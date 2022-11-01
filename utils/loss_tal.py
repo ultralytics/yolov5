@@ -74,9 +74,133 @@ class FocalLoss(nn.Module):
             return loss
 
 
-class BboxLoss(nn.Module):
-    def __init__(self, reg_max, use_dfl=False):
+class QFocalLoss(nn.Module):
+    # Wraps Quality focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
+    def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
         super().__init__()
+        self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
+        self.gamma = gamma
+        self.alpha = alpha
+        self.reduction = loss_fcn.reduction
+        self.loss_fcn.reduction = "none"  # required to apply FL to each element
+
+    def forward(self, pred, true):
+        loss = self.loss_fcn(pred, true)
+
+        pred_prob = torch.sigmoid(pred)  # prob from logits
+        alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
+        modulating_factor = torch.abs(true - pred_prob) ** self.gamma
+        loss *= alpha_factor * modulating_factor
+
+        if self.reduction == "mean":
+            return loss.mean()
+        elif self.reduction == "sum":
+            return loss.sum()
+        else:  # 'none'
+            return loss
+
+
+class IOUloss:
+    """ Calculate IoU loss.
+    """
+
+    def __init__(self, box_format="xywh", iou_type="ciou", reduction="none", eps=1e-7):
+        """ Setting of the class.
+        Args:
+            box_format: (string), must be one of 'xywh' or 'xyxy'.
+            iou_type: (string), can be one of 'ciou', 'diou', 'giou' or 'siou'
+            reduction: (string), specifies the reduction to apply to the output, must be one of 'none', 'mean','sum'.
+            eps: (float), a value to avoid divide by zero error.
+        """
+        self.box_format = box_format
+        self.iou_type = iou_type.lower()
+        self.reduction = reduction
+        self.eps = eps
+
+    def __call__(self, box1, box2):
+        """ calculate iou. box1 and box2 are torch tensor with shape [M, 4] and [Nm 4].
+        """
+        if box1.shape[0] != box2.shape[0]:
+            box2 = box2.T
+            if self.box_format == "xyxy":
+                b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2], box1[3]
+                b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
+            elif self.box_format == "xywh":
+                b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
+                b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
+                b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
+                b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
+        else:
+            if self.box_format == "xyxy":
+                b1_x1, b1_y1, b1_x2, b1_y2 = torch.split(box1, 1, dim=-1)
+                b2_x1, b2_y1, b2_x2, b2_y2 = torch.split(box2, 1, dim=-1)
+
+            elif self.box_format == "xywh":
+                b1_x1, b1_y1, b1_w, b1_h = torch.split(box1, 1, dim=-1)
+                b2_x1, b2_y1, b2_w, b2_h = torch.split(box2, 1, dim=-1)
+                b1_x1, b1_x2 = b1_x1 - b1_w / 2, b1_x1 + b1_w / 2
+                b1_y1, b1_y2 = b1_y1 - b1_h / 2, b1_y1 + b1_h / 2
+                b2_x1, b2_x2 = b2_x1 - b2_w / 2, b2_x1 + b2_w / 2
+                b2_y1, b2_y2 = b2_y1 - b2_h / 2, b2_y1 + b2_h / 2
+
+        # Intersection area
+        inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * (
+                torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
+
+        # Union Area
+        w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + self.eps
+        w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + self.eps
+        union = w1 * h1 + w2 * h2 - inter + self.eps
+        iou = inter / union
+
+        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex width
+        ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
+        if self.iou_type == "giou":
+            c_area = cw * ch + self.eps  # convex area
+            iou = iou - (c_area - union) / c_area
+        elif self.iou_type in ["diou", "ciou"]:
+            c2 = cw ** 2 + ch ** 2 + self.eps  # convex diagonal squared
+            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (
+                    b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
+            if self.iou_type == "diou":
+                iou = iou - rho2 / c2
+            elif self.iou_type == "ciou":
+                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+                with torch.no_grad():
+                    alpha = v / (v - iou + (1 + self.eps))
+                iou = iou - (rho2 / c2 + v * alpha)
+        elif self.iou_type == "siou":
+            # SIoU Loss https://arxiv.org/pdf/2205.12740.pdf
+            s_cw = (b2_x1 + b2_x2 - b1_x1 - b1_x2) * 0.5
+            s_ch = (b2_y1 + b2_y2 - b1_y1 - b1_y2) * 0.5
+            sigma = torch.pow(s_cw ** 2 + s_ch ** 2, 0.5)
+            sin_alpha_1 = torch.abs(s_cw) / sigma
+            sin_alpha_2 = torch.abs(s_ch) / sigma
+            threshold = pow(2, 0.5) / 2
+            sin_alpha = torch.where(sin_alpha_1 > threshold, sin_alpha_2, sin_alpha_1)
+            angle_cost = torch.cos(torch.arcsin(sin_alpha) * 2 - math.pi / 2)
+            rho_x = (s_cw / cw) ** 2
+            rho_y = (s_ch / ch) ** 2
+            gamma = angle_cost - 2
+            distance_cost = 2 - torch.exp(gamma * rho_x) - torch.exp(gamma * rho_y)
+            omiga_w = torch.abs(w1 - w2) / torch.max(w1, w2)
+            omiga_h = torch.abs(h1 - h2) / torch.max(h1, h2)
+            shape_cost = torch.pow(1 - torch.exp(-1 * omiga_w), 4) + torch.pow(1 - torch.exp(-1 * omiga_h), 4)
+            iou = iou - 0.5 * (distance_cost + shape_cost)
+        loss = 1.0 - iou
+
+        if self.reduction == "sum":
+            loss = loss.sum()
+        elif self.reduction == "mean":
+            loss = loss.mean()
+
+        return loss, iou
+
+
+class BboxLoss(nn.Module):
+    def __init__(self, reg_max, use_dfl=False, iou_type="giou"):
+        super(BboxLoss, self).__init__()
+        self.iou_loss = IOUloss(box_format="xyxy", iou_type=iou_type, eps=1e-7)
         self.reg_max = reg_max
         self.use_dfl = use_dfl
 
@@ -86,9 +210,7 @@ class BboxLoss(nn.Module):
         pred_bboxes_pos = torch.masked_select(pred_bboxes, bbox_mask).reshape([-1, 4])
         target_bboxes_pos = torch.masked_select(target_bboxes, bbox_mask).reshape([-1, 4])
         bbox_weight = torch.masked_select(target_scores.sum(-1), fg_mask).unsqueeze(-1)
-        iou = bbox_iou(pred_bboxes_pos, target_bboxes_pos, xywh=False, CIoU=True)
-        loss_iou = 1.0 - iou
-
+        loss_iou, iou = self.iou_loss(pred_bboxes_pos, target_bboxes_pos)
         loss_iou *= bbox_weight
         loss_iou = loss_iou.sum() / target_scores_sum
         # loss_iou = loss_iou.mean()
@@ -146,29 +268,29 @@ class ComputeLoss:
         self.device = device
 
         self.assigner = TaskAlignedAssigner(topk=13, num_classes=self.nc, alpha=1.0, beta=6.0)
-        self.bbox_loss = BboxLoss(16, use_dfl=use_dfl).to(device)
+        self.bbox_loss = BboxLoss(16, use_dfl=use_dfl, iou_type="ciou").to(device)
         self.reg_max = 16 if use_dfl else 0
         self.use_dfl = use_dfl
-        self.proj = torch.linspace(0, self.reg_max, self.reg_max + 1).to(device)
+        self.proj = nn.Parameter(torch.linspace(0, self.reg_max, self.reg_max + 1), requires_grad=False)
 
     def preprocess(self, targets, batch_size, scale_tensor):
-        i = targets[:, 0]  # image index
-        _, counts = i.unique(return_counts=True)
-        out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
-        for j in range(batch_size):
-            matches = i == j
-            n = matches.sum()
-            if n:
-                out[j, :n] = targets[matches, 1:]
-        out[..., 1:5] = xywh2xyxy(out[:, :, 1:5].mul_(scale_tensor))
-        return out
+        targets_list = np.zeros((batch_size, 1, 5)).tolist()
+        for i, item in enumerate(targets.cpu().numpy().tolist()):
+            targets_list[int(item[0])].append(item[1:])
+        max_len = max((len(l) for l in targets_list))
+        targets = torch.from_numpy(
+            np.array(list(map(lambda l: l + [[-1, 0, 0, 0, 0]] * (max_len - len(l)), targets_list)))[:, 1:, :]).to(
+            targets.device
+        )
+        batch_target = targets[:, :, 1:5].mul_(scale_tensor)
+        targets[..., 1:] = xywh2xyxy(batch_target)
+        return targets
 
     def bbox_decode(self, anchor_points, pred_dist):
         if self.use_dfl:
-            b, a, _ = pred_dist.shape
-            pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj.type(pred_dist.dtype))
-            # pred_dist = (pred_dist.view(b, a, self.reg_max + 1, 4).softmax(2) * self.proj.type(pred_dist.dtype).view(1, 1, 17, 1)).sum(2)
-
+            batch_size, n_anchors, _ = pred_dist.shape
+            pred_dist = F.softmax(pred_dist.view(batch_size, n_anchors, 4, self.reg_max + 1), dim=-1) \
+                .matmul(self.proj.to(pred_dist.device).to(pred_dist.dtype))
         return dist2bbox(pred_dist, anchor_points, box_format="xyxy")
 
     def __call__(self, p, targets, img=None, epoch=0):
@@ -178,12 +300,6 @@ class ComputeLoss:
         ldfl = torch.zeros(1, device=self.device)  # object loss
 
         feats, pred_obj, pred_scores, pred_distri = p
-
-        # TODO adjust TAL/DFL loss for channel dim=1
-        pred_obj = pred_obj.permute(0, 2, 1).contiguous()
-        pred_scores = pred_scores.permute(0, 2, 1).contiguous()
-        pred_distri = pred_distri.permute(0, 2, 1).contiguous()
-
         anchors, anchor_points, n_anchors_list, stride_tensor = generate_anchors(feats, torch.tensor([8, 16, 32]), 5.0,
                                                                                  0.5, device=self.device)
 
@@ -250,7 +366,7 @@ class ComputeLoss:
         # lbox *= self.hyp["box"] * 3
         lbox *= 2.5 * 3
         lobj *= 0.7 * 3
-        lcls *= 1.0 * 3 * 0.15
+        lcls *= 1.0 * 3
         ldfl *= 0.5 * 3
         bs = tobj.shape[0]  # batch size
 

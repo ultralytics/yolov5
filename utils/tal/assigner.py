@@ -3,8 +3,30 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def dist_calculator(gt_bboxes, anchor_bboxes):
+    """compute center distance between all bbox and gt
+
+    Args:
+        gt_bboxes (Tensor): shape(bs*n_max_boxes, 4)
+        anchor_bboxes (Tensor): shape(num_total_anchors, 4)
+    Return:
+        distances (Tensor): shape(bs*n_max_boxes, num_total_anchors)
+        ac_points (Tensor): shape(num_total_anchors, 2)
+    """
+    gt_cx = (gt_bboxes[:, 0] + gt_bboxes[:, 2]) / 2.0
+    gt_cy = (gt_bboxes[:, 1] + gt_bboxes[:, 3]) / 2.0
+    gt_points = torch.stack([gt_cx, gt_cy], dim=1)
+    ac_cx = (anchor_bboxes[:, 0] + anchor_bboxes[:, 2]) / 2.0
+    ac_cy = (anchor_bboxes[:, 1] + anchor_bboxes[:, 3]) / 2.0
+    ac_points = torch.stack([ac_cx, ac_cy], dim=1)
+
+    distances = (gt_points[:, None, :] - ac_points[None, :, :]).pow(2).sum(-1).sqrt()
+
+    return distances, ac_points
+
+
 def select_candidates_in_gts(xy_centers, gt_bboxes, eps=1e-9):
-    """select the positive anchor center in gt
+    """select the positive anchors's center in gt
 
     Args:
         xy_centers (Tensor): shape(h*w, 4)
@@ -81,7 +103,7 @@ def iou_calculator(box1, box2, eps=1e-9):
 
 class TaskAlignedAssigner(nn.Module):
     def __init__(self, topk=13, num_classes=80, alpha=1.0, beta=6.0, eps=1e-9):
-        super().__init__()
+        super(TaskAlignedAssigner, self).__init__()
         self.topk = topk
         self.num_classes = num_classes
         self.bg_idx = num_classes
@@ -112,10 +134,12 @@ class TaskAlignedAssigner(nn.Module):
 
         if self.n_max_boxes == 0:
             device = gt_bboxes.device
-            return (torch.full_like(pd_scores[..., 0], self.bg_idx).to(device),
-                    torch.zeros_like(pd_bboxes).to(device),
-                    torch.zeros_like(pd_scores).to(device),
-                    torch.zeros_like(pd_scores[..., 0]).to(device))
+            return (
+                torch.full_like(pd_scores[..., 0], self.bg_idx).to(device),
+                torch.zeros_like(pd_bboxes).to(device),
+                torch.zeros_like(pd_scores).to(device),
+                torch.zeros_like(pd_scores[..., 0]).to(device),
+            )
 
         mask_pos, align_metric, overlaps = self.get_pos_mask(pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points,
                                                              mask_gt)
@@ -198,7 +222,11 @@ class TaskAlignedAssigner(nn.Module):
         # assigned target labels, (b, 1)
         batch_ind = torch.arange(end=self.bs, dtype=torch.int64, device=gt_labels.device)[..., None]
         target_gt_idx = target_gt_idx + batch_ind * self.n_max_boxes  # (b, h*w)
+        # print(target_gt_idx.max(1)[0], target_gt_idx.min(1)[0])
         target_labels = gt_labels.long().flatten()[target_gt_idx]  # (b, h*w)
+        # print(target_labels.max(1)[0])
+        # print(gt_labels.flatten())
+        # exit()
 
         # assigned target boxes, (b, max_num_obj, 4) -> (b, h*w)
         target_bboxes = gt_bboxes.reshape([-1, 4])[target_gt_idx]
