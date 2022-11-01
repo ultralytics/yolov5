@@ -16,6 +16,7 @@ TensorFlow Lite             | `tflite`                      | yolov5s.tflite
 TensorFlow Edge TPU         | `edgetpu`                     | yolov5s_edgetpu.tflite
 TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
 PaddlePaddle                | `paddle`                      | yolov5s_paddle_model/
+DepthAI                     | `depthai`                     | yolov5s_openvino_2021.4_6shave.blob
 
 Requirements:
     $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU
@@ -36,6 +37,7 @@ Inference:
                                  yolov5s.tflite             # TensorFlow Lite
                                  yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
                                  yolov5s_paddle_model       # PaddlePaddle
+                                 yolov5s_openvino_2021.4_6shave.blob # DepthAI model
 
 TensorFlow.js:
     $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example
@@ -54,6 +56,7 @@ import subprocess
 import sys
 import time
 import warnings
+import glob
 from pathlib import Path
 
 import pandas as pd
@@ -91,7 +94,8 @@ def export_formats():
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
-        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],
+        ['DepthAI', 'depthai', '.blob', True, False],]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -198,6 +202,17 @@ def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     subprocess.run(cmd.split(), check=True, env=os.environ)  # export
     yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
+
+
+@try_export
+def export_depthai(file, prefix=colorstr('DepthAI:')):
+    check_requirements('blobconverter')
+    LOGGER.info(f'\n{prefix} starting export with depthai...')
+    f = os.path.dirname(file)
+    cmd = f"blobconverter --onnx {file.with_suffix('.onnx')} --output-dir {f} --data-type FP16 --shaves 6"
+    subprocess.run(cmd.split(), check=False, env=os.environ, timeout=60)  # export
+    blob_file = glob.glob(f + "/*.blob")[0]
+    return blob_file, None
 
 
 @try_export
@@ -517,7 +532,7 @@ def run(
     fmts = tuple(export_formats()['Argument'][1:])  # --include arguments
     flags = [x in include for x in fmts]
     assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {fmts}'
-    jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = flags  # export booleans
+    jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, depthai = flags  # export booleans
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
 
     # Load PyTorch model
@@ -591,6 +606,10 @@ def run(
             f[9], _ = export_tfjs(file)
     if paddle:  # PaddlePaddle
         f[10], _ = export_paddle(model, im, file, metadata)
+    
+    if depthai:
+        f[2], _ = export_onnx(model, im, file, opset, dynamic, simplify)
+        f[11], _ = export_depthai(file)
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
@@ -636,7 +655,7 @@ def parse_opt():
         '--include',
         nargs='+',
         default=['torchscript'],
-        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle')
+        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, depthai')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt
