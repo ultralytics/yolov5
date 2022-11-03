@@ -48,8 +48,8 @@ TensorFlow.js:
 
 import argparse
 import contextlib
-import json
 import glob
+import json
 import os
 import platform
 import re
@@ -95,8 +95,7 @@ def export_formats():
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
         ['PaddlePaddle', 'paddle', '_paddle_model', True, True],
-        ['DepthAI', 'depthai', '.blob', True, False],
-    ]
+        ['DepthAI', 'depthai', '.blob', True, False],]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -189,6 +188,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
             LOGGER.info(f'{prefix} simplifier failure: {e}')
     return f, model_onnx
 
+
 @try_export
 def export_depthai(file, prefix=colorstr('DepthAI:')):
     check_requirements('blobconverter')
@@ -198,6 +198,7 @@ def export_depthai(file, prefix=colorstr('DepthAI:')):
     subprocess.run(cmd.split(), check=False, env=os.environ, timeout=60)  # export
     blob_file = glob.glob(f + "/*.blob")[0]
     return blob_file, None
+
 
 @try_export
 def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
@@ -605,8 +606,8 @@ def run(
             f[9], _ = export_tfjs(file)
     if paddle:  # PaddlePaddle
         f[10], _ = export_paddle(model, im, file, metadata)
-        
-    if depthai:        
+
+    if depthai:
         f[11], _ = export_depthai(file)
 
     # Finish
