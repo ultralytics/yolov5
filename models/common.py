@@ -315,7 +315,14 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False, fuse=True, use_ovtf=False):
+    def __init__(self,
+                 weights='yolov5s.pt',
+                 device=torch.device('cpu'),
+                 dnn=False,
+                 data=None,
+                 fp16=False,
+                 fuse=True,
+                 use_ovtf=False):
         # Usage:
         #   PyTorch:              weights = *.pt
         #   TorchScript:                    *.torchscript
@@ -423,8 +430,8 @@ class DetectMultiBackend(nn.Module):
             model = ct.models.MLModel(w)
         elif saved_model:  # TF SavedModel
             LOGGER.info(f'Loading {w} for TensorFlow SavedModel inference...')
-            import tensorflow as tf
             import openvino_tensorflow as ovtf
+            import tensorflow as tf
             if not use_ovtf:
                 ovtf.disable()
             keras = False  # assume TF1 saved_model
@@ -600,7 +607,7 @@ class DetectMultiBackend(nn.Module):
                 self.forward(im)  # warmup
             if self.saved_model:
                 for _ in range(5):
-                    self.forward(im) 
+                    self.forward(im)
 
     @staticmethod
     def _model_type(p='path/to/model.pt'):
