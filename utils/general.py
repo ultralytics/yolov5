@@ -72,7 +72,7 @@ def is_chinese(s='人工智能'):
 
 def is_colab():
     # Is environment a Google Colab instance?
-    return 'COLAB_GPU' in os.environ
+    return 'google.colab' in sys.modules
 
 
 def is_notebook():
@@ -283,11 +283,16 @@ def file_size(path):
 def check_online():
     # Check internet connectivity
     import socket
-    try:
-        socket.create_connection(("1.1.1.1", 443), 5)  # check host accessibility
-        return True
-    except OSError:
-        return False
+
+    def run_once():
+        # Check once
+        try:
+            socket.create_connection(("1.1.1.1", 443), 5)  # check host accessibility
+            return True
+        except OSError:
+            return False
+
+    return run_once() or run_once()  # check twice to increase robustness to intermittent connectivity issues
 
 
 def git_describe(path=ROOT):  # path must be a directory
