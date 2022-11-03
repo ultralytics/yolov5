@@ -212,13 +212,11 @@ class BboxLoss(nn.Module):
         bbox_weight = torch.masked_select(target_scores.sum(-1), fg_mask).unsqueeze(-1)
 
         # LQ method
-        loss_iou1, iou1 = self.iou_loss(pred_bboxes_pos, target_bboxes_pos)
+        # loss_iou1, iou1 = self.iou_loss(pred_bboxes_pos, target_bboxes_pos)
 
         # YOLOv5 method
         iou = bbox_iou(pred_bboxes_pos, target_bboxes_pos, xywh=False, CIoU=True)
         loss_iou = 1.0 - iou
-
-        print((loss_iou1 - loss_iou).max(), (loss_iou1 - loss_iou).min())
 
         loss_iou *= bbox_weight
         loss_iou = loss_iou.sum() / target_scores_sum
