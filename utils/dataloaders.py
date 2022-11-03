@@ -567,34 +567,33 @@ class LoadImagesAndLabels(Dataset):
 
         # Cache images into RAM/disk for faster training (WARNING: large datasets may exceed system resources)
         if cache_images == 'auto':
-            cache_images = self.autocache()  # AutoCache
+            cache_images = 'ram' if self.autocache() else False  # AutoCache
         self.ims = [None] * n
         self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
         if cache_images:
-            gb = 0  # Gigabytes of cached images
+            b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
             self.im_hw0, self.im_hw = [None] * n, [None] * n
             fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_image
             results = ThreadPool(NUM_THREADS).imap(fcn, range(n))
             pbar = tqdm(enumerate(results), total=n, bar_format=BAR_FORMAT, disable=LOCAL_RANK > 0)
             for i, x in pbar:
                 if cache_images == 'disk':
-                    gb += self.npy_files[i].stat().st_size
+                    b += self.npy_files[i].stat().st_size
                 else:  # 'ram'
                     self.ims[i], self.im_hw0[i], self.im_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
-                    gb += self.ims[i].nbytes
-                pbar.desc = f'{prefix}Caching images ({gb << 30:.1f}GB {cache_images})'
+                    b += self.ims[i].nbytes
+                pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images})'
             pbar.close()
 
-    def autocache(self, safety_margin=0.5, prefix=colorstr('AutoCache: ')):
+    def autocache(self, safety_margin=0.3, prefix=colorstr('AutoCache: ')):
         # AutoCache: check image caching requirements vs available memory
-        bytes = 0  # gigabytes
-        gb = 1 << 30  # bytes in a GB
-        n = min(self.n, 30)  # number of samples
+        b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
+        n = min(self.n, 30)  # extrapolate from 30 random images
         for _ in range(n):
             im = cv2.imread(random.choice(self.im_files))  # sample image
             ratio = self.img_size / max(im.shape[0], im.shape[1])  # max(h, w)  # ratio
-            bytes += im.nbytes * ratio ** 2
-        mem_required = bytes * self.n / n  # GB required to cache dataset into RAM
+            b += im.nbytes * ratio ** 2
+        mem_required = b * self.n / n  # GB required to cache dataset into RAM
         mem = psutil.virtual_memory()
         cache = mem_required * (1 + safety_margin) < mem.available  # to cache or not to cache, that is the question
         LOGGER.info(f"{prefix}{mem_required / gb:.1f}GB RAM required, "
