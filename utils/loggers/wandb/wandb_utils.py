@@ -184,8 +184,14 @@ class WandbLogger():
                     self.data_dict = opt.data
                 elif opt.resume:
                     # resume from artifact
-                    if isinstance(opt.resume, str) and opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
-                        self.data_dict = dict(self.wandb_run.config.data_dict)
+                    if isinstance(opt.resume, str) and opt.resume.startswith(
+                        WANDB_ARTIFACT_PREFIX
+                    ):
+                        self.data_dict = {
+                            k.lstrip("data_dict_"): v
+                            for k, v in self.wandb_run.config.items()
+                            if k.startswith("data_dict_")
+                        }
                     else:  # local resume
                         self.data_dict = check_wandb_dataset(opt.data)
                 else:
@@ -193,7 +199,13 @@ class WandbLogger():
                     self.wandb_artifact_data_dict = self.wandb_artifact_data_dict or self.data_dict
 
                     # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
-                    self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict}, allow_val_change=True)
+                    self.wandb_run.config.update(
+                        {
+                            f"data_dict_{k}": v
+                            for k, v in self.wandb_artifact_data_dict.items()
+                        },
+                        allow_val_change=True,
+                    )
                 self.setup_training(opt)
 
             if self.job_type == 'Dataset Creation':
