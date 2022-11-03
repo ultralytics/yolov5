@@ -340,14 +340,24 @@ class WandbLogger():
                            aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
 
-    def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
+    def log_dataset_artifact(
+        self,
+        data_file,
+        single_cls,
+        entity,
+        project,
+        alias="latest",
+        overwrite_config=False,
+    ):
         """
         Log the dataset as W&B artifact and return the new data file with W&B links
 
         arguments:
         data_file (str) -- the .yaml file with information about the dataset like - path, classes etc.
         single_class (boolean)  -- train multi-class data as single-class
+        entity (str) -- entity name. Used to construct the artifact path
         project (str) -- project name. Used to construct the artifact path
+        alias (str) -- artifact alias to use for artifact name. Used to construct the artifact path
         overwrite_config (boolean) -- overwrites the data.yaml file if set to true otherwise creates a new
         file with _wandb postfix. Eg -> data_wandb.yaml
 
@@ -355,48 +365,74 @@ class WandbLogger():
         the new .yaml file with artifact links. it can be used to start training directly from artifacts
         """
         upload_dataset = self.wandb_run.config.upload_dataset
-        log_val_only = isinstance(upload_dataset, str) and upload_dataset == 'val'
+        log_val_only = isinstance(upload_dataset, str) and upload_dataset == "val"
         self.data_dict = check_dataset(data_file)  # parse and check
         data = dict(self.data_dict)
-        nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
-        names = {k: v for k, v in enumerate(names)}  # to index dictionary
+        nc, names = (1, ["item"]) if single_cls else (int(data["nc"]), data["names"])
+        names = {k: str(v) for k, v in enumerate(names)}  # to index dictionary
 
         # log train set
         if not log_val_only:
-            self.train_artifact = self.create_dataset_table(LoadImagesAndLabels(data['train'], rect=True, batch_size=1),
-                                                            names,
-                                                            name='train') if data.get('train') else None
-            if data.get('train'):
-                data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'train')
+            self.train_artifact = (
+                self.create_dataset_table(
+                    LoadImagesAndLabels(data["train"], rect=True, batch_size=1),
+                    names,
+                    name="train",
+                )
+                if data.get("train")
+                else None
+            )
+            if data.get("train"):
+                data["train"] = (
+                    WANDB_ARTIFACT_PREFIX
+                    + str(Path(entity) / Path(project) / "train")
+                    + ":"
+                    + alias
+                )
 
-        self.val_artifact = self.create_dataset_table(
-            LoadImagesAndLabels(data['val'], rect=True, batch_size=1), names, name='val') if data.get('val') else None
-        if data.get('val'):
-            data['val'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'val')
+        self.val_artifact = (
+            self.create_dataset_table(
+                LoadImagesAndLabels(data["val"], rect=True, batch_size=1),
+                names,
+                name="val",
+            )
+            if data.get("val")
+            else None
+        )
+        if data.get("val"):
+            data["val"] = (
+                WANDB_ARTIFACT_PREFIX
+                + str(Path(entity) / Path(project) / "val")
+                + ":"
+                + alias
+            )
 
         path = Path(data_file)
         # create a _wandb.yaml file with artifacts links if both train and test set are logged
         if not log_val_only:
-            path = (path.stem if overwrite_config else path.stem + '_wandb') + '.yaml'  # updated data.yaml path
-            path = ROOT / 'data' / path
-            data.pop('download', None)
-            data.pop('path', None)
-            with open(path, 'w') as f:
+            path = (
+                path.stem if overwrite_config else path.stem + "_wandb"
+            ) + ".yaml"  # updated data.yaml path
+            path = ROOT / "data" / path
+            data.pop("download", None)
+            data.pop("path", None)
+            with open(path, "w") as f:
                 yaml.safe_dump(data, f)
                 LOGGER.info(f"Created dataset config file {path}")
 
-        if self.job_type == 'Training':  # builds correct artifact pipeline graph
+        if self.job_type == "Training":  # builds correct artifact pipeline graph
             if not log_val_only:
                 self.wandb_run.log_artifact(
-                    self.train_artifact)  # calling use_artifact downloads the dataset. NOT NEEDED!
+                    self.train_artifact
+                )  # calling use_artifact downloads the dataset. NOT NEEDED!
             self.wandb_run.use_artifact(self.val_artifact)
             self.val_artifact.wait()
-            self.val_table = self.val_artifact.get('val')
+            self.val_table = self.val_artifact.get("val")
             self.map_val_table_path()
         else:
             self.wandb_run.log_artifact(self.train_artifact)
             self.wandb_run.log_artifact(self.val_artifact)
-        return path
+        return str(path)
 
     def map_val_table_path(self):
         """
