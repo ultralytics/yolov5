@@ -218,10 +218,16 @@ class WandbLogger():
         returns:
         Updated dataset info dictionary where local dataset paths are replaced by WAND_ARFACT_PREFIX links.
         """
-        assert wandb, 'Install wandb to upload dataset'
-        config_path = self.log_dataset_artifact(opt.data, opt.single_cls,
-                                                'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
-        with open(config_path, errors='ignore') as f:
+        assert wandb, "Install wandb to upload dataset"
+        config_path = self.log_dataset_artifact(
+            opt.data,
+            opt.single_cls,
+            str(Path(opt.entity)) if opt.entity is not None else wandb.run.entity,
+            "YOLOv5" if opt.project == "runs/train" else Path(opt.project).stem,
+            opt.artifact_alias if opt.artifact_alias else "latest",
+        )
+        return check_wandb_dataset(config_path)
+        with open(config_path, errors="ignore") as f:
             wandb_data_dict = yaml.safe_load(f)
         return wandb_data_dict
 
@@ -263,7 +269,7 @@ class WandbLogger():
         if self.val_artifact is not None:
             self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
             columns = ["epoch", "id", "ground truth", "prediction"]
-            columns.extend(self.data_dict['names'])
+            columns.extend([str(name) for name in self.data_dict["names"]])
             self.result_table = wandb.Table(columns)
             self.val_table = self.val_artifact.get("val")
             if self.val_table_path_map is None:
