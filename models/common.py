@@ -431,8 +431,9 @@ class DetectMultiBackend(nn.Module):
         elif saved_model:  # TF SavedModel
             LOGGER.info(f'Loading {w} for TensorFlow SavedModel inference...')
             import os
-            import tensorflow as tf
+
             import openvino_tensorflow as ovtf
+            import tensorflow as tf
             os.environ["OPENVINO_TF_CONVERT_VARIABLES_TO_CONSTANTS"] = "1"
             if not use_ovtf:
                 ovtf.disable()
