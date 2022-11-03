@@ -430,8 +430,10 @@ class DetectMultiBackend(nn.Module):
             model = ct.models.MLModel(w)
         elif saved_model:  # TF SavedModel
             LOGGER.info(f'Loading {w} for TensorFlow SavedModel inference...')
-            import openvino_tensorflow as ovtf
+            import os
             import tensorflow as tf
+            import openvino_tensorflow as ovtf
+            os.environ["OPENVINO_TF_CONVERT_VARIABLES_TO_CONSTANTS"] = "1"
             if not use_ovtf:
                 ovtf.disable()
             keras = False  # assume TF1 saved_model
