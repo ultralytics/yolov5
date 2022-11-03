@@ -10,6 +10,7 @@ import json
 import math
 import os
 import random
+import psutil
 import shutil
 import time
 from itertools import repeat
@@ -31,7 +32,7 @@ from utils.augmentations import (Albumentations, augment_hsv, classify_albumenta
                                  cutout, letterbox, mixup, random_perspective)
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
                            cv2, is_colab, is_kaggle, segments2boxes, unzip_file, xyn2xy, xywh2xyxy, xywhn2xyxy,
-                           xyxy2xywhn)
+                           xyxy2xywhn, colorstr)
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -565,6 +566,8 @@ class LoadImagesAndLabels(Dataset):
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(int) * stride
 
         # Cache images into RAM/disk for faster training (WARNING: large datasets may exceed system resources)
+        if cache_images == 'auto':
+            cache_images = self.autocache()  # AutoCache
         self.ims = [None] * n
         self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
         if cache_images:
@@ -579,8 +582,25 @@ class LoadImagesAndLabels(Dataset):
                 else:  # 'ram'
                     self.ims[i], self.im_hw0[i], self.im_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
                     gb += self.ims[i].nbytes
-                pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
+                pbar.desc = f'{prefix}Caching images ({gb << 30:.1f}GB {cache_images})'
             pbar.close()
+
+    def autocache(self, safety_margin=0.5, prefix=colorstr('AutoCache: ')):
+        # AutoCache: check image caching requirements vs available memory
+        bytes = 0  # gigabytes
+        gb = 1 << 30  # bytes in a GB
+        n = min(self.n, 30)  # number of samples
+        for _ in range(n):
+            im = cv2.imread(random.choice(self.im_files))  # sample image
+            ratio = self.img_size / max(im.shape[0], im.shape[1])  # max(h, w)  # ratio
+            bytes += im.nbytes * ratio ** 2
+        mem_required = bytes * self.n / n  # GB required to cache dataset into RAM
+        mem = psutil.virtual_memory()
+        cache = mem_required * (1 + safety_margin) < mem.available  # to cache or not to cache, that is the question
+        LOGGER.info(f"{prefix}{mem_required / gb:.1f}GB RAM required, "
+                    f"{mem.available / gb:.1f}/{mem.total / gb:.1f}GB available, "
+                    f"{'caching images ✅' if cache else 'not caching images ⚠️'}")
+        return cache
 
     def cache_labels(self, path=Path('./labels.cache'), prefix=''):
         # Cache dataset labels, check images and read shapes
