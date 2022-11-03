@@ -26,7 +26,7 @@ def dist_calculator(gt_bboxes, anchor_bboxes):
 
 
 def select_candidates_in_gts(xy_centers, gt_bboxes, eps=1e-9):
-    """select the positive anchors's center in gt
+    """select positive anchor centers in gt
 
     Args:
         xy_centers (Tensor): shape(h*w, 4)
@@ -49,7 +49,7 @@ def select_candidates_in_gts(xy_centers, gt_bboxes, eps=1e-9):
     b_rb = gt_bboxes_rb - xy_centers
     bbox_deltas = torch.cat([b_lt, b_rb], dim=-1)
     bbox_deltas = bbox_deltas.reshape([bs, n_max_boxes, n_anchors, -1])
-    return (bbox_deltas.min(axis=-1)[0] > eps).to(gt_bboxes.dtype)
+    return (bbox_deltas.min(-1)[0] > eps).to(gt_bboxes.dtype)
 
 
 def select_highest_overlaps(mask_pos, overlaps, n_max_boxes):
@@ -65,16 +65,16 @@ def select_highest_overlaps(mask_pos, overlaps, n_max_boxes):
         mask_pos (Tensor): shape(b, n_max_boxes, h*w)
     """
     # (b, n_max_boxes, h*w) -> (b, h*w)
-    fg_mask = mask_pos.sum(axis=-2)
+    fg_mask = mask_pos.sum(-2)
     if fg_mask.max() > 1:  # one anchor is assigned to multiple gt_bboxes
         mask_multi_gts = (fg_mask.unsqueeze(1) > 1).repeat([1, n_max_boxes, 1])  # (b, n_max_boxes, h*w)
-        max_overlaps_idx = overlaps.argmax(axis=1)  # (b, h*w)
+        max_overlaps_idx = overlaps.argmax(1)  # (b, h*w)
         is_max_overlaps = F.one_hot(max_overlaps_idx, n_max_boxes)  # (b, h*w, n_max_boxes)
         is_max_overlaps = is_max_overlaps.permute(0, 2, 1).to(overlaps.dtype)  # (b, n_max_boxes, h*w)
         mask_pos = torch.where(mask_multi_gts, is_max_overlaps, mask_pos)  # (b, n_max_boxes, h*w)
-        fg_mask = mask_pos.sum(axis=-2)
+        fg_mask = mask_pos.sum(-2)
     # find each grid serve which gt(index)
-    target_gt_idx = mask_pos.argmax(axis=-2)  # (b, h*w)
+    target_gt_idx = mask_pos.argmax(-2)  # (b, h*w)
     return target_gt_idx, fg_mask, mask_pos
 
 
@@ -151,8 +151,8 @@ class TaskAlignedAssigner(nn.Module):
 
         # normalize
         align_metric *= mask_pos
-        pos_align_metrics = align_metric.max(axis=-1, keepdim=True)[0]  # b, max_num_obj
-        pos_overlaps = (overlaps * mask_pos).max(axis=-1, keepdim=True)[0]  # b, max_num_obj
+        pos_align_metrics = align_metric.max(-1, keepdim=True)[0]  # b, max_num_obj
+        pos_overlaps = (overlaps * mask_pos).max(-1, keepdim=True)[0]  # b, max_num_obj
         norm_align_metric = (align_metric * pos_overlaps / (pos_align_metrics + self.eps)).max(-2)[0].unsqueeze(-1)
         target_scores = target_scores * norm_align_metric
 
@@ -196,13 +196,13 @@ class TaskAlignedAssigner(nn.Module):
 
         num_anchors = metrics.shape[-1]  # h*w
         # (b, max_num_obj, topk)
-        topk_metrics, topk_idxs = torch.topk(metrics, self.topk, axis=-1, largest=largest)
+        topk_metrics, topk_idxs = torch.topk(metrics, self.topk, dim=-1, largest=largest)
         if topk_mask is None:
-            topk_mask = (topk_metrics.max(axis=-1, keepdim=True) > self.eps).tile([1, 1, self.topk])
+            topk_mask = (topk_metrics.max(-1, keepdim=True) > self.eps).tile([1, 1, self.topk])
         # (b, max_num_obj, topk)
         topk_idxs = torch.where(topk_mask, topk_idxs, torch.zeros_like(topk_idxs))
         # (b, max_num_obj, topk, h*w) -> (b, max_num_obj, h*w)
-        is_in_topk = F.one_hot(topk_idxs, num_anchors).sum(axis=-2)
+        is_in_topk = F.one_hot(topk_idxs, num_anchors).sum(-2)
         # filter invalid bboxes
         # assigned topk should be unique, this is for dealing with empty labels
         # since empty labels will generate index `0` through `F.one_hot`
