@@ -134,7 +134,7 @@ class WandbLogger():
        """
         # Temporary-fix
         if opt.upload_dataset:
-            opt.upload_dataset = False
+            # opt.upload_dataset = False
             # LOGGER.info("Uploading Dataset functionality is not being supported temporarily due to a bug.")
 
         # Pre-training routine --
