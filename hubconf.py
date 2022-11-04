@@ -40,8 +40,9 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
     check_requirements(exclude=('opencv-python', 'tensorboard', 'thop'))
-    name = Path(name)
-    path = name.with_suffix('.pt') if name.suffix == '' and not name.is_dir() else name  # checkpoint path
+    path = Path(name)
+    path = path.with_suffix(".pt") if path.suffix == "" and not path.is_dir() else name  # checkpoint path
+    path = str(path)
     try:
         device = select_device(device)
         if pretrained and channels == 3 and classes == 80:
