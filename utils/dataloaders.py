@@ -565,9 +565,9 @@ class LoadImagesAndLabels(Dataset):
 
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(int) * stride
 
-        # Cache images into RAM/disk for faster training (WARNING: large datasets may exceed system resources)
-        if cache_images == 'auto':
-            cache_images = 'ram' if self.autocache() else False  # AutoCache
+        # Cache images into RAM/disk for faster training
+        if cache_images == 'ram' and not self.check_cache_ram(prefix=prefix):
+            cache_images = False
         self.ims = [None] * n
         self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
         if cache_images:
@@ -585,8 +585,8 @@ class LoadImagesAndLabels(Dataset):
                 pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images})'
             pbar.close()
 
-    def autocache(self, safety_margin=0.3, verbose=False, prefix=colorstr('AutoCache: ')):
-        # AutoCache: check image caching requirements vs available memory
+    def check_cache_ram(self, safety_margin=0.1, prefix=''):
+        # Check image caching requirements vs available memory
         b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
         n = min(self.n, 30)  # extrapolate from 30 random images
         for _ in range(n):
@@ -596,7 +596,7 @@ class LoadImagesAndLabels(Dataset):
         mem_required = b * self.n / n  # GB required to cache dataset into RAM
         mem = psutil.virtual_memory()
         cache = mem_required * (1 + safety_margin) < mem.available  # to cache or not to cache, that is the question
-        if verbose:
+        if not cache:
             LOGGER.info(f"{prefix}{mem_required / gb:.1f}GB RAM required, "
                         f"{mem.available / gb:.1f}/{mem.total / gb:.1f}GB available, "
                         f"{'caching images ✅' if cache else 'not caching images ⚠️'}")
