@@ -146,27 +146,28 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
         elif isinstance(model, DetectionModel):
             dynamic['output0'] = {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
 
-    torch.onnx.export(
-        model,
-        im,
-        f,
-        verbose=False,
-        opset_version=opset,
-        do_constant_folding=True,
-        input_names=['images'],
-        output_names=output_names,
-        dynamic_axes=dynamic or None)
+    with torch.no_grad():
+        torch.onnx.export(
+            model,
+            im,
+            f,
+            verbose=False,
+            opset_version=opset,
+            do_constant_folding=True,
+            input_names=['images'],
+            output_names=output_names,
+            dynamic_axes=dynamic or None)
 
-    # Checks
-    model_onnx = onnx.load(f)  # load onnx model
-    onnx.checker.check_model(model_onnx)  # check onnx model
+        # Checks
+        model_onnx = onnx.load(f)  # load onnx model
+        onnx.checker.check_model(model_onnx)  # check onnx model
 
-    # Metadata
-    d = {'stride': int(max(model.stride)), 'names': model.names}
-    for k, v in d.items():
-        meta = model_onnx.metadata_props.add()
-        meta.key, meta.value = k, str(v)
-    onnx.save(model_onnx, f)
+        # Metadata
+        d = {'stride': int(max(model.stride)), 'names': model.names}
+        for k, v in d.items():
+            meta = model_onnx.metadata_props.add()
+            meta.key, meta.value = k, str(v)
+        onnx.save(model_onnx, f)
 
     # Simplify
     if simplify:
