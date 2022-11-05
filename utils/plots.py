@@ -179,6 +179,7 @@ class Annotator:
     def result(self):
         # Return annotated image as array
         return np.asarray(self.im)
+        # return np.asarray(im0)
 
 
 def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detect/exp')):

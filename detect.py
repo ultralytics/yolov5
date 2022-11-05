@@ -33,6 +33,8 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.getcwd()))
 from tennis import Tennis
 import torch
+import numpy as np
+import copy
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -144,6 +146,7 @@ def run(
                 s += f'{i}: '
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
+            originalFrame=copy.copy(im0)
             if sport_flag==1 and not webcam: #we dont want to track the court on a webcam yet  
                 im0=trackTennisCourt(im0, seen)
             p = Path(p)  # to Path
@@ -168,7 +171,7 @@ def run(
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                     if xywh is not None and sport_flag==1: #make a line call if you can
-                        im0 = tennis.lineCall(xy_In=xywh, frame_in=im0)
+                        im0 = tennis.lineCall(xy_In=xywh, frame=im0)
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -179,19 +182,36 @@ def run(
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
+                        # prediction code
                         predict = kf.predict(int(w*xywh[0]), int(h*xywh[1]))
                         cv2.circle(im0,(predict[0], predict[1]), 5, (255,0,0), 4)
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
-            # Stream results
+
+            # im0 = tennis.warpCourt(frame=im0)
+            # out = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)) GET THIS WORKING
+            # out.write(im0)
+            # out = cv2.VideoWriter('warpedOutput/warped.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 10, (frame_width,frame_height))
+
+            # cv2.imshow("Warped", im0)
+            # cv2.waitKey(0)
+
+            # Stream results THIS IS RETURNING im, NOT im0 
             im0 = annotator.result()
+            # np.concatenate((im0, warped_frame), axis=0)
+            # cv2.imshow("Warped", np.concatenate((im0, warped_frame), axis=1))
+            # cv2.waitKey(0)
+
             if view_img:
                 if platform.system() == 'Linux' and p not in windows:
                     windows.append(p)
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0)
+                # cv2.imshow(str(p), im0)
+
+                cv2.imshow(str(p), np.concatenate((originalFrame, im0), axis=0))
+
                 cv2.waitKey(1)  # 1 millisecond
 
             # Save results (image with detections)
@@ -212,7 +232,7 @@ def run(
                         save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
-
+                    
         # Print time (inference-only)
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
@@ -225,22 +245,35 @@ def run(
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
-def trackTennisCourt(frame_in, seen):
+def trackTennisCourt(frame, seen):
     if seen>=2:
-        return tennis.trackCourt(frame_in)
+        im0 = tennis.trackCourt(frame)
+        # im0 = tennis.warpCourt(frame)
+        return im0
     else:
         print("Detecting court...")
-        return tennis.detectCourt(frame_in)
+        im0 = tennis.detectCourt(frame)
+        # im0 = tennis.warpCourt(frame)
+        return im0
 
 def parse_opt():
     parser = argparse.ArgumentParser()
     #for testing
+    # parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/soccer/soccer_model4.pt', help='model path or triton URL')
+    # parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/basketball/basketball.pt', help='model path or triton URL')
+    # parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/baseball/20octbaseball357epoch.pt', help='model path or triton URL')
     parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt', help='model path or triton URL')
     #for testing
-    parser.add_argument('--source', type=str, default=0, help='file/dir/URL/glob/screen/0(webcam)')
-    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/outofboundsbouncerublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default=0, help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/soccerdemo.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionlowangle.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle1.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle2.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/longballrublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/3secQatarTest.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+   
     parser.add_argument('--sport-flag', type=int, default=1, help='Flag for extra processing')
+    # parser.add_argument('--sport-flag', type=int, default=0, help='Flag for extra processing')
     
     # parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
     # parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
@@ -250,9 +283,13 @@ def parse_opt():
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='show results')
+
+    parser.add_argument('--view-img', default=True, action='store_true', help='show results')
+    # parser.add_argument('--view-img', action='store_true', help='show results')
+
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     # parser.add_argument('--save-txt', default=True, action='store_true', help='save results to *.txt')
+
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
