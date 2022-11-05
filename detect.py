@@ -116,6 +116,7 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    predict = None
     for path, im, im0s, vid_cap, s in dataset: #im0s is "frame" from the court detector
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
@@ -181,9 +182,15 @@ def run(
                         annotator.box_label(xyxy, label, color=colors(c, True))
                         predict = kf.predict(int(w*xywh[0]), int(h*xywh[1]))
                         cv2.circle(im0,(predict[0], predict[1]), 5, (255,0,0), 4)
+                        predict = kf.predict(predict[0], predict[1])
+                        cv2.circle(im0,(predict[0], predict[1]), 5, (255,0,0), 4)
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-
+            else:
+                if(predict != None):
+                    print("hit")
+                    predict = kf.predict(predict[0], predict[1])
+                    cv2.circle(im0,(predict[0], predict[1]), 5, (255,0,0), 4)
             # Stream results
             im0 = annotator.result()
             if view_img:
