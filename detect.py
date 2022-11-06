@@ -30,11 +30,13 @@ import os
 import platform
 import sys
 from pathlib import Path
+
 sys.path.insert(0, os.path.join(os.getcwd()))
-from tennis import Tennis
+import copy
+
+import numpy as np
 import torch
-
-
+from tennis import Tennis
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -42,6 +44,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from kalmanfilter import KalmanFilter
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
@@ -49,12 +52,12 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 
-from kalmanfilter import KalmanFilter
 tennis = Tennis("Tennis")
 
 kf = KalmanFilter()
 
 from speed import tennisDetection
+
 speedDetect = tennisDetection()
 
 
@@ -87,8 +90,7 @@ def run(
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
-        sport_flag=0
-):
+        sport_flag=0):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -124,7 +126,7 @@ def run(
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
     predict = None
-    for path, im, im0s, vid_cap, s in dataset: #im0s is "frame" from the court detector
+    for path, im, im0s, vid_cap, s in dataset:  #im0s is "frame" from the court detector
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -152,8 +154,9 @@ def run(
                 s += f'{i}: '
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-            if sport_flag==1 and not webcam: #we dont want to track the court on a webcam yet  
-                im0=trackTennisCourt(im0, seen)
+            originalFrame = copy.copy(im0)
+            if sport_flag == 1 and not webcam:  #we dont want to track the court on a webcam yet
+                im0 = trackTennisCourt(im0, seen)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
@@ -164,7 +167,7 @@ def run(
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
-                h,w , c= im0.shape
+                h, w, c = im0.shape
 
                 # Print results
                 for c in det[:, 5].unique():
@@ -175,8 +178,8 @@ def run(
                 for *xyxy, conf, cls in reversed(det):
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                    if xywh is not None and sport_flag==1: #make a line call if you can
-                        im0 = tennis.lineCall(xy_In=xywh, frame_in=im0)
+                    if xywh is not None and sport_flag == 1:  #make a line call if you can
+                        im0 = tennis.lineCall(xy_In=xywh, frame=im0)
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -187,17 +190,20 @@ def run(
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
-                        predict = kf.predict(int(w*xywh[0]), int(h*xywh[1]))
-                        cv2.circle(im0,(predict[0], predict[1]), 5, (255,0,0), 4)
+                        # prediction code
+                        predict = kf.predict(int(w * xywh[0]), int(h * xywh[1]))
+                        cv2.circle(im0, (predict[0], predict[1]), 5, (255, 0, 0), 4)
                         #speed estimation
-                        im0 = speedDetect.speedEstimate(object_pixel_width=int(w*xywh[2]), frame_in=im0)
+                        im0 = speedDetect.speedEstimate(object_pixel_width=int(w * xywh[2]), frame_in=im0)
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+
+            # Stream results THIS IS RETURNING im, NOT im0
             else:
-                if(predict != None):
+                if (predict != None):
                     print("hit")
                     predict = kf.predict(predict[0], predict[1])
-                    cv2.circle(im0,(predict[0], predict[1]), 5, (255,0,0), 4)
+                    cv2.circle(im0, (predict[0], predict[1]), 5, (255, 0, 0), 4)
             # Stream results
             im0 = annotator.result()
             if view_img:
@@ -205,7 +211,9 @@ def run(
                     windows.append(p)
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0)
+
+                cv2.imshow(str(p), np.concatenate((originalFrame, im0), axis=0))
+
                 cv2.waitKey(1)  # 1 millisecond
 
             # Save results (image with detections)
@@ -239,23 +247,43 @@ def run(
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
-def trackTennisCourt(frame_in, seen):
-    if seen>=2:
-        return tennis.trackCourt(frame_in)
+
+def trackTennisCourt(frame, seen):
+    if seen >= 2:
+        im0 = tennis.trackCourt(frame)
+        return im0
     else:
         print("Detecting court...")
-        return tennis.detectCourt(frame_in)
+        im0 = tennis.detectCourt(frame)
+        return im0
+
 
 def parse_opt():
     parser = argparse.ArgumentParser()
     #for testing
-    parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt', help='model path or triton URL')
+    # parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/soccer/soccer_model4.pt', help='model path or triton URL')
+    # parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/basketball/basketball.pt', help='model path or triton URL')
+    # parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/baseball/20octbaseball357epoch.pt', help='model path or triton URL')
+    parser.add_argument('--weights',
+                        nargs='+',
+                        type=str,
+                        default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt',
+                        help='model path or triton URL')
     #for testing
-    parser.add_argument('--source', type=str, default=0, help='file/dir/URL/glob/screen/0(webcam)')
-    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/outofboundsbouncerublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default=0, help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/soccerdemo.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionlowangle.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle1.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle2.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/longballrublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--source',
+                        type=str,
+                        default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/3secQatarTest.mp4',
+                        help='file/dir/URL/glob/screen/0(webcam)')
+
     parser.add_argument('--sport-flag', type=int, default=1, help='Flag for extra processing')
-    
+    # parser.add_argument('--sport-flag', type=int, default=0, help='Flag for extra processing')
+
     # parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
     # parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
@@ -264,9 +292,13 @@ def parse_opt():
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='show results')
+
+    parser.add_argument('--view-img', default=True, action='store_true', help='show results')
+    # parser.add_argument('--view-img', action='store_true', help='show results')
+
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     # parser.add_argument('--save-txt', default=True, action='store_true', help='save results to *.txt')
+
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
