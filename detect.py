@@ -36,6 +36,8 @@ import torch
 import numpy as np
 import copy
 
+
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -53,6 +55,11 @@ from kalmanfilter import KalmanFilter
 tennis = Tennis("Tennis")
 
 kf = KalmanFilter()
+
+from speed import tennisDetection
+speedDetect = tennisDetection()
+
+
 @smart_inference_mode()
 def run(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
@@ -185,6 +192,12 @@ def run(
                         # prediction code
                         predict = kf.predict(int(w*xywh[0]), int(h*xywh[1]))
                         cv2.circle(im0,(predict[0], predict[1]), 5, (255,0,0), 4)
+
+                        #speed estimation
+                        im0 = speedDetect.speedEstimate(object_pixel_width=int(w*xywh[2]), frame_in=im0)
+
+
+
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
