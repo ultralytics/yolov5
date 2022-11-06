@@ -45,7 +45,7 @@ class V6Detect(nn.Module):
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(anchors)  # number of detection layers
-        self.reg_max = 17
+        self.reg_max = 16 + 1
         self.no = nc + self.reg_max * 4 + 1  # number of outputs per anchor
         self.grid = torch.empty(0)  # init
         self.anchor_grid = torch.empty(0)  # init
@@ -54,25 +54,22 @@ class V6Detect(nn.Module):
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
 
-        c2, c3 = 32, max(ch[0], self.no - 4)  # channels
+        c2, c3 = max(ch[0] // 4, 16), max(ch[0], self.no - 4)  # channels
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)
         self.cv3 = nn.ModuleList(
             nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc + 1, 1)) for x in ch)
         self.proj_conv = nn.Conv2d(self.reg_max, 1, 1, bias=False).requires_grad_(False)
-        self.proj_conv.weight.data[:] = nn.Parameter(
-            torch.arange(0, self.reg_max, dtype=torch.float).view(1, self.reg_max, 1, 1))
+        self.proj_conv.weight.data[:] = nn.Parameter(torch.arange(0, self.reg_max).float().view(1, self.reg_max, 1, 1))
         self.initialize_biases()
 
     def initialize_biases(self):
         for seq in self.cv2:
             m = seq[-1]
             m.bias.data[:] = 1.0
-            m.weight.data[:] = 0.0
         for seq in self.cv3:
             m = seq[-1]
-            m.bias.data[:] = -math.log((1 - 1e-2) / 1e-2)
-            m.weight.data[:] = 0.0
+            m.bias.data[:] = math.log(1 / (640 / 8) ** 2)  # 1 instance per image at stride 8
 
     def forward(self, x):
         b = x[0].shape[0]
