@@ -29,8 +29,9 @@ import argparse
 import os
 import platform
 import sys
-from pathlib import Path
 import time
+from pathlib import Path
+
 import torch
 
 FILE = Path(__file__).resolve()
@@ -111,11 +112,11 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-    
+
     # Variables to calculate FPS
     counter, fps = 0, 0
     start_time = time.time()
-    
+
     # Visualization parameters
     row_size = 20  # pixels
     left_margin = 24  # pixels
@@ -197,9 +198,9 @@ def run(
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
                 # Show the FPS
-                fps_text = 'FPS = {:.1f}'.format(fps)
+                fps_text = f'FPS = {fps:.1f}'
                 text_location = (left_margin, row_size)
-                cv2.putText(im0, fps_text, text_location, cv2.FONT_HERSHEY_PLAIN,font_size, text_color, font_thickness)
+                cv2.putText(im0, fps_text, text_location, cv2.FONT_HERSHEY_PLAIN, font_size, text_color, font_thickness)
                 cv2.imshow(str(p), im0)
                 cv2.waitKey(1)  # 1 millisecond
 
