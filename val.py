@@ -179,6 +179,7 @@ def run(
                                        pad=pad,
                                        rect=rect,
                                        workers=workers,
+                                       min_items=opt.min_items,
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
@@ -360,6 +361,7 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--min-items', type=int, default=0, help='Experimental')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
