@@ -66,12 +66,12 @@ class V6Detect(nn.Module):
     def initialize_biases(self):
         for seq in self.cv2:
             m = seq[-1]
-            m.bias.data[:] = 1.0
-            m.weight.data[:] = 0.0
+            # m.bias.data[:] = 1.0
+            # m.weight.data[:] = 0.0
         for seq in self.cv3:
             m = seq[-1]
             m.bias.data[:] = -math.log((1 - 1e-2) / 1e-2)
-            m.weight.data[:] = 0.0
+            # m.weight.data[:] = 0.0
 
     def forward(self, x):
         b = x[0].shape[0]
