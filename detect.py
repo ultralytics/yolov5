@@ -188,27 +188,13 @@ def run(
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
-
-            # im0 = tennis.warpCourt(frame=im0)
-            # out = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)) GET THIS WORKING
-            # out.write(im0)
-            # out = cv2.VideoWriter('warpedOutput/warped.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 10, (frame_width,frame_height))
-
-            # cv2.imshow("Warped", im0)
-            # cv2.waitKey(0)
-
             # Stream results THIS IS RETURNING im, NOT im0 
             im0 = annotator.result()
-            # np.concatenate((im0, warped_frame), axis=0)
-            # cv2.imshow("Warped", np.concatenate((im0, warped_frame), axis=1))
-            # cv2.waitKey(0)
-
             if view_img:
                 if platform.system() == 'Linux' and p not in windows:
                     windows.append(p)
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                # cv2.imshow(str(p), im0)
 
                 cv2.imshow(str(p), np.concatenate((originalFrame, im0), axis=0))
 
@@ -248,12 +234,10 @@ def run(
 def trackTennisCourt(frame, seen):
     if seen>=2:
         im0 = tennis.trackCourt(frame)
-        # im0 = tennis.warpCourt(frame)
         return im0
     else:
         print("Detecting court...")
         im0 = tennis.detectCourt(frame)
-        # im0 = tennis.warpCourt(frame)
         return im0
 
 def parse_opt():
