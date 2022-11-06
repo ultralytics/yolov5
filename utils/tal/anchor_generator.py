@@ -18,7 +18,7 @@ def generate_anchors(feats, fpn_strides, grid_cell_size=5.0, grid_cell_offset=0.
             sy = torch.arange(end=h, device=device) + grid_cell_offset  # shift y
             sy, sx = torch.meshgrid(sy, sx, indexing='ij') if TORCH_1_10 else torch.meshgrid(sy, sx)
             anchor_point = torch.stack([sx, sy], -1).to(torch.float)
-            anchor_points.append(anchor_point.reshape([-1, 2]))
+            anchor_points.append(anchor_point.view(-1, 2))
             stride_tensor.append(torch.full((h * w, 1), stride, dtype=torch.float, device=device))
         anchor_points = torch.cat(anchor_points)
         stride_tensor = torch.cat(stride_tensor)
@@ -34,8 +34,8 @@ def generate_anchors(feats, fpn_strides, grid_cell_size=5.0, grid_cell_offset=0.
             anchor = torch.stack([sx - cell_half_size, sy - cell_half_size,
                                   sx + cell_half_size, sy + cell_half_size], -1).clone().to(feats[0].dtype)
             anchor_point = torch.stack([sx, sy], -1).clone().to(feats[0].dtype)
-            anchors.append(anchor.reshape([-1, 4]))
-            anchor_points.append(anchor_point.reshape([-1, 2]))
+            anchors.append(anchor.view(-1, 4))
+            anchor_points.append(anchor_point.view(-1, 2))
             num_anchors_list.append(len(anchors[-1]))
             stride_tensor.append(torch.full([num_anchors_list[-1], 1], stride, dtype=feats[0].dtype))
         anchors = torch.cat(anchors)

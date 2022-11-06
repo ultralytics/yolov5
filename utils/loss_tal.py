@@ -82,8 +82,8 @@ class BboxLoss(nn.Module):
     def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask):
         # iou loss
         bbox_mask = fg_mask.unsqueeze(-1).repeat([1, 1, 4])  # (b, h*w, 4)
-        pred_bboxes_pos = torch.masked_select(pred_bboxes, bbox_mask).reshape([-1, 4])
-        target_bboxes_pos = torch.masked_select(target_bboxes, bbox_mask).reshape([-1, 4])
+        pred_bboxes_pos = torch.masked_select(pred_bboxes, bbox_mask).view(-1, 4)
+        target_bboxes_pos = torch.masked_select(target_bboxes, bbox_mask).view(-1, 4)
         bbox_weight = torch.masked_select(target_scores.sum(-1), fg_mask).unsqueeze(-1)
         iou = bbox_iou(pred_bboxes_pos, target_bboxes_pos, xywh=False, CIoU=True)
         loss_iou = 1.0 - iou
@@ -95,9 +95,9 @@ class BboxLoss(nn.Module):
         # dfl loss
         if self.use_dfl:
             dist_mask = fg_mask.unsqueeze(-1).repeat([1, 1, (self.reg_max + 1) * 4])
-            pred_dist_pos = torch.masked_select(pred_dist, dist_mask).reshape([-1, 4, self.reg_max + 1])
+            pred_dist_pos = torch.masked_select(pred_dist, dist_mask).view(-1, 4, self.reg_max + 1)
             target_ltrb = bbox2dist(anchor_points, target_bboxes, self.reg_max)
-            target_ltrb_pos = torch.masked_select(target_ltrb, bbox_mask).reshape([-1, 4])
+            target_ltrb_pos = torch.masked_select(target_ltrb, bbox_mask).view(-1, 4)
             loss_dfl = self._df_loss(pred_dist_pos, target_ltrb_pos) * bbox_weight
             loss_dfl = loss_dfl.sum() / target_scores_sum
         else:
