@@ -245,7 +245,6 @@ class ComputeLoss:
             tobj[fg_mask] = 1
 
             lobj = self.BCEobj(pred_obj, tobj)
-            # lobj = 0
 
         # lbox *= self.hyp["box"] * 3
         lbox *= 2.5 * 3

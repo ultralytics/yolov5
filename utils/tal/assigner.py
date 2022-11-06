@@ -148,13 +148,12 @@ class TaskAlignedAssigner(nn.Module):
 
     def get_box_metrics(self, pd_scores, pd_bboxes, gt_labels, gt_bboxes):
 
-        pd_scores = pd_scores.permute(0, 2, 1)  # b, 80, h*w
         gt_labels = gt_labels.to(torch.long)  # b, max_num_obj, 1
         ind = torch.zeros([2, self.bs, self.n_max_boxes], dtype=torch.long)  # 2, b, max_num_obj
         ind[0] = torch.arange(end=self.bs).view(-1, 1).repeat(1, self.n_max_boxes)  # b, max_num_obj
         ind[1] = gt_labels.squeeze(-1)  # b, max_num_obj
         # get the scores of each grid for each gt cls
-        bbox_scores = pd_scores[ind[0], ind[1]]  # b, max_num_obj, h*w
+        bbox_scores = pd_scores[ind[0], :, ind[1]]  # b, max_num_obj, h*w
 
         overlaps = iou_calculator(gt_bboxes, pd_bboxes)  # b, max_num_obj, h*w
         align_metric = bbox_scores.pow(self.alpha) * overlaps.pow(self.beta)
@@ -170,18 +169,18 @@ class TaskAlignedAssigner(nn.Module):
 
         num_anchors = metrics.shape[-1]  # h*w
         # (b, max_num_obj, topk)
-        topk_metrics, topk_idxs = torch.topk(metrics, self.topk, axis=-1, largest=largest)
+        topk_metrics, topk_idxs = torch.topk(metrics, self.topk, dim=-1, largest=largest)
         if topk_mask is None:
-            topk_mask = (topk_metrics.max(axis=-1, keepdim=True) > self.eps).tile([1, 1, self.topk])
+            topk_mask = (topk_metrics.max(-1, keepdim=True) > self.eps).tile([1, 1, self.topk])
         # (b, max_num_obj, topk)
-        topk_idxs = torch.where(topk_mask, topk_idxs, torch.zeros_like(topk_idxs))
+        topk_idxs = torch.where(topk_mask, topk_idxs, 0)
         # (b, max_num_obj, topk, h*w) -> (b, max_num_obj, h*w)
-        is_in_topk = F.one_hot(topk_idxs, num_anchors).sum(axis=-2)
+        is_in_topk = F.one_hot(topk_idxs, num_anchors).sum(-2)
         # filter invalid bboxes
         # assigned topk should be unique, this is for dealing with empty labels
         # since empty labels will generate index `0` through `F.one_hot`
         # NOTE: but what if the topk_idxs include `0`?
-        is_in_topk = torch.where(is_in_topk > 1, torch.zeros_like(is_in_topk), is_in_topk)
+        is_in_topk = torch.where(is_in_topk > 1, 0, is_in_topk)
         return is_in_topk.to(metrics.dtype)
 
     def get_targets(self, gt_labels, gt_bboxes, target_gt_idx, fg_mask):
@@ -202,9 +201,9 @@ class TaskAlignedAssigner(nn.Module):
         target_bboxes = gt_bboxes.view(-1, 4)[target_gt_idx]
 
         # assigned target scores
-        target_labels[target_labels < 0] = 0
+        target_labels.clamp(0)
         target_scores = F.one_hot(target_labels, self.num_classes)  # (b, h*w, 80)
         fg_scores_mask = fg_mask[:, :, None].repeat(1, 1, self.num_classes)  # (b, h*w, 80)
-        target_scores = torch.where(fg_scores_mask > 0, target_scores, torch.full_like(target_scores, 0))
+        target_scores = torch.where(fg_scores_mask > 0, target_scores, 0)
 
         return target_labels, target_bboxes, target_scores
