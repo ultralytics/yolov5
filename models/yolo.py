@@ -66,14 +66,25 @@ class V6Detect(nn.Module):
     def initialize_biases(self):
         for seq in self.cv2:
             m = seq[-1]
-            # m.bias.data[:] = 1.0
-            # m.weight.data[:] = 0.0
+            m.bias.data[:] = 1.0
+            m.weight.data[:] = 0.0
         for seq in self.cv3:
             m = seq[-1]
             m.bias.data[:] = -math.log((1 - 1e-2) / 1e-2)
-            # m.weight.data[:] = 0.0
+            m.weight.data[:] = 0.0
+
+    def print_biases(self):
+        for seq in self.cv2:
+            m = seq[-1]
+            print('cv2 bias', m.bias.data.mean())
+            print('cv2 mean', m.weight.data.mean())
+        for seq in self.cv3:
+            m = seq[-1]
+            print('cv3 bias', m.bias.data.mean())
+            print('cv3 mean', m.weight.data.mean())
 
     def forward(self, x):
+        self.print_biases()
         b = x[0].shape[0]
         for i in range(self.nl):
             # y = self.cv1[i](x[i])
