@@ -67,11 +67,11 @@ class V6Detect(nn.Module):
         for seq in self.cv2:
             m = seq[-1]
             m.bias.data[:] = 1.0
-            m.weight.data[:] = 0.0
+            #m.weight.data[:] = 0.0
         for seq in self.cv3:
             m = seq[-1]
             m.bias.data[:] = math.log(1 / (640 / 8) ** 2)  # 1 instance per image at stride 8
-            m.weight.data[:] = 0.0
+            #m.weight.data[:] = 0.0
 
     def print_biases(self):
         for i, seq in enumerate(self.cv2):
