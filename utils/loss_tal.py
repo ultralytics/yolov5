@@ -3,16 +3,15 @@
 Loss functions
 """
 
+import numpy as np
 import torch
-import math
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 from utils.metrics import bbox_iou
-from utils.torch_utils import de_parallel
-from utils.tal.assigner import TaskAlignedAssigner
 from utils.tal.anchor_generator import dist2bbox, generate_anchors, bbox2dist
+from utils.tal.assigner import TaskAlignedAssigner
+from utils.torch_utils import de_parallel
 
 
 def xywh2xyxy(x):
