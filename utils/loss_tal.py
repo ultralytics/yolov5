@@ -388,6 +388,6 @@ class ComputeLoss:
         ldfl *= 0.5 * 3
         bs = tobj.shape[0]  # batch size
 
-        print(f'\n{lbox} box, {lobj} obj, {lcls} cls, {ldfl} dfl')
+        print(f'\n{lbox:.3f} box, {lobj:.3f} obj, {lcls:.3f} cls, {ldfl:.3f} dfl')
 
         return (lbox + lobj + lcls + ldfl) * bs, torch.as_tensor([lbox, ldfl, lcls], device=lbox.device).detach()
