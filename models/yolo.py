@@ -74,14 +74,13 @@ class V6Detect(nn.Module):
             m.weight.data[:] = 0.0
 
     def print_biases(self):
-        for seq in self.cv2:
+        for i, seq in enumerate(self.cv2):
             m = seq[-1]
-            print('cv2 bias', m.bias.data.mean())
-            print('cv2 mean', m.weight.data.mean())
-        for seq in self.cv3:
+            print(f'cv2-{i} weight/bias {m.weight.data.mean()}, {m.bias.data.mean()}')
+        for i, seq in enumerate(self.cv3):
             m = seq[-1]
-            print('cv3 bias', m.bias.data.mean())
-            print('cv3 mean', m.weight.data.mean())
+            print(f'cv3-{i} weight/bias {m.weight.data.mean()}, {m.bias.data.mean()}')
+
 
     def forward(self, x):
         self.print_biases()
