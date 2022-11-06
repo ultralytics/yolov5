@@ -383,11 +383,11 @@ class ComputeLoss:
 
         # lbox *= self.hyp["box"] * 3
         lbox *= 2.5 * 3
-        lobj *= 0.7 * 3
-        lcls *= 1.0 * 3
+        lobj *= 0.7 * 3 * 20
+        lcls *= 1.0 * 3 / 6
         ldfl *= 0.5 * 3
         bs = tobj.shape[0]  # batch size
 
-        print(f'\n{lbox:.3f} box, {lobj:.3f} obj, {lcls:.3f} cls, {ldfl:.3f} dfl')
+        # print(f'{lbox:.3f} box, {lobj:.3f} obj, {lcls:.3f} cls, {ldfl:.3f} dfl')
 
         return (lbox + lobj + lcls + ldfl) * bs, torch.as_tensor([lbox, ldfl, lcls], device=lbox.device).detach()
