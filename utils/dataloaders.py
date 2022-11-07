@@ -240,6 +240,8 @@ class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
     def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         files = []
+        if isinstance(path, str) and path.split('.')[-1].lower() == "txt":
+            path = Path(path).read_text().rsplit()  # txt with media on each line
         for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
             if '*' in p:
