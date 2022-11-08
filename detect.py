@@ -48,7 +48,7 @@ from kalmanfilter import KalmanFilter
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
-                           increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh)
+                           increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh, xywh2xyxy)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 
@@ -155,7 +155,8 @@ def run(
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
             originalFrame = copy.copy(im0)
-            if sport_flag == 1 and not webcam:  #we dont want to track the court on a webcam yet
+            # if sport_flag == 1 and not webcam:  #we dont want to track the court on a webcam yet
+            if sport_flag == 1:  #we dont want to track the court on a webcam yet
                 im0 = trackTennisCourt(im0, seen)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
@@ -168,7 +169,7 @@ def run(
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
                 h, w, c = im0.shape
-
+    
                 # Print results
                 for c in det[:, 5].unique():
                     n = (det[:, 5] == c).sum()  # detections per class
@@ -177,9 +178,17 @@ def run(
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    xyxy = (xywh2xyxy(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # we need the format of x1, y1, x2, y2 for the predictor
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                     if xywh is not None and sport_flag == 1:  #make a line call if you can
+
+                        # cv2.imshow("roi", im0)
+                        # cv2.waitKey(0)
+                        # im0 = tennis.predictBallPath(xy_In=xywh, frame=im0)
+                        # im0 = tennis.predictBallPath(xy_In=xyxy, frame=im0)
                         im0 = tennis.lineCall(xy_In=xywh, frame=im0)
+
+
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -271,8 +280,10 @@ def parse_opt():
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionlowangle.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle1.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle2.mp4', help='file/dir/URL/glob/screen/0(webcam)')
-    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/longballrublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/longballrublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/bouncingontheline6nov.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/3secQatarTest.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/tennis_rally.mp4', help='file/dir/URL/glob/screen/0(webcam)')
 
     parser.add_argument('--sport-flag', type=int, default=1, help='Flag for extra processing')
     # parser.add_argument('--sport-flag', type=int, default=0, help='Flag for extra processing')
