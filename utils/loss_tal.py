@@ -3,26 +3,26 @@
 Loss functions
 """
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.general import xywh2xyxy
 from utils.metrics import bbox_iou
 from utils.tal.anchor_generator import dist2bbox, generate_anchors, bbox2dist
 from utils.tal.assigner import TaskAlignedAssigner
 from utils.torch_utils import de_parallel
 
 
-def xywh2xyxy(x):
-    # from utils.general import xywh2xyxy
-    # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = x[..., 0] - x[..., 2] / 2  # top left x
-    y[..., 1] = x[..., 1] - x[..., 3] / 2  # top left y
-    y[..., 2] = x[..., 0] + x[..., 2] / 2  # bottom right x
-    y[..., 3] = x[..., 1] + x[..., 3] / 2  # bottom right y
-    return y
+# def xywh2xyxy(x):
+#     # from utils.general import xywh2xyxy
+#     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+#     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+#     y[..., 0] = x[..., 0] - x[..., 2] / 2  # top left x
+#     y[..., 1] = x[..., 1] - x[..., 3] / 2  # top left y
+#     y[..., 2] = x[..., 0] + x[..., 2] / 2  # bottom right x
+#     y[..., 3] = x[..., 1] + x[..., 3] / 2  # bottom right y
+#     return y
 
 
 def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#issuecomment-598028441
@@ -159,16 +159,13 @@ class ComputeLoss:
             n = matches.sum()
             if n:
                 out[j, :n] = targets[matches, 1:]
-        out[..., 1:5] = xywh2xyxy(out[:, :, 1:5].mul_(scale_tensor))
+        out[..., 1:5] = xywh2xyxy(out[..., 1:5].mul_(scale_tensor))
         return out
 
     def bbox_decode(self, anchor_points, pred_dist):
         if self.use_dfl:
             b, a, _ = pred_dist.shape
             pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj.type(pred_dist.dtype))
-            # pred_dist = (pred_dist.view(b, a, self.reg_max + 1, 4).softmax(2).mul(self.proj.type(pred_dist.dtype).view(1,1,17,1))).sum(2)
-            # pred_dist = pred_dist.view(b, a, self.reg_max + 1, 4).permute(0, 1, 3, 2).contiguous().softmax(3).matmul(self.proj.type(pred_dist.dtype))
-
         return dist2bbox(pred_dist, anchor_points, box_format="xyxy")
 
     def __call__(self, p, targets, img=None, epoch=0):
@@ -176,7 +173,6 @@ class ComputeLoss:
         lbox = torch.zeros(1, device=self.device)  # box loss
         lobj = torch.zeros(1, device=self.device)  # object loss
         ldfl = torch.zeros(1, device=self.device)  # object loss
-
         feats, pred_obj, pred_scores, pred_distri = p
 
         # TODO adjust TAL/DFL loss for channel dim=1
@@ -184,17 +180,16 @@ class ComputeLoss:
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
-        anchors, anchor_points, n_anchors_list, stride_tensor = generate_anchors(feats, torch.tensor([8, 16, 32]), 5.0,
-                                                                                 0.5, device=self.device)
+        anchors, anchor_points, n_anchors_list, stride_tensor = \
+            generate_anchors(feats, torch.tensor([8, 16, 32]), 5.0, 0.5, device=self.device)
 
-        gt_bboxes_scale = torch.full((1, 4), 640).type_as(pred_scores)
+        gt_bboxes_scale = torch.full((1, 4), 640, dtype=pred_scores.dtype)
         batch_size, grid_size = pred_scores.shape[:2]
 
         # targets
         targets = self.preprocess(targets, batch_size, gt_bboxes_scale)
-        gt_labels = targets[:, :, :1]
-        gt_bboxes = targets[:, :, 1:]  # xyxy
-        mask_gt = (gt_bboxes.sum(-1, keepdim=True) > 0).float()
+        gt_labels, gt_bboxes = targets.split((1, 4), 2)  # cls, xyxy
+        mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0)
 
         # pboxes
         anchor_points_s = anchor_points / stride_tensor
@@ -210,9 +205,7 @@ class ComputeLoss:
 
         pred_obj = pred_obj.view(batch_size, grid_size)
         tobj = torch.zeros_like(pred_obj)
-
         target_bboxes /= stride_tensor
-
         target_scores_sum = target_scores.sum()
 
         # cls loss
@@ -241,7 +234,7 @@ class ComputeLoss:
 
             # obj loss
             # tobj[fg_mask] = iou.detach().clamp(0).type(tobj.dtype).squeeze()
-            # tobj[fg_mask] = target_scores[fg_mask].detach().clamp(0).type(tobj.dtype).max(1)[0]
+            # tobj[fg_mask] = target_scores[fg_mask].detach().clamp(0).type(tobj.dtype).amax(1)
             tobj[fg_mask] = 1
 
             lobj = self.BCEobj(pred_obj, tobj)

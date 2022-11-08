@@ -8,26 +8,16 @@ def select_candidates_in_gts(xy_centers, gt_bboxes, eps=1e-9):
 
     Args:
         xy_centers (Tensor): shape(h*w, 4)
-        gt_bboxes (Tensor): shape(b, n_max_boxes, 4)
+        gt_bboxes (Tensor): shape(b, n_boxes, 4)
     Return:
-        (Tensor): shape(b, n_max_boxes, h*w)
+        (Tensor): shape(b, n_boxes, h*w)
     """
-    n_anchors = xy_centers.size(0)
-    bs, n_max_boxes, _ = gt_bboxes.size()
-    _gt_bboxes = gt_bboxes.view(-1, 4)  # (b*n_max_boxes, 4)
-    xy_centers = xy_centers.unsqueeze(0).repeat(bs * n_max_boxes, 1, 1)  # (b*n_max_boxes, h*w, 4)
-    gt_bboxes_lt = _gt_bboxes[:, 0:2].unsqueeze(1).repeat(1, n_anchors, 1)  # (b*n_max_boxes, h*w, 2)
-    gt_bboxes_rb = _gt_bboxes[:, 2:4].unsqueeze(1).repeat(1, n_anchors, 1)
-    # gt_center = (gt_bboxes_lt + gt_bboxes_rb) / 2
-    # dis = xy_centers - gt_center
-    # dis = dis.reshape([bs, n_max_boxes, n_anchors, -1])  # (b, n_max_boxes, h*w, 2)
-    # return ((dis.abs() <= 2).all(-1)).to(gt_bboxes.dtype)
-
-    b_lt = xy_centers - gt_bboxes_lt
-    b_rb = gt_bboxes_rb - xy_centers
-    bbox_deltas = torch.cat([b_lt, b_rb], dim=-1)
-    bbox_deltas = bbox_deltas.view(bs, n_max_boxes, n_anchors, -1)
-    return (bbox_deltas.min(-1)[0] > eps).to(gt_bboxes.dtype)
+    n_anchors = xy_centers.shape[0]
+    bs, n_boxes, _ = gt_bboxes.shape
+    lt, rb = gt_bboxes.view(-1, 1, 4).chunk(2, 2)  # left-top, right-bottom
+    bbox_deltas = torch.cat((xy_centers[None] - lt, rb - xy_centers[None]), dim=2).view(bs, n_boxes, n_anchors, -1)
+    # return (bbox_deltas.min(3)[0] > eps).to(gt_bboxes.dtype)
+    return bbox_deltas.amin(3).gt_(eps)
 
 
 def select_highest_overlaps(mask_pos, overlaps, n_max_boxes):
@@ -125,9 +115,9 @@ class TaskAlignedAssigner(nn.Module):
 
         # normalize
         align_metric *= mask_pos
-        pos_align_metrics = align_metric.max(axis=-1, keepdim=True)[0]  # b, max_num_obj
-        pos_overlaps = (overlaps * mask_pos).max(axis=-1, keepdim=True)[0]  # b, max_num_obj
-        norm_align_metric = (align_metric * pos_overlaps / (pos_align_metrics + self.eps)).max(-2)[0].unsqueeze(-1)
+        pos_align_metrics = align_metric.amax(axis=-1, keepdim=True)  # b, max_num_obj
+        pos_overlaps = (overlaps * mask_pos).amax(axis=-1, keepdim=True)  # b, max_num_obj
+        norm_align_metric = (align_metric * pos_overlaps / (pos_align_metrics + self.eps)).amax(-2).unsqueeze(-1)
         target_scores = target_scores * norm_align_metric
 
         return target_labels, target_bboxes, target_scores, fg_mask.bool()
