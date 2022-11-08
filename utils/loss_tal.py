@@ -145,6 +145,7 @@ class ComputeLoss:
         self.anchors = m.anchors
         self.device = device
 
+        print(os.getenv('YOLOA'), os.getenv('YOLOB'))
         self.assigner = TaskAlignedAssigner(topk=13, num_classes=self.nc,
                                             alpha=float(os.getenv('YOLOA')), beta=float(os.getenv('YOLOB')))
         # self.assigner = TaskAlignedAssigner(topk=13, num_classes=self.nc, alpha=1.0, beta=6.0)
