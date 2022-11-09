@@ -52,9 +52,7 @@
 
 ## <div align="center">Documentation</div>
 
-See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on training, testing and deployment.
-
-## <div align="center">Quick Start Examples</div>
+See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on training, testing and deployment. See below for quickstart examples.
 
 <details open>
 <summary>Install</summary>
@@ -71,7 +69,7 @@ pip install -r requirements.txt  # install
 
 </details>
 
-<details open>
+<details>
 <summary>Inference</summary>
 
 YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) inference. [Models](https://github.com/ultralytics/yolov5/tree/master/models) download automatically from the latest
