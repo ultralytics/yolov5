@@ -37,12 +37,13 @@ def threaded(func):
     return wrapper
 
 
-def join_threads():
+def join_threads(verbose=False):
     # Join all daemon threads, i.e. atexit.register(lambda: join_threads())
     main_thread = threading.current_thread()
     for t in threading.enumerate():
         if t is not main_thread:
-            print(f'Joining thread {t.name}')
+            if verbose:
+                print(f'Joining thread {t.name}')
             t.join()
 
 
