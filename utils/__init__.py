@@ -41,10 +41,9 @@ def join_threads():
     # Join all daemon threads, i.e. atexit.register(lambda: join_threads())
     main_thread = threading.current_thread()
     for t in threading.enumerate():
-        if t is main_thread:
-            continue
-        print(f'Joining thread {t.name}')
-        t.join()
+        if t is not main_thread:
+            print(f'Joining thread {t.name}')
+            t.join()
 
 
 def notebook_init(verbose=True):
