@@ -5,14 +5,14 @@ from utils.general import check_version
 TORCH_1_10 = check_version(torch.__version__, '1.10.0')
 
 
-def generate_anchors(feats, fpn_strides, grid_cell_size=5.0, grid_cell_offset=0.5, device='cpu', is_eval=False):
+def generate_anchors(feats, strides, grid_cell_size=5.0, grid_cell_offset=0.5, device='cpu', is_eval=False):
     """Generate anchors from features."""
     anchors = []
     anchor_points = []
     stride_tensor = []
     assert feats is not None
     if is_eval:
-        for i, stride in enumerate(fpn_strides):
+        for i, stride in enumerate(strides):
             _, _, h, w = feats[i].shape
             sx = torch.arange(end=w, device=device) + grid_cell_offset  # shift x
             sy = torch.arange(end=h, device=device) + grid_cell_offset  # shift y
@@ -25,7 +25,7 @@ def generate_anchors(feats, fpn_strides, grid_cell_size=5.0, grid_cell_offset=0.
         return anchor_points, stride_tensor
     else:
         num_anchors_list = []
-        for i, stride in enumerate(fpn_strides):
+        for i, stride in enumerate(strides):
             _, _, h, w = feats[i].shape
             cell_half_size = grid_cell_size * stride * 0.5
             sx = (torch.arange(end=w, device=device) + grid_cell_offset) * stride
