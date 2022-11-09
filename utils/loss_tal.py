@@ -145,7 +145,6 @@ class ComputeLoss:
         self.anchors = m.anchors
         self.device = device
 
-        print(os.getenv('YOLOA'), os.getenv('YOLOB'))
         self.assigner = TaskAlignedAssigner(topk=13, num_classes=self.nc,
                                             alpha=float(os.getenv('YOLOA')), beta=float(os.getenv('YOLOB')))
         # self.assigner = TaskAlignedAssigner(topk=13, num_classes=self.nc, alpha=1.0, beta=6.0)
@@ -187,7 +186,7 @@ class ComputeLoss:
         anchors, anchor_points, n_anchors_list, stride_tensor = \
             generate_anchors(feats, torch.tensor([8, 16, 32]), 5.0, 0.5, device=self.device)
 
-        gt_bboxes_scale = torch.full((1, 4), 640, dtype=pred_scores.dtype)
+        gt_bboxes_scale = torch.full((1, 4), 640, device=self.device, dtype=pred_scores.dtype)
         batch_size, grid_size = pred_scores.shape[:2]
 
         # targets
