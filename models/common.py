@@ -692,7 +692,7 @@ class AutoShape(nn.Module):
                 s = im.shape[:2]  # HWC
                 shape0.append(s)  # image shape
                 g = max(size) / max(s)  # gain
-                shape1.append([y * g for y in s])
+                shape1.append([int(y * g) for y in s])
                 ims[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
             shape1 = [make_divisible(x, self.stride) for x in np.array(shape1).max(0)] if self.pt else size  # inf shape
             x = [letterbox(im, shape1, auto=False)[0] for im in ims]  # pad
