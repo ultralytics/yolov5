@@ -10,13 +10,14 @@ Usage - formats:
     $ python classify/val.py --weights yolov5s-cls.pt                 # PyTorch
                                        yolov5s-cls.torchscript        # TorchScript
                                        yolov5s-cls.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                       yolov5s-cls.xml                # OpenVINO
+                                       yolov5s-cls_openvino_model     # OpenVINO
                                        yolov5s-cls.engine             # TensorRT
                                        yolov5s-cls.mlmodel            # CoreML (macOS-only)
                                        yolov5s-cls_saved_model        # TensorFlow SavedModel
                                        yolov5s-cls.pb                 # TensorFlow GraphDef
                                        yolov5s-cls.tflite             # TensorFlow Lite
                                        yolov5s-cls_edgetpu.tflite     # TensorFlow Edge TPU
+                                       yolov5s-cls_paddle_model       # PaddlePaddle
 """
 
 import argparse
