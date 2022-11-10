@@ -163,7 +163,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 
 <br>
 <a align="center" href="https://bit.ly/ultralytics_hub" target="_blank">
-<img width="100%" src="https://user-images.githubusercontent.com/26833433/201148217-c96dbd17-ca57-45e0-a934-0fc3c2e524de.png"></a>
+<img width="100%" src="https://github.com/ultralytics/assets/raw/master/im/integrations-loop.png"></a>
 <br>
 <br>
 
