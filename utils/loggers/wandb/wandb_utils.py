@@ -320,7 +320,7 @@ class WandbLogger:
                 "run_" + wandb.run.id + "_progress", "evaluation"
             )
             columns = ["epoch", "id", "ground truth", "prediction"]
-            columns.extend([str(name) for name in self.data_dict["names"]])
+            columns.extend(list(self.data_dict["names"].values()))
             self.result_table = wandb.Table(columns)
             self.val_table = self.val_artifact.get("val")
             if self.val_table_path_map is None:
@@ -452,7 +452,7 @@ class WandbLogger:
         self.data_dict = check_dataset(data_file)  # parse and check
         data = dict(self.data_dict)
         nc, names = (1, ["item"]) if single_cls else (int(data["nc"]), data["names"])
-        names = {k: str(v) for k, v in enumerate(names)}  # to index dictionary
+        names = {k: v for k, v in enumerate(names)}  # to index dictionary
 
         # log train set
         if not log_val_only:
@@ -742,7 +742,7 @@ class WandbLogger:
 
                 wandb.log({"evaluation": self.result_table})
                 columns = ["epoch", "id", "ground truth", "prediction"]
-                columns.extend(self.data_dict["names"])
+                columns.extend(self.data_dict["names"].values())
                 self.result_table = wandb.Table(columns)
                 self.result_artifact = wandb.Artifact(
                     "run_" + wandb.run.id + "_progress", "evaluation"
