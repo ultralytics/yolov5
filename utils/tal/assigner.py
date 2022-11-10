@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.metrics import bbox_iou
+
 
 def select_candidates_in_gts(xy_centers, gt_bboxes, eps=1e-9):
     """select the positive anchor center in gt
@@ -44,27 +46,6 @@ def select_highest_overlaps(mask_pos, overlaps, n_max_boxes):
     # find each grid serve which gt(index)
     target_gt_idx = mask_pos.argmax(-2)  # (b, h*w)
     return target_gt_idx, fg_mask, mask_pos
-
-
-def iou_calculator(box1, box2, eps=1e-9):
-    """Calculate iou for batch
-
-    Args:
-        box1 (Tensor): shape(bs, n_max_boxes, 4), xyxy
-        box2 (Tensor): shape(bs, num_total_anchors, 4), xyxy
-    Return:
-        (Tensor): shape(bs, n_max_boxes, num_total_anchors)
-    """
-    px1y1, px2y2 = box1.unsqueeze(2).chunk(2, 3)  # bs, n_max_boxes, 1, 4
-    gx1y1, gx2y2 = box2.unsqueeze(1).chunk(2, 3)  # bs, 1, n_max_boxes, 4
-    x1y1 = torch.maximum(px1y1, gx1y1)
-    x2y2 = torch.minimum(px2y2, gx2y2)
-    overlap = (x2y2 - x1y1).clip(0).prod(3)
-    area1 = (px2y2 - px1y1).clip(0).prod(3)
-    area2 = (gx2y2 - gx1y1).clip(0).prod(3)
-    union = area1 + area2 - overlap + eps
-
-    return overlap / union
 
 
 class TaskAlignedAssigner(nn.Module):
@@ -145,7 +126,7 @@ class TaskAlignedAssigner(nn.Module):
         # get the scores of each grid for each gt cls
         bbox_scores = pd_scores[ind[0], :, ind[1]]  # b, max_num_obj, h*w
 
-        overlaps = iou_calculator(gt_bboxes, pd_bboxes)  # b, max_num_obj, h*w
+        overlaps = bbox_iou(gt_bboxes.unsqueeze(2), pd_bboxes.unsqueeze(1), xywh=False, CIoU=False).squeeze(3)
         align_metric = bbox_scores.pow(self.alpha) * overlaps.pow(self.beta)
 
         return align_metric, overlaps

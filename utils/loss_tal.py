@@ -3,6 +3,8 @@
 Loss functions
 """
 
+import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -145,9 +147,10 @@ class ComputeLoss:
         self.anchors = m.anchors
         self.device = device
 
-        # self.assigner = TaskAlignedAssigner(topk=13, num_classes=self.nc,
-        #                                    alpha=float(os.getenv('YOLOA')), beta=float(os.getenv('YOLOB')))
-        self.assigner = TaskAlignedAssigner(topk=13, num_classes=self.nc, alpha=1.0, beta=6.0)
+        self.assigner = TaskAlignedAssigner(topk=int(os.getenv('YOLOM', 13)),
+                                            num_classes=self.nc,
+                                            alpha=float(os.getenv('YOLOA', 1.0)),
+                                            beta=float(os.getenv('YOLOB', 6.0)))
         self.bbox_loss = BboxLoss(16, use_dfl=use_dfl).to(device)
         self.reg_max = 16 if use_dfl else 0
         self.use_dfl = use_dfl
