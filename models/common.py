@@ -847,7 +847,7 @@ class Proto(nn.Module):
         y = self.cv1(x)
         if self.training:
             return self.cv3(self.cv2(self.upsample(y)))
-        y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=False)[0]
+        y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=False)
         return self.cv3(self.cv2(y))
 
 
