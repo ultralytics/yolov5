@@ -21,6 +21,7 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from IPython.display import display
 from PIL import Image
 from torch.cuda import amp
@@ -836,15 +837,18 @@ class Proto(nn.Module):
     def __init__(self, c1, c_=256, c2=32):  # ch_in, number of protos, number of masks
         super().__init__()
         self.cv1 = Conv(c1, c_, k=3)
-        self.upsample_nearest = nn.Upsample(scale_factor=2, mode='nearest')
-        self.upsample_bilinear = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        # self.upsample_bilinear = nn.Upsample(scale_factor=2, mode='bilinear')
         # self.upsample = nn.ConvTranspose2d(c_, c_, 2, 2, 0)
         self.cv2 = Conv(c_, c_, k=3)
         self.cv3 = Conv(c_, c2)
 
     def forward(self, x):
         y = self.cv1(x)
-        return self.cv3(self.cv2(self.upsample_nearest(y) if self.training else self.upsample_bilinear(y)))
+        if self.training:
+            return self.cv3(self.cv2(self.upsample(y)))
+        y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=False)[0]
+        return self.cv3(self.cv2(y))
 
 
 class Classify(nn.Module):
