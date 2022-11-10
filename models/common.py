@@ -21,7 +21,6 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from IPython.display import display
 from PIL import Image
 from torch.cuda import amp
@@ -59,6 +58,20 @@ class Conv(nn.Module):
 
     def forward_fuse(self, x):
         return self.act(self.conv(x))
+
+
+class ConvTranspose(nn.Module):
+    # Convolution transpose 2d layer
+    default_act = nn.SiLU()  # default activation
+
+    def __init__(self, c1, c2, k=2, s=2, p=0, bn=True, act=True):
+        super().__init__()
+        self.conv_transpose = nn.ConvTranspose2d(c1, c2, k, s, p, bias=not bn)
+        self.bn = nn.BatchNorm2d(c2) if bn else nn.Identity()
+        self.act = self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
+
+    def forward(self, x):
+        return self.act(self.bn(self.conv_transpose(x)))
 
 
 class DWConv(Conv):
@@ -837,18 +850,14 @@ class Proto(nn.Module):
     def __init__(self, c1, c_=256, c2=32):  # ch_in, number of protos, number of masks
         super().__init__()
         self.cv1 = Conv(c1, c_, k=3)
-        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        # self.upsample_bilinear = nn.Upsample(scale_factor=2, mode='bilinear')
+        # self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         # self.upsample = nn.ConvTranspose2d(c_, c_, 2, 2, 0)
+        self.upsample = ConvTranspose(c_, c_, 2, 2, 0, bn=True, act=True)
         self.cv2 = Conv(c_, c_, k=3)
         self.cv3 = Conv(c_, c2)
 
     def forward(self, x):
-        y = self.cv1(x)
-        if self.training:
-            return self.cv3(self.cv2(self.upsample(y)))
-        y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=False)
-        return self.cv3(self.cv2(y))
+        return self.cv3(self.cv2(self.upsample(self.cv1(x))))
 
 
 class Classify(nn.Module):
