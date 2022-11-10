@@ -161,9 +161,11 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 
 ## <div align="center">Integrations</div>
 
+<br>
 <a align="center" href="https://bit.ly/ultralytics_hub" target="_blank">
-<img width="100%" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/image-integrations-loop.png"></a>
-
+<img width="100%" src="https://user-images.githubusercontent.com/26833433/201148217-c96dbd17-ca57-45e0-a934-0fc3c2e524de.png"></a>
+<br>
+  
 <div align="center">
   <a href="https://roboflow.com/?ref=ultralytics">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow.png" width="10%" /></a>
