@@ -851,8 +851,8 @@ class Proto(nn.Module):
         super().__init__()
         self.cv1 = Conv(c1, c_, k=3)
         # self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        self.upsample = nn.ConvTranspose2d(c_, c_, 2, 2, 0)
-        # self.upsample = ConvTranspose(c_, c_, 2, 2, 0, bn=True, act=True)
+        # self.upsample = nn.ConvTranspose2d(c_, c_, 2, 2, 0)
+        self.upsample = ConvTranspose(c_, c_, 2, 2, 0, bn=True, act=True)
         self.cv2 = Conv(c_, c_, k=3)
         self.cv3 = Conv(c_, c2)
 
