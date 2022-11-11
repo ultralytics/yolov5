@@ -178,7 +178,7 @@ def run(
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    # xyxy = (xywh2xyxy(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # we need the format of x1, y1, x2, y2 for the predictor
+                    # MYxyxy = (xywh2xyxy(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # we need the format of x1, y1, x2, y2 for the predictor
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                     if xywh is not None and sport_flag == 1:  #make a line call if you can
                         # im0 = tennis.predictBallPath(xy_In=xywh, frame=im0)
