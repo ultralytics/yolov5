@@ -181,14 +181,8 @@ def run(
                     # xyxy = (xywh2xyxy(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # we need the format of x1, y1, x2, y2 for the predictor
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                     if xywh is not None and sport_flag == 1:  #make a line call if you can
-
-                        # cv2.imshow("roi", im0)
-                        # cv2.waitKey(0)
                         # im0 = tennis.predictBallPath(xy_In=xywh, frame=im0)
-                        # im0 = tennis.predictBallPath(xy_In=xyxy, frame=im0)
-                        im0 = tennis.lineCall(xy_In=xywh, frame=im0)
-
-
+                        im0 = tennis.lineCall(xy_In=(int(w * xywh[0]), int(h * xywh[1])), frame=im0)
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -279,10 +273,10 @@ def parse_opt():
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/soccerdemo.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionlowangle.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle1.mp4', help='file/dir/URL/glob/screen/0(webcam)')
-    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle2.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/swingvisionmedangle2.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/longballrublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/bouncingontheline6nov.mp4', help='file/dir/URL/glob/screen/0(webcam)')
-    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/3secQatarTest.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/3secQatarTest.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/tennis_rally.mp4', help='file/dir/URL/glob/screen/0(webcam)')
 
     parser.add_argument('--sport-flag', type=int, default=1, help='Flag for extra processing')
