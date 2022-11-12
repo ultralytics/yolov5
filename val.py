@@ -118,6 +118,7 @@ def run(
         exist_ok=False,  # existing project/name ok, do not increment
         half=True,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
+        min_items=0,  # Experimental
         model=None,
         dataloader=None,
         save_dir=Path(''),
