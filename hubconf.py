@@ -141,6 +141,7 @@ if __name__ == '__main__':
     from PIL import Image
 
     from utils.general import cv2, print_args
+    from utils.dataloaders import exif_transpose
 
     # Argparser
     parser = argparse.ArgumentParser()
@@ -165,5 +166,14 @@ if __name__ == '__main__':
     results = model(imgs, size=320)  # batched inference
 
     # Results
+    results.print()
+    results.save()
+
+    # Inference on torch.Tensor, with post-processing
+    imgs = torch.zeros(1, 3, 512, 512)
+    im = np.asarray(exif_transpose(Image.open('data/images/bus.jpg').resize((512, 512)))).transpose(2, 0, 1).copy()
+    im = torch.Tensor(im).to(torch.float32) / 255.0
+    imgs[0] = im
+    results = model(imgs, post_process=True)
     results.print()
     results.save()

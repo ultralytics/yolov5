@@ -655,7 +655,7 @@ class AutoShape(nn.Module):
         return self
 
     @smart_inference_mode()
-    def forward(self, ims, size=640, augment=False, profile=False):
+    def forward(self, ims, size=640, augment=False, profile=False, post_process=None):
         # Inference from various sources. For size(height=640, width=1280), RGB images example inputs are:
         #   file:        ims = 'data/images/zidane.jpg'  # str or PosixPath
         #   URI:             = 'https://ultralytics.com/images/zidane.jpg'
@@ -664,6 +664,8 @@ class AutoShape(nn.Module):
         #   numpy:           = np.zeros((640,1280,3))  # HWC
         #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
+        #
+        # Default post_process behaviour is to run post processing on all formats except torch.Tensor.
 
         dt = (Profile(), Profile(), Profile())
         with dt[0]:
@@ -671,38 +673,52 @@ class AutoShape(nn.Module):
                 size = (size, size)
             p = next(self.model.parameters()) if self.pt else torch.empty(1, device=self.model.device)  # param
             autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
-            if isinstance(ims, torch.Tensor):  # torch
-                with amp.autocast(autocast):
-                    return self.model(ims.to(p.device).type_as(p), augment=augment)  # inference
+            is_tensor = isinstance(ims, torch.Tensor)
+            if post_process is None:
+                post_process = not is_tensor
 
-            # Pre-process
-            n, ims = (len(ims), list(ims)) if isinstance(ims, (list, tuple)) else (1, [ims])  # number, list of images
-            shape0, shape1, files = [], [], []  # image and inference shapes, filenames
-            for i, im in enumerate(ims):
-                f = f'image{i}'  # filename
-                if isinstance(im, (str, Path)):  # filename or uri
-                    im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
-                    im = np.asarray(exif_transpose(im))
-                elif isinstance(im, Image.Image):  # PIL Image
-                    im, f = np.asarray(exif_transpose(im)), getattr(im, 'filename', f) or f
-                files.append(Path(f).with_suffix('.jpg').name)
-                if im.shape[0] < 5:  # image in CHW
-                    im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
-                im = im[..., :3] if im.ndim == 3 else cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)  # enforce 3ch input
-                s = im.shape[:2]  # HWC
-                shape0.append(s)  # image shape
-                g = max(size) / max(s)  # gain
-                shape1.append([int(y * g) for y in s])
-                ims[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
-            shape1 = [make_divisible(x, self.stride) for x in np.array(shape1).max(0)] if self.pt else size  # inf shape
-            x = [letterbox(im, shape1, auto=False)[0] for im in ims]  # pad
-            x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
-            x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
+            if is_tensor:  # torch
+                if ims.shape[2] != ims.shape[3]:
+                    raise Exception('Tensor images must be square')
+                n = ims.shape[0]
+                x = ims.to(p.device).type_as(p)
+                files = [f"image{i}.jpg" for i in range(n)]
+                shape1 = [ims.shape[3], ims.shape[2]]
+                shape0 = [shape1 for _ in range(n)]
+            else:
+                # Pre-process
+                n, ims = (len(ims), list(ims)) if isinstance(ims,
+                                                             (list, tuple)) else (1, [ims])  # number, list of images
+                shape0, shape1, files = [], [], []  # image and inference shapes, filenames
+                for i, im in enumerate(ims):
+                    f = f'image{i}'  # filename
+                    if isinstance(im, (str, Path)):  # filename or uri
+                        im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
+                        im = np.asarray(exif_transpose(im))
+                    elif isinstance(im, Image.Image):  # PIL Image
+                        im, f = np.asarray(exif_transpose(im)), getattr(im, 'filename', f) or f
+                    files.append(Path(f).with_suffix('.jpg').name)
+                    if im.shape[0] < 5:  # image in CHW
+                        im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
+                    im = im[..., :3] if im.ndim == 3 else cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)  # enforce 3ch input
+                    s = im.shape[:2]  # HWC
+                    shape0.append(s)  # image shape
+                    g = max(size) / max(s)  # gain
+                    shape1.append([int(y * g) for y in s])
+                    ims[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
+                shape1 = [make_divisible(x, self.stride)
+                          for x in np.array(shape1).max(0)] if self.pt else size  # inf shape
+                x = [letterbox(im, shape1, auto=False)[0] for im in ims]  # pad
+                x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
+                x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
 
         with amp.autocast(autocast):
             # Inference
             with dt[1]:
                 y = self.model(x, augment=augment)  # forward
+
+            if not post_process:
+                return y
 
             # Post-process
             with dt[2]:
@@ -721,11 +737,17 @@ class AutoShape(nn.Module):
 
 class Detections:
     # YOLOv5 detections class for inference results
+    #
+    # If running this under a debugger, comment out the __str__ method, or _run() will end up running on every single-step
     def __init__(self, ims, pred, files, times=(0, 0, 0), names=None, shape=None):
         super().__init__()
         d = pred[0].device  # device
-        gn = [torch.tensor([*(im.shape[i] for i in [1, 0, 1, 0]), 1, 1], device=d) for im in ims]  # normalizations
-        self.ims = ims  # list of images as numpy arrays
+        # normalizations
+        if isinstance(ims, torch.Tensor):
+            gn = [torch.tensor([*(im.shape[i] for i in [2, 1, 2, 1]), 1, 1], device=d) for im in ims]  # BCHW
+        else:
+            gn = [torch.tensor([*(im.shape[i] for i in [1, 0, 1, 0]), 1, 1], device=d) for im in ims]  # BHWC
+        self.ims = ims  # list of images as numpy arrays (0..255), or a torch tensor (0..1)
         self.pred = pred  # list of tensors pred[0] = (xyxy, conf, cls)
         self.names = names  # class names
         self.files = files  # image filenames
@@ -739,6 +761,8 @@ class Detections:
         self.s = tuple(shape)  # inference BCHW shape
 
     def _run(self, pprint=False, show=False, save=False, crop=False, render=False, labels=True, save_dir=Path('')):
+        if isinstance(self.ims, torch.Tensor):
+            self.ims = np.ascontiguousarray(self.ims.permute(0, 2, 3, 1).cpu().numpy()) * 255
         s, crops = '', []
         for i, (im, pred) in enumerate(zip(self.ims, self.pred)):
             s += f'\nimage {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '  # string
