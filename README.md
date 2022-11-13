@@ -52,9 +52,7 @@
 
 ## <div align="center">Documentation</div>
 
-See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on training, testing and deployment.
-
-## <div align="center">Quick Start Examples</div>
+See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on training, testing and deployment. See below for quickstart examples.
 
 <details open>
 <summary>Install</summary>
@@ -71,7 +69,7 @@ pip install -r requirements.txt  # install
 
 </details>
 
-<details open>
+<details>
 <summary>Inference</summary>
 
 YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) inference. [Models](https://github.com/ultralytics/yolov5/tree/master/models) download automatically from the latest
@@ -163,7 +161,11 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 
 ## <div align="center">Integrations</div>
 
-<img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/image-integrations-loop.png" width="100%" />
+<br>
+<a align="center" href="https://bit.ly/ultralytics_hub" target="_blank">
+<img width="100%" src="https://github.com/ultralytics/assets/raw/master/im/integrations-loop.png"></a>
+<br>
+<br>
 
 <div align="center">
   <a href="https://roboflow.com/?ref=ultralytics">
@@ -182,6 +184,14 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 |Roboflow|ClearML ⭐ NEW|Comet ⭐ NEW|Deci ⭐ NEW|
 |:-:|:-:|:-:|:-:|
 |Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics)|Automatically track, visualize and even remotely train YOLOv5 using [ClearML](https://cutt.ly/yolov5-readme-clearml) (open-source!)|Free forever, [Comet](https://bit.ly/yolov5-readme-comet) lets you save YOLOv5 models, resume training, and interactively visualise and debug predictions|Automatically compile and quantize YOLOv5 for better inference performance in one click at [Deci](https://bit.ly/yolov5-deci-platform)|
+
+
+## <div align="center">Ultralytics HUB</div>
+
+[Ultralytics HUB](https://bit.ly/ultralytics_hub) is our ⭐ **NEW** no-code solution to visualize datasets, train YOLOv5 🚀 models, and deploy to the real world in a seamless experience. Get started for **Free** now!
+
+<a align="center" href="https://bit.ly/ultralytics_hub" target="_blank">
+<img width="100%" src="https://github.com/ultralytics/assets/raw/master/im/ultralytics-hub.png"></a>
 
 
 ## <div align="center">Why YOLOv5</div>
