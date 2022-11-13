@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.metrics import bbox_iou
+
 
 def iou_calculator(box1, box2, eps=1e-9):
     """Calculate iou for batch
@@ -144,8 +146,13 @@ class TaskAlignedAssigner(nn.Module):
         # get the scores of each grid for each gt cls
         bbox_scores = pd_scores[ind[0], :, ind[1]]  # b, max_num_obj, h*w
 
-        # overlaps = bbox_iou(gt_bboxes.unsqueeze(2), pd_bboxes.unsqueeze(1), xywh=False, CIoU=False, eps=1e-9).squeeze(3)
-        overlaps = iou_calculator(gt_bboxes, pd_bboxes)
+        overlaps = bbox_iou(gt_bboxes.unsqueeze(2), pd_bboxes.unsqueeze(1), xywh=False, CIoU=False, eps=1e-9).squeeze(3)
+        overlaps_orig = iou_calculator(gt_bboxes, pd_bboxes)
+
+        diff = overlaps - overlaps_orig
+        if diff.max() != 0.0 or diff.min() != 0.0:
+            print(overlaps.shape, overlaps_orig.shape, diff.max(), diff.min())
+
         align_metric = bbox_scores.pow(self.alpha) * overlaps.pow(self.beta)
 
         return align_metric, overlaps
