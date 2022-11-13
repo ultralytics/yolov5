@@ -213,7 +213,7 @@ class ComputeLoss:
         if fg_mask.sum():
             loss[0], loss[2], iou = self.bbox_loss(pred_distri,
                                                    pred_bboxes,
-                                                   anchor_points * stride_tensor,
+                                                   anchor_points,
                                                    target_bboxes,
                                                    target_scores,
                                                    target_scores_sum,
