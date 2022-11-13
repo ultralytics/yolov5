@@ -182,8 +182,7 @@ class ComputeLoss:
         dtype = pred_scores.dtype
         batch_size, grid_size = pred_scores.shape[:2]
         imgsz = torch.tensor(feats[0].shape[2:], device=self.device, dtype=dtype) * self.stride[0]  # image size (h,w)
-        anchors, anchor_points, n_anchors_list, stride_tensor = \
-            generate_anchors(feats, self.stride, 5.0, 0.5, device=self.device)
+        anchor_points, stride_tensor = generate_anchors(feats, self.stride, 0.5, device=self.device)
 
         # targets
         targets = self.preprocess(targets, batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
@@ -191,13 +190,12 @@ class ComputeLoss:
         mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0)
 
         # pboxes
-        anchor_points_s = anchor_points / stride_tensor
-        pred_bboxes = self.bbox_decode(anchor_points_s, pred_distri)  # xyxy, (b, h*w, 4)
+        pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4)
 
         target_labels, target_bboxes, target_scores, fg_mask = self.assigner(
             pred_scores.detach().sigmoid(),
             (pred_bboxes.detach() * stride_tensor).type(gt_bboxes.dtype),
-            anchor_points,
+            anchor_points * stride_tensor,
             gt_labels,
             gt_bboxes,
             mask_gt)
@@ -217,7 +215,7 @@ class ComputeLoss:
         if fg_mask.sum():
             loss[0], loss[2], iou = self.bbox_loss(pred_distri,
                                                    pred_bboxes,
-                                                   anchor_points_s,
+                                                   anchor_points * stride_tensor,
                                                    target_bboxes,
                                                    target_scores,
                                                    target_scores_sum,

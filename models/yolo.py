@@ -64,7 +64,7 @@ class V6Detect(nn.Module):
         if self.training:
             return x, cls, box
 
-        anchors, strides = generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
+        anchors, strides = generate_anchors(x, torch.tensor([8, 16, 32]), 0.5, device=x[0].device)
         dbox = dist2bbox(self.dfl(box), anchors.T.unsqueeze(0), xywh=True, dim=1) * strides.T
         return torch.cat([dbox, cls.sigmoid()], 1), (x, cls, box)
 
