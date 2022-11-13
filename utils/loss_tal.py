@@ -121,13 +121,12 @@ class BboxLoss(nn.Module):
 
 class ComputeLoss:
     # Compute losses
-    def __init__(self, model, autobalance=False, use_dfl=True):
+    def __init__(self, model, use_dfl=True):
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
         # Define criteria
         BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h["cls_pw"]], device=device), reduction='none')
-        BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h["obj_pw"]], device=device))
 
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
         self.cp, self.cn = smooth_BCE(eps=h.get("label_smoothing", 0.0))  # positive, negative BCE targets
@@ -135,26 +134,24 @@ class ComputeLoss:
         # Focal loss
         g = h["fl_gamma"]  # focal loss gamma
         if g > 0:
-            BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
+            BCEcls = FocalLoss(BCEcls, g)
 
         m = de_parallel(model).model[-1]  # Detect() module
         self.balance = {3: [4.0, 1.0, 0.4]}.get(m.nl, [4.0, 1.0, 0.25, 0.06, 0.02])  # P3-P7
-        self.ssi = list(m.stride).index(16) if autobalance else 0  # stride 16 index
-        self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, 1.0, h, autobalance
+        self.BCEcls = BCEcls
+        self.hyp = h
         self.stride = m.stride  # model strides
         self.nc = m.nc  # number of classes
         self.nl = m.nl  # number of layers
-        self.anchors = m.anchors
         self.device = device
 
         self.assigner = TaskAlignedAssigner(topk=int(os.getenv('YOLOM', 13)),
                                             num_classes=self.nc,
-                                            alpha=float(os.getenv('YOLOA', 1.0)),
+                                            alpha=float(os.getenv('YOLOA', 0.5)),
                                             beta=float(os.getenv('YOLOB', 6.0)))
-        self.bbox_loss = BboxLoss(16, use_dfl=use_dfl).to(device)
-        self.reg_max = 16 if use_dfl else 0
+        self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=use_dfl).to(device)
+        self.proj = torch.arange(m.reg_max).float().to(device)
         self.use_dfl = use_dfl
-        self.proj = torch.linspace(0, self.reg_max, self.reg_max + 1).to(device)
 
     def preprocess(self, targets, batch_size, scale_tensor):
         i = targets[:, 0]  # image index
@@ -170,19 +167,15 @@ class ComputeLoss:
 
     def bbox_decode(self, anchor_points, pred_dist):
         if self.use_dfl:
-            b, a, _ = pred_dist.shape
-            pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj.type(pred_dist.dtype))
-        return dist2bbox(pred_dist, anchor_points, box_format="xyxy")
+            b, a, c = pred_dist.shape  # batch, anchors, channels
+            pred_dist = pred_dist.view(b, a, 4, c // 4).softmax(3).matmul(self.proj.type(pred_dist.dtype))
+        return dist2bbox(pred_dist, anchor_points, xywh=False)
 
     def __call__(self, p, targets, img=None, epoch=0):
-        lcls = torch.zeros(1, device=self.device)  # class loss
-        lbox = torch.zeros(1, device=self.device)  # box loss
-        lobj = torch.zeros(1, device=self.device)  # object loss
-        ldfl = torch.zeros(1, device=self.device)  # object loss
-        feats, pred_obj, pred_scores, pred_distri = p
+        loss = torch.zeros(3, device=self.device)  # box, cls, dfl
+        feats, pred_scores, pred_distri = p
 
         # TODO adjust TAL/DFL loss for channel dim=1, try to remove permutes -------------------------------------------
-        pred_obj = pred_obj.permute(0, 2, 1).contiguous()
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
@@ -202,54 +195,36 @@ class ComputeLoss:
         pred_bboxes = self.bbox_decode(anchor_points_s, pred_distri)  # xyxy, (b, h*w, 4)
 
         target_labels, target_bboxes, target_scores, fg_mask = self.assigner(
-            (pred_scores if self.nc > 1 else pred_obj).detach().sigmoid(),
+            pred_scores.detach().sigmoid(),
             pred_bboxes.detach() * stride_tensor,
             anchor_points,
             gt_labels,
             gt_bboxes,
             mask_gt)
 
-        pred_obj = pred_obj.view(batch_size, grid_size)
-        tobj = torch.zeros_like(pred_obj)
         target_bboxes /= stride_tensor
         target_scores_sum = target_scores.sum()
 
         # cls loss
         # target_labels = F.one_hot(target_labels, self.nc)  # (b, h*w, 80)
-        # lcls = self.BCEcls(pred_scores[fg_mask], target_scores[fg_mask].to(dtype))  # BCE
+        # loss[1] = self.BCEcls(pred_scores[fg_mask], target_scores[fg_mask].to(dtype))  # BCE
         # target_labels = torch.where(fg_mask > 0, target_labels, torch.full_like(target_labels, self.nc))
         # target_labels = F.one_hot(target_labels.long(), self.nc + 1)[..., :-1]
-        lcls = self.BCEcls(pred_scores, target_scores.to(dtype)).sum()  # BCE
+        # loss[1] = self.varifocal_loss(pred_scores, target_scores, target_labels) / target_scores_sum  # VFL way
+        loss[1] = self.BCEcls(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum  # BCE
 
-        # VFL way
-        # lcls = self.varifocal_loss(pred_scores, target_scores, target_labels)
-        lcls /= target_scores_sum
+        # bbox loss
+        if fg_mask.sum():
+            loss[0], loss[2], iou = self.bbox_loss(pred_distri,
+                                                   pred_bboxes,
+                                                   anchor_points_s,
+                                                   target_bboxes,
+                                                   target_scores,
+                                                   target_scores_sum,
+                                                   fg_mask)
 
-        num_pos = fg_mask.sum()
+        loss[0] *= 7.5  # box
+        loss[1] *= 0.5  # cls
+        loss[2] *= 1.5  # dfl
 
-        if num_pos:
-            # lcls = self.BCEcls(pred_scores[fg_mask], target_scores[fg_mask].to(dtype)).mean()  # BCE
-            # bbox loss
-            lbox, ldfl, iou = self.bbox_loss(pred_distri,
-                                             pred_bboxes,
-                                             anchor_points_s,
-                                             target_bboxes,
-                                             target_scores,
-                                             target_scores_sum,
-                                             fg_mask)
-
-            # obj loss
-            # tobj[fg_mask] = iou.detach().clamp(0).type(tobj.dtype).squeeze()
-            # tobj[fg_mask] = target_scores[fg_mask].detach().clamp(0).type(tobj.dtype).amax(1)
-            tobj[fg_mask] = 1
-
-            lobj = self.BCEobj(pred_obj, tobj)
-
-        # lbox *= self.hyp["box"] * 3
-        lbox *= 2.5 * 3
-        lobj *= 0.7 * 3  # * 20
-        lcls *= 1.0 * 3 / 6
-        ldfl *= 0.5 * 3
-        bs = tobj.shape[0]  # batch size
-
-        return (lbox + lobj + lcls + ldfl) * bs, torch.as_tensor([lbox, ldfl, lcls], device=lbox.device).detach()
+        return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl)

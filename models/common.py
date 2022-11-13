@@ -88,15 +88,15 @@ class DWConvTranspose2d(nn.ConvTranspose2d):
 
 class DFL(nn.Module):
     # DFL module
-    def __init__(self, c1):
+    def __init__(self, c1=17):
         super().__init__()
         self.conv = nn.Conv2d(c1, 1, 1, bias=False).requires_grad_(False)
-        self.conv.weight.data[:] = nn.Parameter(torch.arange(1, c1 + 1, dtype=torch.float).view(1, c1, 1, 1))
-        self.bn = nn.BatchNorm2d(4)
+        self.conv.weight.data[:] = nn.Parameter(torch.arange(c1, dtype=torch.float).view(1, c1, 1, 1))
+        # self.bn = nn.BatchNorm2d(4)
 
     def forward(self, x):
-        b, c, h, w = x.shape
-        return self.bn(self.conv(x.view(b, c // 4, 4, h * w).softmax(1)).view(b, 4, h, w))
+        b, c, a = x.shape  # batch, channels, anchors
+        return self.conv(x.view(b, 4, c // 4, a).transpose(2, 1).softmax(1)).view(b, 4, a)
 
 
 class TransformerLayer(nn.Module):

@@ -22,7 +22,6 @@ if platform.system() != 'Windows':
 
 from models.common import *
 from models.experimental import *
-from utils.autoanchor import check_anchor_order
 from utils.general import LOGGER, check_version, check_yaml, make_divisible, print_args
 from utils.plots import feature_visualization
 from utils.torch_utils import (fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, select_device,
@@ -41,50 +40,42 @@ class V6Detect(nn.Module):
     dynamic = False  # force grid reconstruction
     export = False  # export mode
 
-    def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
-        self.nl = len(anchors)  # number of detection layers
+        self.nl = len(ch)  # number of detection layers
         self.reg_max = 16 + 1
-        self.no = nc + self.reg_max * 4 + 1  # number of outputs per anchor
-        self.grid = torch.empty(0)  # init
-        self.anchor_grid = torch.empty(0)  # init
-        self.stride_grid = torch.empty(0)  # init
-        self.register_buffer("anchors", torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
+        self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
-        self.shape = (0, 0)  # initial grid shape
 
         c2, c3 = max(ch[0] // 4, 16), max(ch[0], self.no - 4)  # channels
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)
         self.cv3 = nn.ModuleList(
-            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc + 1, 1)) for x in ch)
-        self.proj_conv = nn.Conv2d(self.reg_max, 1, 1, bias=False).requires_grad_(False)
-        self.proj_conv.weight.data[:] = nn.Parameter(torch.arange(0, self.reg_max).float().view(1, self.reg_max, 1, 1))
-        self.initialize_biases()
-
-    def initialize_biases(self):
-        for seq in self.cv2:
-            m = seq[-1]
-            m.bias.data[:] = 1.0
-        for seq in self.cv3:
-            m = seq[-1]
-            m.bias.data[:] = math.log(1 / (640 / 8) ** 2)  # 1 instance per image at stride 8
+            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc, 1)) for x in ch)
+        self.dfl = DFL(self.reg_max)
 
     def forward(self, x):
         b = x[0].shape[0]
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
         y = torch.cat([xi.view(b, self.no, -1) for xi in x], dim=2)
-        box, conf, cls = y.split((self.reg_max * 4, 1, self.nc), 1)
+        box, cls = y.split((self.reg_max * 4, self.nc), 1)
         if self.training:
-            return x, conf, cls, box
+            return x, cls, box
 
         anchors, strides = generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
-        dfl_box = self.proj_conv(box.view(b, 4, 17, -1).transpose(2, 1).softmax(1)).view(b, 4, -1)
-        final_box = dist2bbox(dfl_box, anchors.T.unsqueeze(0), box_format="xywh", dim=1)  # (b, grids, 4)
-        final_box *= strides.view(1, 1, -1)
-        return torch.cat([final_box, conf.sigmoid(), cls.sigmoid()], 1), (x, conf, cls, box)
+        dbox = dist2bbox(self.dfl(box), anchors.T.unsqueeze(0), xywh=True, dim=1) * strides.T
+        return torch.cat([dbox, cls.sigmoid()], 1), (x, cls, box)
+
+    def bias_init(self):
+        # Initialize Detect() biases, cf is class frequency
+        m = self  # self.model[-1]  # Detect() module
+        # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1
+        # ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
+        for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
+            a[-1].bias.data[:] = 1.0  # box
+            b[-1].bias.data[:m.nc] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (5 objects and 80 classes per 640 image)
 
 
 class Detect(nn.Module):
@@ -223,7 +214,7 @@ class BaseModel(nn.Module):
                 setattr(m, k, list(map(fn, x))) if isinstance(x, (list, tuple)) else setattr(m, k, fn(x))
         elif isinstance(m, V6Detect):
             m.stride = fn(m.stride)
-            m.grid = list(map(fn, m.grid))
+            # m.grid = list(map(fn, m.grid))
         return self
 
 
@@ -258,11 +249,11 @@ class DetectionModel(BaseModel):
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, (Segment, V6Detect)) else self.forward(x)
             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
-            check_anchor_order(m)
-            m.anchors /= m.stride.view(-1, 1, 1)
+            # check_anchor_order(m)
+            # m.anchors /= m.stride.view(-1, 1, 1)
             self.stride = m.stride
-            if not isinstance(m, V6Detect):
-                self._initialize_biases()  # only run once
+            if isinstance(m, V6Detect):
+                m.bias_init()  # only run once
 
         # Init weights, biases
         initialize_weights(self)
@@ -315,17 +306,6 @@ class DetectionModel(BaseModel):
         i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
         y[-1] = y[-1][:, i:]  # small
         return y
-
-    def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
-        # https://arxiv.org/abs/1708.02002 section 3.3 for 4-81 splits
-        # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1
-        m = self.model[-1]  # Detect() module
-        ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
-        for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
-            # a[-1].bn.bias.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
-            a[-1].bn.bias.data[2:4] = -1.60944  # wh = 0.2 + (x - 1.60944).sigmoid() * 4.8
-            b[-1].bn.bias.data[0] = math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-            b[-1].bn.bias.data[1:m.nc + 1] = ncf  # cls
 
 
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
@@ -399,8 +379,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         # TODO: channel, gw, gd
         elif m in {V6Detect, Detect, Segment}:
             args.append([ch[x] for x in f])
-            if isinstance(args[1], int):  # number of anchors
-                args[1] = [list(range(args[1] * 2))] * len(f)
+            # if isinstance(args[1], int):  # number of anchors
+            #     args[1] = [list(range(args[1] * 2))] * len(f)
             if m is Segment:
                 args[3] = make_divisible(args[3] * gw, 8)
         elif m is Contract:
@@ -425,7 +405,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='yolov8m-2-upsample-tal.yaml', help='model.yaml')
+    parser.add_argument('--cfg', type=str, default='yolov8m-11-base.yaml', help='model.yaml')
     parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--profile', action='store_true', help='profile model speed')
