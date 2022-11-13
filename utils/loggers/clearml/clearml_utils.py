@@ -97,6 +97,9 @@ class ClearmlLogger:
             # will have to be added manually!
             self.task.connect(hyp, name='Hyperparameters')
 
+            # Make sure the code is easily remotely runnable by setting the docker image to use by the remote agent
+            self.task.set_base_docker("ultralytics/yolov5:latest", docker_arguments='--ipc=host')
+
             # Get ClearML Dataset Version if requested
             if opt.data.startswith('clearml://'):
                 # data_dict should have the following keys:
