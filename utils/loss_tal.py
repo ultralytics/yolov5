@@ -204,10 +204,6 @@ class ComputeLoss:
         target_scores_sum = target_scores.sum()
 
         # cls loss
-        # target_labels = F.one_hot(target_labels, self.nc)  # (b, h*w, 80)
-        # loss[1] = self.BCEcls(pred_scores[fg_mask], target_scores[fg_mask].to(dtype))  # BCE
-        # target_labels = torch.where(fg_mask > 0, target_labels, torch.full_like(target_labels, self.nc))
-        # target_labels = F.one_hot(target_labels.long(), self.nc + 1)[..., :-1]
         # loss[1] = self.varifocal_loss(pred_scores, target_scores, target_labels) / target_scores_sum  # VFL way
         loss[1] = self.BCEcls(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum  # BCE
 
