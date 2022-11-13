@@ -151,7 +151,7 @@ class TaskAlignedAssigner(nn.Module):
 
         diff = overlaps - overlaps_orig
         if diff.max() != 0.0 or diff.min() != 0.0:
-            print(overlaps.shape, overlaps_orig.shape, diff.max(), diff.min())
+            print(overlaps.shape, overlaps.dtype, overlaps_orig.shape, overlaps_orig.dtype, diff.max(), diff.min())
 
         align_metric = bbox_scores.pow(self.alpha) * overlaps.pow(self.beta)
 
