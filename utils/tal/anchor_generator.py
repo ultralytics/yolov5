@@ -15,11 +15,9 @@ def generate_anchors(feats, strides, grid_cell_offset=0.5, device='cpu', is_eval
         sx = torch.arange(end=w, device=device) + grid_cell_offset  # shift x
         sy = torch.arange(end=h, device=device) + grid_cell_offset  # shift y
         sy, sx = torch.meshgrid(sy, sx, indexing='ij') if TORCH_1_10 else torch.meshgrid(sy, sx)
-        anchor_point = torch.stack([sx, sy], -1).to(torch.float)
-        anchor_points.append(anchor_point.view(-1, 2))
-        stride_tensor.append(torch.full((h * w, 1), stride, dtype=torch.float, device=device))
-
-    return torch.cat(anchor_points), torch.cat(stride_tensor)
+        anchor_points.append(torch.stack((sx, sy), -1).view(-1, 2))
+        stride_tensor.append(torch.full((h * w, 1), stride, dtype=torch.float32, device=device))
+    return torch.cat(anchor_points).to(torch.float32), torch.cat(stride_tensor)
 
 
 def dist2bbox(distance, anchor_points, xywh=True, dim=-1):
@@ -30,9 +28,8 @@ def dist2bbox(distance, anchor_points, xywh=True, dim=-1):
     if xywh:
         c_xy = (x1y1 + x2y2) / 2
         wh = x2y2 - x1y1
-        return torch.cat((c_xy, wh), dim)  # bbox
-    else:  # xyxy
-        return torch.cat((x1y1, x2y2), dim)  # bbox
+        return torch.cat((c_xy, wh), dim)  # xywh bbox
+    return torch.cat((x1y1, x2y2), dim)  # xyxy bbox
 
 
 def bbox2dist(anchor_points, bbox, reg_max):
