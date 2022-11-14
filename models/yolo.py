@@ -44,7 +44,7 @@ class V6Detect(nn.Module):
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch)  # number of detection layers
-        self.reg_max = 16 + 1
+        self.reg_max = 8
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
 
