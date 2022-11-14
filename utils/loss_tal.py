@@ -173,7 +173,7 @@ class ComputeLoss:
         dtype = pred_scores.dtype
         batch_size, grid_size = pred_scores.shape[:2]
         imgsz = torch.tensor(feats[0].shape[2:], device=self.device, dtype=dtype) * self.stride[0]  # image size (h,w)
-        anchor_points, stride_tensor = generate_anchors(feats, self.stride, 0.5, device=self.device)
+        anchor_points, stride_tensor = generate_anchors(feats, self.stride, 0.5)
 
         # targets
         targets = self.preprocess(targets, batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
