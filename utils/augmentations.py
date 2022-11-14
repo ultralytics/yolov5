@@ -252,8 +252,8 @@ def random_perspective(im,
 #                 segments.append(np.concatenate((w - s[:, 0:1], s[:, 1:2]), 1))
 #                 cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED)
 #
-#         result = np.flip(im, 1)  # augment segments (flip left-right)
-#         i = np.flip(im_new.astype(bool), 1)
+#         result = cv2.flip(im, 1)  # augment segments (flip left-right)
+#         i = cv2.flip(im_new, 1).astype(bool)
 #         im[i] = result[i]  # cv2.imwrite('debug.jpg', im)  # debug
 #
 #     return im, labels, segments
