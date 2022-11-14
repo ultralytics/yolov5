@@ -875,7 +875,7 @@ def non_max_suppression(
     bs = prediction.shape[0]  # batch size
     nc = prediction.shape[1] - nm - 4  # number of classes
     mi = 4 + nc  # mask start index
-    xc = prediction[:, 4:mi].amax(1).gt_(conf_thres)  # candidates
+    xc = prediction[:, 4:mi].amax(1) > conf_thres  # candidates
 
     # Checks
     assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
