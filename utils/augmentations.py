@@ -272,14 +272,13 @@ def copy_paste(im, labels, segments, p=0.5):
         indexes = np.nonzero((ioa < 0.30).all(1))[0]  # (N, )
         n = len(indexes)
         for j in random.sample(list(indexes), k=round(p * n)):
-            l, s = labels[j], segments[j]
-            box = boxes[j]
+            l, box, s = labels[j], boxes[j], segments[j]
             labels = np.concatenate((labels, [[l[0], *box]]), 0)
             segments.append(np.concatenate((w - s[:, 0:1], s[:, 1:2]), 1))
             cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED)
 
-        result = np.flip(im, 1)  # augment segments (flip left-right)
-        i = np.flip(im_new.astype(bool), 1)
+        result = cv2.flip(im, 1)  # augment segments (flip left-right)
+        i = cv2.flip(im_new.astype(bool), 1)
         im[i] = result[i]  # cv2.imwrite('debug.jpg', im)  # debug
 
     return im, labels, segments
