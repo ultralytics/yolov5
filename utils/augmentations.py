@@ -278,7 +278,7 @@ def copy_paste(im, labels, segments, p=0.5):
             cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED)
 
         result = cv2.flip(im, 1)  # augment segments (flip left-right)
-        i = cv2.flip(im_new.astype(bool), 1)
+        i = cv2.flip(im_new, 1).astype(bool)
         im[i] = result[i]  # cv2.imwrite('debug.jpg', im)  # debug
 
     return im, labels, segments
