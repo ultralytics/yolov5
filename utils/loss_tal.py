@@ -170,7 +170,7 @@ class ComputeLoss:
             b, a, c = pred_dist.shape  # batch, anchors, channels
             # pred_dist = pred_dist.view(b, a, 4, c // 4).softmax(3).matmul(self.proj.type(pred_dist.dtype))
             # pred_dist = pred_dist.view(b, a, c // 4, 4).transpose(2,3).softmax(3).matmul(self.proj.type(pred_dist.dtype))
-            pred_dist = (pred_dist.view(b, a, c // 4, 4).softmax(2) * self.proj.type(pred_dist.dtype).view(1, 1, -1, 1)).sum(2)
+            pred_dist = (pred_dist.view(b, a, c // 4, 4).softmax(2) * self.proj.view(1, 1, -1, 1)).sum(2)
         return dist2bbox(pred_dist, anchor_points, xywh=False)
 
     def __call__(self, p, targets, img=None, epoch=0):
@@ -179,7 +179,7 @@ class ComputeLoss:
 
         # TODO adjust TAL/DFL loss for channel dim=1, try to remove permutes -------------------------------------------
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
-        pred_distri = pred_distri.permute(0, 2, 1).contiguous()
+        pred_distri = pred_distri.permute(0, 2, 1).contiguous().float()
 
         dtype = pred_scores.dtype
         batch_size, grid_size = pred_scores.shape[:2]

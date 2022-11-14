@@ -868,16 +868,14 @@ def non_max_suppression(
     if isinstance(prediction, (list, tuple)):  # YOLOv5 model in validation model, output = (inference_out, loss_out)
         prediction = prediction[0]  # select only inference output
 
-    prediction = prediction.permute((0, 2, 1)).contiguous()  # TODO: Remove and update function for channels dim 1
-
     device = prediction.device
     mps = 'mps' in device.type  # Apple MPS
     if mps:  # MPS not fully supported yet, convert tensors to CPU before NMS
         prediction = prediction.cpu()
     bs = prediction.shape[0]  # batch size
-    nc = prediction.shape[2] - nm - 4  # number of classes
+    nc = prediction.shape[1] - nm - 4  # number of classes
     mi = 4 + nc  # mask start index
-    xc = prediction[..., 4:mi].amax(-1) > conf_thres  # candidates
+    xc = prediction[:, 4:mi].amax(1).gt_(conf_thres)  # candidates
 
     # Checks
     assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
@@ -896,8 +894,8 @@ def non_max_suppression(
     output = [torch.zeros((0, 6 + nm), device=prediction.device)] * bs
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
-        # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
-        x = x[xc[xi]]  # confidence
+        # x[((x[:, 2:4] < min_wh) | (x[:, 2:4] > max_wh)).any(1), 4] = 0  # width-height
+        x = x.T[xc[xi]]  # confidence
 
         # Cat apriori labels if autolabelling
         if labels and len(labels[xi]):
