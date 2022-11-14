@@ -47,6 +47,7 @@ class V6Detect(nn.Module):
         self.reg_max = 17
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
+        self.stride = torch.zeros(self.nl)  # strides computed during build
 
         c2, c3 = max(ch[0] // 4, 16), max(ch[0], self.no - 4)  # channels
         self.cv2 = nn.ModuleList(
@@ -64,12 +65,12 @@ class V6Detect(nn.Module):
         if self.training:
             return x, cls, box
 
-        anchors, strides = generate_anchors(x, torch.tensor([8, 16, 32]), 0.5)
+        anchors, strides = generate_anchors(x, self.stride, 0.5)
         dbox = dist2bbox(self.dfl(box), anchors.T.unsqueeze(0), xywh=True, dim=1) * strides.T
         return torch.cat([dbox, cls.sigmoid()], 1), (x, cls, box)
 
     def bias_init(self):
-        # Initialize Detect() biases, cf is class frequency
+        # Initialize Detect() biases, WARNING: requires stride availability
         m = self  # self.model[-1]  # Detect() module
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1
         # ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
