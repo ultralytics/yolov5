@@ -134,7 +134,7 @@ class ComputeLoss:
         self.nl = m.nl  # number of layers
         self.device = device
 
-        self.assigner = TaskAlignedAssigner(topk=int(os.getenv('YOLOM', 13)),
+        self.assigner = TaskAlignedAssigner(topk=int(os.getenv('YOLOM', 10)),
                                             num_classes=self.nc,
                                             alpha=float(os.getenv('YOLOA', 0.5)),
                                             beta=float(os.getenv('YOLOB', 6.0)))
