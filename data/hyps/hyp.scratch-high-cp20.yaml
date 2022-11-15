@@ -28,7 +28,7 @@ scale: 0.9  # image scale (+/- gain)
 shear: 0.0  # image shear (+/- deg)
 perspective: 0.0  # image perspective (+/- fraction), range 0-0.001
 flipud: 0.0  # image flip up-down (probability)
-fliplr: 0.5  # image flip left-right (probability)
+fliplr: 0.0  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
 mixup: 0.1  # image mixup (probability)
 copy_paste: 0.2  # segment copy-paste (probability)
