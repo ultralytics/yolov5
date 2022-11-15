@@ -59,14 +59,14 @@ class V6Detect(nn.Module):
         b = x[0].shape[0]
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
-        y = torch.cat([xi.view(b, self.no, -1) for xi in x], dim=2)
-        box, cls = y.split((self.reg_max * 4, self.nc), 1)
+        box, cls = torch.cat([xi.view(b, self.no, -1) for xi in x], 2).split((self.reg_max * 4, self.nc), 1)
         if self.training:
-            return x, cls, box
+            return x, box, cls
 
         anchors, strides = generate_anchors(x, self.stride, 0.5)
         dbox = dist2bbox(self.dfl(box), anchors.T.unsqueeze(0), xywh=True, dim=1) * strides.T
-        return torch.cat([dbox, cls.sigmoid()], 1), (x, cls, box)
+        y = torch.cat((dbox, cls.sigmoid()), 1)
+        return y if self.export else y, (x, box, cls)
 
     def bias_init(self):
         # Initialize Detect() biases, WARNING: requires stride availability

@@ -164,7 +164,7 @@ class ComputeLoss:
 
     def __call__(self, p, targets, img=None, epoch=0):
         loss = torch.zeros(3, device=self.device)  # box, cls, dfl
-        feats, pred_scores, pred_distri = p
+        feats, pred_distri, pred_scores = p
 
         # TODO adjust TAL/DFL loss for channel dim=1, try to remove permutes -------------------------------------------
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
