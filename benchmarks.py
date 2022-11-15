@@ -22,7 +22,7 @@ Requirements:
     $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
 
 Usage:
-    $ python utils/benchmarks.py --weights yolov5s.pt --img 640
+    $ python benchmarks.py --weights yolov5s.pt --img 640
 """
 
 import argparse
@@ -81,10 +81,10 @@ def run(
 
             # Validate
             if model_type == SegmentationModel:
-                result = val_seg(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
+                result = val_seg(data, w, batch_size, imgsz, plots=False, device=device, task='speed', half=half)
                 metric = result[0][7]  # (box(p, r, map50, map), mask(p, r, map50, map), *loss(box, obj, cls))
             else:  # DetectionModel:
-                result = val_det(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
+                result = val_det(data, w, batch_size, imgsz, plots=False, device=device, task='speed', half=half)
                 metric = result[0][3]  # (p, r, map50, map, *loss(box, obj, cls))
             speed = result[2][1]  # times (preprocess, inference, postprocess)
             y.append([name, round(file_size(w), 1), round(metric, 4), round(speed, 2)])  # MB, mAP, t_inference
