@@ -869,6 +869,7 @@ class LoadImagesAndLabels(Dataset):
         # img9, labels9 = replicate(img9, labels9)  # replicate
 
         # Augment
+        img9, labels9, segments9 = copy_paste(img9, labels9, segments9, p=self.hyp['copy_paste'])
         img9, labels9 = random_perspective(img9,
                                            labels9,
                                            segments9,
