@@ -208,12 +208,12 @@ class ComputeLoss:
                                                    target_scores_sum,
                                                    fg_mask)
 
-        # loss[0] *= 7.5  # box
-        # loss[1] *= 0.5  # cls
-        # loss[2] *= 1.5  # dfl
+        loss[0] *= 7.5  # box
+        loss[1] *= 0.5  # cls
+        loss[2] *= 1.5  # dfl
 
-        loss[0] *= 1.00  # box
-        loss[1] *= 0.13  # cls
-        loss[2] *= 0.20  # dfl
+        # loss[0] *= 1.00  # box
+        # loss[1] *= 0.13  # cls
+        # loss[2] *= 0.20  # dfl
 
         return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl)
