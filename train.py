@@ -25,6 +25,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
+import mlflow
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -32,7 +33,6 @@ import torch.nn as nn
 import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
-import mlflow
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -85,7 +85,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     if isinstance(hyp, str):
         with open(hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
-            mlflow.log_params({F"hyper_{key}" : hyp[key] for key in hyp})
+            mlflow.log_params({F"hyper_{key}": hyp[key] for key in hyp})
     LOGGER.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     opt.hyp = hyp.copy()  # for saving hyps to checkpoints
 
