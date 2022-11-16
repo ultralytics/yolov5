@@ -149,7 +149,8 @@ def random_perspective(im,
                        scale=.1,
                        shear=10,
                        perspective=0.0,
-                       border=(0, 0)):
+                       border=(0, 0), 
+                       kpt_label=0):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(0.1, 0.1), scale=(0.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -228,11 +229,26 @@ def random_perspective(im,
             # clip
             new[:, [0, 2]] = new[:, [0, 2]].clip(0, width)
             new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
+            if kpt_label:
+                xy_kpts = np.ones((n * kpt_label, 3))
+                xy_kpts[:, :2] = targets[:,5:].reshape(n * kpt_label, 2)  #num_kpt is hardcoded to 17
+                xy_kpts = xy_kpts @ M.T # transform
+                xy_kpts = (xy_kpts[:, :2] / xy_kpts[:, 2:3] if perspective else xy_kpts[:, :2]).reshape(n, 2 * kpt_label)  # perspective rescale or affine
+                xy_kpts[targets[:, 5:]==0] = 0
+                x_kpts = xy_kpts[:, list(range(0, 2 * kpt_label, 2))]
+                y_kpts = xy_kpts[:, list(range(1, 2 * kpt_label, 2))]
+
+                x_kpts[np.logical_or.reduce((x_kpts < 0, x_kpts > width, y_kpts < 0, y_kpts > height))] = 0
+                y_kpts[np.logical_or.reduce((x_kpts < 0, x_kpts > width, y_kpts < 0, y_kpts > height))] = 0
+                xy_kpts[:, list(range(0, 2 * kpt_label, 2))] = x_kpts
+                xy_kpts[:, list(range(1, 2 * kpt_label, 2))] = y_kpts
 
         # filter candidates
         i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
         targets = targets[i]
         targets[:, 1:5] = new[i]
+        if kpt_label:
+            targets[:, 5:] = xy_kpts[i]
 
     return im, targets
 

@@ -124,6 +124,8 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
+        kpt_label=False,
+        save_json_kpt=False,
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -179,7 +181,8 @@ def run(
                                        pad=pad,
                                        rect=rect,
                                        workers=workers,
-                                       prefix=colorstr(f'{task}: '))[0]
+                                       prefix=colorstr(f'{task}: '),
+                                       kpt_label=kpt_label)[0]
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
@@ -208,12 +211,19 @@ def run(
         with dt[1]:
             preds, train_out = model(im) if compute_loss else (model(im, augment=augment), None)
 
+        preds = preds[...,:6] if not kpt_label else preds
+        targets = targets[..., :6] if not kpt_label else targets
+
         # Loss
         if compute_loss:
             loss += compute_loss(train_out, targets)[1]  # box, obj, cls
 
         # NMS
-        targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
+        if kpt_label:
+            num_points = kpt_label
+            targets[:, 2:] *= torch.Tensor([width, height]*num_points).to(device)  # to pixels
+        else:
+            targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         with dt[2]:
             preds = non_max_suppression(preds,
@@ -222,7 +232,8 @@ def run(
                                         labels=lb,
                                         multi_label=True,
                                         agnostic=single_cls,
-                                        max_det=max_det)
+                                        max_det=max_det,
+                                        kpt_label=kpt_label)
 
         # Metrics
         for si, pred in enumerate(preds):
@@ -244,11 +255,16 @@ def run(
                 pred[:, 5] = 0
             predn = pred.clone()
             scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
+            if kpt_label:
+                scale_boxes(im[si].shape[1:], predn[:,6:], shapes[si][0], shapes[si][1], kpt_label=kpt_label, step=3)  # native-space pred
 
             # Evaluate
             if nl:
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                 scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
+                if kpt_label:
+                    tkpt = labels[:, 5:]
+                    scale_boxes(im[si].shape[1:], tkpt, shapes[si][0], shapes[si][1], kpt_label=kpt_label)  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
                 if plots:
