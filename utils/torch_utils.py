@@ -32,6 +32,7 @@ except ImportError:
 
 # Suppress PyTorch warnings
 warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
+warnings.filterwarnings('ignore', category=UserWarning)
 
 
 def smart_inference_mode(torch_1_9=check_version(torch.__version__, '1.9.0')):
