@@ -134,6 +134,9 @@ class ComputeLoss:
         self.nl = m.nl  # number of layers
         self.device = device
 
+        from utils.general import RANK
+        print(RANK, os.getenv('YOLOM', None), os.getenv('YOLOA', None), os.getenv('YOLOB', None))
+
         self.assigner = TaskAlignedAssigner(topk=int(os.getenv('YOLOM', 10)),
                                             num_classes=self.nc,
                                             alpha=float(os.getenv('YOLOA', 0.5)),
