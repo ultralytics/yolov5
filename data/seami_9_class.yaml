@@ -2,7 +2,7 @@ path: data/seami-image-data-10-classes.v3
 train: train/images
 val: valid/images
 
-nc: 9 
+nc: 9
 names: ['Others',
  'Octopus',
  'Triggerfish',

@@ -1,7 +1,8 @@
+import os
+
+import cv2
+import numpy as np
 import tensorflow as tf
-import cv2 
-import os 
-import numpy as np 
 
 saved_model_dir = "/home/parvej/Downloads/seami_models/best_saved_model/"
 converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_dir)
@@ -16,10 +17,10 @@ with open(filename, "wb") as f:
 # files = os.listdir(dirpath)
 # print(files)
 # BATCH_SIZE = 1
-# NORM_H = NORM_W = 320 
+# NORM_H = NORM_W = 320
 # def rep_data_gen():
 #     a = []
-#     for filename in files: 
+#     for filename in files:
 #         img = cv2.imread(dirpath + filename)
 #         img = cv2.resize(img, (NORM_H, NORM_W))
 #         img = img / 255.0

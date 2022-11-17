@@ -313,7 +313,7 @@ class LoadImages:
         # Convert
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         # img = np.ascontiguousarray(img)
-        # Modification for int8 quantized models 
+        # Modification for int8 quantized models
         img = np.ascontiguousarray(img, dtype=np.uint8)
 =======
         if self.transforms:
