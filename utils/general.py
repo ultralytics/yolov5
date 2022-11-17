@@ -482,9 +482,10 @@ def check_dataset(data, autodownload=True):
 
     # Checks
     for k in 'train', 'val', 'names':
-        assert k in data, f"data.yaml '{k}:' field missing ❌"
+        assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
     if isinstance(data['names'], (list, tuple)):  # old array format
         data['names'] = dict(enumerate(data['names']))  # convert to dict
+    assert all(isinstance(k, int) for k in data['names'].keys()), 'data.yaml names keys must be integers, i.e. 2: car'
     data['nc'] = len(data['names'])
 
     # Resolve paths
