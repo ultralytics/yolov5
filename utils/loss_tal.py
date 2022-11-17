@@ -134,9 +134,6 @@ class ComputeLoss:
         self.nl = m.nl  # number of layers
         self.device = device
 
-        from utils.general import RANK
-        print(RANK, os.getenv('YOLOM', None), os.getenv('YOLOA', None), os.getenv('YOLOB', None))
-
         self.assigner = TaskAlignedAssigner(topk=int(os.getenv('YOLOM', 10)),
                                             num_classes=self.nc,
                                             alpha=float(os.getenv('YOLOA', 0.5)),
@@ -171,8 +168,6 @@ class ComputeLoss:
     def __call__(self, p, targets, img=None, epoch=0):
         loss = torch.zeros(3, device=self.device)  # box, cls, dfl
         feats, pred_distri, pred_scores = p
-
-        # TODO adjust TAL/DFL loss for channel dim=1, try to remove permutes -------------------------------------------
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
@@ -214,12 +209,8 @@ class ComputeLoss:
                                                    target_scores_sum,
                                                    fg_mask)
 
-        loss[0] *= 7.5  # box
-        loss[1] *= 0.5  # cls
-        loss[2] *= 1.5  # dfl
-
-        # loss[0] *= 1.00  # box
-        # loss[1] *= 0.13  # cls
-        # loss[2] *= 0.20  # dfl
+        loss[0] *= 7.5  # box gain
+        loss[1] *= 0.5  # cls gain
+        loss[2] *= 1.5  # dfl gain
 
         return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl)
