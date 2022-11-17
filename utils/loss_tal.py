@@ -146,15 +146,18 @@ class ComputeLoss:
         self.use_dfl = use_dfl
 
     def preprocess(self, targets, batch_size, scale_tensor):
-        i = targets[:, 0]  # image index
-        _, counts = i.unique(return_counts=True)
-        out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
-        for j in range(batch_size):
-            matches = i == j
-            n = matches.sum()
-            if n:
-                out[j, :n] = targets[matches, 1:]
-        out[..., 1:5] = xywh2xyxy(out[..., 1:5].mul_(scale_tensor))
+        if targets.shape[0] == 0:
+            out = torch.zeros(batch_size, 0, 5, device=self.device)
+        else:
+            i = targets[:, 0]  # image index
+            _, counts = i.unique(return_counts=True)
+            out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
+            for j in range(batch_size):
+                matches = i == j
+                n = matches.sum()
+                if n:
+                    out[j, :n] = targets[matches, 1:]
+            out[..., 1:5] = xywh2xyxy(out[..., 1:5].mul_(scale_tensor))
         return out
 
     def bbox_decode(self, anchor_points, pred_dist):
