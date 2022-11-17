@@ -112,7 +112,6 @@ def run(
 	model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
 	seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
 	for path, im, im0s, vid_cap, s in dataset:
-<<<<<<< HEAD
 		t1 = time_sync()
 		im = torch.from_numpy(im).to(device).to( dtype=torch.int8)
 		print(type(im))
@@ -122,14 +121,6 @@ def run(
 			im = im[None]  # expand for batch dim
 		t2 = time_sync()
 		dt[0] += t2 - t1
-=======
-		with dt[0]:
-			im = torch.from_numpy(im).to(model.device)
-			im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
-			im /= 255  # 0 - 255 to 0.0 - 1.0
-			if len(im.shape) == 3:
-				im = im[None]  # expand for batch dim
->>>>>>> 7f097ddb6c9921d64fa504a8db79cf24fa0a913c
 
 		# Inference
 		with dt[1]:
