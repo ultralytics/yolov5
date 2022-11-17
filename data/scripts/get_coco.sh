@@ -30,7 +30,7 @@ url=https://github.com/ultralytics/yolov5/releases/download/v1.0/
 if [ "$segments" == "true" ]; then
   f='coco2017labels-segments.zip' # 168 MB
 else
-  f='coco2017labels.zip' # 168 MB
+  f='coco2017labels.zip' # 46 MB
 fi
 echo 'Downloading' $url$f ' ...'
 curl -L $url$f -o $f -# && unzip -q $f -d $d && rm $f &

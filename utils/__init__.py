@@ -23,7 +23,7 @@ class TryExcept(contextlib.ContextDecorator):
 
     def __exit__(self, exc_type, value, traceback):
         if value:
-            print(emojis(f'{self.msg}{value}'))
+            print(emojis(f"{self.msg}{': ' if self.msg else ''}{value}"))
         return True
 
 
@@ -37,6 +37,16 @@ def threaded(func):
     return wrapper
 
 
+def join_threads(verbose=False):
+    # Join all daemon threads, i.e. atexit.register(lambda: join_threads())
+    main_thread = threading.current_thread()
+    for t in threading.enumerate():
+        if t is not main_thread:
+            if verbose:
+                print(f'Joining thread {t.name}')
+            t.join()
+
+
 def notebook_init(verbose=True):
     # Check system software and hardware
     print('Checking setup...')
@@ -47,7 +57,6 @@ def notebook_init(verbose=True):
     from utils.general import check_font, check_requirements, is_colab
     from utils.torch_utils import select_device  # imports
 
-    check_requirements(('psutil', 'IPython'))
     check_font()
 
     import psutil

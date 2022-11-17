@@ -4,13 +4,13 @@ Validate a trained YOLOv5 segment model on a segment dataset
 
 Usage:
     $ bash data/scripts/get_coco.sh --val --segments  # download COCO-segments val split (1G, 5000 images)
-    $ python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640-  # validate COCO-segments
+    $ python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # validate COCO-segments
 
 Usage - formats:
     $ python segment/val.py --weights yolov5s-seg.pt                 # PyTorch
                                       yolov5s-seg.torchscript        # TorchScript
                                       yolov5s-seg.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                      yolov5s-seg.xml                # OpenVINO
+                                      yolov5s-seg_openvino_label     # OpenVINO
                                       yolov5s-seg.engine             # TensorRT
                                       yolov5s-seg.mlmodel            # CoreML (macOS-only)
                                       yolov5s-seg_saved_model        # TensorFlow SavedModel

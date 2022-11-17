@@ -84,10 +84,10 @@ class Loggers():
         self.csv = True  # always log to csv
 
         # Messages
-        if not wandb:
-            prefix = colorstr('Weights & Biases: ')
-            s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs in Weights & Biases"
-            self.logger.info(s)
+        # if not wandb:
+        #     prefix = colorstr('Weights & Biases: ')
+        #     s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs in Weights & Biases"
+        #     self.logger.info(s)
         if not clearml:
             prefix = colorstr('ClearML: ')
             s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 in ClearML"
@@ -110,9 +110,9 @@ class Loggers():
             self.opt.hyp = self.hyp  # add hyperparameters
             self.wandb = WandbLogger(self.opt, run_id)
             # temp warn. because nested artifacts not supported after 0.12.10
-            if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.11'):
-                s = "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected."
-                self.logger.warning(s)
+            # if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.11'):
+            #    s = "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected."
+            #    self.logger.warning(s)
         else:
             self.wandb = None
 

@@ -5,12 +5,9 @@ Download utils
 
 import logging
 import os
-import platform
 import subprocess
-import time
 import urllib
 from pathlib import Path
-from zipfile import ZipFile
 
 import requests
 import torch
@@ -109,81 +106,3 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v6.2'):
                 error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/{tag} or {url3}')
 
     return str(file)
-
-
-def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
-    # Downloads a file from Google Drive. from yolov5.utils.downloads import *; gdrive_download()
-    t = time.time()
-    file = Path(file)
-    cookie = Path('cookie')  # gdrive cookie
-    print(f'Downloading https://drive.google.com/uc?export=download&id={id} as {file}... ', end='')
-    if file.exists():
-        file.unlink()  # remove existing file
-    if cookie.exists():
-        cookie.unlink()  # remove existing cookie
-
-    # Attempt file download
-    out = "NUL" if platform.system() == "Windows" else "/dev/null"
-    os.system(f'curl -c ./cookie -s -L "drive.google.com/uc?export=download&id={id}" > {out}')
-    if os.path.exists('cookie'):  # large file
-        s = f'curl -Lb ./cookie "drive.google.com/uc?export=download&confirm={get_token()}&id={id}" -o {file}'
-    else:  # small file
-        s = f'curl -s -L -o {file} "drive.google.com/uc?export=download&id={id}"'
-    r = os.system(s)  # execute, capture return
-    if cookie.exists():
-        cookie.unlink()  # remove existing cookie
-
-    # Error check
-    if r != 0:
-        if file.exists():
-            file.unlink()  # remove partial
-        print('Download error ')  # raise Exception('Download error')
-        return r
-
-    # Unzip if archive
-    if file.suffix == '.zip':
-        print('unzipping... ', end='')
-        ZipFile(file).extractall(path=file.parent)  # unzip
-        file.unlink()  # remove zip
-
-    print(f'Done ({time.time() - t:.1f}s)')
-    return r
-
-
-def get_token(cookie="./cookie"):
-    with open(cookie) as f:
-        for line in f:
-            if "download" in line:
-                return line.split()[-1]
-    return ""
-
-
-# Google utils: https://cloud.google.com/storage/docs/reference/libraries ----------------------------------------------
-#
-#
-# def upload_blob(bucket_name, source_file_name, destination_blob_name):
-#     # Uploads a file to a bucket
-#     # https://cloud.google.com/storage/docs/uploading-objects#storage-upload-object-python
-#
-#     storage_client = storage.Client()
-#     bucket = storage_client.get_bucket(bucket_name)
-#     blob = bucket.blob(destination_blob_name)
-#
-#     blob.upload_from_filename(source_file_name)
-#
-#     print('File {} uploaded to {}.'.format(
-#         source_file_name,
-#         destination_blob_name))
-#
-#
-# def download_blob(bucket_name, source_blob_name, destination_file_name):
-#     # Uploads a blob from a bucket
-#     storage_client = storage.Client()
-#     bucket = storage_client.get_bucket(bucket_name)
-#     blob = bucket.blob(source_blob_name)
-#
-#     blob.download_to_filename(destination_file_name)
-#
-#     print('Blob {} downloaded to {}.'.format(
-#         source_blob_name,
-#         destination_file_name))

@@ -12,17 +12,17 @@ Usage - sources:
 													 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 
 Usage - formats:
-	$ python detect.py --weights yolov5s.pt                 # PyTorch
-								 yolov5s.torchscript        # TorchScript
-								 yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-								 yolov5s.xml                # OpenVINO
-								 yolov5s.engine             # TensorRT
-								 yolov5s.mlmodel            # CoreML (macOS-only)
-								 yolov5s_saved_model        # TensorFlow SavedModel
-								 yolov5s.pb                 # TensorFlow GraphDef
-								 yolov5s.tflite             # TensorFlow Lite
-								 yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
-								 yolov5s_paddle_model       # PaddlePaddle
+    $ python detect.py --weights yolov5s.pt                 # PyTorch
+                                 yolov5s.torchscript        # TorchScript
+                                 yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                 yolov5s.xml                # OpenVINO
+                                 yolov5s.engine             # TensorRT
+                                 yolov5s.mlmodel            # CoreML (macOS-only)
+                                 yolov5s_saved_model        # TensorFlow SavedModel
+                                 yolov5s.pb                 # TensorFlow GraphDef
+                                 yolov5s.tflite             # TensorFlow Lite
+                                 yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
+                                 yolov5s_paddle_model       # PaddlePaddle
 """
 
 import argparse
@@ -96,17 +96,17 @@ def run(
 	stride, names, pt = model.stride, model.names, model.pt
 	imgsz = check_img_size(imgsz, s=stride)  # check image size
 
-	# Dataloader
-	bs = 1  # batch_size
-	if webcam:
-		view_img = check_imshow()
-		dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
-		bs = len(dataset)
-	elif screenshot:
-		dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
-	else:
-		dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
-	vid_path, vid_writer = [None] * bs, [None] * bs
+    # Dataloader
+    bs = 1  # batch_size
+    if webcam:
+        view_img = check_imshow()
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
+        bs = len(dataset)
+    elif screenshot:
+        dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
+    else:
+        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
+    vid_path, vid_writer = [None] * bs, [None] * bs
 
 	# Run inference
 	model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
