@@ -6,6 +6,7 @@ Usage - sources:
     $ python classify/predict.py --weights yolov5s-cls.pt --source 0                               # webcam
                                                                    img.jpg                         # image
                                                                    vid.mp4                         # video
+                                                                   screen                          # screenshot
                                                                    path/                           # directory
                                                                    'path/*.jpg'                    # glob
                                                                    'https://youtu.be/Zgi9g1ksQHc'  # YouTube
