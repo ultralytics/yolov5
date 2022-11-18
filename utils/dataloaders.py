@@ -470,8 +470,8 @@ class LoadImagesAndLabels(Dataset):
                     with open(p) as t:
                         t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
-                        f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
-                        # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
+                        f += [x.replace('./', parent, 1) if x.startswith('./') else x for x in t]  # to global path
+                        # f += [p.parent / x.lstrip(os.sep) for x in t]  # to global path (pathlib)
                 else:
                     raise FileNotFoundError(f'{prefix}{p} does not exist')
             self.im_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
@@ -869,6 +869,7 @@ class LoadImagesAndLabels(Dataset):
         # img9, labels9 = replicate(img9, labels9)  # replicate
 
         # Augment
+        img9, labels9, segments9 = copy_paste(img9, labels9, segments9, p=self.hyp['copy_paste'])
         img9, labels9 = random_perspective(img9,
                                            labels9,
                                            segments9,
