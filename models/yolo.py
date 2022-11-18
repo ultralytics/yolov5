@@ -272,9 +272,18 @@ class SegmentationModel(DetectionModel):
 
 class ClassificationModel(BaseModel):
     # YOLOv5 classification model
-    def __init__(self, cfg=None, model=None, nc=1000, cutoff=10):  # yaml, model, number of classes, cutoff index
+    def __init__(self, cfg=None, model=None, nc=1000, cutoff=10, ch=3):  # yaml, model, number of classes, cutoff index
         super().__init__()
-        self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
+        if cfg is not None:
+            import yaml  # for torch hub
+            self.yaml_file = Path(cfg).name
+            with open(cfg, encoding='ascii', errors='ignore') as f:
+                self.yaml = yaml.safe_load(f)  # model dict
+            ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
+            self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch],
+                                                task="classification")  # create ClassificationModel
+        else:
+            self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
     def _from_detection_model(self, model, nc=1000, cutoff=10):
         # Create a YOLOv5 classification model from a YOLOv5 detection model
@@ -295,19 +304,35 @@ class ClassificationModel(BaseModel):
         # Create a YOLOv5 classification model from a *.yaml file
         self.model = None
 
+    def _forward_once_class(self, x, visualize=False):
+        for m in self.model:
+            x = m(x)  # run
+            # y.append(x if m.i in self.save else None)  # save output
+            if visualize:
+                feature_visualization(x, m.type, m.i, save_dir=visualize)
+        return x
 
-def parse_model(d, ch):  # model_dict, input_channels(3)
+    def forward(self, x, augment=False, profile=False, visualize=False):
+        return self._forward_once_class(x, visualize)  # single-scale inference, train
+
+
+def parse_model(d, ch, task="detection"):  # model_dict, input_channels(3)
     # Parse a YOLOv5 model.yaml dictionary
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    anchors, nc, gd, gw, act = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('activation')
-    if act:
-        Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
-        LOGGER.info(f"{colorstr('activation:')} {act}")  # print
-    na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
-    no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
-
+    if task == "detection":
+        anchors, nc, gd, gw, act = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('activation')
+        task_model = d['backbone'] + d['head']
+        if act:
+            Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
+            LOGGER.info(f"{colorstr('activation:')} {act}")  # print
+        na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
+        no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
+    else:
+        nc, gd, gw = d['nc'], d['depth_multiple'], d['width_multiple']
+        task_model = d['backbone']
+        no = nc
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
-    for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
+    for i, (f, n, m, args) in enumerate(task_model):  # from, number, module, args
         m = eval(m) if isinstance(m, str) else m  # eval strings
         for j, a in enumerate(args):
             with contextlib.suppress(NameError):
@@ -340,6 +365,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+        elif m is Classify:
+            args = [ch[f], nc]
+            c2 = nc
         else:
             c2 = ch[f]
 
