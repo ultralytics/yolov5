@@ -493,7 +493,7 @@ class LoadImagesAndLabels(Dataset):
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupt, total
         if exists and LOCAL_RANK in {-1, 0}:
-            d = f"Scanning {cache_path} ... {nf} images, {nm + ne} backgrounds, {nc} corrupt"
+            d = f"Scanning {cache_path}... {nf} images, {nm + ne} backgrounds, {nc} corrupt"
             tqdm(None, desc=prefix + d, total=n, initial=n, bar_format=BAR_FORMAT)  # display cache results
             if cache['msgs']:
                 LOGGER.info('\n'.join(cache['msgs']))  # display warnings
@@ -607,7 +607,7 @@ class LoadImagesAndLabels(Dataset):
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
-        desc = f"{prefix}Scanning {path.parent / path.stem} ..."
+        desc = f"{prefix}Scanning {path.parent / path.stem}..."
         with Pool(NUM_THREADS) as pool:
             pbar = tqdm(pool.imap(verify_image_label, zip(self.im_files, self.label_files, repeat(prefix))),
                         desc=desc,
