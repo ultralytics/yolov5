@@ -7,6 +7,7 @@ import contextlib
 import glob
 import inspect
 import logging
+import logging.config
 import math
 import os
 import platform
@@ -111,23 +112,33 @@ def is_writeable(dir, test=False):
         return False
 
 
-def set_logging(name=None, verbose=VERBOSE):
-    # Sets level and returns logger
-    if is_kaggle() or is_colab():
-        for h in logging.root.handlers:
-            logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
+LOGGING_NAME = "yolov5"
+
+
+def set_logging(name=LOGGING_NAME, verbose=True):
+    # sets up logging for the given name
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
     level = logging.INFO if verbose and rank in {-1, 0} else logging.ERROR
-    log = logging.getLogger(name)
-    log.setLevel(level)
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    handler.setLevel(level)
-    log.addHandler(handler)
+    logging.config.dictConfig({
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            name: {
+                "format": "%(message)s"}},
+        "handlers": {
+            name: {
+                "class": "logging.StreamHandler",
+                "formatter": name,
+                "level": level,}},
+        "loggers": {
+            name: {
+                "level": level,
+                "handlers": [name],
+                "propagate": False,}}})
 
 
-set_logging()  # run before defining LOGGER
-LOGGER = logging.getLogger("yolov5")  # define globally (used in train.py, val.py, detect.py, etc.)
+set_logging(LOGGING_NAME)  # run before defining LOGGER
+LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
 if platform.system() == 'Windows':
     for fn in LOGGER.info, LOGGER.warning:
         setattr(LOGGER, fn.__name__, lambda x: fn(emojis(x)))  # emoji safe logging
@@ -482,9 +493,10 @@ def check_dataset(data, autodownload=True):
 
     # Checks
     for k in 'train', 'val', 'names':
-        assert k in data, f"data.yaml '{k}:' field missing ❌"
+        assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
     if isinstance(data['names'], (list, tuple)):  # old array format
         data['names'] = dict(enumerate(data['names']))  # convert to dict
+    assert all(isinstance(k, int) for k in data['names'].keys()), 'data.yaml names keys must be integers, i.e. 2: car'
     data['nc'] = len(data['names'])
 
     # Resolve paths

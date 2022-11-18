@@ -22,7 +22,7 @@ Requirements:
     $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
 
 Usage:
-    $ python utils/benchmarks.py --weights yolov5s.pt --img 640
+    $ python benchmarks.py --weights yolov5s.pt --img 640
 """
 
 import argparse
