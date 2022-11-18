@@ -822,7 +822,7 @@ def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None):
     return boxes
 
 
-def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None):
+def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=False):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
@@ -835,6 +835,9 @@ def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None):
     segments[:, 1] -= pad[1]  # y padding
     segments /= gain
     clip_segments(segments, img0_shape)
+    if normalize:
+        segments[:, 0] /= img0_shape[0]
+        segments[:, 1] /= img0_shape[1]
     return segments
 
 
