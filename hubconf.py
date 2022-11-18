@@ -33,16 +33,21 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from models.common import AutoShape, DetectMultiBackend
     from models.experimental import attempt_load
     from models.yolo import ClassificationModel, DetectionModel, SegmentationModel
-    from utils.downloads import attempt_download
+    from utils.downloads import attempt_download, is_url
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
     from utils.torch_utils import select_device
 
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
-    check_requirements(exclude=('opencv-python', 'tensorboard', 'thop'))
+    check_requirements(exclude=("opencv-python", "tensorboard", "thop"))
     path = Path(name)
-    path = path.with_suffix(".pt") if path.suffix == "" and not path.is_dir() else name  # checkpoint path
-    path = str(path)
+    path = (
+        path.with_suffix(".pt") if path.suffix == "" and not path.is_dir() else path
+    )  # checkpoint path
+    if is_url(name, check=False):
+        path = name
+    else:
+        path = str(path)
     try:
         device = select_device(device)
         if pretrained and channels == 3 and classes == 80:
