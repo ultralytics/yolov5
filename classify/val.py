@@ -36,7 +36,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import create_classification_dataloader
-from utils.general import LOGGER, TQDM_BAR_FORMAT, Profile, check_img_size, check_requirements, colorstr, increment_path, print_args
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_img_size, check_requirements, colorstr,
+                           increment_path, print_args)
 from utils.torch_utils import select_device, smart_inference_mode
 
 
