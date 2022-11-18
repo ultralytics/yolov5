@@ -822,7 +822,7 @@ def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None):
     return boxes
 
 
-def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None):
+def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=False):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
@@ -835,6 +835,9 @@ def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None):
     segments[:, 1] -= pad[1]  # y padding
     segments /= gain
     clip_segments(segments, img0_shape)
+    if normalize:
+        segments[:, 0] /= img0_shape[1]  # width
+        segments[:, 1] /= img0_shape[0]  # height
     return segments
 
 
@@ -850,14 +853,14 @@ def clip_boxes(boxes, shape):
         boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
 
 
-def clip_segments(boxes, shape):
+def clip_segments(segments, shape):
     # Clip segments (xy1,xy2,...) to image shape (height, width)
-    if isinstance(boxes, torch.Tensor):  # faster individually
-        boxes[:, 0].clamp_(0, shape[1])  # x
-        boxes[:, 1].clamp_(0, shape[0])  # y
+    if isinstance(segments, torch.Tensor):  # faster individually
+        segments[:, 0].clamp_(0, shape[1])  # x
+        segments[:, 1].clamp_(0, shape[0])  # y
     else:  # np.array (faster grouped)
-        boxes[:, 0] = boxes[:, 0].clip(0, shape[1])  # x
-        boxes[:, 1] = boxes[:, 1].clip(0, shape[0])  # y
+        segments[:, 0] = segments[:, 0].clip(0, shape[1])  # x
+        segments[:, 1] = segments[:, 1].clip(0, shape[0])  # y
 
 
 def non_max_suppression(
