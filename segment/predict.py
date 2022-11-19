@@ -6,6 +6,7 @@ Usage - sources:
     $ python segment/predict.py --weights yolov5s-seg.pt --source 0                               # webcam
                                                                   img.jpg                         # image
                                                                   vid.mp4                         # video
+                                                                  screen                          # screenshot
                                                                   path/                           # directory
                                                                   'path/*.jpg'                    # glob
                                                                   'https://youtu.be/Zgi9g1ksQHc'  # YouTube
@@ -156,7 +157,7 @@ def run(
                 # Segments
                 if save_txt:
                     segments = reversed(masks2segments(masks))
-                    segments = [scale_segments(im.shape[2:], x, im0.shape).round() for x in segments]
+                    segments = [scale_segments(im.shape[2:], x, im0.shape, normalize=True) for x in segments]
 
                 # Print results
                 for c in det[:, 5].unique():
