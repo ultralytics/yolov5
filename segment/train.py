@@ -46,7 +46,7 @@ from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_status,
+from utils.general import (GIT, LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_status,
                            check_img_size, check_requirements, check_suffix, check_yaml, colorstr, get_latest_run,
                            increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
                            labels_to_image_weights, one_cycle, print_args, print_mutation, strip_optimizer, yaml_save)
@@ -390,6 +390,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     'updates': ema.updates,
                     'optimizer': optimizer.state_dict(),
                     'opt': vars(opt),
+                    'git': GIT,  # {remote, branch, commit} if a git repo
                     'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
@@ -497,12 +498,6 @@ def parse_opt(known=False):
     # Instance Segmentation Args
     parser.add_argument('--mask-ratio', type=int, default=4, help='Downsample the truth masks to saving memory')
     parser.add_argument('--no-overlap', action='store_true', help='Overlap masks train faster at slightly less mAP')
-
-    # Weights & Biases arguments
-    # parser.add_argument('--entity', default=None, help='W&B: Entity')
-    # parser.add_argument('--upload_dataset', nargs='?', const=True, default=False, help='W&B: Upload data, "val" option')
-    # parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
-    # parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
 
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
