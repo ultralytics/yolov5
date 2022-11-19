@@ -155,11 +155,11 @@ jobs:
         run: |
           m=${{ matrix.model }}-cls.pt  # official weights
           b=runs/train-cls/exp/weights/best.pt  # best.pt checkpoint
-          python classify/train.py --imgsz 32 --model $m --data mnist2560 --epochs 1  # train
-          python classify/val.py --imgsz 32 --weights $b --data ../datasets/mnist2560  # val
-          python classify/predict.py --imgsz 32 --weights $b --source ../datasets/mnist2560/test/7/60.png  # predict
+          python classify/train.py --imgsz 32 --model $m --data mnist160 --epochs 1  # train
+          python classify/val.py --imgsz 32 --weights $b --data ../datasets/mnist160  # val
+          python classify/predict.py --imgsz 32 --weights $b --source ../datasets/mnist160/test/7/60.png  # predict
           python classify/predict.py --imgsz 32 --weights $m --source data/images/bus.jpg  # predict
-          python export.py --weights $b --img 64 --imgsz 224 --include torchscript  # export
+          python export.py --weights $b --img 64 --include torchscript  # export
           python - <<EOF
           import torch
           for path in '$m', '$b':

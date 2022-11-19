@@ -6,6 +6,7 @@ Usage - sources:
     $ python classify/predict.py --weights yolov5s-cls.pt --source 0                               # webcam
                                                                    img.jpg                         # image
                                                                    vid.mp4                         # video
+                                                                   screen                          # screenshot
                                                                    path/                           # directory
                                                                    'path/*.jpg'                    # glob
                                                                    'https://youtu.be/Zgi9g1ksQHc'  # YouTube
@@ -15,7 +16,7 @@ Usage - formats:
     $ python classify/predict.py --weights yolov5s-cls.pt                 # PyTorch
                                            yolov5s-cls.torchscript        # TorchScript
                                            yolov5s-cls.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                           yolov5s-cls.xml                # OpenVINO
+                                           yolov5s-cls_openvino_model     # OpenVINO
                                            yolov5s-cls.engine             # TensorRT
                                            yolov5s-cls.mlmodel            # CoreML (macOS-only)
                                            yolov5s-cls_saved_model        # TensorFlow SavedModel
@@ -91,7 +92,7 @@ def run(
     # Dataloader
     bs = 1  # batch_size
     if webcam:
-        view_img = check_imshow()
+        view_img = check_imshow(warn=True)
         dataset = LoadStreams(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
         bs = len(dataset)
     elif screenshot:
@@ -196,7 +197,7 @@ def parse_opt():
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[224], help='inference size h,w')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
-    parser.add_argument('--save-txt', action='store_false', help='save results to *.txt')
+    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--visualize', action='store_true', help='visualize features')

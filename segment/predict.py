@@ -6,6 +6,7 @@ Usage - sources:
     $ python segment/predict.py --weights yolov5s-seg.pt --source 0                               # webcam
                                                                   img.jpg                         # image
                                                                   vid.mp4                         # video
+                                                                  screen                          # screenshot
                                                                   path/                           # directory
                                                                   'path/*.jpg'                    # glob
                                                                   'https://youtu.be/Zgi9g1ksQHc'  # YouTube
@@ -15,7 +16,7 @@ Usage - formats:
     $ python segment/predict.py --weights yolov5s-seg.pt                 # PyTorch
                                           yolov5s-seg.torchscript        # TorchScript
                                           yolov5s-seg.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                          yolov5s-seg.xml                # OpenVINO
+                                          yolov5s-seg_openvino_model     # OpenVINO
                                           yolov5s-seg.engine             # TensorRT
                                           yolov5s-seg.mlmodel            # CoreML (macOS-only)
                                           yolov5s-seg_saved_model        # TensorFlow SavedModel
@@ -102,7 +103,7 @@ def run(
     # Dataloader
     bs = 1  # batch_size
     if webcam:
-        view_img = check_imshow()
+        view_img = check_imshow(warn=True)
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
         bs = len(dataset)
     elif screenshot:
@@ -156,7 +157,7 @@ def run(
                 # Segments
                 if save_txt:
                     segments = reversed(masks2segments(masks))
-                    segments = [scale_segments(im.shape[2:], x, im0.shape).round() for x in segments]
+                    segments = [scale_segments(im.shape[2:], x, im0.shape, normalize=True) for x in segments]
 
                 # Print results
                 for c in det[:, 5].unique():

@@ -11,7 +11,7 @@ import yaml
 from tqdm import tqdm
 
 from utils import TryExcept
-from utils.general import LOGGER, colorstr
+from utils.general import LOGGER, TQDM_BAR_FORMAT, colorstr
 
 PREFIX = colorstr('AutoAnchor: ')
 
@@ -26,7 +26,7 @@ def check_anchor_order(m):
         m.anchors[:] = m.anchors.flip(0)
 
 
-@TryExcept(f'{PREFIX}ERROR: ')
+@TryExcept(f'{PREFIX}ERROR')
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
     # Check anchor fit to data, recompute if necessary
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
@@ -153,7 +153,7 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
 
     # Evolve
     f, sh, mp, s = anchor_fitness(k), k.shape, 0.9, 0.1  # fitness, generations, mutation prob, sigma
-    pbar = tqdm(range(gen), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+    pbar = tqdm(range(gen), bar_format=TQDM_BAR_FORMAT)  # progress bar
     for _ in pbar:
         v = np.ones(sh)
         while (v == 1).all():  # mutate until a change occurs (prevent duplicates)
