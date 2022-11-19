@@ -347,7 +347,7 @@ def check_git_status(repo='ultralytics/yolov5', branch='master'):
 
 @WorkingDirectory(ROOT)
 def check_git(path='.'):
-    # YOLOv5 git check, return git directory remote, branch and commit
+    # YOLOv5 git check, return git {remote, branch, commit}
     try:
         repo = git.Repo(path)
         remote = repo.remotes.origin.url.replace('.git', '')  # i.e. 'https://github.com/ultralytics/yolov5'
