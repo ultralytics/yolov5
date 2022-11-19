@@ -246,6 +246,13 @@ class C2(nn.Module):
         return self.cv2(torch.cat((self.m(a), b), 1))
 
 
+class C2x(C2):
+    # Depth-wise convolution
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, kernel, stride, dilation, activation
+        super().__init__(c1, c2, n=1, shortcut=True, g=1, e=0.5)
+        self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=((1, 3), (3, 1)), e=1.0) for _ in range(n)))
+
+
 class ChannelAttention(nn.Module):
     # Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
     def __init__(self, channels: int) -> None:
