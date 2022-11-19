@@ -39,6 +39,8 @@ class V6Detect(nn.Module):
     dynamic = False  # force grid reconstruction
     export = False  # export mode
     shape = None
+    anchors = torch.empty(0)  # init
+    strides = torch.empty(0)  # init
 
     def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
         super().__init__()
@@ -48,8 +50,6 @@ class V6Detect(nn.Module):
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.stride = torch.zeros(self.nl)  # strides computed during build
-        self.anchors = torch.empty(0)  # init
-        self.strides = torch.empty(0)  # init
 
         c2, c3 = max(ch[0] // 4, 16), max(ch[0], self.no - 4)  # channels
         self.cv2 = nn.ModuleList(
