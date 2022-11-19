@@ -46,9 +46,9 @@ from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
-from utils.general import (GIT, LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_status,
-                           check_img_size, check_requirements, check_suffix, check_yaml, colorstr, get_latest_run,
-                           increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
+                           check_git_status, check_img_size, check_requirements, check_suffix, check_yaml, colorstr,
+                           get_latest_run, increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
                            labels_to_image_weights, one_cycle, print_args, print_mutation, strip_optimizer, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import plot_evolve, plot_labels
@@ -62,6 +62,7 @@ from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_devi
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
+GIT_INFO = check_git_info()
 
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
@@ -390,7 +391,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     'updates': ema.updates,
                     'optimizer': optimizer.state_dict(),
                     'opt': vars(opt),
-                    'git': GIT,  # {remote, branch, commit} if a git repo
+                    'git': GIT_INFO,  # {remote, branch, commit} if a git repo
                     'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
