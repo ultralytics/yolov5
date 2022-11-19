@@ -310,7 +310,7 @@ class TFDetect(keras.layers.Layer):
                 y = tf.concat([xy, wh, tf.sigmoid(y[..., 4:5 + self.nc]), y[..., 5 + self.nc:]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
-        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1), x)
+        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1),)
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -333,6 +333,7 @@ class TFSegment(TFDetect):
 
     def call(self, x):
         p = self.proto(x[0])
+        # p = TFUpsample(None, scale_factor=4, mode='nearest')(self.proto(x[0]))  # (optional) full-size protos
         p = tf.transpose(p, [0, 3, 1, 2])  # from shape(1,160,160,32) to shape(1,32,160,160)
         x = self.detect(self, x)
         return (x, p) if self.training else (x[0], p)
@@ -355,8 +356,8 @@ class TFUpsample(keras.layers.Layer):
     # TF version of torch.nn.Upsample()
     def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
         super().__init__()
-        assert scale_factor == 2, "scale_factor must be 2"
-        self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
+        assert scale_factor % 2 == 0, "scale_factor must be multiple of 2"
+        self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * scale_factor, x.shape[2] * scale_factor), mode)
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
         # with default arguments: align_corners=False, half_pixel_centers=False
         # self.upsample = lambda x: tf.raw_ops.ResizeNearestNeighbor(images=x,
@@ -485,7 +486,7 @@ class TFModel:
                                                             iou_thres,
                                                             conf_thres,
                                                             clip_boxes=False)
-            return nms, x[1]
+            return (nms,)
         return x  # output [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes

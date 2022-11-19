@@ -2,13 +2,13 @@
 
 # YOLOv5 with Comet
 
-This guide will cover how to use YOLOv5 with [Comet](https://www.comet.com/site/?ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)
+This guide will cover how to use YOLOv5 with [Comet](https://bit.ly/yolov5-readme-comet)
 
 # About Comet
 
 Comet builds tools that help data scientists, engineers, and team leaders accelerate and optimize machine learning and deep learning models.
 
-Track and visualize model metrics in real time, save your hyperparameters, datasets, and model checkpoints, and visualize your model predictions with [Comet Custom Panels](https://www.comet.com/examples/comet-example-yolov5?shareable=YcwMiJaZSXfcEXpGOHDD12vA1&ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)!
+Track and visualize model metrics in real time, save your hyperparameters, datasets, and model checkpoints, and visualize your model predictions with [Comet Custom Panels](https://bit.ly/yolov5-colab-comet-panels)!
 Comet makes sure you never lose track of your work and makes it easy to share results and collaborate across teams of all sizes!
 
 # Getting Started
@@ -51,7 +51,7 @@ python train.py --img 640 --batch 16 --epochs 5 --data coco128.yaml --weights yo
 
 That's it! Comet will automatically log your hyperparameters, command line arguments, training and valiation metrics. You can visualize and analyze your runs in the Comet UI
 
-<img width="1920" alt="yolo-ui" src="https://user-images.githubusercontent.com/7529846/187608607-ff89c3d5-1b8b-4743-a974-9275301b0524.png">
+<img width="1920" alt="yolo-ui" src="https://user-images.githubusercontent.com/26833433/202851203-164e94e1-2238-46dd-91f8-de020e9d6b41.png">
 
 # Try out an Example!
 Check out an example of a [completed run here](https://www.comet.com/examples/comet-example-yolov5/a0e29e0e9b984e4a822db2a62d0cb357?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=step&ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)

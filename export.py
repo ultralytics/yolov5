@@ -28,7 +28,7 @@ Inference:
     $ python detect.py --weights yolov5s.pt                 # PyTorch
                                  yolov5s.torchscript        # TorchScript
                                  yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                 yolov5s.xml                # OpenVINO
+                                 yolov5s_openvino_model     # OpenVINO
                                  yolov5s.engine             # TensorRT
                                  yolov5s.mlmodel            # CoreML (macOS-only)
                                  yolov5s_saved_model        # TensorFlow SavedModel
@@ -45,9 +45,11 @@ TensorFlow.js:
 """
 
 import argparse
+import contextlib
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -250,11 +252,11 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
     if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
         grid = model.model[-1].anchor_grid
         model.model[-1].anchor_grid = [a[..., :1, :1, :] for a in grid]
-        export_onnx(model, im, file, 12, False, dynamic, simplify)  # opset 12
+        export_onnx(model, im, file, 12, dynamic, simplify)  # opset 12
         model.model[-1].anchor_grid = grid
     else:  # TensorRT >= 8
         check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
-        export_onnx(model, im, file, 12, False, dynamic, simplify)  # opset 12
+        export_onnx(model, im, file, 12, dynamic, simplify)  # opset 12
     onnx = file.with_suffix('.onnx')
 
     LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
@@ -284,7 +286,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
 
     if dynamic:
         if im.shape[0] <= 1:
-            LOGGER.warning(f"{prefix}WARNING ⚠️ --dynamic model requires maximum --batch-size argument")
+            LOGGER.warning(f"{prefix} WARNING ⚠️ --dynamic model requires maximum --batch-size argument")
         profile = builder.create_optimization_profile()
         for inp in inputs:
             profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
@@ -427,8 +429,6 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
 def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     check_requirements('tensorflowjs')
-    import re
-
     import tensorflowjs as tfjs
 
     LOGGER.info(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
@@ -452,6 +452,39 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
+
+
+def add_tflite_metadata(file, metadata, num_outputs):
+    # Add metadata to *.tflite models per https://www.tensorflow.org/lite/models/convert/metadata
+    with contextlib.suppress(ImportError):
+        # check_requirements('tflite_support')
+        from tflite_support import flatbuffers
+        from tflite_support import metadata as _metadata
+        from tflite_support import metadata_schema_py_generated as _metadata_fb
+
+        tmp_file = Path('/tmp/meta.txt')
+        with open(tmp_file, 'w') as meta_f:
+            meta_f.write(str(metadata))
+
+        model_meta = _metadata_fb.ModelMetadataT()
+        label_file = _metadata_fb.AssociatedFileT()
+        label_file.name = tmp_file.name
+        model_meta.associatedFiles = [label_file]
+
+        subgraph = _metadata_fb.SubGraphMetadataT()
+        subgraph.inputTensorMetadata = [_metadata_fb.TensorMetadataT()]
+        subgraph.outputTensorMetadata = [_metadata_fb.TensorMetadataT()] * num_outputs
+        model_meta.subgraphMetadata = [subgraph]
+
+        b = flatbuffers.Builder(0)
+        b.Finish(model_meta.Pack(b), _metadata.MetadataPopulator.METADATA_FILE_IDENTIFIER)
+        metadata_buf = b.Output()
+
+        populator = _metadata.MetadataPopulator.with_model_file(file)
+        populator.load_metadata_buffer(metadata_buf)
+        populator.load_associated_files([str(tmp_file)])
+        populator.populate()
+        tmp_file.unlink()
 
 
 @smart_inference_mode()
@@ -534,8 +567,6 @@ def run(
     if coreml:  # CoreML
         f[4], _ = export_coreml(model, im, file, int8, half)
     if any((saved_model, pb, tflite, edgetpu, tfjs)):  # TensorFlow formats
-        if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
-            check_requirements('flatbuffers==1.12')  # required before `import tensorflow`
         assert not tflite or not tfjs, 'TFLite and TF.js models must be exported separately, please pass only one type.'
         assert not isinstance(model, ClassificationModel), 'ClassificationModel export to TF formats not yet supported.'
         f[5], s_model = export_saved_model(model.cpu(),
@@ -553,8 +584,9 @@ def run(
             f[6], _ = export_pb(s_model, file)
         if tflite or edgetpu:
             f[7], _ = export_tflite(s_model, im, file, int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
-        if edgetpu:
-            f[8], _ = export_edgetpu(file)
+            if edgetpu:
+                f[8], _ = export_edgetpu(file)
+            add_tflite_metadata(f[8] or f[7], metadata, num_outputs=len(s_model.outputs))
         if tfjs:
             f[9], _ = export_tfjs(file)
     if paddle:  # PaddlePaddle
@@ -563,12 +595,16 @@ def run(
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
+        cls, det, seg = (isinstance(model, x) for x in (ClassificationModel, DetectionModel, SegmentationModel))  # type
+        dir = Path('segment' if seg else 'classify' if cls else '')
         h = '--half' if half else ''  # --half FP16 inference arg
+        s = "# WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference" if cls else \
+            "# WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference" if seg else ''
         LOGGER.info(f'\nExport complete ({time.time() - t:.1f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                    f"\nDetect:          python detect.py --weights {f[-1]} {h}"
-                    f"\nValidate:        python val.py --weights {f[-1]} {h}"
-                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
+                    f"\nDetect:          python {dir / ('detect.py' if det else 'predict.py')} --weights {f[-1]} {h}"
+                    f"\nValidate:        python {dir / 'val.py'} --weights {f[-1]} {h}"
+                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')  {s}"
                     f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
 
@@ -596,10 +632,11 @@ def parse_opt():
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
-    parser.add_argument('--include',
-                        nargs='+',
-                        default=['torchscript'],
-                        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+    parser.add_argument(
+        '--include',
+        nargs='+',
+        default=['torchscript'],
+        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt
