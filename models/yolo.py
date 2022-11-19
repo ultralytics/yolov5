@@ -48,8 +48,8 @@ class V6Detect(nn.Module):
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.stride = torch.zeros(self.nl)  # strides computed during build
-        self.anchors = nn.Parameter()  # init anchors
-        self.strides = nn.Parameter()  # init strides
+        self.anchors = torch.empty(0)  # init
+        self.strides = torch.empty(0)  # init
 
         c2, c3 = max(ch[0] // 4, 16), max(ch[0], self.no - 4)  # channels
         self.cv2 = nn.ModuleList(
@@ -59,14 +59,14 @@ class V6Detect(nn.Module):
         self.dfl = DFL(self.reg_max)
 
     def forward(self, x):
-        shape = x[0].shape
+        shape = x[0].shape  # BCHW
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
         box, cls = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2).split((self.reg_max * 4, self.nc), 1)
         if self.training:
             return x, box, cls
         elif self.dynamic or self.shape != shape:
-            self.anchors, self.strides = (nn.Parameter(x.transpose(0, 1)) for x in make_anchors(x, self.stride, 0.5))
+            self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
             self.shape = shape
 
         dbox = dist2bbox(self.dfl(box), self.anchors.unsqueeze(0), xywh=True, dim=1) * self.strides
@@ -219,6 +219,8 @@ class BaseModel(nn.Module):
                 setattr(m, k, list(map(fn, x))) if isinstance(x, (list, tuple)) else setattr(m, k, fn(x))
         elif isinstance(m, V6Detect):
             m.stride = fn(m.stride)
+            m.anchors = fn(m.anchors)
+            m.strides = fn(m.strides)
             # m.grid = list(map(fn, m.grid))
         return self
 
