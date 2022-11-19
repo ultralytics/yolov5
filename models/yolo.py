@@ -26,7 +26,7 @@ from utils.general import LOGGER, check_version, check_yaml, make_divisible, pri
 from utils.plots import feature_visualization
 from utils.torch_utils import (fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, select_device,
                                time_sync)
-from utils.tal.anchor_generator import generate_anchors, dist2bbox
+from utils.tal.anchor_generator import make_anchors, dist2bbox
 
 try:
     import thop  # for FLOPs computation
@@ -38,7 +38,7 @@ class V6Detect(nn.Module):
     # YOLOv5 Detect head for detection models
     dynamic = False  # force grid reconstruction
     export = False  # export mode
-    shape = (0, 0, 0, 0)
+    shape = None
 
     def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
         super().__init__()
@@ -59,15 +59,15 @@ class V6Detect(nn.Module):
         self.dfl = DFL(self.reg_max)
 
     def forward(self, x):
-        b = x[0].shape[0]
+        shape = x[0].shape
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
-        box, cls = torch.cat([xi.view(b, self.no, -1) for xi in x], 2).split((self.reg_max * 4, self.nc), 1)
+        box, cls = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2).split((self.reg_max * 4, self.nc), 1)
         if self.training:
             return x, box, cls
-        elif self.dynamic or self.shape[2:4] != x[0].shape[2:4]:
-            self.anchors, self.strides = (x.transpose(0, 1) for x in generate_anchors(x, self.stride, 0.5))
-            self.shape = x[0].shape
+        elif self.dynamic or self.shape != shape:
+            self.anchors, self.strides = (nn.Parameter(x.transpose(0, 1)) for x in make_anchors(x, self.stride, 0.5))
+            self.shape = shape
 
         dbox = dist2bbox(self.dfl(box), self.anchors.unsqueeze(0), xywh=True, dim=1) * self.strides
         y = torch.cat((dbox, cls.sigmoid()), 1)

@@ -5,7 +5,7 @@ from utils.general import check_version
 TORCH_1_10 = check_version(torch.__version__, '1.10.0')
 
 
-def generate_anchors(feats, strides, grid_cell_offset=0.5):
+def make_anchors(feats, strides, grid_cell_offset=0.5):
     """Generate anchors from features."""
     anchor_points, stride_tensor = [], []
     assert feats is not None

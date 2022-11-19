@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 from utils.general import xywh2xyxy
 from utils.metrics import bbox_iou
-from utils.tal.anchor_generator import dist2bbox, generate_anchors, bbox2dist
+from utils.tal.anchor_generator import dist2bbox, make_anchors, bbox2dist
 from utils.tal.assigner import TaskAlignedAssigner
 from utils.torch_utils import de_parallel
 
@@ -174,7 +174,7 @@ class ComputeLoss:
         dtype = pred_scores.dtype
         batch_size, grid_size = pred_scores.shape[:2]
         imgsz = torch.tensor(feats[0].shape[2:], device=self.device, dtype=dtype) * self.stride[0]  # image size (h,w)
-        anchor_points, stride_tensor = generate_anchors(feats, self.stride, 0.5)
+        anchor_points, stride_tensor = make_anchors(feats, self.stride, 0.5)
 
         # targets
         targets = self.preprocess(targets, batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
