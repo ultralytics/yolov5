@@ -13,7 +13,6 @@ import os
 import platform
 import random
 import re
-import shutil
 import signal
 import sys
 import time
@@ -29,7 +28,6 @@ from typing import Optional
 from zipfile import ZipFile, is_zipfile
 
 import cv2
-import git
 import IPython
 import numpy as np
 import pandas as pd
@@ -346,8 +344,10 @@ def check_git_status(repo='ultralytics/yolov5', branch='master'):
 
 
 @WorkingDirectory(ROOT)
-def check_git(path='.'):
-    # YOLOv5 git check, return git {remote, branch, commit}
+def check_git_info(path='.'):
+    # YOLOv5 git info check, return {remote, branch, commit}
+    check_requirements('gitpython')
+    import git
     try:
         repo = git.Repo(path)
         remote = repo.remotes.origin.url.replace('.git', '')  # i.e. 'https://github.com/ultralytics/yolov5'
@@ -1138,4 +1138,3 @@ def imshow(path, im):
 cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
 
 # Variables ------------------------------------------------------------------------------------------------------------
-GIT = check_git()  # repo, branch, commit
