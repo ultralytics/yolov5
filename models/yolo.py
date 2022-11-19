@@ -38,6 +38,7 @@ class V6Detect(nn.Module):
     # YOLOv5 Detect head for detection models
     dynamic = False  # force grid reconstruction
     export = False  # export mode
+    shape = (0, 0, 0, 0)
 
     def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
         super().__init__()
@@ -47,6 +48,8 @@ class V6Detect(nn.Module):
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.stride = torch.zeros(self.nl)  # strides computed during build
+        self.anchors = nn.Parameter()  # init anchors
+        self.strides = nn.Parameter()  # init strides
 
         c2, c3 = max(ch[0] // 4, 16), max(ch[0], self.no - 4)  # channels
         self.cv2 = nn.ModuleList(
@@ -62,11 +65,13 @@ class V6Detect(nn.Module):
         box, cls = torch.cat([xi.view(b, self.no, -1) for xi in x], 2).split((self.reg_max * 4, self.nc), 1)
         if self.training:
             return x, box, cls
+        elif self.dynamic or self.shape[2:4] != x[0].shape[2:4]:
+            self.anchors, self.strides = (x.transpose(0, 1) for x in generate_anchors(x, self.stride, 0.5))
+            self.shape = x[0].shape
 
-        anchors, strides = generate_anchors(x, self.stride, 0.5)
-        dbox = dist2bbox(self.dfl(box), anchors.T.unsqueeze(0), xywh=True, dim=1) * strides.T
+        dbox = dist2bbox(self.dfl(box), self.anchors.unsqueeze(0), xywh=True, dim=1) * self.strides
         y = torch.cat((dbox, cls.sigmoid()), 1)
-        return y if self.export else y, (x, box, cls)
+        return y if self.export else (y, (x, box, cls))
 
     def bias_init(self):
         # Initialize Detect() biases, WARNING: requires stride availability
