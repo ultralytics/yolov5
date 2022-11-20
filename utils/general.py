@@ -13,7 +13,6 @@ import os
 import platform
 import random
 import re
-import shutil
 import signal
 import sys
 import time
@@ -50,6 +49,7 @@ NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiproces
 DATASETS_DIR = Path(os.getenv('YOLOv5_DATASETS_DIR', ROOT.parent / 'datasets'))  # global datasets directory
 AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
+TQDM_BAR_FORMAT = '{l_bar}{bar:10}| {n_fmt}/{total_fmt} {elapsed}'  # tqdm bar format
 FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf
 
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -341,6 +341,24 @@ def check_git_status(repo='ultralytics/yolov5', branch='master'):
     else:
         s += f'up to date with {url} ✅'
     LOGGER.info(s)
+
+
+@WorkingDirectory(ROOT)
+def check_git_info(path='.'):
+    # YOLOv5 git info check, return {remote, branch, commit}
+    check_requirements('gitpython')
+    import git
+    try:
+        repo = git.Repo(path)
+        remote = repo.remotes.origin.url.replace('.git', '')  # i.e. 'https://github.com/ultralytics/yolov5'
+        commit = repo.head.commit.hexsha  # i.e. '3134699c73af83aac2a481435550b968d5792c0d'
+        try:
+            branch = repo.active_branch.name  # i.e. 'main'
+        except TypeError:  # not on any branch
+            branch = None  # i.e. 'detached HEAD' state
+        return {'remote': remote, 'branch': branch, 'commit': commit}
+    except git.exc.InvalidGitRepositoryError:  # path is not a git dir
+        return {'remote': None, 'branch': None, 'commit': None}
 
 
 def check_python(minimum='3.7.0'):
@@ -1120,4 +1138,3 @@ def imshow(path, im):
 cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
 
 # Variables ------------------------------------------------------------------------------------------------------------
-NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
