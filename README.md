@@ -240,6 +240,74 @@ YOLOv5 has been designed to be super easy to get started and simple to learn. We
 
 </details>
 
+
+
+## <div align="center">Segmentation ⭐ NEW</div>
+
+YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases) brings support for realtime instance segmentation model training, validation, prediction and export! We've made training segmentation models super simple. Click below to get started.
+
+<details>
+  <summary>Segmentation Checkpoints (click to expand)</summary>
+
+<br>
+
+We trained YOLOv5 segmentations models on COCO for 300 epochs at image size 640 using A100 GPUs. We exported all models to ONNX FP32 for CPU speed tests and to TensorRT FP16 for GPU speed tests. We ran all speed tests on Google [Colab Pro](https://colab.research.google.com/signup) notebooks for easy reproducibility.
+
+| Model                                                                                              | size<br><sup>(pixels) | mAP50-95<br><sup>box | mAP50-95<br><sup>mask | Train time<br><sup>300 epochs<br>A100 (hours) | Speed<br><sup>ONNX-CPU<br>(ms) | Speed<br><sup>TensorRT-A100<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@640 (B) |
+|----------------------------------------------------------------------------------------------------|-----------------------|----------------------|-----------------------|-----------------------------------------------|--------------------------------|-------------------------------------|--------------------|------------------------|
+| [YOLOv5n-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5n-seg.pt)         | 640                   | 27.6                 | 23.4                  | 80:17                                         | **62.7**                       | **1.2**                             | **2.0**            | **7.1**                |
+| [YOLOv5s-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5s-seg.pt)         | 640                   | 37.6                 | 31.7                  | 88:16                                         | 173.3                          | 1.4                                 | 7.6                | 26.4                   |
+| [YOLOv5m-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5m-seg.pt)         | 640                   | 45.0                 | 37.1                  | 108:36                                        | 427.0                          | 2.2                                 | 22.0               | 70.8                   |
+| [YOLOv5l-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5l-seg.pt)         | 640                   | 49.0                 | 39.9                  | 66:43 (2x)                                    | 857.4                          | 2.9                                 | 47.9               | 147.7                  |
+| [YOLOv5x-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5x-seg.pt)         | 640                   | **50.7**             | **41.4**              | 62:56 (3x)                                    | 1579.2                         | 4.5                                 | 88.8               | 265.7                  |
+
+- All checkpoints are trained to 300 epochs with SGD optimizer with `lr0=0.01` and `weight_decay=5e-5` at image size 640 and all default settings.<br>Runs logged to https://wandb.ai/glenn-jocher/YOLOv5_v70_official
+- **Accuracy** values are for single-model single-scale on COCO dataset.<br>Reproduce by `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt`
+- **Speed** averaged over 100 inference images using a [Colab Pro](https://colab.research.google.com/signup) A100 High-RAM instance. Values indicate inference speed only (NMS adds about 1ms per image). <br>Reproduce by `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt --batch 1`
+- **Export** to ONNX at FP32 and TensorRT at FP16 done with `export.py`. <br>Reproduce by `python export.py --weights yolov5s-seg.pt --include engine --device 0 --half`
+
+</details>
+
+<details>
+  <summary>Segmentation Usage Examples (click to expand)</summary>
+
+### Train
+YOLOv5 segmentation training supports auto-download COCO128-seg segmentation dataset with `--data coco128-seg.yaml` argument and manual download of COCO-segments dataset with `bash data/scripts/get_coco.sh --train --val --segments` and then `python train.py --data coco.yaml`.
+
+```bash
+# Single-GPU
+python segment/train.py --model yolov5s-seg.pt --data coco128-seg.yaml --epochs 5 --img 640
+
+# Multi-GPU DDP
+python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train.py --model yolov5s-seg.pt --data coco128-seg.yaml --epochs 5 --img 640 --device 0,1,2,3
+```
+
+### Val
+Validate YOLOv5m-seg accuracy on ImageNet-1k dataset:
+```bash
+bash data/scripts/get_coco.sh --val --segments  # download COCO val segments split (780MB, 5000 images)
+python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # validate
+```
+
+### Predict
+Use pretrained YOLOv5s-seg.pt to predict bus.jpg:
+```bash
+python segment/predict.py --weights yolov5s-seg.pt --data data/images/bus.jpg
+```
+```python
+model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5s-seg.pt')  # load from PyTorch Hub (WARNING: inference not yet supported)
+```
+
+### Export
+Export YOLOv5s-seg model to ONNX and TensorRT:
+```bash
+python export.py --weights yolov5s-seg.pt --include onnx engine --img 640 --device 0
+```
+
+</details>
+
+
+
 ## <div align="center">Classification ⭐ NEW</div>
 
 YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) brings support for classification model training, validation, prediction and export! We've made training classifier models super simple. Click below to get started.
