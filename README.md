@@ -244,7 +244,7 @@ YOLOv5 has been designed to be super easy to get started and simple to learn. We
 
 ## <div align="center">Segmentation ⭐ NEW</div>
 
-YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases) brings support for realtime instance segmentation model training, validation, prediction and export! We've made training segmentation models super simple. Click below to get started.
+In YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases) we introduced SOTA realtime instance segmentation models for the first time. Our models are super simple to train, validate and deploy. See full details in our [Release Notes](https://github.com/ultralytics/yolov5/releases/v7.0) and visit our [YOLOv5 Segmentation Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb) for quickstart tutorials.
 
 <details>
   <summary>Segmentation Checkpoints (click to expand)</summary>
@@ -310,7 +310,7 @@ python export.py --weights yolov5s-seg.pt --include onnx engine --img 640 --devi
 
 ## <div align="center">Classification ⭐ NEW</div>
 
-YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) brings support for classification model training, validation, prediction and export! We've made training classifier models super simple. Click below to get started.
+YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) brings support for classification model training, validation and deployment! See full details in our [Release Notes](https://github.com/ultralytics/yolov5/releases/v6.2) and visit our [YOLOv5 Classification Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/classify/tutorial.ipynb) for quickstart tutorials.
 
 <details>
   <summary>Classification Checkpoints (click to expand)</summary>
