@@ -247,7 +247,7 @@ YOLOv5 has been designed to be super easy to get started and simple to learn. We
 Our new YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases/v7.0) instance segmentation models are the fastest and most accurate in the world, beating all current [SOTA benchmarks](https://paperswithcode.com/sota/real-time-instance-segmentation-on-mscoco). We've made them super simple to train, validate and deploy. See full details in our [Release Notes](https://github.com/ultralytics/yolov5/releases/v7.0) and visit our [YOLOv5 Segmentation Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb) for quickstart tutorials.
 
 <details>
-  <summary>Segmentation Checkpoints (click to expand)</summary>
+  <summary>Segmentation Checkpoints</summary>
 
 <br>
 
@@ -269,7 +269,7 @@ We trained YOLOv5 segmentations models on COCO for 300 epochs at image size 640 
 </details>
 
 <details>
-  <summary>Segmentation Usage Examples (click to expand)</summary>
+  <summary>Segmentation Usage Examples &nbsp;<a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/segment/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></summary>
 
 ### Train
 YOLOv5 segmentation training supports auto-download COCO128-seg segmentation dataset with `--data coco128-seg.yaml` argument and manual download of COCO-segments dataset with `bash data/scripts/get_coco.sh --train --val --segments` and then `python train.py --data coco.yaml`.
@@ -316,7 +316,7 @@ python export.py --weights yolov5s-seg.pt --include onnx engine --img 640 --devi
 YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) brings support for classification model training, validation and deployment! See full details in our [Release Notes](https://github.com/ultralytics/yolov5/releases/v6.2) and visit our [YOLOv5 Classification Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/classify/tutorial.ipynb) for quickstart tutorials.
 
 <details>
-  <summary>Classification Checkpoints (click to expand)</summary>
+  <summary>Classification Checkpoints</summary>
 
 <br>
 
@@ -351,7 +351,7 @@ We trained YOLOv5-cls classification models on ImageNet for 90 epochs using a 4x
 </details>
 
 <details>
-  <summary>Classification Usage Examples (click to expand)</summary>
+  <summary>Classification Usage Examples &nbsp;<a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/classify/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></summary>
 
 ### Train
 YOLOv5 classification training supports auto-download of MNIST, Fashion-MNIST, CIFAR10, CIFAR100, Imagenette, Imagewoof, and ImageNet datasets with the `--data` argument. To start training on MNIST for example use `--data mnist`.
