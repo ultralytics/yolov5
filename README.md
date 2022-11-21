@@ -290,13 +290,16 @@ python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # val
 ```
 
 ### Predict
-Use pretrained YOLOv5s-seg.pt to predict bus.jpg:
+Use pretrained YOLOv5m-seg.pt to predict bus.jpg:
 ```bash
-python segment/predict.py --weights yolov5s-seg.pt --data data/images/bus.jpg
+python segment/predict.py --weights yolov5m-seg.pt --data data/images/bus.jpg
 ```
 ```python
-model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5s-seg.pt')  # load from PyTorch Hub (WARNING: inference not yet supported)
+model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5m-seg.pt')  # load from PyTorch Hub (WARNING: inference not yet supported)
 ```
+
+![zidane](https://user-images.githubusercontent.com/26833433/203113421-decef4c4-183d-4a0a-a6c2-6435b33bc5d3.jpg) | ![bus](https://user-images.githubusercontent.com/26833433/203113416-11fe0025-69f7-4874-a0a6-65d0bfe2999a.jpg)
+--- |---
 
 ### Export
 Export YOLOv5s-seg model to ONNX and TensorRT:
