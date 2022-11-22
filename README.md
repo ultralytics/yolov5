@@ -3,7 +3,7 @@
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
       <img width="850" src="https://raw.githubusercontent.com/ultralytics/assets/master/yolov5/v70/splash.png"></a>
   </p>
-
+  
   English | [简体中文](.github/README_cn.md)
   <br>
   <div>
@@ -243,6 +243,11 @@ YOLOv5 has been designed to be super easy to get started and simple to learn. We
 
 
 ## <div align="center">Segmentation ⭐ NEW</div>
+
+<div align="center">
+<a align="center" href="https://ultralytics.com/yolov5" target="_blank">
+<img width="800" src="https://user-images.githubusercontent.com/26833433/203348073-9b85607b-03e2-48e1-a6ba-fe1c1c31749c.png"></a>
+</div>
 
 Our new YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases/v7.0) instance segmentation models are the fastest and most accurate in the world, beating all current [SOTA benchmarks](https://paperswithcode.com/sota/real-time-instance-segmentation-on-mscoco). We've made them super simple to train, validate and deploy. See full details in our [Release Notes](https://github.com/ultralytics/yolov5/releases/v7.0) and visit our [YOLOv5 Segmentation Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb) for quickstart tutorials.
 
