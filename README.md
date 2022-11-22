@@ -3,7 +3,7 @@
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
       <img width="850" src="https://raw.githubusercontent.com/ultralytics/assets/master/yolov5/v70/splash.png"></a>
   </p>
-  
+
   English | [简体中文](.github/README_cn.md)
   <br>
   <div>
