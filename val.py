@@ -23,6 +23,7 @@ import argparse
 import json
 import os
 import sys
+import csvwriter
 from pathlib import Path
 
 import numpy as np
@@ -113,6 +114,7 @@ def run(
         save_hybrid=False,  # save label+prediction hybrid results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_json=False,  # save a COCO-JSON results file
+        save_metrics=False, # save table of metrics to csv file
         project=ROOT / 'runs/val',  # save to project/name
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
@@ -276,7 +278,13 @@ def run(
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
     nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
-
+    
+    # save metrics to csv file for easier analysis
+    if save_metrics:
+        metrics_for_txt = []
+        metrics_for_txt.append(['Name', 'Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95'])
+        metrics_for_txt.append([name, 'all', seen, nt.sum(), mp, mr, map50, map])
+    
     # Print results
     pf = '%22s' + '%11i' * 2 + '%11.3g' * 4  # print format
     LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
@@ -287,6 +295,19 @@ def run(
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
             LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            if save_metrics:
+                metrics_for_txt.append([name, names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]])
+    
+    # save metrics to txt
+    if save_metrics:
+        import csv
+        metrics_output_path = os.path.join(save_dir, "metrics.csv")
+        with open(metrics_output_path, "w") as f:
+            writer = csv.writer(f)
+            for class_metric_list in metrics_for_txt:
+                writer.writerow(class_metric_list)
+        
+        LOGGER.info(f"Metrics saved to {colorstr('bold', metrics_output_path)}")
 
     # Print speeds
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
@@ -355,6 +376,7 @@ def parse_opt():
     parser.add_argument('--save-hybrid', action='store_true', help='save label+prediction hybrid results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-json', action='store_true', help='save a COCO-JSON results file')
+    parser.add_argument('--save-metrics', action='store_true', help='save all metrics to csv')
     parser.add_argument('--project', default=ROOT / 'runs/val', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
