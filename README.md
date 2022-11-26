@@ -89,14 +89,14 @@ YOLOv5 segmentation training supports auto-download COCO128-seg segmentation dat
 
 ```bash
 # Single-GPU
-python segment/train.py --model yolov5s-seg.pt --data coco128-seg.yaml --epochs 5 --img 640
+python segment/train.py --data coco128-seg.yaml --weights yolov5s-seg.pt --img 640
 
 # Multi-GPU DDP
-python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train.py --model yolov5s-seg.pt --data coco128-seg.yaml --epochs 5 --img 640 --device 0,1,2,3
+python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train.py --data coco128-seg.yaml --weights yolov5s-seg.pt --img 640 --device 0,1,2,3
 ```
 
 ### Val
-Validate YOLOv5m-seg accuracy on ImageNet-1k dataset:
+Validate YOLOv5s-seg mask mAP on COCO dataset:
 ```bash
 bash data/scripts/get_coco.sh --val --segments  # download COCO val segments split (780MB, 5000 images)
 python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # validate
