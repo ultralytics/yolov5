@@ -54,7 +54,7 @@ from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, ch
                            yaml_save)
 from utils.loggers import Loggers
 from utils.loggers.comet.comet_utils import check_comet_resume
-from utils.loss import ComputeLoss
+from utils.loss_tal import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve
 from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
@@ -82,6 +82,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         with open(hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
     LOGGER.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
+    hyp['anchor_t'] = 5.0
     opt.hyp = hyp.copy()  # for saving hyps to checkpoints
 
     # Save run settings
@@ -134,7 +135,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # Freeze
     freeze = [f'model.{x}.' for x in (freeze if len(freeze) > 1 else range(freeze[0]))]  # layers to freeze
     for k, v in model.named_parameters():
-        v.requires_grad = True  # train all layers
+        # v.requires_grad = True  # train all layers TODO: uncomment this line as in master
         # v.register_hook(lambda x: torch.nan_to_num(x))  # NaN to 0 (commented for erratic training results)
         if any(x in k for x in freeze):
             LOGGER.info(f'freezing {k}')
@@ -160,7 +161,18 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         lf = one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
     else:
         lf = lambda x: (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']  # linear
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
+
+    # def lf(x):  # saw
+    #     return (1 - (x % 30) / 30) * (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
+    #
+    # def lf(x):  # triangle start at min
+    #     return 2 * abs(x / 30 - math.floor(x / 30 + 1 / 2)) * (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
+    #
+    # def lf(x):  # triangle start at max
+    #     return 2 * abs(x / 32 + .5 - math.floor(x / 32 + 1)) * (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
+
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+    # from utils.plots import plot_lr_scheduler; plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
@@ -198,7 +210,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               image_weights=opt.image_weights,
                                               quad=opt.quad,
                                               prefix=colorstr('train: '),
-                                              shuffle=True)
+                                              shuffle=True,
+                                              min_items=opt.min_items)
     labels = np.concatenate(dataset.labels, 0)
     mlc = int(labels[:, 0].max())  # max label class
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
@@ -219,8 +232,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        prefix=colorstr('val: '))[0]
 
         if not resume:
-            if not opt.noautoanchor:
-                check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)  # run AutoAnchor
+            # if not opt.noautoanchor:
+            #     check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)  # run AutoAnchor
             model.half().float()  # pre-reduce anchor precision
 
         callbacks.run('on_pretrain_routine_end', labels, names)
@@ -275,7 +288,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         if RANK != -1:
             train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
-        LOGGER.info(('\n' + '%11s' * 7) % ('Epoch', 'GPU_mem', 'box_loss', 'obj_loss', 'cls_loss', 'Instances', 'Size'))
+        LOGGER.info(('\n' + '%11s' * 7) % ('Epoch', 'GPU_mem', 'box_loss', 'cls_loss', 'dfl_loss', 'Instances', 'Size'))
         if RANK in {-1, 0}:
             pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
         optimizer.zero_grad()
@@ -412,7 +425,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         batch_size=batch_size // WORLD_SIZE * 2,
                         imgsz=imgsz,
                         model=attempt_load(f, device).half(),
-                        iou_thres=0.65 if is_coco else 0.60,  # best pycocotools at iou 0.65
                         single_cls=single_cls,
                         dataloader=val_loader,
                         save_dir=save_dir,
@@ -432,8 +444,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
+    # parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
+    # parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
+    parser.add_argument('--weights', type=str, default='', help='initial weights path')
+    parser.add_argument('--cfg', type=str, default='yolov8m-base.yaml', help='model.yaml path')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=100, help='total training epochs')
@@ -466,6 +480,7 @@ def parse_opt(known=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
+    parser.add_argument('--min-items', type=int, default=0, help='Experimental')
 
     # Logger arguments
     parser.add_argument('--entity', default=None, help='Entity')

@@ -16,7 +16,7 @@ cls_pw: 1.0  # cls BCELoss positive_weight
 obj: 0.7  # obj loss gain (scale with pixels)
 obj_pw: 1.0  # obj BCELoss positive_weight
 iou_t: 0.20  # IoU training threshold
-anchor_t: 4.0  # anchor-multiple threshold
+anchor_t: 5.0  # anchor-multiple threshold
 # anchors: 3  # anchors per output layer (0 to ignore)
 fl_gamma: 0.0  # focal loss gamma (efficientDet default gamma=1.5)
 hsv_h: 0.015  # image HSV-Hue augmentation (fraction)
@@ -31,4 +31,4 @@ flipud: 0.0  # image flip up-down (probability)
 fliplr: 0.5  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
 mixup: 0.1  # image mixup (probability)
-copy_paste: 0.1  # segment copy-paste (probability)
+copy_paste: 0.2  # segment copy-paste (probability)

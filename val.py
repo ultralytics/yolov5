@@ -101,7 +101,7 @@ def run(
         batch_size=32,  # batch size
         imgsz=640,  # inference size (pixels)
         conf_thres=0.001,  # confidence threshold
-        iou_thres=0.6,  # NMS IoU threshold
+        iou_thres=0.7,  # NMS IoU threshold
         max_det=300,  # maximum detections per image
         task='val',  # train, val, test, speed or study
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
@@ -118,6 +118,7 @@ def run(
         exist_ok=False,  # existing project/name ok, do not increment
         half=True,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
+        min_items=0,  # Experimental
         model=None,
         dataloader=None,
         save_dir=Path(''),
@@ -179,6 +180,7 @@ def run(
                                        pad=pad,
                                        rect=rect,
                                        workers=workers,
+                                       min_items=opt.min_items,
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
@@ -343,7 +345,7 @@ def parse_opt():
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.7, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=300, help='maximum detections per image')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -360,6 +362,7 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--min-items', type=int, default=0, help='Experimental')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')

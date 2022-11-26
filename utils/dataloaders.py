@@ -114,6 +114,7 @@ def create_dataloader(path,
                       workers=8,
                       image_weights=False,
                       quad=False,
+                      min_items=0,
                       prefix='',
                       shuffle=False):
     if rect and shuffle:
@@ -132,6 +133,7 @@ def create_dataloader(path,
             stride=int(stride),
             pad=pad,
             image_weights=image_weights,
+            min_items=min_items,
             prefix=prefix)
 
     batch_size = min(batch_size, len(dataset))
