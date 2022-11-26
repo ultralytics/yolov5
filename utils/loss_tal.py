@@ -114,7 +114,6 @@ class ComputeLoss:
             BCEcls = FocalLoss(BCEcls, g)
 
         m = de_parallel(model).model[-1]  # Detect() module
-        self.balance = {3: [4.0, 1.0, 0.4]}.get(m.nl, [4.0, 1.0, 0.25, 0.06, 0.02])  # P3-P7
         self.BCEcls = BCEcls
         self.hyp = h
         self.stride = m.stride  # model strides
@@ -127,7 +126,8 @@ class ComputeLoss:
                                             alpha=float(os.getenv('YOLOA', 0.5)),
                                             beta=float(os.getenv('YOLOB', 6.0)))
         self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=use_dfl).to(device)
-        self.proj = torch.arange(m.reg_max).float().to(device)  # / 120.0
+        # self.proj = torch.arange(m.reg_max).float().to(device)  # / 120.0
+        self.proj = torch.arange(1, m.reg_max + 1).float().to(device)  # / 120.0
         self.use_dfl = use_dfl
 
     def preprocess(self, targets, batch_size, scale_tensor):
