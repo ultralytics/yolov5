@@ -86,7 +86,7 @@ class BboxLoss(nn.Module):
         # dfl loss
         if self.use_dfl:
             dist_mask = fg_mask.unsqueeze(-1).repeat([1, 1, (self.reg_max + 1) * 4])
-            pred_dist_pos = torch.masked_select(pred_dist, dist_mask).view(-1, 4, self.reg_max + 1)
+            pred_dist_pos = torch.masked_select(pred_dist, dist_mask).view(-1, self.reg_max + 1)
             target_ltrb = bbox2dist(anchor_points, target_bboxes, self.reg_max)
             target_ltrb_pos = torch.masked_select(target_ltrb, bbox_mask).view(-1, 4)
             loss_dfl = self._df_loss(pred_dist_pos, target_ltrb_pos) * bbox_weight
@@ -97,14 +97,12 @@ class BboxLoss(nn.Module):
         return loss_iou, loss_dfl, iou
 
     def _df_loss(self, pred_dist, target):
-        target_left = target.to(torch.long)
-        target_right = target_left + 1
-        weight_left = target_right.to(torch.float) - target
-        weight_right = 1 - weight_left
-        loss_left = F.cross_entropy(pred_dist.view(-1, self.reg_max + 1), target_left.view(-1), reduction="none").view(
-            target_left.shape) * weight_left
-        loss_right = F.cross_entropy(pred_dist.view(-1, self.reg_max + 1), target_right.view(-1),
-                                     reduction="none").view(target_left.shape) * weight_right
+        tl = target.to(torch.long)
+        tr = tl + 1
+        wl = tr - target
+        wr = 1 - wl
+        loss_left = F.cross_entropy(pred_dist, tl.view(-1), reduction="none").view(tl.shape) * wl
+        loss_right = F.cross_entropy(pred_dist, tr.view(-1), reduction="none").view(tl.shape) * wr
         return (loss_left + loss_right).mean(-1, keepdim=True)
 
 
