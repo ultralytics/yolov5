@@ -14,6 +14,8 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
+import torchvision.transforms as T
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -203,19 +205,22 @@ class DetectionModel(BaseModel):
         self.info()
         LOGGER.info('')
 
-    def forward(self, x, augment=False, profile=False, visualize=False):
-        if augment:
-            return self._forward_augment(x)  # augmented inference, None
+    def forward(self, x, augment: T.Compose=None, profile=False, visualize=False):
+        if not augment is None:
+            return self._forward_augment(x, augment)  # augmented inference, None
         return self._forward_once(x, profile, visualize)  # single-scale inference, train
 
-    def _forward_augment(self, x):
+    def _forward_augment(self, x, augment):
         img_size = x.shape[-2:]  # height, width
         s = [1, 0.83, 0.67]  # scales
         f = [None, 3, None]  # flips (2-ud, 3-lr)
         y = []  # outputs
         for si, fi in zip(s, f):
             xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
-            yi = self._forward_once(xi)[0]  # forward
+            # print(xi.size())
+            transform_predictions = augment(xi)
+            # print(transform_predictions.size())
+            yi = self._forward_once(transform_predictions)[0]  # forward
             # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
             yi = self._descale_pred(yi, fi, si, img_size)
             y.append(yi)
