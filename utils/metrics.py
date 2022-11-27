@@ -177,7 +177,7 @@ class ConfusionMatrix:
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # predicted background
 
-    def confusion_matrix(self):
+    def matrix(self):
         return self.matrix
 
     def tp_fp(self):
