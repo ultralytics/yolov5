@@ -34,36 +34,6 @@ class VarifocalLoss(nn.Module):
         return loss
 
 
-class FocalLoss(nn.Module):
-    # Wraps focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
-    def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
-        super().__init__()
-        self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
-        self.gamma = gamma
-        self.alpha = alpha
-        self.reduction = loss_fcn.reduction
-        self.loss_fcn.reduction = "none"  # required to apply FL to each element
-
-    def forward(self, pred, true):
-        loss = self.loss_fcn(pred, true)
-        # p_t = torch.exp(-loss)
-        # loss *= self.alpha * (1.000001 - p_t) ** self.gamma  # non-zero power for gradient stability
-
-        # TF implementation https://github.com/tensorflow/addons/blob/v0.7.1/tensorflow_addons/losses/focal_loss.py
-        pred_prob = torch.sigmoid(pred)  # prob from logits
-        p_t = true * pred_prob + (1 - true) * (1 - pred_prob)
-        alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
-        modulating_factor = (1.0 - p_t) ** self.gamma
-        loss *= alpha_factor * modulating_factor
-
-        if self.reduction == "mean":
-            return loss.mean()
-        elif self.reduction == "sum":
-            return loss.sum()
-        else:  # 'none'
-            return loss
-
-
 class BboxLoss(nn.Module):
     def __init__(self, reg_max, use_dfl=False):
         super().__init__()
@@ -71,12 +41,12 @@ class BboxLoss(nn.Module):
         self.use_dfl = use_dfl
 
     def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask):
-        # iou loss
+        # IoU loss
         weight = torch.masked_select(target_scores.sum(-1), fg_mask).unsqueeze(-1)
         iou = bbox_iou(pred_bboxes[fg_mask], target_bboxes[fg_mask], xywh=False, CIoU=True)
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
 
-        # dfl loss
+        # DFL loss
         if self.use_dfl:
             target_ltrb = bbox2dist(anchor_points, target_bboxes, self.reg_max)
             loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight
@@ -84,16 +54,17 @@ class BboxLoss(nn.Module):
         else:
             loss_dfl = torch.tensor(0.0).to(pred_dist.device)
 
-        return loss_iou, loss_dfl, iou
+        return loss_iou, loss_dfl
 
-    def _df_loss(self, pred_dist, target):
+    @staticmethod
+    def _df_loss(pred_dist, target):
+        # Return sum of left and right DFL losses
         tl = target.long()  # target left
         tr = tl + 1  # target right
         wl = tr - target  # weight left
         wr = 1 - wl  # weight right
-        loss_left = F.cross_entropy(pred_dist, tl.view(-1), reduction="none").view(tl.shape) * wl
-        loss_right = F.cross_entropy(pred_dist, tr.view(-1), reduction="none").view(tl.shape) * wr
-        return (loss_left + loss_right).mean(-1, keepdim=True)
+        return (F.cross_entropy(pred_dist, tl.view(-1), reduction="none").view(tl.shape) * wl +
+                F.cross_entropy(pred_dist, tr.view(-1), reduction="none").view(tl.shape) * wr).mean(-1, keepdim=True)
 
 
 class ComputeLoss:
@@ -107,11 +78,6 @@ class ComputeLoss:
 
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
         self.cp, self.cn = smooth_BCE(eps=h.get("label_smoothing", 0.0))  # positive, negative BCE targets
-
-        # Focal loss
-        g = h["fl_gamma"]  # focal loss gamma
-        if g > 0:
-            BCEcls = FocalLoss(BCEcls, g)
 
         m = de_parallel(model).model[-1]  # Detect() module
         self.BCEcls = BCEcls
@@ -188,13 +154,13 @@ class ComputeLoss:
 
         # bbox loss
         if fg_mask.sum():
-            loss[0], loss[2], iou = self.bbox_loss(pred_distri,
-                                                   pred_bboxes,
-                                                   anchor_points,
-                                                   target_bboxes,
-                                                   target_scores,
-                                                   target_scores_sum,
-                                                   fg_mask)
+            loss[0], loss[2] = self.bbox_loss(pred_distri,
+                                              pred_bboxes,
+                                              anchor_points,
+                                              target_bboxes,
+                                              target_scores,
+                                              target_scores_sum,
+                                              fg_mask)
 
         loss[0] *= 7.5  # box gain
         loss[1] *= 0.5  # cls gain
