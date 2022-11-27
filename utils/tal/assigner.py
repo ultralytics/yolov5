@@ -104,7 +104,6 @@ class TaskAlignedAssigner(nn.Module):
         return target_labels, target_bboxes, target_scores, fg_mask.bool()
 
     def get_pos_mask(self, pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points, mask_gt):
-
         # get anchor_align metric, (b, max_num_obj, h*w)
         align_metric, overlaps = self.get_box_metrics(pd_scores, pd_bboxes, gt_labels, gt_bboxes)
         # get in_gts mask, (b, max_num_obj, h*w)
@@ -118,11 +117,9 @@ class TaskAlignedAssigner(nn.Module):
         return mask_pos, align_metric, overlaps
 
     def get_box_metrics(self, pd_scores, pd_bboxes, gt_labels, gt_bboxes):
-
-        gt_labels = gt_labels.to(torch.long)  # b, max_num_obj, 1
         ind = torch.zeros([2, self.bs, self.n_max_boxes], dtype=torch.long)  # 2, b, max_num_obj
         ind[0] = torch.arange(end=self.bs).view(-1, 1).repeat(1, self.n_max_boxes)  # b, max_num_obj
-        ind[1] = gt_labels.squeeze(-1)  # b, max_num_obj
+        ind[1] = gt_labels.long().squeeze(-1)  # b, max_num_obj
         # get the scores of each grid for each gt cls
         bbox_scores = pd_scores[ind[0], :, ind[1]]  # b, max_num_obj, h*w
 

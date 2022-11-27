@@ -87,10 +87,10 @@ class BboxLoss(nn.Module):
         return loss_iou, loss_dfl, iou
 
     def _df_loss(self, pred_dist, target):
-        tl = target.to(torch.long)
-        tr = tl + 1
-        wl = tr - target
-        wr = 1 - wl
+        tl = target.long()  # target left
+        tr = tl + 1  # target right
+        wl = tr - target  # weight left
+        wr = 1 - wl  # weight right
         loss_left = F.cross_entropy(pred_dist, tl.view(-1), reduction="none").view(tl.shape) * wl
         loss_right = F.cross_entropy(pred_dist, tr.view(-1), reduction="none").view(tl.shape) * wr
         return (loss_left + loss_right).mean(-1, keepdim=True)
