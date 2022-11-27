@@ -206,7 +206,7 @@ class DetectionModel(BaseModel):
         LOGGER.info('')
 
     def forward(self, x, augment: T.Compose = None, profile=False, visualize=False):
-        if not(augment is None):
+        if not (augment is None):
             return self._forward_augment(x, augment)  # augmented inference, None
         return self._forward_once(x, profile, visualize)  # single-scale inference, train
 
