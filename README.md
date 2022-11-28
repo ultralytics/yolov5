@@ -432,9 +432,17 @@ We love your input! We want to make contributing to YOLOv5 as easy and transpare
 <!-- SVG image from https://opencollective.com/ultralytics/contributors.svg?width=990 -->
 <a href="https://github.com/ultralytics/yolov5/graphs/contributors"><img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/image-contributors-1280.png" /></a>
 
+## <div align="center">License</div>
+
+Ultralytics YOLO versions come with a GPL 3.0 License for all users by default. If you require additional permissions beyond those available under GPL 3.0 you can request an Ultralytics Enterprise License at https://ultralytics.com/license.
+
+- [GPL 3.0 License](https://github.com/ultralytics/yolov5/blob/master/LICENSE): Ultralytics provides our open-source software free of charge for all use cases under a GPL 3.0 License by default.
+- [Enterprise License](https://ultralytics.com/static/license/Ultralytics-Enterprise-Software-License-Agreement.pdf): Ultralytics also offers an Enterprise License for organizations seeking maximum flexibility in commercial product development. Typical use cases for this license are embedding Ultralytics software and AI models in commercial products and applications.
+
+
 ## <div align="center">Contact</div>
 
-For YOLOv5 bugs and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues). For professional support please [Contact Us](https://ultralytics.com/contact). To request a commercial license please complete the form at [Ultralytics Licensing](https://ultralytics.com/license).
+For YOLOv5 bugs and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues). For professional support please [Contact Us](https://ultralytics.com/contact).
 
 <br>
 <div align="center">
