@@ -1,4 +1,12 @@
 <div align="center">
+
+
+We're excited to announce our very first [Ultralytics Live Session](https://www.youtube.com/@Ultralytics/streams) ✨ at https://youtu.be/KS4weDInJYs on **Tuesday, November 29th** with Victor Sonck of [ClearML](https://cutt.ly/yolov5-readme-clearml). Glenn and Victor will discuss all things experiment tracking and how you can maximize the benefits of the new YOLOv5 + ClearML integration. 🔥
+
+<a align="center" href="https://youtu.be/KS4weDInJYs" target="_blank"><img width="850" src="https://user-images.githubusercontent.com/85292283/203834465-fa67ead1-d87b-4212-8a1d-acfd4d8e7226.png"></a>
+
+
+
   <p>
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
       <img width="850" src="https://raw.githubusercontent.com/ultralytics/assets/master/yolov5/v70/splash.png"></a>
