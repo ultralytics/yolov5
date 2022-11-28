@@ -50,11 +50,11 @@
 </div>
 
 
-## <div align="center">Ultralytics Live - November 29th</div>
+## <div align="center">Ultralytics Live Session</div>
 
 <div align="center">
 
-We're excited to announce our very first [Ultralytics Live](https://www.youtube.com/@Ultralytics/streams) session ✨ streaming live at https://youtu.be/KS4weDInJYs on **Tuesday, November 29th** with [@thepycoder](https://github.com/thepycoder) of [ClearML](https://cutt.ly/yolov5-readme-clearml). Glenn and Victor will discuss all things experiment tracking and how you can maximize the benefits of the new YOLOv5 + ClearML [integration](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml). 🔥
+We're excited to announce our very first [Ultralytics Live Session](https://www.youtube.com/@Ultralytics/streams) ✨ streaming live at https://youtu.be/KS4weDInJYs on **Tuesday, November 29th at 16:00 CET** with [@thepycoder](https://github.com/thepycoder) of [ClearML](https://cutt.ly/yolov5-readme-clearml). Glenn and Victor will discuss all things experiment tracking and how you can maximize the benefits of the new YOLOv5 + ClearML [integration](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml). 🔥
 
 <a align="center" href="https://youtu.be/KS4weDInJYs" target="_blank"><img width="800" src="https://user-images.githubusercontent.com/85292283/203834465-fa67ead1-d87b-4212-8a1d-acfd4d8e7226.png"></a>
 </div>
