@@ -140,8 +140,9 @@ class ComputeLoss:
                     dtype=torch.float32, device='cuda', 
                     requires_grad=False)
             
-            self.reg_loss= torch.jit.trace(reg_loss, (_pxy, _pwh, _tbox_i, _anchors_i)) 
-            del _pxy, _pwh, _tbox_i
+            with torch.autocast(device_type='cuda'):
+                self.reg_loss= torch.jit.trace(reg_loss, (_pxy, _pwh, _tbox_i, _anchors_i)) 
+            del _pxy, _pwh, _tbox_i, _anchors_i
         else:
             self.reg_loss = reg_loss
             self.num_max_pred_pad = 0

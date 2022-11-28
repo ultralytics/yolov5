@@ -321,12 +321,13 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Backward
             scaler.scale(loss).backward()
 
+            # ema update on a seperate stream to run concurrently with fw/bw
             if ema and update_happened:
                 with torch.cuda.stream(ema_stream):
-                    # wait for update to materialize
+                    # wait for previous optim update to materialize
                     ema_stream.wait_event(update_done)
-                    # this should overlap with the backward call above if
-                    # hardware resource allows for it
+                    # this call below should overlap with the forward and
+                    # backward if hardware resource allows for it
                     ema.update(model)
                 update_happened = False
 
@@ -334,6 +335,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             if ni - last_opt_step >= accumulate:
                 scaler.unscale_(optimizer)  # unscale gradients
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)  # clip gradients
+                
+                torch.cuda.current_stream().wait_stream(ema_stream)
                 scaler.step(optimizer)  # optimizer.step
                 scaler.update()
                 # notify ema update to start when optim update is done
