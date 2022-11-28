@@ -30,7 +30,7 @@ try:
 except ImportError:
     thop = None
 try:
-    import apex # for fused optimizer
+    import apex  # for fused optimizer
 except ImportError as er:
     apex = None
 

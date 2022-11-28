@@ -335,7 +335,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             if ni - last_opt_step >= accumulate:
                 scaler.unscale_(optimizer)  # unscale gradients
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)  # clip gradients
-                
+
                 torch.cuda.current_stream().wait_stream(ema_stream)
                 scaler.step(optimizer)  # optimizer.step
                 scaler.update()

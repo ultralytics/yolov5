@@ -14,12 +14,14 @@ def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#iss
     # return positive, negative label smoothing BCE targets
     return 1.0 - 0.5 * eps, 0.5 * eps
 
+
 def reg_loss(pxy, pwh, tbox_i, anchors_i):
     pxy = pxy.sigmoid() * 2 - 0.5
     pwh = (pwh.sigmoid() * 2) ** 2 * anchors_i
     pbox = torch.cat((pxy, pwh), 1)  # predicted box
     iou = bbox_iou(pbox, tbox_i, CIoU=True).squeeze()  # iou(prediction, target)
     return iou
+
 
 class BCEBlurWithLogitsLoss(nn.Module):
     # BCEwithLogitLoss() with reduced missing label effects.
@@ -127,21 +129,16 @@ class ComputeLoss:
         if self.device.type == 'cuda':
 
             self.num_max_pred_pad = 6400
-            _pxy = torch.empty([self.num_max_pred_pad, 2], 
-                    dtype=torch.float16, device='cuda', 
-                    requires_grad=True)
-            _pwh = torch.empty([self.num_max_pred_pad, 2], 
-                    dtype=torch.float32, device='cuda', 
-                    requires_grad=True)
-            _tbox_i = torch.empty([self.num_max_pred_pad, 4], 
-                    dtype=torch.float32, device='cuda', 
-                    requires_grad=False)
-            _anchors_i = torch.empty([self.num_max_pred_pad, 2], 
-                    dtype=torch.float32, device='cuda', 
-                    requires_grad=False)
-            
+            _pxy = torch.empty([self.num_max_pred_pad, 2], dtype=torch.float16, device='cuda', requires_grad=True)
+            _pwh = torch.empty([self.num_max_pred_pad, 2], dtype=torch.float32, device='cuda', requires_grad=True)
+            _tbox_i = torch.empty([self.num_max_pred_pad, 4], dtype=torch.float32, device='cuda', requires_grad=False)
+            _anchors_i = torch.empty([self.num_max_pred_pad, 2],
+                                     dtype=torch.float32,
+                                     device='cuda',
+                                     requires_grad=False)
+
             with torch.autocast(device_type='cuda'):
-                self.reg_loss= torch.jit.trace(reg_loss, (_pxy, _pwh, _tbox_i, _anchors_i)) 
+                self.reg_loss = torch.jit.trace(reg_loss, (_pxy, _pwh, _tbox_i, _anchors_i))
             del _pxy, _pwh, _tbox_i, _anchors_i
         else:
             self.reg_loss = reg_loss
@@ -168,8 +165,8 @@ class ComputeLoss:
                 pad_size = max(0, self.num_max_pred_pad - p_size)
                 pxy = torch.nn.functional.pad(pxy, (0, 0, 0, pad_size))
                 pwh = torch.nn.functional.pad(pwh, (0, 0, 0, pad_size))
-                tbox_i= torch.nn.functional.pad(tbox[i], (0, 0, 0, pad_size))
-                anchors_i= torch.nn.functional.pad(anchors[i], (0, 0, 0, pad_size))
+                tbox_i = torch.nn.functional.pad(tbox[i], (0, 0, 0, pad_size))
+                anchors_i = torch.nn.functional.pad(anchors[i], (0, 0, 0, pad_size))
 
                 # Regression
                 iou = self.reg_loss(pxy, pwh, tbox_i, anchors_i)
@@ -209,7 +206,6 @@ class ComputeLoss:
 
         return (lbox + lobj + lcls) * bs, torch.cat((lbox, lobj, lcls)).detach()
 
-    
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
