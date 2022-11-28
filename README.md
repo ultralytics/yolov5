@@ -432,12 +432,13 @@ We love your input! We want to make contributing to YOLOv5 as easy and transpare
 <!-- SVG image from https://opencollective.com/ultralytics/contributors.svg?width=990 -->
 <a href="https://github.com/ultralytics/yolov5/graphs/contributors"><img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/image-contributors-1280.png" /></a>
 
+
 ## <div align="center">License</div>
 
 YOLOv5 is available under two difference licenses:
 
-- **GPL 3.0 License**: see [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for details.
-- **Enterprise License**: Provides greater flexibility for commercial product development without the requirement to open-source changes. Typical use cases are embedding Ultralytics software and AI models in commercial products and applications. See FAQ and request a license at https://ultralytics.com/license.
+- **GPL-3.0 License**: see [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for details.
+- **Enterprise License**: Provides greater flexibility for commercial product development without the open-source requirements of GPL-3.0. Typical use cases are embedding Ultralytics software and AI models in commercial products and applications. See FAQ and request a license at https://ultralytics.com/license.
 
 
 ## <div align="center">Contact</div>
