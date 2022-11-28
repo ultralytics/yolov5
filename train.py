@@ -65,12 +65,6 @@ RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 GIT_INFO = check_git_info()
 
-try:
-    import apex
-    has_apex = True
-except ImportError as er:
-    has_apex = False
-
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
@@ -137,6 +131,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
     amp = check_amp(model)  # check AMP
 
+    if amp:
+        model = model.to(memory_format=torch.channels_last)
+
     # Freeze
     freeze = [f'model.{x}.' for x in (freeze if len(freeze) > 1 else range(freeze[0]))]  # layers to freeze
     for k, v in model.named_parameters():
@@ -170,6 +167,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
+    if ema:
+        ema_stream = torch.cuda.Stream()
 
     # Resume
     best_fitness, start_epoch = 0.0, 0
@@ -285,6 +284,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         if RANK in {-1, 0}:
             pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
         optimizer.zero_grad()
+        update_happened = False
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             callbacks.run('on_train_batch_start')
             ni = i + nb * epoch  # number integrated batches (since train start)
@@ -321,16 +321,26 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Backward
             scaler.scale(loss).backward()
 
+            if ema and update_happened:
+                with torch.cuda.stream(ema_stream):
+                    # wait for update to materialize
+                    ema_stream.wait_event(update_done)
+                    # this should overlap with the backward call above if
+                    # hardware resource allows for it
+                    ema.update(model)
+                update_happened = False
+
             # Optimize - https://pytorch.org/docs/master/notes/amp_examples.html
             if ni - last_opt_step >= accumulate:
                 scaler.unscale_(optimizer)  # unscale gradients
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)  # clip gradients
                 scaler.step(optimizer)  # optimizer.step
                 scaler.update()
+                # notify ema update to start when optim update is done
+                update_done = torch.cuda.current_stream().record_event()
                 optimizer.zero_grad()
-                if ema:
-                    ema.update(model)
                 last_opt_step = ni
+                update_happened = True
 
             # Log
             if RANK in {-1, 0}:
@@ -405,6 +415,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             break  # must break all DDP ranks
 
         # end epoch ----------------------------------------------------------------------------------------------------
+        if ema and update_happened:
+            ema.update(model)
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in {-1, 0}:
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')

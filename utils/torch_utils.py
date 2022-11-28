@@ -29,6 +29,10 @@ try:
     import thop  # for FLOPs computation
 except ImportError:
     thop = None
+try:
+    import apex # for fused optimizer
+except ImportError as er:
+    apex = None
 
 # Suppress PyTorch warnings
 warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
@@ -257,9 +261,9 @@ def fuse_conv_and_bn(conv, bn):
                           bias=True).requires_grad_(False).to(conv.weight.device)
 
     # Prepare filters
-    w_conv = conv.weight.clone().view(conv.out_channels, -1)
+    w_conv = conv.weight.clone().reshape(conv.out_channels, -1)
     w_bn = torch.diag(bn.weight.div(torch.sqrt(bn.eps + bn.running_var)))
-    fusedconv.weight.copy_(torch.mm(w_bn, w_conv).view(fusedconv.weight.shape))
+    fusedconv.weight.copy_(torch.mm(w_bn, w_conv).reshape(fusedconv.weight.shape))
 
     # Prepare spatial bias
     b_conv = torch.zeros(conv.weight.size(0), device=conv.weight.device) if conv.bias is None else conv.bias
@@ -327,17 +331,29 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, decay=1e-5):
                 g[1].append(p)
             else:
                 g[0].append(p)  # weight (with decay)
+    if apex is not None:
+        if name == 'Adam':
+            optimizer = apex.optimizers.FusedAdam(g[2], lr=lr, betas=(momentum, 0.999), adam_w_mode=False)
+        elif name == 'AdamW':
+            optimizer = apex.optimizers.FusedAdam(g[2], lr=lr, betas=(momentum, 0.999), adam_w_mode=True)
+        elif name == 'RMSProp':
+            optimizer = torch.optim.RMSprop(g[2], lr=lr, momentum=momentum)
+        elif name == 'SGD':
+            optimizer = apex.optimizers.FusedSGD(g[2], lr=lr, momentum=momentum, nesterov=True)
+        else:
+            raise NotImplementedError(f'Optimizer {name} not implemented.')
 
-    if name == 'Adam':
-        optimizer = torch.optim.Adam(g[2], lr=lr, betas=(momentum, 0.999))  # adjust beta1 to momentum
-    elif name == 'AdamW':
-        optimizer = torch.optim.AdamW(g[2], lr=lr, betas=(momentum, 0.999), weight_decay=0.0)
-    elif name == 'RMSProp':
-        optimizer = torch.optim.RMSprop(g[2], lr=lr, momentum=momentum)
-    elif name == 'SGD':
-        optimizer = torch.optim.SGD(g[2], lr=lr, momentum=momentum, nesterov=True)
     else:
-        raise NotImplementedError(f'Optimizer {name} not implemented.')
+        if name == 'Adam':
+            optimizer = torch.optim.Adam(g[2], lr=lr, betas=(momentum, 0.999))  # adjust beta1 to momentum
+        elif name == 'AdamW':
+            optimizer = torch.optim.AdamW(g[2], lr=lr, betas=(momentum, 0.999), weight_decay=0.0)
+        elif name == 'RMSProp':
+            optimizer = torch.optim.RMSprop(g[2], lr=lr, momentum=momentum)
+        elif name == 'SGD':
+            optimizer = torch.optim.SGD(g[2], lr=lr, momentum=momentum, nesterov=True)
+        else:
+            raise NotImplementedError(f'Optimizer {name} not implemented.')
 
     optimizer.add_param_group({'params': g[0], 'weight_decay': decay})  # add g0 with weight_decay
     optimizer.add_param_group({'params': g[1], 'weight_decay': 0.0})  # add g1 (BatchNorm2d weights)
