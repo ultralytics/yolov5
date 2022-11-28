@@ -435,9 +435,9 @@ We love your input! We want to make contributing to YOLOv5 as easy and transpare
 
 ## <div align="center">License</div>
 
-YOLOv5 is available under two difference licenses:
+YOLOv5 is available under two different licenses:
 
-- **GPL-3.0 License**: see [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for details.
+- **GPL-3.0 License**: See [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for details.
 - **Enterprise License**: Provides greater flexibility for commercial product development without the open-source requirements of GPL-3.0. Typical use cases are embedding Ultralytics software and AI models in commercial products and applications. Request an Enterprise License at [Ultralytics Licensing](https://ultralytics.com/license).
 
 
