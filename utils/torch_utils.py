@@ -32,6 +32,7 @@ except ImportError:
 
 # Suppress PyTorch warnings
 warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
+warnings.filterwarnings('ignore', category=UserWarning)
 
 
 def smart_inference_mode(torch_1_9=check_version(torch.__version__, '1.9.0')):
@@ -81,7 +82,7 @@ def reshape_classifier_output(model, n=1000):
         elif nn.Conv2d in types:
             i = types.index(nn.Conv2d)  # nn.Conv2d index
             if m[i].out_channels != n:
-                m[i] = nn.Conv2d(m[i].in_channels, n, m[i].kernel_size, m[i].stride, bias=m[i].bias)
+                m[i] = nn.Conv2d(m[i].in_channels, n, m[i].kernel_size, m[i].stride, bias=m[i].bias is not None)
 
 
 @contextmanager
@@ -319,12 +320,13 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, decay=1e-5):
     g = [], [], []  # optimizer parameter groups
     bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
     for v in model.modules():
-        if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias (no decay)
-            g[2].append(v.bias)
-        if isinstance(v, bn):  # weight (no decay)
-            g[1].append(v.weight)
-        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
-            g[0].append(v.weight)
+        for p_name, p in v.named_parameters(recurse=0):
+            if p_name == 'bias':  # bias (no decay)
+                g[2].append(p)
+            elif p_name == 'weight' and isinstance(v, bn):  # weight (no decay)
+                g[1].append(p)
+            else:
+                g[0].append(p)  # weight (with decay)
 
     if name == 'Adam':
         optimizer = torch.optim.Adam(g[2], lr=lr, betas=(momentum, 0.999))  # adjust beta1 to momentum

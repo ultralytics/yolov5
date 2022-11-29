@@ -4,13 +4,13 @@ Validate a trained YOLOv5 segment model on a segment dataset
 
 Usage:
     $ bash data/scripts/get_coco.sh --val --segments  # download COCO-segments val split (1G, 5000 images)
-    $ python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640-  # validate COCO-segments
+    $ python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # validate COCO-segments
 
 Usage - formats:
     $ python segment/val.py --weights yolov5s-seg.pt                 # PyTorch
                                       yolov5s-seg.torchscript        # TorchScript
                                       yolov5s-seg.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                      yolov5s-seg.xml                # OpenVINO
+                                      yolov5s-seg_openvino_label     # OpenVINO
                                       yolov5s-seg.engine             # TensorRT
                                       yolov5s-seg.mlmodel            # CoreML (macOS-only)
                                       yolov5s-seg_saved_model        # TensorFlow SavedModel
@@ -42,9 +42,9 @@ import torch.nn.functional as F
 from models.common import DetectMultiBackend
 from models.yolo import SegmentationModel
 from utils.callbacks import Callbacks
-from utils.general import (LOGGER, NUM_THREADS, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
-                           coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
-                           scale_boxes, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size,
+                           check_requirements, check_yaml, coco80_to_coco91_class, colorstr, increment_path,
+                           non_max_suppression, print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
 from utils.segment.dataloaders import create_dataloader
@@ -237,7 +237,7 @@ def run(
     loss = torch.zeros(4, device=device)
     jdict, stats = [], []
     # callbacks.run('on_val_start')
-    pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+    pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
     for batch_i, (im, targets, paths, shapes, masks) in enumerate(pbar):
         # callbacks.run('on_val_batch_start')
         with dt[0]:
@@ -444,7 +444,7 @@ def main(opt):
 
     else:
         weights = opt.weights if isinstance(opt.weights, list) else [opt.weights]
-        opt.half = True  # FP16 for fastest results
+        opt.half = torch.cuda.is_available() and opt.device != 'cpu'  # FP16 for fastest results
         if opt.task == 'speed':  # speed benchmarks
             # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
             opt.conf_thres, opt.iou_thres, opt.save_json = 0.25, 0.45, False

@@ -9,7 +9,7 @@ Usage - formats:
     $ python val.py --weights yolov5s.pt                 # PyTorch
                               yolov5s.torchscript        # TorchScript
                               yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                              yolov5s.xml                # OpenVINO
+                              yolov5s_openvino_model     # OpenVINO
                               yolov5s.engine             # TensorRT
                               yolov5s.mlmodel            # CoreML (macOS-only)
                               yolov5s_saved_model        # TensorFlow SavedModel
@@ -38,9 +38,9 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
-from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
-                           coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
-                           scale_boxes, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size, check_requirements,
+                           check_yaml, coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
+                           print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
@@ -193,7 +193,7 @@ def run(
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
     callbacks.run('on_val_start')
-    pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+    pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         callbacks.run('on_val_batch_start')
         with dt[0]:
@@ -380,7 +380,7 @@ def main(opt):
 
     else:
         weights = opt.weights if isinstance(opt.weights, list) else [opt.weights]
-        opt.half = True  # FP16 for fastest results
+        opt.half = torch.cuda.is_available() and opt.device != 'cpu'  # FP16 for fastest results
         if opt.task == 'speed':  # speed benchmarks
             # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
             opt.conf_thres, opt.iou_thres, opt.save_json = 0.25, 0.45, False

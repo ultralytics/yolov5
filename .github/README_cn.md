@@ -1,12 +1,7 @@
 <div align="center">
   <p>
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
-      <img width="850" src="https://github.com/ultralytics/assets/raw/master/yolov5/v62/splash_readme.png"></a>
-    <br><br>
-    <a href="https://play.google.com/store/apps/details?id=com.ultralytics.ultralytics_app" style="text-decoration:none;">
-      <img src="https://raw.githubusercontent.com/ultralytics/assets/master/app/google-play.svg" width="15%" alt="" /></a>&nbsp;
-    <a href="https://apps.apple.com/xk/app/ultralytics/id1583935240" style="text-decoration:none;">
-      <img src="https://raw.githubusercontent.com/ultralytics/assets/master/app/app-store.svg" width="15%" alt="" /></a>
+      <img width="850" src="https://raw.githubusercontent.com/ultralytics/assets/master/yolov5/v70/splash.png"></a>
   </p>
 
   [English](../README.md) | 简体中文
@@ -116,11 +111,11 @@ python detect.py --source 0  # 网络摄像头
 数据集结果. [模型](https://github.com/ultralytics/yolov5/tree/master/models) 和 [数据集](https://github.com/ultralytics/yolov5/tree/master/data) 自动从最新的YOLOv5 [版本](https://github.com/ultralytics/yolov5/releases) 中下载。YOLOv5n/s/m/l/x的训练时间在V100 GPU上是 1/2/4/6/8天（多GPU倍速）. 尽可能使用最大的 `--batch-size`, 或通过 `--batch-size -1` 来实现 YOLOv5 [自动批处理](https://github.com/ultralytics/yolov5/pull/5092). 批量大小显示为 V100-16GB。
 
 ```bash
-python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 128
-                                       yolov5s                                64
-                                       yolov5m                                40
-                                       yolov5l                                24
-                                       yolov5x                                16
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  --batch-size 128
+                                                                 yolov5s                    64
+                                                                 yolov5m                    40
+                                                                 yolov5l                    24
+                                                                 yolov5x                    16
 ```
 
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
@@ -149,47 +144,40 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 
 </details>
 
-## <div align="center">环境</div>
 
-使用经过我们验证的环境，几秒钟就可以开始。点击下面的每个图标了解详情。
+## <div align="center">Integrations</div>
 
-<div align="center">
-    <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-colab-small.png" width="15%"/>
-    </a>
-    <a href="https://www.kaggle.com/ultralytics/yolov5">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-kaggle-small.png" width="15%"/>
-    </a>
-    <a href="https://hub.docker.com/r/ultralytics/yolov5">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-docker-small.png" width="15%"/>
-    </a>
-    <a href="https://github.com/ultralytics/yolov5/wiki/AWS-Quickstart">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-aws-small.png" width="15%"/>
-    </a>
-    <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="15%"/>
-    </a>
-</div>
-
-## <div align="center">如何与第三方集成</div>
+<br>
+<a align="center" href="https://bit.ly/ultralytics_hub" target="_blank">
+<img width="100%" src="https://github.com/ultralytics/assets/raw/master/im/integrations-loop.png"></a>
+<br>
+<br>
 
 <div align="center">
-  <a href="https://bit.ly/yolov5-deci-platform">
-    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-deci.png" width="10%" /></a>
-  <img src="https://github.com/ultralytics/assets/raw/master/social/logo-transparent.png" width="14%" height="0" alt="" />
-  <a href="https://cutt.ly/yolov5-readme-clearml">
-    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-clearml.png" width="10%" /></a>
-  <img src="https://github.com/ultralytics/assets/raw/master/social/logo-transparent.png" width="14%" height="0" alt="" />
   <a href="https://roboflow.com/?ref=ultralytics">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow.png" width="10%" /></a>
-  <img src="https://github.com/ultralytics/assets/raw/master/social/logo-transparent.png" width="14%" height="0" alt="" />
-  <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
-    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb.png" width="10%" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/master/social/logo-transparent.png" width="15%" height="0" alt="" />
+  <a href="https://cutt.ly/yolov5-readme-clearml">
+    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-clearml.png" width="10%" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/master/social/logo-transparent.png" width="15%" height="0" alt="" />
+  <a href="https://bit.ly/yolov5-readme-comet">
+    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-comet.png" width="10%" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/master/social/logo-transparent.png" width="15%" height="0" alt="" />
+  <a href="https://bit.ly/yolov5-deci-platform">
+    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-deci.png" width="10%" /></a>
 </div>
 
-|Deci ⭐ NEW|ClearML ⭐ NEW|Roboflow|Weights & Biases
+|Roboflow|ClearML ⭐ NEW|Comet ⭐ NEW|Deci ⭐ NEW|
 |:-:|:-:|:-:|:-:|
-|在[Deci](https://bit.ly/yolov5-deci-platform)一键自动编译和量化YOLOv5以提高推理性能|使用[ClearML](https://cutt.ly/yolov5-readme-clearml) (开源!)自动追踪，可视化，以及远程训练YOLOv5|标记并将您的自定义数据直接导出到YOLOv5后，用[Roboflow](https://roboflow.com/?ref=ultralytics)进行训练 |通过[Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)自动跟踪以及可视化你在云端所有的YOLOv5训练运行情况
+|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics)|Automatically track, visualize and even remotely train YOLOv5 using [ClearML](https://cutt.ly/yolov5-readme-clearml) (open-source!)|Free forever, [Comet](https://bit.ly/yolov5-readme-comet) lets you save YOLOv5 models, resume training, and interactively visualise and debug predictions|Automatically compile and quantize YOLOv5 for better inference performance in one click at [Deci](https://bit.ly/yolov5-deci-platform)|
+
+
+## <div align="center">Ultralytics HUB</div>
+
+[Ultralytics HUB](https://bit.ly/ultralytics_hub) is our ⭐ **NEW** no-code solution to visualize datasets, train YOLOv5 🚀 models, and deploy to the real world in a seamless experience. Get started for **Free** now!
+
+<a align="center" href="https://bit.ly/ultralytics_hub" target="_blank">
+<img width="100%" src="https://github.com/ultralytics/assets/raw/master/im/ultralytics-hub.png"></a>
 
 
 ## <div align="center">为什么选择 YOLOv5</div>
