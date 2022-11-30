@@ -171,7 +171,7 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Mask plotting
-                plot_img = torch.as_tensor(im0, dtype=torch.float16).permute(2, 0, 1).contiguous().to(device) / 255. \
+                plot_img = torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() / 255. \
                         if retina_masks else im[i]
                 annotator.masks(masks,
                                 colors=[colors(x, True) for x in det[:, 5]],
