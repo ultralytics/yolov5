@@ -162,8 +162,9 @@ def run(
                 # Segments
                 if save_txt:
                     segments = reversed(masks2segments(masks))
-                    segments = [scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
-                                for x in segments]
+                    segments = [
+                        scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
+                        for x in segments]
 
                 # Print results
                 for c in det[:, 5].unique():
@@ -173,9 +174,7 @@ def run(
                 # Mask plotting
                 plot_img = torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() / 255. \
                         if retina_masks else im[i]
-                annotator.masks(masks,
-                                colors=[colors(x, True) for x in det[:, 5]],
-                                im_gpu=plot_img)
+                annotator.masks(masks, colors=[colors(x, True) for x in det[:, 5]], im_gpu=plot_img)
 
                 # Write results
                 for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
