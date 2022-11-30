@@ -21,7 +21,7 @@
     YOLOv5 🚀 is the world's most loved vision AI, representing <a href="https://ultralytics.com">Ultralytics</a>
     open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
     <br><br>
-    To request a commercial license please complete the form at <a href="https://ultralytics.com/license">Ultralytics Licensing</a>.
+    To request an Enterprise License please complete the form at <a href="https://ultralytics.com/license">Ultralytics Licensing</a>.
     <br><br>
   </p>
 
@@ -49,6 +49,15 @@
   </div>
 </div>
 
+
+## <div align="center">Ultralytics Live Session</div>
+
+<div align="center">
+
+We're excited to announce our very first [Ultralytics Live Session](https://www.youtube.com/@Ultralytics/streams) ✨ streaming live at https://youtu.be/KS4weDInJYs on **Tuesday, November 29th at 16:00 CET** with [@thepycoder](https://github.com/thepycoder) of [ClearML](https://cutt.ly/yolov5-readme-clearml). Glenn and Victor will discuss all things experiment tracking and how you can maximize the benefits of the new YOLOv5 + ClearML [integration](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml). 🔥
+
+<a align="center" href="https://youtu.be/KS4weDInJYs" target="_blank"><img width="800" src="https://user-images.githubusercontent.com/85292283/203834465-fa67ead1-d87b-4212-8a1d-acfd4d8e7226.png"></a>
+</div>
 
 ## <div align="center">Segmentation ⭐ NEW</div>
 
@@ -89,14 +98,14 @@ YOLOv5 segmentation training supports auto-download COCO128-seg segmentation dat
 
 ```bash
 # Single-GPU
-python segment/train.py --model yolov5s-seg.pt --data coco128-seg.yaml --epochs 5 --img 640
+python segment/train.py --data coco128-seg.yaml --weights yolov5s-seg.pt --img 640
 
 # Multi-GPU DDP
-python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train.py --model yolov5s-seg.pt --data coco128-seg.yaml --epochs 5 --img 640 --device 0,1,2,3
+python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train.py --data coco128-seg.yaml --weights yolov5s-seg.pt --img 640 --device 0,1,2,3
 ```
 
 ### Val
-Validate YOLOv5m-seg accuracy on ImageNet-1k dataset:
+Validate YOLOv5s-seg mask mAP on COCO dataset:
 ```bash
 bash data/scripts/get_coco.sh --val --segments  # download COCO val segments split (780MB, 5000 images)
 python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # validate
@@ -423,9 +432,18 @@ We love your input! We want to make contributing to YOLOv5 as easy and transpare
 <!-- SVG image from https://opencollective.com/ultralytics/contributors.svg?width=990 -->
 <a href="https://github.com/ultralytics/yolov5/graphs/contributors"><img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/image-contributors-1280.png" /></a>
 
+
+## <div align="center">License</div>
+
+YOLOv5 is available under two different licenses:
+
+- **GPL-3.0 License**: See [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for details.
+- **Enterprise License**: Provides greater flexibility for commercial product development without the open-source requirements of GPL-3.0. Typical use cases are embedding Ultralytics software and AI models in commercial products and applications. Request an Enterprise License at [Ultralytics Licensing](https://ultralytics.com/license).
+
+
 ## <div align="center">Contact</div>
 
-For YOLOv5 bugs and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues). For professional support please [Contact Us](https://ultralytics.com/contact). To request a commercial license please complete the form at [Ultralytics Licensing](https://ultralytics.com/license).
+For YOLOv5 bugs and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues). For professional support please [Contact Us](https://ultralytics.com/contact).
 
 <br>
 <div align="center">
