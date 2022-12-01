@@ -326,6 +326,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 ema.synchronize()
                 scaler.step(optimizer)  # optimizer.step
                 scaler.update()
+                optimizer.zero_grad()
                 # notify ema update to start when optim update is done
                 if torch.cuda.is_available():
                     update_done = torch.cuda.current_stream().record_event()
@@ -333,7 +334,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 else:
                     ema.update(model)
 
-                optimizer.zero_grad()
                 last_opt_step = ni
 
             # Log
