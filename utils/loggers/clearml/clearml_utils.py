@@ -89,6 +89,7 @@ class ClearmlLogger:
                 task_name=opt.name if opt.name != 'exp' else 'Training',
                 tags=['YOLOv5'],
                 output_uri=True,
+                reuse_last_task_id=opt.reuse_last_task,
                 auto_connect_frameworks={'pytorch': False}
                 # We disconnect pytorch auto-detection, because we added manual model save points in the code
             )
