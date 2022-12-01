@@ -423,7 +423,7 @@ class ModelEMA:
     For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
     """
 
-    def __init__(self, model, decay=0.9999, tau=2000, updates=0):
+    def __init__(self, model, decay=0.9999, tau=2000, updates=0, concurrent_update=False):
         # Create EMA
         self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
         self.updates = updates  # number of EMA updates
@@ -431,18 +431,40 @@ class ModelEMA:
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
-    def update(self, model):
-        # Update EMA parameters
-        self.updates += 1
-        d = self.decay(self.updates)
+        if torch.cuda.is_available() and concurrent_update:
+            self.stream = torch.cuda.Stream()
+        else:
+            self.stream = None
 
-        msd = de_parallel(model).state_dict()  # model state_dict
-        for k, v in self.ema.state_dict().items():
-            if v.dtype.is_floating_point:  # true for FP16 and FP32
-                v *= d
-                v += (1 - d) * msd[k].detach()
-        # assert v.dtype == msd[k].dtype == torch.float32, f'{k}: EMA {v.dtype} and model {msd[k].dtype} must be FP32'
+    def update(self, model, update_done=None):
+        # context manager is an noop if self.stream is None
+        with torch.cuda.stream(self.stream):
+        # wait for previous optim update to materialize
+            if self.stream is not None:
+                if update_done is None:
+                    raise ValueError("A cuda event indicating optimizer update done (update_done)"
+                                     " must be passed to update for concurrent_update to be correct")
+                self.stream.wait_event(update_done)
+
+            # this call below should overlap with the forward and
+            # backward if hardware resource allows for it
+            # Update EMA parameters
+            self.updates += 1
+            d = self.decay(self.updates)
+
+            msd = de_parallel(model).state_dict()  # model state_dict
+            for k, v in self.ema.state_dict().items():
+                if v.dtype.is_floating_point:  # true for FP16 and FP32
+                    v *= d
+                    v += (1 - d) * msd[k].detach()
+            # assert v.dtype == msd[k].dtype == torch.float32, f'{k}: EMA {v.dtype} and model {msd[k].dtype} must be FP32'
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
+
+
+    def synchronize(self):
+        if self.stream is not None:
+            torch.cuda.current_stream().wait_stream(self.stream)
+
