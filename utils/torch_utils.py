@@ -331,7 +331,8 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, decay=1e-5):
                 g[1].append(p)
             else:
                 g[0].append(p)  # weight (with decay)
-    if apex is not None:
+
+    if apex is not None and g[2][0].device.type == 'cuda':
         if name == 'Adam':
             optimizer = apex.optimizers.FusedAdam(g[2], lr=lr, betas=(momentum, 0.999), adam_w_mode=False)
         elif name == 'AdamW':
