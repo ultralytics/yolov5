@@ -48,7 +48,7 @@ from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
 from utils.segment.dataloaders import create_dataloader
-from utils.segment.general import mask_iou, process_mask, process_mask_upsample, scale_image
+from utils.segment.general import mask_iou, process_mask, process_mask_upsample, process_mask_native, scale_image
 from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
 from utils.segment.plots import plot_images_and_masks
 from utils.torch_utils import de_parallel, select_device, smart_inference_mode
@@ -161,6 +161,7 @@ def run(
     if save_json:
         check_requirements(['pycocotools'])
         process = process_mask_upsample  # more accurate
+        process = process_mask_native
     else:
         process = process_mask  # faster
 
