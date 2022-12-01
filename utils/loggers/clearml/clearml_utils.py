@@ -96,7 +96,7 @@ class ClearmlLogger:
             # Only the hyperparameters coming from the yaml config file
             # will have to be added manually!
             self.task.connect(hyp, name='Hyperparameters')
-
+            self.task.connect(opt, name='Args')
             # Get ClearML Dataset Version if requested
             if opt.data.startswith('clearml://'):
                 # data_dict should have the following keys:
