@@ -102,7 +102,7 @@ class ClearmlLogger:
             self.task.set_base_docker("ultralytics/yolov5:latest",
                                       docker_arguments='--ipc=host -e="CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1"',
                                       docker_setup_bash_script='pip install clearml')
- 
+
             # Get ClearML Dataset Version if requested
             if opt.data.startswith('clearml://'):
                 # data_dict should have the following keys:
