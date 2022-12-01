@@ -46,7 +46,7 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
                            increment_path, non_max_suppression, print_args, scale_boxes, scale_segments,
                            strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
-from utils.segment.general import masks2segments, process_mask
+from utils.segment.general import masks2segments, process_mask, process_mask_native
 from utils.torch_utils import select_device, smart_inference_mode
 
 
@@ -151,13 +151,20 @@ def run(
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
-                masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
-                det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                if retina_masks:
+                    # scale bbox first the crop masks
+                    det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                    masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
+                else:
+                    masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
+                    det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
 
                 # Segments
                 if save_txt:
                     segments = reversed(masks2segments(masks))
-                    segments = [scale_segments(im.shape[2:], x, im0.shape, normalize=True) for x in segments]
+                    segments = [
+                        scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
+                        for x in segments]
 
                 # Print results
                 for c in det[:, 5].unique():
@@ -165,9 +172,9 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Mask plotting
-                annotator.masks(masks,
-                                colors=[colors(x, True) for x in det[:, 5]],
-                                im_gpu=None if retina_masks else im[i])
+                plot_img = torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() / 255. \
+                        if retina_masks else im[i]
+                annotator.masks(masks, colors=[colors(x, True) for x in det[:, 5]], im_gpu=plot_img)
 
                 # Write results
                 for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
