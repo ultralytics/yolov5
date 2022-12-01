@@ -439,7 +439,7 @@ class ModelEMA:
     def update(self, model, update_done=None):
         # context manager is an noop if self.stream is None
         with torch.cuda.stream(self.stream):
-        # wait for previous optim update to materialize
+            # wait for previous optim update to materialize
             if self.stream is not None:
                 if update_done is None:
                     raise ValueError("A cuda event indicating optimizer update done (update_done)"
@@ -463,8 +463,6 @@ class ModelEMA:
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
 
-
     def synchronize(self):
         if self.stream is not None:
             torch.cuda.current_stream().wait_stream(self.stream)
-
