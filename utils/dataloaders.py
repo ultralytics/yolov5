@@ -104,6 +104,7 @@ def seed_worker(worker_id):
 # Inherit from DistributedSampler and override iterator
 # https://github.com/pytorch/pytorch/blob/master/torch/utils/data/distributed.py
 class SmartDistributedSampler(distributed.DistributedSampler):
+
     def __iter__(self):
         # deterministically shuffle based on epoch and seed
         g = torch.Generator()
@@ -111,9 +112,9 @@ class SmartDistributedSampler(distributed.DistributedSampler):
         idx = torch.randperm(len(self.dataset), generator=g)
         if not self.shuffle:
             idx = idx.sort()[0]
-        
+
         ## force each rank (i.e. GPU process) to sample the same subset of data every epoch
-        idx = idx[idx % self.num_replicas == self.rank] # num_replicas == WORLD_SIZE
+        idx = idx[idx % self.num_replicas == self.rank]  # num_replicas == WORLD_SIZE
 
         idx = idx.tolist()
         if self.drop_last:
@@ -124,7 +125,7 @@ class SmartDistributedSampler(distributed.DistributedSampler):
                 idx += idx[:padding_size]
             else:
                 idx += (idx * math.ceil(padding_size / len(idx)))[:padding_size]
-        
+
         return iter(idx)
 
 
@@ -598,13 +599,14 @@ class LoadImagesAndLabels(Dataset):
             cache_images = False
         self.ims = [None] * n
         self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
-        self.idx = np.array(self.indices) # DDP indices
+        self.idx = np.array(self.indices)  # DDP indices
         if cache_images:
             b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
             self.im_hw0, self.im_hw = [None] * n, [None] * n
-            self.idx = self.idx[self.idx % WORLD_SIZE == RANK] if rank>-1 else self.idx # see: SmartDistributedSampler (above)
+            self.idx = self.idx[self.idx %
+                                WORLD_SIZE == RANK] if rank > -1 else self.idx  # see: SmartDistributedSampler (above)
             fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_image
-            results = ThreadPool(NUM_THREADS).imap(lambda i: (i, fcn(i)) , self.idx)
+            results = ThreadPool(NUM_THREADS).imap(lambda i: (i, fcn(i)), self.idx)
             pbar = tqdm(results, total=len(self.idx), bar_format=TQDM_BAR_FORMAT, disable=LOCAL_RANK > 0)
             for i, x in pbar:
                 if cache_images == 'disk':
