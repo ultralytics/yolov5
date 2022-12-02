@@ -542,7 +542,7 @@ def parse_opt():
         "--save-json", action="store_true", help="save a COCO-JSON results file"
     )
     parser.add_argument(
-        "--project", default=ROOT / "runs/val", help="save to project/name"
+        "--project", default="yolov5_runs/val_onnx", help="save to project/name"
     )
     parser.add_argument("--name", default="exp", help="save to project/name")
     parser.add_argument(
