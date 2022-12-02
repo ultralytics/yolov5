@@ -113,7 +113,7 @@ class SmartDistributedSampler(distributed.DistributedSampler):
         if not self.shuffle:
             idx = idx.sort()[0]
 
-        ## force each rank (i.e. GPU process) to sample the same subset of data every epoch
+        # force each rank (i.e. GPU process) to sample the same subset of data every epoch
         idx = idx[idx % self.num_replicas == self.rank]  # num_replicas == WORLD_SIZE
 
         idx = idx.tolist()
