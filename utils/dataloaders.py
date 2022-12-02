@@ -470,14 +470,14 @@ class LoadImagesAndLabels(Dataset):
                  augment=False,
                  hyp=None,
                  rect=False,
-                 rank=-1,
                  image_weights=False,
                  cache_images=False,
                  single_cls=False,
                  stride=32,
                  pad=0.0,
                  min_items=0,
-                 prefix=''):
+                 prefix='',
+                 rank=-1):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
