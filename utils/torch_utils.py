@@ -31,7 +31,7 @@ except ImportError:
     thop = None
 try:
     import apex  # for fused optimizer
-except ImportError as er:
+except ImportError:
     apex = None
 
 # Suppress PyTorch warnings
