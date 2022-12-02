@@ -96,6 +96,12 @@ class ClearmlLogger:
             # Only the hyperparameters coming from the yaml config file
             # will have to be added manually!
             self.task.connect(hyp, name='Hyperparameters')
+            self.task.connect(opt, name='Args')
+
+            # Make sure the code is easily remotely runnable by setting the docker image to use by the remote agent
+            self.task.set_base_docker("ultralytics/yolov5:latest",
+                                      docker_arguments='--ipc=host -e="CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1"',
+                                      docker_setup_bash_script='pip install clearml')
 
             # Get ClearML Dataset Version if requested
             if opt.data.startswith('clearml://'):
