@@ -44,7 +44,7 @@ from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, non_max_suppression, print_args, scale_boxes, scale_segments,
-                           strip_optimizer, xyxy2xywh)
+                           strip_optimizer)
 from utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import masks2segments, process_mask, process_mask_native
 from utils.torch_utils import select_device, smart_inference_mode
@@ -161,10 +161,9 @@ def run(
 
                 # Segments
                 if save_txt:
-                    segments = reversed(masks2segments(masks))
                     segments = [
                         scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
-                        for x in segments]
+                        for x in reversed(masks2segments(masks))]
 
                 # Print results
                 for c in det[:, 5].unique():
@@ -172,15 +171,17 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Mask plotting
-                plot_img = torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() / 255. \
-                        if retina_masks else im[i]
-                annotator.masks(masks, colors=[colors(x, True) for x in det[:, 5]], im_gpu=plot_img)
+                annotator.masks(
+                    masks,
+                    colors=[colors(x, True) for x in det[:, 5]],
+                    im_gpu=torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() /
+                    255 if retina_masks else im[i])
 
                 # Write results
                 for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
                     if save_txt:  # Write to file
-                        segj = segments[j].reshape(-1)  # (n,2) to (n*2)
-                        line = (cls, *segj, conf) if save_conf else (cls, *segj)  # label format
+                        seg = segments[j].reshape(-1)  # (n,2) to (n*2)
+                        line = (cls, *seg, conf) if save_conf else (cls, *seg)  # label format
                         with open(f'{txt_path}.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
