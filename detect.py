@@ -8,7 +8,6 @@ Usage - sources:
                                                      vid.mp4                         # video
                                                      screen                          # screenshot
                                                      path/                           # directory
-                                                     files.txt                       # list of media
                                                      'path/*.jpg'                    # glob
                                                      'https://youtu.be/Zgi9g1ksQHc'  # YouTube
                                                      'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
