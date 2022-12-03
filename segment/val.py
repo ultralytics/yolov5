@@ -313,15 +313,13 @@ def run(
 
             pred_masks = torch.as_tensor(pred_masks, dtype=torch.uint8)
             if plots and batch_i < 3:
-                plot_masks.append(pred_masks[:15].cpu())  # filter top 15 to plot
+                plot_masks.append(pred_masks[:15])  # filter top 15 to plot
 
             # Save/log
             if save_txt:
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
             if save_json:
-                pred_masks = scale_image(im[si].shape[1:],
-                                         pred_masks.permute(1, 2, 0).contiguous().cpu().numpy(), shape, shapes[si][1])
-                save_one_json(predn, jdict, path, class_map, pred_masks)  # append to COCO-JSON dictionary
+                save_one_json(predn, jdict, path, class_map, pred_masks.permute(1, 2, 0).contiguous().cpu().numpy())
             # callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
