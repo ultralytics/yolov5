@@ -182,14 +182,16 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) and saving results to `runs/detect`.
 
 ```bash
-python detect.py --source 0  # webcam
-                          img.jpg  # image
-                          vid.mp4  # video
-                          screen  # screenshot
-                          path/  # directory
-                          'path/*.jpg'  # glob
-                          'https://youtu.be/Zgi9g1ksQHc'  # YouTube
-                          'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+python detect.py --weights yolov5s.pt --source 0                               # webcam
+                                               img.jpg                         # image
+                                               vid.mp4                         # video
+                                               screen                          # screenshot
+                                               path/                           # directory
+                                               list.txt                        # list of images
+                                               list.streams                    # list of streams
+                                               'path/*.jpg'                    # glob
+                                               'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                                               'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 ```
 
 </details>
