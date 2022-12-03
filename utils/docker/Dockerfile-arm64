@@ -9,15 +9,16 @@ FROM arm64v8/ubuntu:20.04
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
 
 # Install linux packages
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt update
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt install -y tzdata
+RUN TZ=Etc/UTC apt install -y tzdata
 RUN apt install --no-install-recommends -y python3-pip git zip curl htop gcc libgl1-mesa-glx libglib2.0-0 libpython3-dev
 # RUN alias python=python3
 
 # Install pip packages
 COPY requirements.txt .
 RUN python3 -m pip install --upgrade pip wheel
-RUN pip install --no-cache -r requirements.txt gsutil notebook \
+RUN pip install --no-cache -r requirements.txt ultralytics gsutil notebook \
     tensorflow-aarch64
     # tensorflowjs \
     # onnx onnx-simplifier onnxruntime \
@@ -30,12 +31,13 @@ WORKDIR /usr/src/app
 # Copy contents
 # COPY . /usr/src/app  (issues as not a .git directory)
 RUN git clone https://github.com/ultralytics/yolov5 /usr/src/app
+ENV DEBIAN_FRONTEND teletype
 
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
 
 # Build and Push
-# t=ultralytics/yolov5:latest-M1 && sudo docker build --platform linux/arm64 -f utils/docker/Dockerfile-arm64 -t $t . && sudo docker push $t
+# t=ultralytics/yolov5:latest-arm64 && sudo docker build --platform linux/arm64 -f utils/docker/Dockerfile-arm64 -t $t . && sudo docker push $t
 
 # Pull and Run
-# t=ultralytics/yolov5:latest-M1 && sudo docker pull $t && sudo docker run -it --ipc=host -v "$(pwd)"/datasets:/usr/src/datasets $t
+# t=ultralytics/yolov5:latest-arm64 && sudo docker pull $t && sudo docker run -it --ipc=host -v "$(pwd)"/datasets:/usr/src/datasets $t

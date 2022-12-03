@@ -118,7 +118,14 @@ class Loggers():
 
         # ClearML
         if clearml and 'clearml' in self.include:
-            self.clearml = ClearmlLogger(self.opt, self.hyp)
+            try:
+                self.clearml = ClearmlLogger(self.opt, self.hyp)
+            except Exception:
+                self.clearml = None
+                prefix = colorstr('ClearML: ')
+                LOGGER.warning(f'{prefix}WARNING ⚠️ ClearML is installed but not configured, skipping ClearML logging.'
+                               f' See https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml#readme')
+
         else:
             self.clearml = None
 

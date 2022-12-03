@@ -32,6 +32,7 @@ except ImportError:
 
 # Suppress PyTorch warnings
 warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
+warnings.filterwarnings('ignore', category=UserWarning)
 
 
 def smart_inference_mode(torch_1_9=check_version(torch.__version__, '1.9.0')):
@@ -81,7 +82,7 @@ def reshape_classifier_output(model, n=1000):
         elif nn.Conv2d in types:
             i = types.index(nn.Conv2d)  # nn.Conv2d index
             if m[i].out_channels != n:
-                m[i] = nn.Conv2d(m[i].in_channels, n, m[i].kernel_size, m[i].stride, bias=m[i].bias)
+                m[i] = nn.Conv2d(m[i].in_channels, n, m[i].kernel_size, m[i].stride, bias=m[i].bias is not None)
 
 
 @contextmanager
