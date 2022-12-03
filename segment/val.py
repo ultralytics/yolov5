@@ -319,7 +319,9 @@ def run(
             if save_txt:
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
             if save_json:
-                save_one_json(predn, jdict, path, class_map, pred_masks.permute(1, 2, 0).contiguous().cpu().numpy())
+                pred_masks = scale_image(im[si].shape[1:], pred_masks.permute(1, 2, 0).contiguous().cpu().numpy(),
+                                         shape, shapes[si][1])
+                save_one_json(predn, jdict, path, class_map, pred_masks)  # append to COCO-JSON dictionary
             # callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
