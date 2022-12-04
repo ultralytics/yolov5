@@ -129,9 +129,18 @@ class ComputeLoss:
 
         if self.jit_regloss:
             self.num_max_pred_pad = 6400
-            _pxy = torch.empty([self.num_max_pred_pad, 2], dtype=torch.float32, device=self.device.type, requires_grad=True)
-            _pwh = torch.empty([self.num_max_pred_pad, 2], dtype=torch.float32, device=self.device.type, requires_grad=True)
-            _tbox_i = torch.empty([self.num_max_pred_pad, 4], dtype=torch.float32, device=self.device.type, requires_grad=False)
+            _pxy = torch.empty([self.num_max_pred_pad, 2],
+                               dtype=torch.float32,
+                               device=self.device.type,
+                               requires_grad=True)
+            _pwh = torch.empty([self.num_max_pred_pad, 2],
+                               dtype=torch.float32,
+                               device=self.device.type,
+                               requires_grad=True)
+            _tbox_i = torch.empty([self.num_max_pred_pad, 4],
+                                  dtype=torch.float32,
+                                  device=self.device.type,
+                                  requires_grad=False)
             _anchors_i = torch.empty([self.num_max_pred_pad, 2],
                                      dtype=torch.float32,
                                      device=self.device.type,
@@ -140,7 +149,6 @@ class ComputeLoss:
             with torch.autocast(device_type=self.device.type):
                 self.reg_loss = torch.jit.trace(reg_loss, (_pxy, _pwh, _tbox_i, _anchors_i))
             del _pxy, _pwh, _tbox_i, _anchors_i
-
 
     def __call__(self, p, targets):  # predictions, targets
         lcls = torch.zeros(1, device=self.device)  # class loss
