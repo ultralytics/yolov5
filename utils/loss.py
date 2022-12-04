@@ -100,7 +100,7 @@ class ComputeLoss:
     sort_obj_iou = False
 
     # Compute losses
-    def __init__(self, model, autobalance=False):
+    def __init__(self, model, autobalance=False, jit_regloss=False):
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
@@ -125,24 +125,22 @@ class ComputeLoss:
         self.nl = m.nl  # number of layers
         self.anchors = m.anchors
         self.device = device
+        self.jit_regloss = jit_regloss
 
-        if self.device.type == 'cuda':
-
+        if self.jit_regloss:
             self.num_max_pred_pad = 6400
-            _pxy = torch.empty([self.num_max_pred_pad, 2], dtype=torch.float16, device='cuda', requires_grad=True)
-            _pwh = torch.empty([self.num_max_pred_pad, 2], dtype=torch.float32, device='cuda', requires_grad=True)
-            _tbox_i = torch.empty([self.num_max_pred_pad, 4], dtype=torch.float32, device='cuda', requires_grad=False)
+            _pxy = torch.empty([self.num_max_pred_pad, 2], dtype=torch.float32, device=self.device.type, requires_grad=True)
+            _pwh = torch.empty([self.num_max_pred_pad, 2], dtype=torch.float32, device=self.device.type, requires_grad=True)
+            _tbox_i = torch.empty([self.num_max_pred_pad, 4], dtype=torch.float32, device=self.device.type, requires_grad=False)
             _anchors_i = torch.empty([self.num_max_pred_pad, 2],
                                      dtype=torch.float32,
-                                     device='cuda',
+                                     device=self.device.type,
                                      requires_grad=False)
 
-            with torch.autocast(device_type='cuda'):
+            with torch.autocast(device_type=self.device.type):
                 self.reg_loss = torch.jit.trace(reg_loss, (_pxy, _pwh, _tbox_i, _anchors_i))
             del _pxy, _pwh, _tbox_i, _anchors_i
-        else:
-            self.reg_loss = reg_loss
-            self.num_max_pred_pad = 0
+
 
     def __call__(self, p, targets):  # predictions, targets
         lcls = torch.zeros(1, device=self.device)  # class loss
@@ -160,17 +158,25 @@ class ComputeLoss:
                 # pxy, pwh, _, pcls = pi[b, a, gj, gi].tensor_split((2, 4, 5), dim=1)  # faster, requires torch 1.8.0
                 pxy, pwh, _, pcls = pi[b, a, gj, gi].split((2, 2, 1, self.nc), 1)  # target-subset of predictions
 
-                # Pad
-                p_size = pxy.size(0)
-                pad_size = max(0, self.num_max_pred_pad - p_size)
-                pxy = torch.nn.functional.pad(pxy, (0, 0, 0, pad_size))
-                pwh = torch.nn.functional.pad(pwh, (0, 0, 0, pad_size))
-                tbox_i = torch.nn.functional.pad(tbox[i], (0, 0, 0, pad_size))
-                anchors_i = torch.nn.functional.pad(anchors[i], (0, 0, 0, pad_size))
-
                 # Regression
-                iou = self.reg_loss(pxy, pwh, tbox_i, anchors_i)
-                iou = iou[:p_size]
+                if self.jit_regloss:
+                    # Pad
+                    p_size = pxy.size(0)
+                    pad_size = max(0, self.num_max_pred_pad - p_size)
+                    pxy = torch.nn.functional.pad(pxy, (0, 0, 0, pad_size))
+                    pwh = torch.nn.functional.pad(pwh, (0, 0, 0, pad_size))
+                    tbox_i = torch.nn.functional.pad(tbox[i], (0, 0, 0, pad_size))
+                    anchors_i = torch.nn.functional.pad(anchors[i], (0, 0, 0, pad_size))
+                    # compute loss
+                    iou = self.reg_loss(pxy, pwh, tbox_i, anchors_i)
+                    # Unpad
+                    iou = iou[:p_size]
+                else:
+                    pxy = pxy.sigmoid() * 2 - 0.5
+                    pwh = (pwh.sigmoid() * 2) ** 2 * anchors[i]
+                    pbox = torch.cat((pxy, pwh), 1)  # predicted box
+                    iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
+
                 lbox += (1.0 - iou).mean()  # iou loss
 
                 # Objectness
