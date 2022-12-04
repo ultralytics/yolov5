@@ -323,16 +323,18 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 scaler.unscale_(optimizer)  # unscale gradients
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)  # clip gradients
 
-                ema.synchronize()
+                if ema:
+                    ema.synchronize()
                 scaler.step(optimizer)  # optimizer.step
                 scaler.update()
                 optimizer.zero_grad()
-                # notify ema update to start when optim update is done
-                if torch.cuda.is_available():
-                    update_done = torch.cuda.current_stream().record_event()
-                    ema.update(model, update_done)
-                else:
-                    ema.update(model)
+                if ema:
+                    # notify ema update to start when optim update is done
+                    if torch.cuda.is_available():
+                        update_done = torch.cuda.current_stream().record_event()
+                        ema.update(model, update_done)
+                    else:
+                        ema.update(model)
 
                 last_opt_step = ni
 
