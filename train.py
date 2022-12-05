@@ -472,12 +472,6 @@ def parse_opt(known=False):
     parser.add_argument('--upload_dataset', nargs='?', const=True, default=False, help='Upload data, "val" option')
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='Version of dataset artifact to use')
-    parser.add_argument('--reuse_last_task',
-                        nargs='?',
-                        default=False,
-                        const=True,
-                        help='If given will override newest task ID only if task has no artifacts, only ClearML.'
-                        'Can also give specific ID as argument to override instead. Is meant to prevent clutter.')
 
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
