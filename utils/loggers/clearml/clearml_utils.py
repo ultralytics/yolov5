@@ -89,6 +89,7 @@ class ClearmlLogger:
                 task_name=opt.name if opt.name != 'exp' else 'Training',
                 tags=['YOLOv5'],
                 output_uri=True,
+                reuse_last_task_id=opt.exist_ok,
                 auto_connect_frameworks={'pytorch': False}
                 # We disconnect pytorch auto-detection, because we added manual model save points in the code
             )
@@ -96,6 +97,12 @@ class ClearmlLogger:
             # Only the hyperparameters coming from the yaml config file
             # will have to be added manually!
             self.task.connect(hyp, name='Hyperparameters')
+            self.task.connect(opt, name='Args')
+
+            # Make sure the code is easily remotely runnable by setting the docker image to use by the remote agent
+            self.task.set_base_docker("ultralytics/yolov5:latest",
+                                      docker_arguments='--ipc=host -e="CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1"',
+                                      docker_setup_bash_script='pip install clearml')
 
             # Get ClearML Dataset Version if requested
             if opt.data.startswith('clearml://'):
