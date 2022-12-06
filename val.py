@@ -400,7 +400,7 @@ def main(opt):
             os.system('zip -r study.zip study_*.txt')
             plot_val_study(x=x)  # plot
         else:
-            raise NotImplementedError(f'{opt.task} not in ["train", "val", "test", "speed", "study"].')
+            raise NotImplementedError(f'--task {opt.task} not in ("train", "val", "test", "speed", "study")')
 
 
 if __name__ == "__main__":
