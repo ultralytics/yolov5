@@ -284,34 +284,28 @@ class DetectionModel(BaseModel):
             yi = self._descale_pred(yi, fi, si, img_size)
             y.append(yi)
         y = self._clip_augmented(y)  # clip augmented tails
-        return torch.cat(y, 1), None  # augmented inference, train
+        return torch.cat(y, -1), None  # augmented inference, train
 
-    def _descale_pred(self, p, flips, scale, img_size):
+    @staticmethod
+    def _descale_pred(p, flips, scale, img_size, dim=1):
         # de-scale predictions following augmented inference (inverse operation)
-        if self.inplace:
-            p[..., :4] /= scale  # de-scale
-            if flips == 2:
-                p[..., 1] = img_size[0] - p[..., 1]  # de-flip ud
-            elif flips == 3:
-                p[..., 0] = img_size[1] - p[..., 0]  # de-flip lr
-        else:
-            x, y, wh = p[..., 0:1] / scale, p[..., 1:2] / scale, p[..., 2:4] / scale  # de-scale
-            if flips == 2:
-                y = img_size[0] - y  # de-flip ud
-            elif flips == 3:
-                x = img_size[1] - x  # de-flip lr
-            p = torch.cat((x, y, wh, p[..., 4:]), -1)
-        return p
+        p[:, :4] /= scale  # de-scale
+        x, y, wh, cls = p.split((1, 1, 2, p.shape[dim] - 4), dim)
+        if flips == 2:
+            y = img_size[0] - y  # de-flip ud
+        elif flips == 3:
+            x = img_size[1] - x  # de-flip lr
+        return torch.cat((x, y, wh, cls), dim)
 
     def _clip_augmented(self, y):
         # Clip YOLOv5 augmented inference tails
         nl = self.model[-1].nl  # number of detection layers (P3-P5)
         g = sum(4 ** x for x in range(nl))  # grid points
         e = 1  # exclude layer count
-        i = (y[0].shape[1] // g) * sum(4 ** x for x in range(e))  # indices
-        y[0] = y[0][:, :-i]  # large
-        i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
-        y[-1] = y[-1][:, i:]  # small
+        i = (y[0].shape[-1] // g) * sum(4 ** x for x in range(e))  # indices
+        y[0] = y[0][..., :-i]  # large
+        i = (y[-1].shape[-1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
+        y[-1] = y[-1][..., i:]  # small
         return y
 
 
