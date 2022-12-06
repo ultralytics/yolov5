@@ -429,6 +429,25 @@ if __name__ == '__main__':
     model = Model(opt.cfg).to(device)
     model.eval()
 
+    # f = Path(opt.cfg).with_suffix('.onnx')
+    # model(im)
+    # torch.onnx.export(
+    #     model,  # --dynamic only compatible with cpu
+    #     im,
+    #     f,
+    #     verbose=False,
+    #     opset_version=12,
+    #     do_constant_folding=False,
+    #     input_names=['images'],
+    #     output_names=['output'])
+    #
+    # import onnx
+    # import onnxsim
+    #
+    # model_onnx, check = onnxsim.simplify(onnx.load(f))
+    # assert check, 'assert check failed'
+    # onnx.save(model_onnx, f)
+
     # Options
     if opt.line_profile:  # profile layer by layer
         model(im, profile=True)
