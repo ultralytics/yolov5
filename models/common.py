@@ -231,6 +231,18 @@ class C2_sum_all(nn.Module):
         return self.cv2(torch.cat((c, b), 1))
 
 
+class Down(nn.Module):
+    # CSP Bottleneck with 2 convolutions
+    def __init__(self, c1, c2):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.cv1 = Conv(c1, c1, 3, 2)
+        self.cv2 = Conv(c1 * 2, c2, 1)
+
+    def forward(self, x):
+        return self.cv2(torch.cat((self.pool(x), self.cv1(x)), 1))
+
+
 class C2(nn.Module):
     # CSP Bottleneck with 2 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
