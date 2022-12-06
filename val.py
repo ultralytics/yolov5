@@ -402,6 +402,7 @@ def main(opt):
         else:
             raise NotImplementedError(f'{opt.task} not in ["train", "val", "test", "speed", "study"].')
 
+
 if __name__ == "__main__":
     opt = parse_opt()
     main(opt)
