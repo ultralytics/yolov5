@@ -113,6 +113,7 @@ def create_dataloader(path,
                       rank=-1,
                       workers=8,
                       image_weights=False,
+                      close_mosaic=False,
                       quad=False,
                       min_items=0,
                       prefix='',
@@ -140,7 +141,7 @@ def create_dataloader(path,
     nd = torch.cuda.device_count()  # number of CUDA devices
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
-    loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
+    loader = DataLoader if image_weights or close_mosaic else InfiniteDataLoader  # DataLoader allows attribute updates
     generator = torch.Generator()
     generator.manual_seed(6148914691236517205 + RANK)
     return loader(dataset,

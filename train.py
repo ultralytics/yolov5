@@ -42,7 +42,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 import val as validate  # for end-of-epoch mAP
 from models.experimental import attempt_load
 from models.yolo import Model
-from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
@@ -208,6 +207,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               rank=LOCAL_RANK,
                                               workers=workers,
                                               image_weights=opt.image_weights,
+                                              close_mosaic=opt.close_mosaic != 0,
                                               quad=opt.quad,
                                               prefix=colorstr('train: '),
                                               shuffle=True,
@@ -274,11 +274,14 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         callbacks.run('on_train_epoch_start')
         model.train()
 
-        # Update image weights (optional, single-GPU only)
-        if opt.image_weights:
+        # Update dataloader attributes (optional)
+        if opt.image_weights:  # optional, single-GPU only
             cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2 / nc  # class weights
             iw = labels_to_image_weights(dataset.labels, nc=nc, class_weights=cw)  # image weights
             dataset.indices = random.choices(range(dataset.n), weights=iw, k=dataset.n)  # rand weighted idx
+        if epoch == (epochs - opt.close_mosaic):
+            LOGGER.info("Closing dataloader mosaic")
+            dataset.mosaic = False
 
         # Update mosaic border (optional)
         # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
@@ -481,6 +484,7 @@ def parse_opt(known=False):
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
     parser.add_argument('--min-items', type=int, default=0, help='Experimental')
+    parser.add_argument('--close-mosaic', type=int, default=0, help='Experimental')
 
     # Logger arguments
     parser.add_argument('--entity', default=None, help='Entity')
