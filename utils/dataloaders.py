@@ -104,13 +104,14 @@ def seed_worker(worker_id):
 # Inherit from DistributedSampler and override iterator
 # https://github.com/pytorch/pytorch/blob/master/torch/utils/data/distributed.py
 class SmartDistributedSampler(distributed.DistributedSampler):
+
     def __iter__(self):
         # deterministically shuffle based on epoch and seed
         g = torch.Generator()
         g.manual_seed(self.seed + self.epoch)
 
         # determine the the eventual size (n) of self.indices (DDP indices)
-        n = int( (len(self.dataset)-self.rank-1)/self.num_replicas ) + 1 # num_replicas == WORLD_SIZE
+        n = int((len(self.dataset) - self.rank - 1) / self.num_replicas) + 1  # num_replicas == WORLD_SIZE
         idx = torch.randperm(n, generator=g)
         if not self.shuffle:
             idx = idx.sort()[0]
@@ -124,7 +125,7 @@ class SmartDistributedSampler(distributed.DistributedSampler):
                 idx += idx[:padding_size]
             else:
                 idx += (idx * math.ceil(padding_size / len(idx)))[:padding_size]
-        
+
         return iter(idx)
 
 
@@ -558,7 +559,7 @@ class LoadImagesAndLabels(Dataset):
         self.batch = bi  # batch index of image
         self.n = n
         self.indices = np.arange(n)
-        if rank>-1: # DDP indices (see: SmartDistributedSampler)
+        if rank > -1:  # DDP indices (see: SmartDistributedSampler)
             # force each rank (i.e. GPU process) to sample the same subset of data on every epoch
             self.indices = self.indices[np.random.RandomState(seed=seed).permutation(n) % WORLD_SIZE == RANK]
 
