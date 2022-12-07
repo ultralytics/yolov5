@@ -416,11 +416,6 @@ def run(
     pf = "%20s" + "%11i" * 2 + "%11.3g" * 4  # print format
     LOGGER.info(pf % ("all", seen, nt.sum(), mp, mr, map50, map))
 
-    # Print results per class
-    if (verbose or (nc < 50)) and nc > 1 and len(stats):
-        for i, c in enumerate(ap_class):
-            LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
-
     # Print speeds
     t = tuple(x / seen * 1e3 for x in dt)  # speeds per image
 
@@ -432,7 +427,7 @@ def run(
 
     # Plots
     if plots:
-        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
+        confusion_matrix.plot(save_dir=save_dir)
         callbacks.run("on_val_end")
 
     # Save JSON
