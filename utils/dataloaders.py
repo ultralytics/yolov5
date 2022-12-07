@@ -104,17 +104,16 @@ def seed_worker(worker_id):
 # Inherit from DistributedSampler and override iterator
 # https://github.com/pytorch/pytorch/blob/master/torch/utils/data/distributed.py
 class SmartDistributedSampler(distributed.DistributedSampler):
-
     def __iter__(self):
         # deterministically shuffle based on epoch and seed
         g = torch.Generator()
         g.manual_seed(self.seed + self.epoch)
-        idx = torch.randperm(len(self.dataset), generator=g)
+
+        # determine the the eventual size (n) of self.indices (DDP indices)
+        n = int( (len(self.dataset)-self.rank-1)/self.num_replicas ) + 1 # num_replicas == WORLD_SIZE
+        idx = torch.randperm(n, generator=g)
         if not self.shuffle:
             idx = idx.sort()[0]
-
-        # force each rank (i.e. GPU process) to sample the same subset of data every epoch
-        idx = idx[idx % self.num_replicas == self.rank]  # num_replicas == WORLD_SIZE
 
         idx = idx.tolist()
         if self.drop_last:
@@ -125,7 +124,7 @@ class SmartDistributedSampler(distributed.DistributedSampler):
                 idx += idx[:padding_size]
             else:
                 idx += (idx * math.ceil(padding_size / len(idx)))[:padding_size]
-
+        
         return iter(idx)
 
 
@@ -156,13 +155,13 @@ def create_dataloader(path,
             augment=augment,  # augmentation
             hyp=hyp,  # hyperparameters
             rect=rect,  # rectangular batches
-            rank=rank,
             cache_images=cache,
             single_cls=single_cls,
             stride=int(stride),
             pad=pad,
             image_weights=image_weights,
-            prefix=prefix)
+            prefix=prefix,
+            rank=rank)
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -479,7 +478,8 @@ class LoadImagesAndLabels(Dataset):
                  pad=0.0,
                  min_items=0,
                  prefix='',
-                 rank=-1):
+                 rank=-1,
+                 seed=0):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -557,7 +557,10 @@ class LoadImagesAndLabels(Dataset):
         nb = bi[-1] + 1  # number of batches
         self.batch = bi  # batch index of image
         self.n = n
-        self.indices = range(n)
+        self.indices = np.arange(n)
+        if rank>-1: # DDP indices (see: SmartDistributedSampler)
+            # force each rank (i.e. GPU process) to sample the same subset of data on every epoch
+            self.indices = self.indices[np.random.RandomState(seed=seed).permutation(n) % WORLD_SIZE == RANK]
 
         # Update labels
         include_class = []  # filter labels to include only these classes (optional)
@@ -601,15 +604,12 @@ class LoadImagesAndLabels(Dataset):
             cache_images = False
         self.ims = [None] * n
         self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
-        self.idx = np.array(self.indices)  # DDP indices
         if cache_images:
             b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
             self.im_hw0, self.im_hw = [None] * n, [None] * n
-            self.idx = self.idx[self.idx %
-                                WORLD_SIZE == RANK] if rank > -1 else self.idx  # see: SmartDistributedSampler (above)
             fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_image
-            results = ThreadPool(NUM_THREADS).imap(lambda i: (i, fcn(i)), self.idx)
-            pbar = tqdm(results, total=len(self.idx), bar_format=TQDM_BAR_FORMAT, disable=LOCAL_RANK > 0)
+            results = ThreadPool(NUM_THREADS).imap(lambda i: (i, fcn(i)), self.indices)
+            pbar = tqdm(results, total=len(self.indices), bar_format=TQDM_BAR_FORMAT, disable=LOCAL_RANK > 0)
             for i, x in pbar:
                 if cache_images == 'disk':
                     b += self.npy_files[i].stat().st_size
@@ -695,7 +695,7 @@ class LoadImagesAndLabels(Dataset):
 
             # MixUp augmentation
             if random.random() < hyp['mixup']:
-                img, labels = mixup(img, labels, *self.load_mosaic(random.choice(self.idx)))
+                img, labels = mixup(img, labels, *self.load_mosaic(random.choice(self.indices)))
 
         else:
             # Load image
@@ -785,7 +785,7 @@ class LoadImagesAndLabels(Dataset):
         labels4, segments4 = [], []
         s = self.img_size
         yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border)  # mosaic center x, y
-        indices = [index] + random.choices(self.idx, k=3)  # 3 additional image indices
+        indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
         random.shuffle(indices)
         for i, index in enumerate(indices):
             # Load image
@@ -842,7 +842,7 @@ class LoadImagesAndLabels(Dataset):
         # YOLOv5 9-mosaic loader. Loads 1 image + 8 random images into a 9-image mosaic
         labels9, segments9 = [], []
         s = self.img_size
-        indices = [index] + random.choices(self.idx, k=8)  # 8 additional image indices
+        indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
         random.shuffle(indices)
         hp, wp = -1, -1  # height, width previous
         for i, index in enumerate(indices):
