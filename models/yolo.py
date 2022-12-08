@@ -12,6 +12,7 @@ import platform
 import sys
 from copy import deepcopy
 from pathlib import Path
+import yaml  # for torch hub
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -407,7 +408,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='yolov8m-base.yaml', help='model.yaml')
+    parser.add_argument('--cfg', type=str, default='yolov8l-3.yaml', help='model.yaml')
     parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--profile', action='store_true', help='profile model speed')
@@ -418,10 +419,17 @@ if __name__ == '__main__':
     print_args(vars(opt))
     device = select_device(opt.device)
 
+    with open(opt.cfg, encoding='ascii', errors='ignore') as f:
+        cfg = yaml.safe_load(f)  # model dict
+
     # Create model
     im = torch.rand(opt.batch_size, 3, 640, 640).to(device)
-    model = Model(opt.cfg).to(device)
-    model.eval()
+    if 'scales' in cfg:
+        for s in cfg['scales']:
+            cfg['depth_multiple'], cfg['width_multiple'] = cfg['scales'][s]
+            model = Model(cfg).to(device)
+    else:
+        model = Model(opt.cfg).to(device)
 
     # f = Path(opt.cfg).with_suffix('.onnx')
     # model(im)
