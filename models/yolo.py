@@ -414,6 +414,7 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true', help='profile model speed')
     parser.add_argument('--line-profile', action='store_true', help='profile model speed layer by layer')
     parser.add_argument('--test', action='store_true', help='test all yolo*.yaml')
+    parser.add_argument('--onnx', action='store_true', help='export to onnx')
     opt = parser.parse_args()
     opt.cfg = check_yaml(opt.cfg)  # check YAML
     print_args(vars(opt))
@@ -430,25 +431,34 @@ if __name__ == '__main__':
             model = Model(cfg).to(device)
     else:
         model = Model(opt.cfg).to(device)
+    model.eval()
 
-    # f = Path(opt.cfg).with_suffix('.onnx')
-    # model(im)
-    # torch.onnx.export(
-    #     model,  # --dynamic only compatible with cpu
-    #     im,
-    #     f,
-    #     verbose=False,
-    #     opset_version=12,
-    #     do_constant_folding=False,
-    #     input_names=['images'],
-    #     output_names=['output'])
-    #
-    # import onnx
-    # import onnxsim
-    #
-    # model_onnx, check = onnxsim.simplify(onnx.load(f))
-    # assert check, 'assert check failed'
-    # onnx.save(model_onnx, f)
+    if opt.onnx:
+        import onnx
+        import onnxsim
+
+        # Update model
+        for k, m in model.named_modules():
+            if isinstance(m, (Detect, V6Detect)):
+                m.export = True
+        for _ in range(2):
+            model(im)
+
+        f = str(Path(opt.cfg).with_suffix('.onnx'))
+        torch.onnx.export(
+            model,  # --dynamic only compatible with cpu
+            im,
+            f,
+            verbose=False,
+            opset_version=12,
+            do_constant_folding=True,
+            input_names=['images'],
+            output_names=['output'],
+            dynamic_axes=None)
+
+        model_onnx = onnx.load(f)
+        model_onnx, _ = onnxsim.simplify(model_onnx)
+        onnx.save(model_onnx, f)
 
     # Options
     if opt.line_profile:  # profile layer by layer
