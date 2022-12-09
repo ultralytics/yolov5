@@ -1,0 +1,69 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/supervisely/serve/src/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
+                "LOG_LEVEL": "DEBUG",
+            }
+        },
+        {
+            "name": "Internal debug for Supervisely Team",
+            "type": "python",
+            "request": "launch",
+            // "program": "${workspaceFolder}/src/main.py",
+            "module": "uvicorn",
+            "args": [
+                "src.main:m.app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--ws",
+                "websockets"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
+                "LOG_LEVEL": "DEBUG",
+                "ENV": "production",
+                "SLY_APP_DATA_DIR": "${workspaceFolder}/results",
+                "TEAM_ID": "1",
+                "FOLDER": "/my-folder/my_model"
+            }
+        },
+        {
+            "name": "Advanced mode for Supervisely Team",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "supervisely.serve.src.main:m.app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--ws",
+                "websockets"
+            ],
+            "jinja": true,
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
+                "LOG_LEVEL": "DEBUG",
+                "ENV": "production",
+                "TEAM_ID": "277",
+                "FOLDER": "./my_model",
+                "DEBUG_WITH_SLY_NET": "1",
+                "SLY_APP_DATA_DIR": "${workspaceFolder}/results"
+            }
+        }
+    ]
+}
