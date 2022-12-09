@@ -50,7 +50,7 @@ repos:
         additional_dependencies:
           - mdformat-gfm
           - mdformat-black
-        exclude: "README.md|README_cn.md"
+        exclude: "README.md|README.zh-CN.md"
 
   - repo: https://github.com/asottile/yesqa
     rev: v1.4.0
