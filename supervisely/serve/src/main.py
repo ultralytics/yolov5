@@ -1,6 +1,9 @@
 import os
 import sys
-from typing_extensions import Literal
+try:
+    from typing import Literal
+except:
+    from typing_extensions import Literal
 from typing import List, Dict, Any
 import cv2
 import yaml
@@ -227,7 +230,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
 
                 for *xyxy, conf, cls in reversed(det):
                     bbox = [int(xyxy[1]), int(xyxy[0]), int(xyxy[3]), int(xyxy[2])]
-                    predictions.append(sly.nn.PredictionBBox(self.class_names[int(cls)], bbox, conf))
+                    predictions.append(sly.nn.PredictionBBox(self.class_names[int(cls)], bbox, conf.item()))
                     rect = sly.Rectangle(*bbox)
                     obj_class = self.model_meta.get_obj_class(self.class_names[int(cls)])
                     tag = sly.Tag(self._get_confidence_tag_meta(), round(float(conf), 4))
@@ -269,7 +272,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
 
                     for *xyxy, conf, cls in reversed(det):
                         bbox = [int(xyxy[1]), int(xyxy[0]), int(xyxy[3]), int(xyxy[2])]
-                        predictions.append(sly.nn.PredictionBBox(self.class_names[int(cls)], bbox, conf))
+                        predictions.append(sly.nn.PredictionBBox(self.class_names[int(cls)], bbox, conf.item()))
 
             return predictions
 
