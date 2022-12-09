@@ -5,6 +5,12 @@ nc: 80  # number of classes
 depth_multiple: 1.00  # model depth multiple
 width_multiple: 1.00  # layer channel multiple
 anchors: [[16,19], [55,65], [178,192]]
+scales:  # model [depth, width] scaling multiples
+  n: [0.33, 0.25]  # nano       231 layers, 2303184 parameters, 9.4 GFLOPs
+  s: [0.33, 0.50]  # small      231 layers, 6690016 parameters, 6690000 gradients, 24.5 GFLOPs
+  m: [0.67, 0.75]  # medium     301 layers, 19682608 parameters, 19682592 gradients, 73.0 GFLOPs
+  l: [1.00, 1.00]  # large      371 layers, 43889664 parameters, 43889648 gradients, 165.1 GFLOPs
+  x: [1.00, 1.25]  # x-large    371 layers, 68538768 parameters, 68538752 gradients, 257.6 GFLOPs
 
 # YOLOv8 v0.0 backbone
 backbone:
