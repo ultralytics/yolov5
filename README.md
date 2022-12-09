@@ -429,7 +429,7 @@ Get started in seconds with our verified environments. Click each icon below for
 
 ## <div align="center">App</div>
 
-Run custom-trained YOLOv5 models directly on your mobile device by downloading the [Ultralytics App](https://ultralytics.com/app_install)!
+Run YOLOv5 models on your iOS or Android device by downloading the [Ultralytics App](https://ultralytics.com/app_install)!
 
 <a align="center" href="https://ultralytics.com/app_install" target="_blank">
 <img width="100%" alt="Ultralytics mobile app" src="https://user-images.githubusercontent.com/26833433/202829285-39367043-292a-41eb-bb76-c3e74f38e38e.png">
