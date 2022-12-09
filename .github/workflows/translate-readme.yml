@@ -10,7 +10,7 @@ on:
       - master
     paths:
       - README.md
-      
+
 jobs:
   Translate:
     runs-on: ubuntu-latest
@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-      # ISO Langusge Codes: https://cloud.google.com/translate/docs/languages  
+      # ISO Langusge Codes: https://cloud.google.com/translate/docs/languages
       - name: Adding README - Chinese Simplified
         uses: dephraiim/translate-readme@main
         with:
