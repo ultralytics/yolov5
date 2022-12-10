@@ -5,14 +5,11 @@ try:
 except:
     from typing_extensions import Literal
 from typing import List, Dict, Any
-import cv2
 import yaml
-import json
 from dotenv import load_dotenv
 import torch
 import numpy as np
 import supervisely as sly
-import supervisely.app.development as sly_app_development
 from supervisely.geometry.sliding_windows_fuzzy import SlidingWindowsFuzzy
 from utils.torch_utils import select_device
 from models.experimental import attempt_load
@@ -24,7 +21,8 @@ from pathlib import Path
 
 # root_source_path = "/tmp/yolov5"
 root_source_path = str(Path(sys.argv[0]).parents[3])
-load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "local.env"))
+app_source_path = str(Path(sys.argv[0]).parents[1])
+load_dotenv(os.path.join(app_source_path, "local.env"))
 load_dotenv(os.path.expanduser("~/supervisely.env"))
 # prepare_weights()  # prepare demo data automatically for convenient debug
 
@@ -86,7 +84,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
                 torch.zeros(1, 3, self.imgsz, self.imgsz).to(self.device).type_as(next(self.model.parameters()))
             )  # run once
 
-        self.custom_settings_path = os.path.join(root_source_path, "supervisely", "serve", "custom_settings.yaml")
+        self.custom_settings_path = os.path.join(app_source_path, "custom_settings.yaml")
         self.class_names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
         # self.model_meta = # TODO: can colors exist in model?
 

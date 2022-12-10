@@ -1,0 +1,13 @@
+{
+  "name": "YOLOv5 collection",
+  "type": "collection",
+  "categories": [
+    "yolov5",
+    "neural network",
+    "object detection"
+  ],
+  "description": "All you need to work with YOLOv5",
+  "icon": "https://i.imgur.com/dncQdRn.png",
+  "icon_cover": true,
+  "poster": "https://i.imgur.com/X9NTc5X.png"
+}
