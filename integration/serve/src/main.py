@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import torch
 import numpy as np
 import supervisely as sly
+import supervisely.app.development as sly_app_development
 from supervisely.geometry.sliding_windows_fuzzy import SlidingWindowsFuzzy
 from utils.torch_utils import select_device
 from models.experimental import attempt_load
@@ -21,8 +22,9 @@ from pathlib import Path
 
 # from src.demo_data import prepare_weights
 
+# root_source_path = "/tmp/yolov5"
 root_source_path = str(Path(sys.argv[0]).parents[3])
-load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "local.env"))
+load_dotenv(os.path.join(root_source_path, "integration", "serve", "local.env"))
 load_dotenv(os.path.expanduser("~/supervisely.env"))
 # prepare_weights()  # prepare demo data automatically for convenient debug
 
@@ -84,7 +86,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
                 torch.zeros(1, 3, self.imgsz, self.imgsz).to(self.device).type_as(next(self.model.parameters()))
             )  # run once
 
-        self.custom_settings_path = os.path.join(root_source_path, "supervisely", "serve", "custom_settings.yaml")
+        self.custom_settings_path = os.path.join(root_source_path, "integration", "serve", "custom_settings.yaml")
         self.class_names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
         # self.model_meta = # TODO: can colors exist in model?
 
@@ -101,7 +103,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
             "device": str(self.device),
             "half": str(self.half),
             "input_size": self.imgsz,
-            "session_id": sly.env.task_id(),
+            "session_id": self.task_id,
             "classes_count": len(self.class_names),
             "sliding_window_support": True,
             "videos_support": True
@@ -194,9 +196,12 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
 
                 candidates.append(inf_res_base)
             
-            if isinstance(candidates[0], np.ndarray):
+            if len(candidates) > 0 and isinstance(candidates[0], np.ndarray):
                 candidates = [torch.as_tensor(element) for element in candidates]
-            detections = torch.cat(candidates).unsqueeze_(0)
+            elif len(candidates) > 0:
+                detections = torch.cat(candidates).unsqueeze_(0)
+            else:
+                detections = []
 
             # get raw candidates for vis
             for i, det in enumerate(slides_for_vis):
@@ -219,7 +224,8 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
                 slides_for_vis[i] = {"rectangle": rectangles[i].to_json(), "labels": labels}
 
             # apply NMS
-            detections = non_max_suppression(detections, conf_thres=conf_thres, iou_thres=iou_thres, agnostic=False)
+            if len(detections):
+                detections = non_max_suppression(detections, conf_thres=conf_thres, iou_thres=iou_thres, agnostic=False)
             
             # get labels after NMS
             labels_after_nms = []

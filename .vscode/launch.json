@@ -9,8 +9,8 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
-                "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
                 "LOG_LEVEL": "DEBUG",
+                "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
             }
         },
         {
@@ -45,7 +45,7 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "supervisely.serve.src.main:m.app",
+                "supervisely_l.serve.src.main:m.app",
                 "--host",
                 "0.0.0.0",
                 "--port",
@@ -60,9 +60,12 @@
                 "LOG_LEVEL": "DEBUG",
                 "ENV": "production",
                 "TEAM_ID": "277",
-                "FOLDER": "./my_model",
+                "WORKSPACE_ID": "403",
                 "DEBUG_WITH_SLY_NET": "1",
-                "SLY_APP_DATA_DIR": "${workspaceFolder}/results"
+                "SLY_APP_DATA_DIR": "${workspaceFolder}/results",
+                "modal.state.modelWeightsOptions": "pretrained",
+                "modal.state.selectedModel": "YOLOv5s",
+                "modal.state.weightsPath": ""
             }
         }
     ]

@@ -12,8 +12,8 @@
   "description": "Deploy model as REST API service",
   "docker_image": "supervisely/yolov5:1.0.0",
   "instance_version": "6.4.57",
-  "main_script": "supervisely/serve/src/sly_serve.py",
-  "modal_template": "supervisely/serve/src/modal.html",
+  "main_script": "integration/serve/src/main.py",
+  "modal_template": "integration/serve/src/modal.html",
   "modal_width": 700,
   "modal_template_state": {
     "modelWeightsOptions": "pretrained",
