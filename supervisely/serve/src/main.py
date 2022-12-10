@@ -24,7 +24,7 @@ from pathlib import Path
 
 # root_source_path = "/tmp/yolov5"
 root_source_path = str(Path(sys.argv[0]).parents[3])
-load_dotenv(os.path.join(root_source_path, "integration", "serve", "local.env"))
+load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "local.env"))
 load_dotenv(os.path.expanduser("~/supervisely.env"))
 # prepare_weights()  # prepare demo data automatically for convenient debug
 
@@ -86,7 +86,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
                 torch.zeros(1, 3, self.imgsz, self.imgsz).to(self.device).type_as(next(self.model.parameters()))
             )  # run once
 
-        self.custom_settings_path = os.path.join(root_source_path, "integration", "serve", "custom_settings.yaml")
+        self.custom_settings_path = os.path.join(root_source_path, "supervisely", "serve", "custom_settings.yaml")
         self.class_names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
         # self.model_meta = # TODO: can colors exist in model?
 
