@@ -288,16 +288,16 @@ YOLOv5 超级容易上手，简单易学。我们优先考虑现实世界的结�
 <details>
   <summary>Figure Notes</summary>
 
--   **COCO AP 值**表示[map@0.5](mailto:mAP@0.5):0.95 指标在 5000 张图像上测得[COCO val2017](http://cocodataset.org)从 256 到 1536 的各种推理大小的数据集。
--   **显卡速度**测量每张图像的平均推理时间[COCO val2017](http://cocodataset.org)数据集使用[美国销售.Excelerge](https://aws.amazon.com/ec2/instance-types/p3/)批量大小为 32 的 V100 实例。
--   **高效**数据来自[谷歌/汽车](https://github.com/google/automl)批量大小为 8。
--   **复制**经过`python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
+-   **COCO AP 值** 表示[map@0.5](mailto:mAP@0.5):0.95 指标在[COCO val2017](http://cocodataset.org)数据集的5000张图像上测得， 图像包含 256 到 1536 各种推理大小。
+-   **显卡推理速度** 为在[COCO val2017](http://cocodataset.org)数据集上的平均推理时间，使用[AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100实例，batchsize 为32。
+-   **EfficientDet** 数据来自[google/automl](https://github.com/google/automl)， batchsize 为32。
+-   **复现命令** 为 `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
 
 </details>
 
-### 预训练检查点
+### 预训练模型
 
-| 模型                                                                                                  | 尺寸<br><sup>（像素） | 地图<sup>值<br>50-95 | 地图<sup>值<br>50   | 速度<br><sup>处理器b1<br>（小姐） | 速度<br><sup>V100 b1<br>（小姐） | 速度<br><sup>V100 b32<br>（小姐） | 参数<br><sup>(男) | 失败者<br><sup>@640（二） |
+| 模型                                                                                                  | 尺寸<br><sup>（像素） | mAP<sup>val<br>50-95 | mAP<sup>val<br>50   | 推理速度<br><sup>CPU b1<br>（ms） | 推理速度<br><sup>V100 b1<br>（小姐） | 速度<br><sup>V100 b32<br>（小姐） | 参数量<br><sup>(M) | FLOPs<br><sup>@640 (B) |
 | --------------------------------------------------------------------------------------------------- | --------------- | ----------------- | ---------------- | ------------------------ | -------------------------- | --------------------------- | -------------- | ------------------- |
 | [YOLOv5n](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5n.pt)                  | 640             | 28.0              | 45.7             | **45**                   | **6.3**                    | **0.6**                     | **1.9**        | **4.5**             |
 | [YOLOv5s](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5s.pt)                  | 640             | 37.4              | 56.8             | 98                       | 6.4                        | 0.9                         | 7.2            | 16.5                |
@@ -309,12 +309,12 @@ YOLOv5 超级容易上手，简单易学。我们优先考虑现实世界的结�
 | [YOLOv5s6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5s6.pt)                | 1280            | 44.8              | 63.7             | 385                      | 8.2                        | 3.6                         | 12.6           | 16.8                |
 | [YOLOv5m6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5m6.pt)                | 1280            | 51.3              | 69.3             | 887                      | 11.1                       | 6.8                         | 35.7           | 50.0                |
 | [YOLOv5l6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5l6.pt)                | 1280            | 53.7              | 71.3             | 1784                     | 15.8                       | 10.5                        | 76.8           | 111.4               |
-| [YOLOv5x6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5x6.pt)<br>+[电讯局][tta] | 1280<br>1536    | 55.0<br>**55.8**  | 72.7<br>**72.7** | 3136<br>-                | 26.2<br>-                  | 19.4<br>-                   | 140.7<br>-     | 209.8<br>-          |
+| [YOLOv5x6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5x6.pt)<br>+[TTA][tta] | 1280<br>1536    | 55.0<br>**55.8**  | 72.7<br>**72.7** | 3136<br>-                | 26.2<br>-                  | 19.4<br>-                   | 140.7<br>-     | 209.8<br>-          |
 
 <details>
   <summary>Table Notes</summary>
 
--   所有检查点都使用默认设置训练到 300 个时期。纳米和小型型号使用[hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml)hyps，所有其他人都使用[hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
+-   所有模型都使用默认设置训练到 300 个时期。n和s模型使用[hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml)hyps，其他模型都使用[hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
 -   **地图<sup>值</sup>**值适用于单模型单尺度[COCO val2017](http://cocodataset.org)数据集。<br>重现者`python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
 -   **速度**使用 a 对 COCO val 图像进行平均[美国销售.Excelerge](https://aws.amazon.com/ec2/instance-types/p3/)实例。 NMS 时间 (~1 ms/img) 不包括在内。<br>重现者`python val.py --data coco.yaml --img 640 --task speed --batch 1`
 -   **电讯局**[测试时间增加](https://github.com/ultralytics/yolov5/issues/303)包括反射和尺度增强。<br>重现者`python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
