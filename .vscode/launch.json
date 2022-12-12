@@ -5,7 +5,7 @@
             "name": "Debug",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/supervisely/serve/src/main.py",
+            "program": "${workspaceFolder}/sly_integration/serve/src/main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
@@ -45,7 +45,7 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "supervisely_l.serve.src.main:m.app",
+                "sly_integration.serve.src.main:m.app",
                 "--host",
                 "0.0.0.0",
                 "--port",

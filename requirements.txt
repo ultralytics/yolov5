@@ -1,7 +1,5 @@
 # pip install -r requirements.txt
-# supervisely==6.47.3
-# supervisely[apps]==6.47.3
-git+https://github.com/supervisely/supervisely.git@nn-obj-det
+supervisely==6.68.48
 
 opencv-python-headless==4.5.5.62
 opencv-python==4.5.5.62
@@ -22,5 +20,3 @@ numpy==1.19.0
 # extras --------------------------------------
 thop==0.0.31-2005241907  # FLOPS computation
 pycocotools==2.0.2  # COCO mAP
-
-ffmpeg-python==0.2.0

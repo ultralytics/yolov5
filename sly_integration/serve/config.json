@@ -1,6 +1,7 @@
 {
   "name": "Serve YOLOv5",
   "type": "app",
+  "version": "2.0.0",
   "categories": [
     "neural network",
     "images",
@@ -8,13 +9,13 @@
     "object detection",
     "detection & tracking",
     "serve"
-  ],
+  ], 
   "description": "Deploy model as REST API service",
   "docker_image": "supervisely/yolov5:1.0.0",
   "instance_version": "6.4.57",
-  "entrypoint": "python -m uvicorn sly_integration.serve.main:m.app --host 0.0.0.0 --port 8000",
+  "entrypoint": "python -m uvicorn sly_integration.serve.src.main:m.app --host 0.0.0.0 --port 8000",
   "port": 8000,
-  "modal_template": "supervisely/serve/src/modal.html",
+  "modal_template": "sly_integration/serve/src/modal.html",
   "modal_width": 700,
   "modal_template_state": {
     "modelWeightsOptions": "pretrained",

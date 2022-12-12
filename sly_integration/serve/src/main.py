@@ -17,14 +17,10 @@ from utils.general import check_img_size, non_max_suppression, scale_coords, xyw
 from utils.datasets import letterbox
 from pathlib import Path
 
-# from src.demo_data import prepare_weights
-
-# root_source_path = "/tmp/yolov5"
-root_source_path = str(Path(sys.argv[0]).parents[3])
-app_source_path = str(Path(sys.argv[0]).parents[1])
+root_source_path = str(Path(__file__).parents[3])
+app_source_path = str(Path(__file__).parents[1])
 load_dotenv(os.path.join(app_source_path, "local.env"))
 load_dotenv(os.path.expanduser("~/supervisely.env"))
-# prepare_weights()  # prepare demo data automatically for convenient debug
 
 model_weights_options = os.environ['modal.state.modelWeightsOptions']
 pretrained_weights = os.environ['modal.state.selectedModel'].lower()
