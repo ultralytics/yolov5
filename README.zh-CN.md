@@ -49,7 +49,7 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 
 <div align="center">
 
-[Ultralytics Live Session Ep。 2](https://youtu.be/LKpuzZllNpA)✨将在**欧洲中部时间 12 月 13 日星期二的 19:00**和[ Joseph Nelson](https://github.com/josephofiowa)的[机器人流](https://roboflow.com/?ref=ultralytics)谁将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。收听 Glenn 和 Joseph 询问如何通过无缝数据集集成来加快工作流程！ 🔥
+[Ultralytics Live Session Ep。 2](https://youtu.be/LKpuzZllNpA)✨将在**欧洲中部时间 12 月 13 日星期二的 19:00**，通过 [Joseph Nelson](https://github.com/josephofiowa) 的 [Roboflow](https://roboflow.com/?ref=ultralytics)直播， 届时他将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。欢迎收听 Glenn 和 Joseph ，以了解如何通过无缝数据集集成来加快工作流程！ 🔥
 
 <a align="center" href="https://youtu.be/LKpuzZllNpA" target="_blank">
 <img width="800" src="https://user-images.githubusercontent.com/85292283/205996456-bf3efa33-9c46-455e-b322-a64886cc7a0b.png"></a>
@@ -62,7 +62,7 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 <img width="800" src="https://user-images.githubusercontent.com/61612323/204180385-84f3aca9-a5e9-43d8-a617-dda7ca12e54a.png"></a>
 </div>
 
-我们新的 YOLOv5[release v7.0](https://github.com/ultralytics/yolov5/releases/v7.0)实例分割模型是世界上最快和最准确的模型，击败所有当前[SOTA 基准](https://paperswithcode.com/sota/real-time-instance-segmentation-on-mscoco)。我们使它非常易于训练、验证和部署。更多细节请查看[发行说明](https://github.com/ultralytics/yolov5/releases/v7.0)或访问我们的[YOLOv5 分割 Colab 笔记本](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb)以快速入门。
+我们新的 YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases/v7.0)实例分割模型是世界上最快和最准确的模型，击败所有当前 [SOTA 基准](https://paperswithcode.com/sota/real-time-instance-segmentation-on-mscoco)。我们使它非常易于训练、验证和部署。更多细节请查看 [发行说明](https://github.com/ultralytics/yolov5/releases/v7.0) 或访问我们的 [YOLOv5 分割 Colab 笔记本](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb) 以快速入门。
 
 <details>
   <summary>实例分割模型列表</summary>
@@ -79,7 +79,7 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 | [YOLOv5l-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5l-seg.pt) | 640                 | 49.0                 | 39.9                  | 66:43 (2x)                                    | 857.4                             | 2.9                               | 47.9              | 147.7                  |
 | [YOLOv5x-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5x-seg.pt) | 640                 | **50.7**             | **41.4**              | 62:56 (3x)                                    | 1579.2                            | 4.5                               | 88.8              | 265.7                  |
 
--   所有模型使用 SGD 优化器训练， 都使用 `lr0=0.01` 和 `weight_decay=5e-5` 参数， 图像大小为 640 。<br>训练 log 可以查看 https://wandb.ai/glenn-jocher/YOLOv5_v70_official
+-   所有模型使用 SGD 优化器训练， 都使用 `lr0=0.01` 和 `weight_decay=5e-5` 参数， 图像大小为 640 。<br>训练 log 可以查看 https://wandb.ai/glenn-jocher/YOLOv5_v70_official 
 -   **准确性**结果都在 COCO 数据集上，使用单模型单尺度测试得到。<br>复现命令 `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt`
 -   **推理速度**是使用 100 张图像推理时间进行平均得到，测试环境使用 [Colab Pro](https://colab.research.google.com/signup) 上A100 高 RAM 实例。结果仅表示推理速度（NMS 每张图像增加约 1 毫秒）。<br>复现命令 `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt --batch 1`
 -   **模型转换**到 FP32 的 ONNX 和 FP16 的 TensorRT 脚本为 `export.py`.<br>运行命令 `python export.py --weights yolov5s-seg.pt --include engine --device 0 --half`
