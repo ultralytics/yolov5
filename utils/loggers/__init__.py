@@ -78,6 +78,27 @@ class Loggers():
             'x/lr0',
             'x/lr1',
             'x/lr2']  # params
+        self.kpt_keys = [
+            'train/box_loss',
+            'train/obj_loss',
+            'train/cls_loss',
+            'train/lkptv_loss',
+            'train/lkpt_loss',
+            'metrics/precision',
+            'metrics/recall',
+            'metrics/mAP_0.5',
+            'metrics/mAP_0.5:0.95',  # metrics
+            'kpt/mAP_0.5',
+            'kpt/mAP_0.5:0.95',
+            'val/box_loss',
+            'val/obj_loss',
+            'val/cls_loss',
+            'val/lkptv_loss',
+            'val/lkpt_loss',
+            'x/lr0',
+            'x/lr1',
+            'x/lr2'
+        ]
         self.best_keys = ['best/epoch', 'best/precision', 'best/recall', 'best/mAP_0.5', 'best/mAP_0.5:0.95']
         for k in LOGGERS:
             setattr(self, k, None)  # init empty logger dictionary
@@ -222,15 +243,24 @@ class Loggers():
         if self.comet_logger:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
-    def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
+    def on_fit_epoch_end(self, vals, epoch, best_fitness, fi, kpt_label):
         # Callback runs at the end of each fit (train+val) epoch
-        x = dict(zip(self.keys, vals))
-        if self.csv:
-            file = self.save_dir / 'results.csv'
-            n = len(x) + 1  # number of cols
-            s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + self.keys)).rstrip(',') + '\n')  # add header
-            with open(file, 'a') as f:
-                f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+        if kpt_label:
+            x = dict(zip(self.kpt_keys, vals))
+            if self.csv:
+                file = self.save_dir / 'results.csv'
+                n = len(x) + 1  # number of cols
+                s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + self.kpt_keys)).rstrip(',') + '\n')  # add header
+                with open(file, 'a') as f:
+                    f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+        else:
+            x = dict(zip(self.keys, vals))
+            if self.csv:
+                file = self.save_dir / 'results.csv'
+                n = len(x) + 1  # number of cols
+                s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + self.keys)).rstrip(',') + '\n')  # add header
+                with open(file, 'a') as f:
+                    f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
 
         if self.tb:
             for k, v in x.items():

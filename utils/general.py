@@ -889,7 +889,7 @@ def non_max_suppression(
     if mps:  # MPS not fully supported yet, convert tensors to CPU before NMS
         prediction = prediction.cpu()
     bs = prediction.shape[0]  # batch size
-    nc = prediction.shape[2] - nm - 5 if not kpt_label else prediction.shape[2] - nm - 3 * kpt_label # number of classes
+    nc = prediction.shape[2] - nm - 5 if not kpt_label else prediction.shape[2] - 5 - 3 * kpt_label # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Checks
@@ -927,12 +927,13 @@ def non_max_suppression(
             continue
 
         # Compute conf
-        x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
+        x[:, 5:mi] *= x[:, 4:5]  # conf = obj_conf * cls_conf
 
         # Box/Mask
         box = xywh2xyxy(x[:, :4])  # center_x, center_y, width, height) to (x1, y1, x2, y2)
         mask = x[:, mi:]  # zero columns if no masks
 
+        # TODO понять что происходит и как работать с многоклассовыми кейпоинтами
         # Detections matrix nx6 (xyxy, conf, cls)
         if multi_label:
             i, j = (x[:, 5:mi] > conf_thres).nonzero(as_tuple=False).T

@@ -41,7 +41,7 @@ from utils.dataloaders import create_dataloader
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
                            scale_boxes, xywh2xyxy, xyxy2xywh)
-from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
+from utils.metrics import ConfusionMatrix, ap_per_class, box_iou, OKS_matrix
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
 
@@ -92,6 +92,31 @@ def process_batch(detections, labels, iouv):
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             correct[matches[:, 1].astype(int), i] = True
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
+
+
+def process_batch_kpt(detections, labels, iouv, kpt_label):
+    """
+    Return correct prediction matrix
+    Arguments:
+        detections (array[N, 6 + num_kpt * 3])
+        labels (array[M, 5 + num_kpt * 2])
+    Returns:
+        correct (array[N, 10]), for 10 IoU levels
+    """
+    correct = torch.zeros((detections.shape[0], iouv.shape[0]), device=iouv.device, dtype=bool)
+    iou = OKS_matrix(labels, detections, kpt_label)
+    correct_class = (labels[:, 0:1] == detections[:, 5]).clone().detach().to(device=iouv.device)
+    for i in range(len(iouv)):
+        x = torch.where((iou >= iouv[i]) & correct_class)  # IoU > threshold and classes match
+        if x[0].shape[0]:
+            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()  # [label, detect, iou]
+            if x[0].shape[0] > 1:
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+                # matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+            correct[matches[:, 1].astype(int), i] = True
+    return correct
 
 
 @smart_inference_mode()
@@ -193,8 +218,11 @@ def run(
     s = ('%22s' + '%11s' * 6) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95')
     tp, fp, p, r, f1, mp, mr, map50, ap50, map = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     dt = Profile(), Profile(), Profile()  # profiling times
-    loss = torch.zeros(3, device=device)
-    jdict, stats, ap, ap_class = [], [], [], []
+    if kpt_label:
+        loss = torch.zeros(5, device=device)
+    else:
+        loss = torch.zeros(3, device=device)
+    jdict, stats, ap, ap_class, stats_kpt = [], [], [], [], []
     callbacks.run('on_val_start')
     pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
@@ -221,7 +249,7 @@ def run(
         # NMS
         if kpt_label:
             num_points = kpt_label
-            targets[:, 2:] *= torch.Tensor([width, height]*num_points).to(device)  # to pixels
+            targets[:, 2:] *= torch.Tensor([width, height] * (num_points + 2)).to(device)  # + 2 xywh detector
         else:
             targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
@@ -238,6 +266,7 @@ def run(
         # Metrics
         for si, pred in enumerate(preds):
             labels = targets[targets[:, 0] == si, 1:]
+            labels_kpt = targets[targets[:, 0] == si, 5:]
             nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
             path, shape = Path(paths[si]), shapes[si][0]
             correct = torch.zeros(npr, niou, dtype=torch.bool, device=device)  # init
@@ -246,17 +275,19 @@ def run(
             if npr == 0:
                 if nl:
                     stats.append((correct, *torch.zeros((2, 0), device=device), labels[:, 0]))
+                    stats_kpt.append((correct, *torch.zeros((2, 0), device=device), labels[:, 0]))
                     if plots:
                         confusion_matrix.process_batch(detections=None, labels=labels[:, 0])
                 continue
 
+            # TODO подчинить рисовалку
             # Predictions
             if single_cls:
                 pred[:, 5] = 0
             predn = pred.clone()
             scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
             if kpt_label:
-                scale_boxes(im[si].shape[1:], predn[:,6:], shapes[si][0], shapes[si][1], kpt_label=kpt_label, step=3)  # native-space pred
+                scale_boxes(im[si].shape[1:], predn[:, 6:], shapes[si][0], shapes[si][1], kpt_label=kpt_label, step=3)  # native-space pred
 
             # Evaluate
             if nl:
@@ -267,9 +298,13 @@ def run(
                     scale_boxes(im[si].shape[1:], tkpt, shapes[si][0], shapes[si][1], kpt_label=kpt_label)  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
+                if kpt_label:
+                    correct_kpt = process_batch_kpt(predn, torch.cat((labelsn, labels_kpt), 1), iouv, kpt_label)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
             stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
+            if kpt_label:
+                stats_kpt.append((correct_kpt, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
 
             # Save/log
             if save_txt:
@@ -279,7 +314,7 @@ def run(
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
-        if plots and batch_i < 3:
+        if plots and batch_i < 0: # ПОТОМ УБРАТЬ ПОСЛЕ ПОЧИНКИ ОТРИСОВКИ
             plot_images(im, targets, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)  # labels
             plot_images(im, output_to_target(preds), paths, save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 
@@ -291,6 +326,12 @@ def run(
         tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
+    if kpt_label:
+        stats_kpt = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats_kpt)]  # to numpy
+        if len(stats_kpt) and stats_kpt[0].any():
+            _, _, p_kpt, r_kpt, _, ap_kpt, _ = ap_per_class(*stats_kpt, plot=plots, save_dir=save_dir, names=names)
+            ap50_kpt, ap_kpt = ap_kpt[:, 0], ap_kpt.mean(1)  # AP@0.5, AP@0.5:0.95
+            mp_kpt, mr_kpt, map50_kpt, map_kpt = p_kpt.mean(), r_kpt.mean(), ap50_kpt.mean(), ap_kpt.mean()
     nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
 
     # Print results
@@ -349,7 +390,10 @@ def run(
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
+    if kpt_label:
+        return (mp, mr, map50, map, map50_kpt, map_kpt, *(loss.cpu() / len(dataloader)).tolist()), maps, t
+    else:
+        return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
 
 def parse_opt():

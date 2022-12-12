@@ -462,6 +462,7 @@ class LoadImagesAndLabels(Dataset):
         self.path = path
         self.albumentations = Albumentations(size=img_size) if augment else None
         self.kpt_label = kpt_label
+        self.flip_index = [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]
 
         try:
             f = []  # image files
@@ -693,7 +694,10 @@ class LoadImagesAndLabels(Dataset):
 
         nl = len(labels)  # number of labels
         if nl:
-            labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1E-3, kpt_label=self.kpt_label)
+            labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1E-3)
+            if self.kpt_label:
+                labels[:, 6::2] /= img.shape[0]  # normalized kpt heights 0-1
+                labels[:, 5::2] /= img.shape[1] # normalized kpt width 0-1
 
         if self.augment:
             # Albumentations
@@ -1044,14 +1048,13 @@ def verify_image_label(args):
                     assert (lb[:, 1:5] <= 1).all(), f'non-normalized or out of bounds coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
                     assert (lb[:, 5::3] <= 1).all(), f'non-normalized or out of bounds keypoint coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
                     kpts = np.zeros((lb.shape[0], 5 + kpt_label * 2))
-                    for i in range(len(l)):
-                        kpt = np.delete(l[i,5:], np.arange(2, l.shape[1]-5, 3))  #remove the occlusion paramater from the GT
-                        kpts[i] = np.hstack((l[i, :5], kpt))
+                    for i in range(len(lb)):
+                        kpt = np.delete(lb[i,5:], np.arange(2, lb.shape[1]-5, 3))  #remove the occlusion paramater from the GT
+                        kpts[i] = np.hstack((lb[i, :5], kpt))
                     lb = kpts
                 else:
                     assert lb.shape[1] == 5, f'labels require 5 columns, {lb.shape[1]} columns detected'
-                    assert (lb[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
-                    
+                    assert (lb[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lb[:, 1:][lb[:, 1:] > 1]}'                    
             else:
                 ne = 1  # label empty
                 if kpt_label:

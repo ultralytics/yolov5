@@ -27,6 +27,41 @@ def smooth(y, f=0.05):
     yp = np.concatenate((p * y[0], y, p * y[-1]), 0)  # y padded
     return np.convolve(yp, np.ones(nf) / nf, mode='valid')  # y-smoothed
 
+def OKS(gt, pred, kpt_label):
+    # The object scale
+    SCALE = (gt[2] - gt[0]) * (gt[3] - gt[1])
+
+    # pred_x = pred[6::3]
+    # pred_y = pred[7::3]
+    # gt_x = gt[5::3]
+    # gt_y = gt[6::3]
+    # visibility = gt[7::3]
+    pred_x = pred[6::3]
+    pred_y = pred[7::3]
+    gt_x = gt[5::2]
+    gt_y = gt[6::2]
+    visibility = torch.ones((kpt_label), device=pred.device)
+    pred = torch.tensor([[pred_x[i], pred_y[i]] for i in range(kpt_label)], device=pred.device)
+    gt = torch.tensor([[gt_x[i], gt_y[i]] for i in range(kpt_label)], device=pred.device)
+    # visibility = np.array([[(visibility[i]>0.5).astype(int)] for i in range(kpt_label)])
+    # Compute the L2/Euclidean Distance
+    distances = torch.linalg.norm(pred - gt, axis=-1)
+    # Compute the exponential part of the equation
+    exp_vector = torch.exp(-(distances**2) / (2 * (SCALE**2)))
+    # The numerator expression
+    numerator = torch.dot(exp_vector, visibility)
+    # The denominator expression
+    denominator = torch.sum(visibility)
+    return numerator / denominator
+
+def OKS_matrix(labels, preds, kpt_label):
+    matrix = torch.zeros((labels.shape[0], preds.shape[0]), device=preds.device)
+    for i in range(labels.shape[0]):
+        for j in range(preds.shape[0]):
+            oks = OKS(labels[i], preds[i], kpt_label)
+            matrix[i, j] = oks
+    return matrix
+
 
 def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16, prefix=""):
     """ Compute the average precision, given the recall and precision curves.

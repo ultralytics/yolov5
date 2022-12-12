@@ -1,0 +1,8 @@
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ./datasets/coco/train2017.txt  # 118287 images
+val: ./datasets/coco/val2017.txt  # 5000 images
+
+# number of classes
+nc: 1
+
+names: [ 'person']
