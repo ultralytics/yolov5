@@ -28,7 +28,7 @@ hsv_h: 0.01041
 hsv_s: 0.54703
 hsv_v: 0.27739
 degrees: 0.0
-rotation_prob: 1.0 
+rotation_prob: 1.0
 translate: 0.04591
 scale: 0.75544
 shear: 0.0

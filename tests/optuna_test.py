@@ -1,8 +1,9 @@
-from itertools import product
 import sys
+from itertools import product
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import yaml
 
 FILE = Path(__file__).resolve()
@@ -54,6 +55,7 @@ def test_trials():
 
     return opt.save_dir
 
+
 def test_optuna_gridsearch():
     weights_path = ROOT / 'yolov5n6.pt'
     data_path = ROOT / 'data/coco128.yaml'
@@ -84,7 +86,7 @@ def test_optuna_gridsearch():
 
     hyp_path = ROOT / 'tests/hyp.test-hyps.yaml'
     with open(hyp_path, errors='ignore') as f:
-        hyp = yaml.safe_load(f) # load hyps dict
+        hyp = yaml.safe_load(f)  # load hyps dict
 
     grid_cell_num = 4
     lr0_grid = np.linspace(1e-7, 0.07, grid_cell_num)
@@ -92,12 +94,7 @@ def test_optuna_gridsearch():
     weight_decay_grid = np.linspace(0.0, 0.0001, grid_cell_num)
     warmup_epochs_grid = np.linspace(0.5, 5.0, grid_cell_num)
 
-    for grid_hyps in product(
-        lr0_grid,
-        lrf_grid,
-        weight_decay_grid,
-        warmup_epochs_grid
-    ):
+    for grid_hyps in product(lr0_grid, lrf_grid, weight_decay_grid, warmup_epochs_grid):
         hyp['lr0'] = float(grid_hyps[0])
         hyp['lrf'] = float(grid_hyps[1])
         hyp['weight_decay'] = float(grid_hyps[2])

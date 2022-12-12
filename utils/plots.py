@@ -483,7 +483,7 @@ def plot_evolve(evolve_csv='path/to/evolve.csv'):  # from utils.plots import *; 
 
     # for prettier plots
     plot_rows, plot_cols = get_optimal_rows_cols(keys[7:])
-    
+
     for i, k in enumerate(keys[7:]):
         v = x[:, 7 + i]
         mu = v[j]  # best single result

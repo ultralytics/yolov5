@@ -61,10 +61,8 @@ from utils.loggers.comet.comet_utils import check_comet_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
-from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
-                               smart_resume, torch_distributed_zero_first)
-from utils.torch_utils import save_ckpt
-
+from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, save_ckpt, select_device, smart_DDP,
+                               smart_optimizer, smart_resume, torch_distributed_zero_first)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -75,6 +73,7 @@ try:
     import optuna
     from optuna.exceptions import ExperimentalWarning
     from optuna.storages import RetryFailedTrialCallback
+
     # Disabling optuna logging
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     assert hasattr(optuna, '__version__')  # verify package import not local dir
@@ -530,7 +529,10 @@ def parse_opt(known=False):
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
-    parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW', 'RAdam', 'RMSProp'], default='SGD',
+    parser.add_argument('--optimizer',
+                        type=str,
+                        choices=['SGD', 'Adam', 'AdamW', 'RAdam', 'RMSProp'],
+                        default='SGD',
                         help='optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
@@ -553,24 +555,35 @@ def parse_opt(known=False):
     parser.add_argument('--artifact_alias', type=str, default='latest', help='Version of dataset artifact to use')
 
     # optuna hyperparameter optimization arguments
-    parser.add_argument('--optuna', action='store_true',
+    parser.add_argument('--optuna',
+                        action='store_true',
                         help='Evolve hyperparameters with Optuna, only works with --optuna')
-    parser.add_argument('--no-augs-evolving', action='store_true',
+    parser.add_argument('--no-augs-evolving',
+                        action='store_true',
                         help='Disable evolution search for augmentations, only works with --optuna')
-    parser.add_argument('--no-loss-evolving', action='store_true',
+    parser.add_argument('--no-loss-evolving',
+                        action='store_true',
                         help='Disable evolution search for loss, only works with --optuna')
-    parser.add_argument('--only-wu-epochs-and-lr', action='store_true',
+    parser.add_argument('--only-wu-epochs-and-lr',
+                        action='store_true',
                         help='Evolution search only for warmup epochs and learning rate, only works with --optuna')
 
-    parser.add_argument('--save-every-trial', action='store_true',
+    parser.add_argument('--save-every-trial',
+                        action='store_true',
                         help='Save best and last checkpoints in every Optuna\'s trial')
-    parser.add_argument('--min-res', type=int, default=1,
+    parser.add_argument('--min-res',
+                        type=int,
+                        default=1,
                         help='Minimal resources for HyperbandPruner, represent min number of epochs, '
                         'only works with --optuna')
-    parser.add_argument('--max-res', default='auto',
+    parser.add_argument('--max-res',
+                        default='auto',
                         help='Maximal resources for HyperbandPruner, represent max number of epochs, '
                         'only works with --optuna')
-    parser.add_argument('--reduction-factor', type=int, default=3, help='Reduction factor of HyperbandPruner, '
+    parser.add_argument('--reduction-factor',
+                        type=int,
+                        default=3,
+                        help='Reduction factor of HyperbandPruner, '
                         'only works with --optuna')
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
@@ -737,8 +750,8 @@ def main(opt, callbacks=Callbacks()):
                 results = train(hyp.copy(), opt, device, callbacks)
                 callbacks = Callbacks()
                 # Write mutation results
-                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-                        'val/obj_loss', 'val/cls_loss')
+                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                        'val/box_loss', 'val/obj_loss', 'val/cls_loss')
                 print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
 
         else:  # optuna evolving case
@@ -750,9 +763,27 @@ def main(opt, callbacks=Callbacks()):
             if opt.no_augs_evolving:
                 # Disabling augmentations as the first number in the tuple is mutation scale
                 augs_keys = (
-                    'hsv_h', 'hsv_s', 'hsv_v', 'degrees', 'rotation_prob', 'translate', 'scale', 'shear', 'perspective',
-                    'flipud', 'fliplr', 'mosaic', 'mixup', 'copy_paste', 'blur', 'median_blur', 'gray', 'clahe',
-                    'random_gamma', 'brightness_contrast', 'image_compression',
+                    'hsv_h',
+                    'hsv_s',
+                    'hsv_v',
+                    'degrees',
+                    'rotation_prob',
+                    'translate',
+                    'scale',
+                    'shear',
+                    'perspective',
+                    'flipud',
+                    'fliplr',
+                    'mosaic',
+                    'mixup',
+                    'copy_paste',
+                    'blur',
+                    'median_blur',
+                    'gray',
+                    'clahe',
+                    'random_gamma',
+                    'brightness_contrast',
+                    'image_compression',
                 )
 
                 for key in augs_keys:
@@ -760,7 +791,11 @@ def main(opt, callbacks=Callbacks()):
 
             if opt.no_loss_evolving:  # disable losses weights optimization
                 loss_keys = (
-                    'box', 'cls', 'cls_pw', 'obj', 'obj_pw',
+                    'box',
+                    'cls',
+                    'cls_pw',
+                    'obj',
+                    'obj_pw',
                 )
 
                 for key in loss_keys:
@@ -769,8 +804,7 @@ def main(opt, callbacks=Callbacks()):
             if opt.only_wu_epochs_and_lr:  # optimize only lr0 and warmup_epochs
                 meta = {
                     'lr0': (1, 1e-5, 1e-1),
-                    'warmup_epochs': (1, 1, 15),
-                }
+                    'warmup_epochs': (1, 1, 15),}
 
             pruner = optuna.pruners.HyperbandPruner(
                 min_resource=opt.min_res,
@@ -787,7 +821,8 @@ def main(opt, callbacks=Callbacks()):
                 storage_name,
                 heartbeat_interval=1,
                 failed_trial_callback=RetryFailedTrialCallback(),
-                engine_kwargs={"connect_args": {"timeout": 100}},
+                engine_kwargs={"connect_args": {
+                    "timeout": 100}},
             )
 
             with warnings.catch_warnings():
@@ -800,10 +835,7 @@ def main(opt, callbacks=Callbacks()):
                     sampler = pickle.load(open(save_dir / 'sampler.pkl', 'rb'))
                 else:
                     # create TPE sampler
-                    sampler = optuna.samplers.TPESampler(
-                        seed=(opt.seed + 1 + RANK),
-                        multivariate=True
-                    )
+                    sampler = optuna.samplers.TPESampler(seed=(opt.seed + 1 + RANK), multivariate=True)
 
                 study = optuna.create_study(
                     direction="maximize",  # in case of metric optimization
@@ -836,9 +868,9 @@ def main(opt, callbacks=Callbacks()):
                 results = tuple(val if val > 0 else 0 for val in log_vals[3:-3])  # Get results from log_vals
 
                 # get the list of trial fitness
-                trial_fitness = [x.values[0]
-                                 for x in study.trials
-                                 if x.state in (optuna.trial.TrialState.PRUNED, optuna.trial.TrialState.COMPLETE)]
+                trial_fitness = [
+                    x.values[0] for x in study.trials
+                    if x.state in (optuna.trial.TrialState.PRUNED, optuna.trial.TrialState.COMPLETE)]
 
                 best_fitness = max(trial_fitness) if trial_fitness else 0
 
@@ -852,7 +884,7 @@ def main(opt, callbacks=Callbacks()):
                     shutil.copytree(trial_last, trial_best)
 
                 if trial.should_prune() or is_max_epochs:
-                
+
                     # Replacing standard hyperparameters with parameters from trial
                     trial_hyp = {**hyp, **trial.params}
                     # log_vals contains losses, results and lr
@@ -889,22 +921,22 @@ def main(opt, callbacks=Callbacks()):
                         hyps_str = '#'.join(f'{k}_{round(v, 5)}' for k, v in trial.params.items())
                         opt.save_dir += hyps_str
                     else:
-                        LOGGER.info(emojis(
-                            f'WARNING: Generation save dir is set default name: {opt.save_dir}.'
-                            f'Too many hyperparameters of optimization is specified ⚠️'))
+                        LOGGER.info(
+                            emojis(f'WARNING: Generation save dir is set default name: {opt.save_dir}.'
+                                   f'Too many hyperparameters of optimization is specified ⚠️'))
 
                 # Create callbacks and loggers instances
                 callbacks = Callbacks()
 
                 # Set pruning callback
-                trial_pruning_callback = partial(optuna_pruning_callback, trial=trial, study=study,
+                trial_pruning_callback = partial(optuna_pruning_callback,
+                                                 trial=trial,
+                                                 study=study,
                                                  root_dir=root_save_dir)
                 # Report trial's results in on_fit_epoch_end action
-                callbacks.register_action(
-                    'after_model_save',
-                    name='prune_optuna_trial',
-                    callback=trial_pruning_callback
-                )
+                callbacks.register_action('after_model_save',
+                                          name='prune_optuna_trial',
+                                          callback=trial_pruning_callback)
 
                 LOGGER.info(f"{colorstr(f'Start training trial {trial.number}')}\n")
 
@@ -920,9 +952,9 @@ def main(opt, callbacks=Callbacks()):
                 return fitness(np.array(results).reshape(1, -1))
 
             # In case of resume we must keep number of trials
-            n_prev_trials = len([trial
-                                 for trial in study.get_trials()
-                                 if trial.state in (optuna.trial.TrialState.PRUNED, optuna.trial.TrialState.COMPLETE)])
+            n_prev_trials = len([
+                trial for trial in study.get_trials()
+                if trial.state in (optuna.trial.TrialState.PRUNED, optuna.trial.TrialState.COMPLETE)])
             n_trials = opt.evolve - n_prev_trials
             study.optimize(optuna_criterion, n_trials=n_trials)
 
