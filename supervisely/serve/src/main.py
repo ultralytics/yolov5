@@ -26,8 +26,6 @@ model_weights_options = os.environ['modal.state.modelWeightsOptions']
 pretrained_weights = os.environ['modal.state.selectedModel'].lower()
 custom_weights = os.environ['modal.state.weightsPath']
 
-IMG_SIZE = 640
-
 class YOLOv5Model(sly.nn.inference.ObjectDetection):
     def load_on_device(
         self,
@@ -67,8 +65,9 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
         elif cfgs_loaded is not None and cfgs_loaded['img_size']:
             imgsz = cfgs_loaded['img_size'][0]
         else:
-            sly.logger.warning(f"Image size is not found in model checkpoint. Use default: {IMG_SIZE}")
-            imgsz = IMG_SIZE
+            default_img_size = 640
+            sly.logger.warning(f"Image size is not found in model checkpoint. Use default: {default_img_size}")
+            imgsz = default_img_size
         self.stride = int(self.model.stride.max())  # model stride
         self.imgsz = check_img_size(imgsz, s=self.stride)  # check img_size
 

@@ -5,7 +5,7 @@
             "name": "Debug",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/sly_integration/serve/src/main.py",
+            "program": "${workspaceFolder}/supervisely/serve/src/main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
@@ -14,38 +14,14 @@
             }
         },
         {
-            "name": "Internal debug for Supervisely Team",
-            "type": "python",
-            "request": "launch",
-            // "program": "${workspaceFolder}/src/main.py",
-            "module": "uvicorn",
-            "args": [
-                "src.main:m.app",
-                "--host",
-                "0.0.0.0",
-                "--port",
-                "8000",
-                "--ws",
-                "websockets"
-            ],
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
-                "LOG_LEVEL": "DEBUG",
-                "ENV": "production",
-                "SLY_APP_DATA_DIR": "${workspaceFolder}/results",
-                "TEAM_ID": "1",
-                "FOLDER": "/my-folder/my_model"
-            }
-        },
-        {
             "name": "Advanced mode for Supervisely Team",
             "type": "python",
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "sly_integration.serve.src.main:m.app",
+                "main:m.app",
+                "--app-dir",
+                "./supervisely/serve/src",
                 "--host",
                 "0.0.0.0",
                 "--port",

@@ -13,9 +13,9 @@
   "description": "Deploy model as REST API service",
   "docker_image": "supervisely/yolov5:1.0.0",
   "instance_version": "6.4.57",
-  "entrypoint": "python -m uvicorn sly_integration.serve.src.main:m.app --host 0.0.0.0 --port 8000",
+  "entrypoint": "python -m uvicorn main:m.app --app-dir ./supervisely/serve/src --host 0.0.0.0 --port 8000 --ws websockets",
   "port": 8000,
-  "modal_template": "sly_integration/serve/src/modal.html",
+  "modal_template": "supervisely/serve/src/modal.html",
   "modal_width": 700,
   "modal_template_state": {
     "modelWeightsOptions": "pretrained",

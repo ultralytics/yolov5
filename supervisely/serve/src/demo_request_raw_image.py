@@ -6,8 +6,8 @@ import supervisely.imaging.image as sly_image
 
 # Start debug in Advanced Mode for Supervisely Team or run Serve app from ecosystem and after run this script from 'sly_integration/serve/src' path
 
-APP_SERVER_ADDRESS = "https://127.0.0.1:8000"
-ENDPOINT_URL = f'{APP_SERVER_ADDRESS}/inference_image' # '/inference_batch' endpoint is also available.
+APP_ADDRESS = "https://app.supervise.ly/net/dwuDUS_vp1V9UX...secret_url...J7_lJVUvfBplBZAm0="
+ENDPOINT_URL = f'{APP_ADDRESS}/inference_image' # '/inference_batch' endpoint is also available.
 ROOT_SOURCE_PATH = str(Path(os.getcwd()).parents[2])
 IMAGE_PATH = os.path.join(ROOT_SOURCE_PATH, "data", "images", "bus.jpg")
 SETTINGS = json.dumps({
