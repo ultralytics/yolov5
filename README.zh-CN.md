@@ -49,27 +49,27 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 
 <div align="center">
 
-[Ultralytics Live Session Ep。 2](https://youtu.be/LKpuzZllNpA)✨将在**欧洲中部时间 12 月 13 日星期二的 19:00**，通过 [Joseph Nelson](https://github.com/josephofiowa) 的 [Roboflow](https://roboflow.com/?ref=ultralytics)直播， 届时他将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。欢迎收听 Glenn 和 Joseph ，以了解如何通过无缝数据集集成来加快工作流程！ 🔥
+[Ultralytics Live Session Ep。 2](https://youtu.be/LKpuzZllNpA) ✨ 将在 **欧洲中部时间 12 月 13 日星期二的 19:00** ，通过 [Joseph Nelson](https://github.com/josephofiowa) 的 [Roboflow](https://roboflow.com/?ref=ultralytics) 直播， 届时他将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。欢迎收听 Glenn 和 Joseph ，以了解如何通过无缝数据集集成来加快工作流程！ 🔥
 
 <a align="center" href="https://youtu.be/LKpuzZllNpA" target="_blank">
 <img width="800" src="https://user-images.githubusercontent.com/85292283/205996456-bf3efa33-9c46-455e-b322-a64886cc7a0b.png"></a>
 </div>
 
-## <div align="center">实例分割模型 ⭐ 新</div>
+## <div align="center">实例分割模型 ⭐  新</div>
 
 <div align="center">
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
 <img width="800" src="https://user-images.githubusercontent.com/61612323/204180385-84f3aca9-a5e9-43d8-a617-dda7ca12e54a.png"></a>
 </div>
 
-我们新的 YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases/v7.0)实例分割模型是世界上最快和最准确的模型，击败所有当前 [SOTA 基准](https://paperswithcode.com/sota/real-time-instance-segmentation-on-mscoco)。我们使它非常易于训练、验证和部署。更多细节请查看 [发行说明](https://github.com/ultralytics/yolov5/releases/v7.0) 或访问我们的 [YOLOv5 分割 Colab 笔记本](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb) 以快速入门。
+我们新的 YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases/v7.0) 实例分割模型是世界上最快和最准确的模型，击败所有当前 [SOTA 基准](https://paperswithcode.com/sota/real-time-instance-segmentation-on-mscoco)。我们使它非常易于训练、验证和部署。更多细节请查看 [发行说明](https://github.com/ultralytics/yolov5/releases/v7.0) 或访问我们的 [YOLOv5 分割 Colab 笔记本](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb) 以快速入门。
 
 <details>
   <summary>实例分割模型列表</summary>
 
 <br>
 
-我们使用 A100 GPU 在 COCO 上以 640 图像大小训练了 300 个 epochs 的 YOLOv5 分割模型。我们将所有模型导出到 ONNX FP32 以进行 CPU 速度测试，并导出到 TensorRT FP16 以进行 GPU 速度测试。为了便于再现，我们在 Google [Colab Pro](https://colab.research.google.com/signup) 上进行了所有速度测试。
+我们使用 A100 GPU 在 COCO 上以 640 图像大小训练了 300 epochs 得到 YOLOv5 分割模型。我们将所有模型导出到 ONNX FP32 以进行 CPU 速度测试，并导出到 TensorRT FP16 以进行 GPU 速度测试。为了便于再现，我们在 Google [Colab Pro](https://colab.research.google.com/signup) 上进行了所有速度测试。
 
 | 模型                                                                                        | 尺寸<br><sup>（像素） | mAP<sup>box<br>50-95 | mAP<sup>mask<br>50-95 | 训练时长<br><sup>300 epochs<br>A100 GPU（小时） | 推理速度<br><sup>ONNX CPU<br>（ms） | 推理速度<br><sup>TRT A100<br>（ms） | 参数量<br><sup>(M) | FLOPs<br><sup>@640 (B) |
 | ------------------------------------------------------------------------------------------ | ------------------- | -------------------- | --------------------- | --------------------------------------------- | --------------------------------- | --------------------------------- | ----------------- | ---------------------- |
@@ -79,7 +79,7 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 | [YOLOv5l-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5l-seg.pt) | 640                 | 49.0                 | 39.9                  | 66:43 (2x)                                    | 857.4                             | 2.9                               | 47.9              | 147.7                  |
 | [YOLOv5x-seg](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5x-seg.pt) | 640                 | **50.7**             | **41.4**              | 62:56 (3x)                                    | 1579.2                            | 4.5                               | 88.8              | 265.7                  |
 
--   所有模型使用 SGD 优化器训练， 都使用 `lr0=0.01` 和 `weight_decay=5e-5` 参数， 图像大小为 640 。<br>训练 log 可以查看 https://wandb.ai/glenn-jocher/YOLOv5_v70_official 
+-   所有模型使用 SGD 优化器训练， 都使用 `lr0=0.01` 和 `weight_decay=5e-5` 参数， 图像大小为 640 。<br>训练 log 可以查看 https://wandb.ai/glenn-jocher/YOLOv5_v70_official
 -   **准确性**结果都在 COCO 数据集上，使用单模型单尺度测试得到。<br>复现命令 `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt`
 -   **推理速度**是使用 100 张图像推理时间进行平均得到，测试环境使用 [Colab Pro](https://colab.research.google.com/signup) 上A100 高 RAM 实例。结果仅表示推理速度（NMS 每张图像增加约 1 毫秒）。<br>复现命令 `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt --batch 1`
 -   **模型转换**到 FP32 的 ONNX 和 FP16 的 TensorRT 脚本为 `export.py`.<br>运行命令 `python export.py --weights yolov5s-seg.pt --include engine --device 0 --half`
@@ -142,7 +142,7 @@ python export.py --weights yolov5s-seg.pt --include onnx engine --img 640 --devi
 <details open>
 <summary>安装</summary>
 
-克隆 repo，并安装[requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt)在[**Python>=3.7.0**](https://www.python.org/)环境，要求[**PyTorch>=1.7**](https://pytorch.org/get-started/locally/).
+克隆 repo，并要求在 [**Python>=3.7.0**](https://www.python.org/) 环境中安装 [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) ，且要求 [**PyTorch>=1.7**](https://pytorch.org/get-started/locally/) 。
 
 ```bash
 git clone https://github.com/ultralytics/yolov5  # clone
@@ -155,8 +155,8 @@ pip install -r requirements.txt  # install
 <details>
 <summary>推理</summary>
 
-YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)推理。最新模型将自动的从[模型库](https://github.com/ultralytics/yolov5/tree/master/models)中下载。
-YOLOv5 [release](https://github.com/ultralytics/yolov5/releases).
+使用 YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 推理。最新 [模型](https://github.com/ultralytics/yolov5/tree/master/models) 将自动的从
+YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载。
 
 ```python
 import torch
@@ -179,8 +179,8 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 <details>
 <summary>使用 detect.py 推理</summary>
 
-`detect.py` 在各种来源上运行推理，自动从[模型库](https://github.com/ultralytics/yolov5/tree/master/models)
-下载最新的YOLOv5 [release](https://github.com/ultralytics/yolov5/releases)，并将结果保存到 `runs/detect`.
+`detect.py` 在各种来源上运行推理， [模型](https://github.com/ultralytics/yolov5/tree/master/models) 自动从
+最新的YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载，并将结果保存到 `runs/detect` 。
 
 ```bash
 python detect.py --weights yolov5s.pt --source 0                               # webcam
@@ -201,11 +201,11 @@ python detect.py --weights yolov5s.pt --source 0                               #
 <summary>训练</summary>
 
 下面的命令重现 YOLOv5 在 [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh) 数据集上的结果。
-最新的[模型库](https://github.com/ultralytics/yolov5/tree/master/models)和[数据集](https://github.com/ultralytics/yolov5/tree/master/data)
-将自动的从 YOLOv5 [release](https://github.com/ultralytics/yolov5/releases)中下载。
-YOLOv5n/s/m/l/x 在 V100 GPU 的训练时间为 1/2/4/6/8 天（[多GPU](https://github.com/ultralytics/yolov5/issues/475)训练速度更快）。
-尽可能使用更大的`--batch-size`，或通过`--batch-size -1`实现
-YOLOv5 [自动批处理](https://github.com/ultralytics/yolov5/pull/5092)。下方显示的 batchsize 适用于 V100-16GB。
+最新的 [模型](https://github.com/ultralytics/yolov5/tree/master/models) 和 [数据集](https://github.com/ultralytics/yolov5/tree/master/data)
+将自动的从 YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载。
+YOLOv5n/s/m/l/x 在 V100 GPU 的训练时间为 1/2/4/6/8 天（ [多GPU](https://github.com/ultralytics/yolov5/issues/475) 训练速度更快）。
+尽可能使用更大的 `--batch-size` ，或通过 `--batch-size -1` 实现
+YOLOv5 [自动批处理](https://github.com/ultralytics/yolov5/pull/5092) 。下方显示的 batchsize 适用于 V100-16GB。
 
 ```bash
 python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  --batch-size 128
@@ -269,7 +269,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 
 ## <div align="center">Ultralytics HUB</div>
 
-[Ultralytics HUB](https://bit.ly/ultralytics_hub)是我们的⭐**新的**用于可视化数据集、训练 YOLOv5 🚀 模型并以无缝体验部署到现实世界的无代码解决方案。现在开始**免费**使用他！
+[Ultralytics HUB](https://bit.ly/ultralytics_hub) 是我们的⭐**新的**用于可视化数据集、训练 YOLOv5 🚀 模型并以无缝体验部署到现实世界的无代码解决方案。现在开始 **免费** 使用他！
 
 <a align="center" href="https://bit.ly/ultralytics_hub" target="_blank">
 <img width="100%" src="https://github.com/ultralytics/assets/raw/master/im/ultralytics-hub.png"></a>
@@ -287,9 +287,9 @@ YOLOv5 超级容易上手，简单易学。我们优先考虑现实世界的结�
 <details>
   <summary>图表笔记</summary>
 
--   **COCO AP val** 表示 mAP@0.5:0.95 指标，在 [COCO val2017](http://cocodataset.org) 数据集的5000张图像上测得， 图像包含 256 到 1536 各种推理大小。
--   **显卡推理速度** 为在 [COCO val2017](http://cocodataset.org) 数据集上的平均推理时间，使用[AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100实例，batchsize 为32。
--   **EfficientDet** 数据来自 [google/automl](https://github.com/google/automl)， batchsize 为32。
+-   **COCO AP val** 表示 mAP@0.5:0.95 指标，在 [COCO val2017](http://cocodataset.org) 数据集的 5000 张图像上测得， 图像包含 256 到 1536 各种推理大小。
+-   **显卡推理速度** 为在 [COCO val2017](http://cocodataset.org) 数据集上的平均推理时间，使用 [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100实例，batchsize 为 32 。
+-   **EfficientDet** 数据来自 [google/automl](https://github.com/google/automl) ， batchsize 为32。
 -   **复现命令** 为 `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
 
 </details>
@@ -313,23 +313,23 @@ YOLOv5 超级容易上手，简单易学。我们优先考虑现实世界的结�
 <details>
   <summary>笔记</summary>
 
--   所有模型都使用默认配置，训练 300 epochs。n和s模型使用[hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml)，其他模型都使用[hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
--   **mAP<sup>val</sup>**在单模型单尺度上计算，数据集使用[COCO val2017](http://cocodataset.org)。<br>复现命令`python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
--   **推理速度**在 COCO val 图像总体时间上进行平均得到，测试环境使用[AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/)实例。 NMS 时间 (大约 1 ms/img) 不包括在内。<br>复现命令`python val.py --data coco.yaml --img 640 --task speed --batch 1`
--   **TTA**[测试时数据增强](https://github.com/ultralytics/yolov5/issues/303)包括反射和尺度变换。<br>复现命令`python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+-   所有模型都使用默认配置，训练 300 epochs。n和s模型使用 [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) ，其他模型都使用 [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml) 。
+-   **mAP<sup>val</sup>**在单模型单尺度上计算，数据集使用 [COCO val2017](http://cocodataset.org) 。<br>复现命令 `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
+-   **推理速度**在 COCO val 图像总体时间上进行平均得到，测试环境使用[AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/)实例。 NMS 时间 (大约 1 ms/img) 不包括在内。<br>复现命令 `python val.py --data coco.yaml --img 640 --task speed --batch 1`
+-   **TTA** [测试时数据增强](https://github.com/ultralytics/yolov5/issues/303) 包括反射和尺度变换。<br>复现命令 `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
 ## <div align="center">分类网络 ⭐ 新</div>
 
-YOLOv5[release v6.2](https://github.com/ultralytics/yolov5/releases)带来对分类模型训练、验证和部署的支持！详情请查看[发行说明](https://github.com/ultralytics/yolov5/releases/v6.2)或访问我们的[YOLOv5 分类 Colab 笔记本](https://github.com/ultralytics/yolov5/blob/master/classify/tutorial.ipynb)以快速入门。
+YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) 带来对分类模型训练、验证和部署的支持！详情请查看 [发行说明](https://github.com/ultralytics/yolov5/releases/v6.2) 或访问我们的 [YOLOv5 分类 Colab 笔记本](https://github.com/ultralytics/yolov5/blob/master/classify/tutorial.ipynb) 以快速入门。
 
 <details>
   <summary>分类网络模型</summary>
 
 <br>
 
-我们使用 4xA100 实例在 ImageNet 上训练了 90 个 epochs 得到 YOLOv5-cls 分类模型，我们训练了 ResNet 和 EfficientNet 模型以及相同的默认训练设置以进行比较。我们将所有模型导出到 ONNX FP32 以进行 CPU 速度测试，并导出到 TensorRT FP16 以进行 GPU 速度测试。为了便于重现，我们在 Google 上进行了所有速度测试[Colab Pro](https://colab.research.google.com/signup)。
+我们使用 4xA100 实例在 ImageNet 上训练了 90 个 epochs 得到 YOLOv5-cls 分类模型，我们训练了 ResNet 和 EfficientNet 模型以及相同的默认训练设置以进行比较。我们将所有模型导出到 ONNX FP32 以进行 CPU 速度测试，并导出到 TensorRT FP16 以进行 GPU 速度测试。为了便于重现，我们在 Google 上进行了所有速度测试 [Colab Pro](https://colab.research.google.com/signup) 。
 
 | 模型                                                                                                | 尺寸<br><sup>（像素） | acc<br><sup>top1 | acc<br><sup>top5 | 训练时长<br><sup>90 epochs<br>4xA100（小时） | 推理速度<br><sup>ONNX CPU<br>（ms） | 推理速度<br><sup>TensorRT V100<br>（ms） | 参数<br><sup>(M) | FLOPs<br><sup>@640 (B) |
 | -------------------------------------------------------------------------------------------------- | ------------------- | ---------------- | ---------------- | ------------------------------------------ | --------------------------------- | -------------------------------------- | --------------- | -----------------------|
@@ -350,12 +350,12 @@ YOLOv5[release v6.2](https://github.com/ultralytics/yolov5/releases)带来对分
 | [EfficientNet_b3](https://github.com/ultralytics/yolov5/releases/download/v6.2/efficientnet_b3.pt) | 224                 | 77.7             | 94.0             | 19:19                                      | 18.9                              | 1.9                                    | 12.2            | 2.4                    |
 
 <details>
-  <summary>Table Notes (click to expand)</summary>
+  <summary>Table Notes (点击以展开)</summary>
 
--   所有模型都使用 SGD 优化器训练 90 个 epochs，都使用 `lr0=0.001` 和 `weight_decay=5e-5`参数， 图像大小为 224 ，且都使用默认设置。<br>训练 log 可以查看 https://wandb.ai/glenn-jocher/YOLOv5-Classifier-v6-2
--   **准确性**都在单模型单尺度上计算，数据集使用[ImageNet-1k](https://www.image-net.org/index.php)。<br>复现命令`python classify/val.py --data ../datasets/imagenet --img 224`
--   **推理速度**是使用 100 个推理图像进行平均得到，测试环境使用谷歌[Colab Pro](https://colab.research.google.com/signup)V100 高 RAM 实例。<br>复现命令 `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`
--   **模型导出**到 FP32 的 ONNX 和 FP16 的 TensorRT 完成`export.py`.<br>复现命令`python export.py --weights yolov5s-cls.pt --include engine onnx --imgsz 224`
+-   所有模型都使用 SGD 优化器训练 90 个 epochs，都使用 `lr0=0.001` 和 `weight_decay=5e-5` 参数， 图像大小为 224 ，且都使用默认设置。<br>训练 log 可以查看 https://wandb.ai/glenn-jocher/YOLOv5-Classifier-v6-2
+-   **准确性**都在单模型单尺度上计算，数据集使用 [ImageNet-1k](https://www.image-net.org/index.php) 。<br>复现命令 `python classify/val.py --data ../datasets/imagenet --img 224`
+-   **推理速度**是使用 100 个推理图像进行平均得到，测试环境使用谷歌 [Colab Pro](https://colab.research.google.com/signup) V100 高 RAM 实例。<br>复现命令 `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`
+-   **模型导出**到 FP32 的 ONNX 和 FP16 的 TensorRT 使用 `export.py` 。<br>复现命令 `python export.py --weights yolov5s-cls.pt --include engine onnx --imgsz 224`
     </details>
     </details>
 
@@ -364,7 +364,7 @@ YOLOv5[release v6.2](https://github.com/ultralytics/yolov5/releases)带来对分
 
 ### 训练
 
-YOLOv5 分类训练支持自动下载 MNIST、Fashion-MNIST、CIFAR10、CIFAR100、Imagenette、Imagewoof 和 ImageNet 数据集，命令中使用`--data`即可。 MNIST 训练示例`--data mnist`。
+YOLOv5 分类训练支持自动下载 MNIST、Fashion-MNIST、CIFAR10、CIFAR100、Imagenette、Imagewoof 和 ImageNet 数据集，命令中使用 `--data` 即可。 MNIST 示例 `--data mnist` 。
 
 ```bash
 # 单 GPU
@@ -431,14 +431,14 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 
 ## <div align="center">APP</div>
 
-通过下载[Ultralytics APP](https://ultralytics.com/app_install)，以在您的 iOS 或 Android 设备上运行 YOLOv5 模型!
+通过下载 [Ultralytics APP](https://ultralytics.com/app_install) ，以在您的 iOS 或 Android 设备上运行 YOLOv5 模型!
 
 <a align="center" href="https://ultralytics.com/app_install" target="_blank">
 <img width="100%" alt="Ultralytics mobile app" src="https://user-images.githubusercontent.com/26833433/202829285-39367043-292a-41eb-bb76-c3e74f38e38e.png">
 
 ## <div align="center">贡献</div>
 
-我们喜欢您的意见或建议！我们希望尽可能简单和透明地为 YOLOv5 做出贡献。请看我们的 [投稿指南](CONTRIBUTING.md)，并填写[YOLOv5调查](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey)向我们发送您的体验反馈。感谢我们所有的贡献者！
+我们喜欢您的意见或建议！我们希望尽可能简单和透明地为 YOLOv5 做出贡献。请看我们的 [投稿指南](CONTRIBUTING.md)，并填写 [YOLOv5调查](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) 向我们发送您的体验反馈。感谢我们所有的贡献者！
 
 <!-- SVG image from https://opencollective.com/ultralytics/contributors.svg?width=990 -->
 
@@ -448,12 +448,12 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 
 YOLOv5 在两种不同的 License 下可用：
 
--   **GPL-3.0 License**： 查看[License](https://github.com/ultralytics/yolov5/blob/master/LICENSE)文件的详细信息。
--   **企业License**：在没有 GPL-3.0 开源要求的情况下为商业产品开发提供更大的灵活性。典型用例是将 Ultralytics 软件和 AI 模型嵌入到商业产品和应用程序中。在以下位置申请企业许可证[Ultralytics 许可](https://ultralytics.com/license)。
+-   **GPL-3.0 License**： 查看 [License](https://github.com/ultralytics/yolov5/blob/master/LICENSE) 文件的详细信息。
+-   **企业License**：在没有 GPL-3.0 开源要求的情况下为商业产品开发提供更大的灵活性。典型用例是将 Ultralytics 软件和 AI 模型嵌入到商业产品和应用程序中。在以下位置申请企业许可证 [Ultralytics 许可](https://ultralytics.com/license) 。
 
 ## <div align="center">联系我们</div>
 
-若发现 YOLOv5 的 bug 或有功能需求，请访问 [GitHub 问题](https://github.com/ultralytics/yolov5/issues)。如需专业支持，请[联系我们](https://ultralytics.com/contact).
+若发现 YOLOv5 的 bug 或有功能需求，请访问 [GitHub 问题](https://github.com/ultralytics/yolov5/issues) 。如需专业支持，请 [联系我们](https://ultralytics.com/contact) 。
 
 <br>
 <div align="center">
