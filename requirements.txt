@@ -45,5 +45,6 @@ seaborn>=0.11.0
 # mss  # screenshots
 # albumentations>=1.0.3
 # pycocotools>=2.0  # COCO mAP
+# optuna==2.10.1
 # roboflow
 # ultralytics  # HUB https://hub.ultralytics.com

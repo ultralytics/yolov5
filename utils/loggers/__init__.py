@@ -98,7 +98,7 @@ class Loggers():
             self.logger.info(s)
         # TensorBoard
         s = self.save_dir
-        if 'tb' in self.include and not self.opt.evolve:
+        if 'tb' in self.include and (not self.opt.evolve or self.opt.optuna):
             prefix = colorstr('TensorBoard: ')
             self.logger.info(f"{prefix}Start with 'tensorboard --logdir {s.parent}', view at http://localhost:6006/")
             self.tb = SummaryWriter(str(s))

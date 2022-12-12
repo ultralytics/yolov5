@@ -30,6 +30,7 @@ class Callbacks:
             'on_val_end': [],
             'on_fit_epoch_end': [],  # fit = train + val
             'on_model_save': [],
+            'after_model_save': [],
             'on_train_end': [],
             'on_params_update': [],
             'teardown': [],}

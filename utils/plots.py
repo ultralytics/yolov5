@@ -457,6 +457,18 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     return f
 
 
+def get_optimal_rows_cols(keys):
+    # find the best factorization of keys_len
+    keys_len = len(keys)
+    plot_rows_cols = math.ceil(math.sqrt(keys_len))
+    plot_rows = plot_rows_cols
+    while keys_len % plot_rows_cols != 0:
+        plot_rows_cols -= 1
+    plot_rows = min(plot_rows_cols, keys_len // plot_rows_cols) if plot_rows_cols > 1 else plot_rows
+    plot_cols = math.ceil(keys_len / plot_rows)
+    return plot_rows, plot_cols
+
+
 def plot_evolve(evolve_csv='path/to/evolve.csv'):  # from utils.plots import *; plot_evolve()
     # Plot evolve.csv hyp evolution results
     evolve_csv = Path(evolve_csv)
@@ -468,10 +480,14 @@ def plot_evolve(evolve_csv='path/to/evolve.csv'):  # from utils.plots import *; 
     plt.figure(figsize=(10, 12), tight_layout=True)
     matplotlib.rc('font', **{'size': 8})
     print(f'Best results from row {j} of {evolve_csv}:')
+
+    # for prettier plots
+    plot_rows, plot_cols = get_optimal_rows_cols(keys[7:])
+    
     for i, k in enumerate(keys[7:]):
         v = x[:, 7 + i]
         mu = v[j]  # best single result
-        plt.subplot(6, 5, i + 1)
+        plt.subplot(plot_rows, plot_cols, i + 1)
         plt.scatter(v, f, c=hist2d(v, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
         plt.plot(mu, f.max(), 'k+', markersize=15)
         plt.title(f'{k} = {mu:.3g}', fontdict={'size': 9})  # limit to 40 characters

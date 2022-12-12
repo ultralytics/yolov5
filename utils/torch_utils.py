@@ -332,6 +332,8 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, decay=1e-5):
         optimizer = torch.optim.Adam(g[2], lr=lr, betas=(momentum, 0.999))  # adjust beta1 to momentum
     elif name == 'AdamW':
         optimizer = torch.optim.AdamW(g[2], lr=lr, betas=(momentum, 0.999), weight_decay=0.0)
+    elif name == 'RAdam':
+        optimizer = torch.optim.RAdam(g[2], lr=lr, betas=(momentum, 0.999))
     elif name == 'RMSProp':
         optimizer = torch.optim.RMSprop(g[2], lr=lr, momentum=momentum)
     elif name == 'SGD':
@@ -430,3 +432,11 @@ class ModelEMA:
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
+
+
+def save_ckpt(ckpt, dir_to_save, is_best, save_on_epoch, epoch):
+    torch.save(ckpt, dir_to_save / 'last.pt')
+    if is_best:
+        torch.save(ckpt, dir_to_save / 'best.pt')
+    if save_on_epoch:
+        torch.save(ckpt, dir_to_save / f'epoch{epoch}.pt')

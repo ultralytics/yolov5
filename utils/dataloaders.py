@@ -458,7 +458,7 @@ class LoadImagesAndLabels(Dataset):
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
-        self.albumentations = Albumentations(size=img_size) if augment else None
+        self.albumentations = Albumentations(size=img_size, hyp=hyp) if augment else None
 
         try:
             f = []  # image files
@@ -680,6 +680,7 @@ class LoadImagesAndLabels(Dataset):
                 img, labels = random_perspective(img,
                                                  labels,
                                                  degrees=hyp['degrees'],
+                                                 rotation_prob=hyp['rotation_prob'],
                                                  translate=hyp['translate'],
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
@@ -796,6 +797,7 @@ class LoadImagesAndLabels(Dataset):
                                            labels4,
                                            segments4,
                                            degrees=self.hyp['degrees'],
+                                           rotation_prob=self.hyp['rotation_prob'],
                                            translate=self.hyp['translate'],
                                            scale=self.hyp['scale'],
                                            shear=self.hyp['shear'],
@@ -873,6 +875,7 @@ class LoadImagesAndLabels(Dataset):
                                            labels9,
                                            segments9,
                                            degrees=self.hyp['degrees'],
+                                           rotation_prob=self.hyp['rotation_prob'],
                                            translate=self.hyp['translate'],
                                            scale=self.hyp['scale'],
                                            shear=self.hyp['shear'],

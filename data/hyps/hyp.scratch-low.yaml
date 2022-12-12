@@ -23,6 +23,7 @@ hsv_h: 0.015  # image HSV-Hue augmentation (fraction)
 hsv_s: 0.7  # image HSV-Saturation augmentation (fraction)
 hsv_v: 0.4  # image HSV-Value augmentation (fraction)
 degrees: 0.0  # image rotation (+/- deg)
+rotation_prob: 1.0 # image rotation probability
 translate: 0.1  # image translation (+/- fraction)
 scale: 0.5  # image scale (+/- gain)
 shear: 0.0  # image shear (+/- deg)
@@ -32,3 +33,12 @@ fliplr: 0.5  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
 mixup: 0.0  # image mixup (probability)
 copy_paste: 0.0  # segment copy-paste (probability)
+
+# albumentations augs
+blur: 0.01  # blur image using a random-sized kernel
+median_blur: 0.01  # median blur
+gray: 0.01  # convert image to gray
+clahe: 0.01  # CLAHE augmentations
+brightness_contrast: 0.0  # random brightness and contrast augmentation
+random_gamma: 0.0  # random gamma
+image_compression: 0.0  # image compression

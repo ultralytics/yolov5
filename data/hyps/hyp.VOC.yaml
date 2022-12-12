@@ -28,6 +28,7 @@ hsv_h: 0.01041
 hsv_s: 0.54703
 hsv_v: 0.27739
 degrees: 0.0
+rotation_prob: 1.0 
 translate: 0.04591
 scale: 0.75544
 shear: 0.0
@@ -38,3 +39,12 @@ mosaic: 0.85834
 mixup: 0.04266
 copy_paste: 0.0
 anchors: 3.412
+
+# albumentations augs
+blur: 0.01  # blur image using a random-sized kernel
+median_blur: 0.01  # median blur
+gray: 0.01  # convert image to gray
+clahe: 0.01  # CLAHE augmentations
+brightness_contrast: 0.0  # random brightness and contrast augmentation
+random_gamma: 0.0  # random gamma
+image_compression: 0.0  # image compression

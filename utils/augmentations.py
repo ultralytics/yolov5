@@ -21,7 +21,7 @@ IMAGENET_STD = 0.229, 0.224, 0.225  # RGB standard deviation
 
 class Albumentations:
     # YOLOv5 Albumentations class (optional, only used if package is installed)
-    def __init__(self, size=640):
+    def __init__(self, hyp, size=640):
         self.transform = None
         prefix = colorstr('albumentations: ')
         try:
@@ -30,13 +30,13 @@ class Albumentations:
 
             T = [
                 A.RandomResizedCrop(height=size, width=size, scale=(0.8, 1.0), ratio=(0.9, 1.11), p=0.0),
-                A.Blur(p=0.01),
-                A.MedianBlur(p=0.01),
-                A.ToGray(p=0.01),
-                A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(p=0.0),
-                A.RandomGamma(p=0.0),
-                A.ImageCompression(quality_lower=75, p=0.0)]  # transforms
+                A.Blur(p=hyp.get('blur', 0.01)),
+                A.MedianBlur(p=hyp.get('median_blur', 0.01)),
+                A.ToGray(p=hyp.get('gray', 0.01)),
+                A.CLAHE(p=hyp.get('clahe', 0.01)),
+                A.RandomBrightnessContrast(p=hyp.get('brightness_contrast', 0.0)),
+                A.RandomGamma(p=hyp.get('random_gamma', 0.0)),
+                A.ImageCompression(quality_lower=75, p=hyp.get('image_compression', 0.0))]  # transforms
             self.transform = A.Compose(T, bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
             LOGGER.info(prefix + ', '.join(f'{x}'.replace('always_apply=False, ', '') for x in T if x.p))
@@ -145,6 +145,7 @@ def random_perspective(im,
                        targets=(),
                        segments=(),
                        degrees=10,
+                       rotation_prob=1.0,
                        translate=.1,
                        scale=.1,
                        shear=10,
@@ -168,7 +169,8 @@ def random_perspective(im,
 
     # Rotation and Scale
     R = np.eye(3)
-    a = random.uniform(-degrees, degrees)
+    apply_rotation = random.random() < rotation_prob
+    a = random.uniform(-degrees, degrees) if apply_rotation else 0
     # a += random.choice([-180, -90, 0, 90])  # add 90deg rotations to small rotations
     s = random.uniform(1 - scale, 1 + scale)
     # s = 2 ** random.uniform(-scale, scale)

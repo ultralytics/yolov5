@@ -18,11 +18,15 @@ Tutorial:   https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data
 import argparse
 import math
 import os
+import pickle
 import random
+import shutil
 import sys
 import time
+import warnings
 from copy import deepcopy
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -49,21 +53,33 @@ from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
                            check_git_status, check_img_size, check_requirements, check_suffix, check_yaml, colorstr,
-                           get_latest_run, increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
+                           emojis, get_latest_run, increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
                            labels_to_image_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer,
                            yaml_save)
 from utils.loggers import Loggers
 from utils.loggers.comet.comet_utils import check_comet_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
-from utils.plots import plot_evolve
+from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
                                smart_resume, torch_distributed_zero_first)
+from utils.torch_utils import save_ckpt
+
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 GIT_INFO = check_git_info()
+
+try:
+    import optuna
+    from optuna.exceptions import ExperimentalWarning
+    from optuna.storages import RetryFailedTrialCallback
+    # Disabling optuna logging
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    assert hasattr(optuna, '__version__')  # verify package import not local dir
+except (ImportError, AssertionError):
+    optuna = None
 
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
@@ -74,8 +90,21 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Directories
     w = save_dir / 'weights'  # weights dir
-    (w.parent if evolve else w).mkdir(parents=True, exist_ok=True)  # make dir
+    (w.parent if evolve and not opt.save_every_trial else w).mkdir(parents=True, exist_ok=True)  # make dir
     last, best = w / 'last.pt', w / 'best.pt'
+
+    if opt.optuna:
+        # `trial_last` should have the following form: `runs/evolve/exp/trial_last`
+        if opt.save_every_trial:
+            # `w` has the following form: `runs/evolve/exp/trial_0/weights`
+            trial_last = w.parents[1] / 'trial_last'
+        else:
+            # `w` has standard form: `runs/evolve/exp/weights`
+            trial_last = w.parent / 'trial_last'
+
+        if os.path.exists(trial_last):
+            shutil.rmtree(trial_last)
+        trial_last.mkdir(parents=True)
 
     # Hyperparameters
     if isinstance(hyp, str):
@@ -85,21 +114,36 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     opt.hyp = hyp.copy()  # for saving hyps to checkpoints
 
     # Save run settings
-    if not evolve:
+    if not evolve or opt.save_every_trial:
         yaml_save(save_dir / 'hyp.yaml', hyp)
-        yaml_save(save_dir / 'opt.yaml', vars(opt))
+    yaml_save(save_dir / 'opt.yaml', vars(opt))
+
+    # Save data configuration
+    if os.path.isfile(data):
+        shutil.copy(data, save_dir / 'data.yaml')
 
     # Loggers
+    loggers = None
     data_dict = None
-    if RANK in {-1, 0}:
-        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
 
-        # Register actions
-        for k in methods(loggers):
-            callbacks.register_action(k, callback=getattr(loggers, k))
+    if RANK in {-1, 0}:
+        if not opt.optuna or opt.save_every_trial:
+            loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
+
+            # Register actions
+            for k in methods(loggers):
+                callbacks.register_action(k, callback=getattr(loggers, k))
+
+        if opt.optuna:
+            loggers_cur_trial = Loggers(trial_last, weights, opt, hyp, LOGGER)  # loggers for `trial_last` instance
+
+            # Register actions
+            for k in methods(loggers_cur_trial):
+                callbacks.register_action(k, callback=getattr(loggers_cur_trial, k))
 
         # Process custom dataset artifact link
-        data_dict = loggers.remote_dataset
+        data_dict = loggers_cur_trial.remote_dataset if opt.optuna else loggers.remote_dataset
+
         if resume:  # If resuming runs from remote artifact
             weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
 
@@ -147,7 +191,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # Batch size
     if RANK == -1 and batch_size == -1:  # single-GPU only, estimate best batch size
         batch_size = check_train_batch_size(model, imgsz, amp)
-        loggers.on_params_update({"batch_size": batch_size})
+        if loggers is not None:
+            loggers.on_params_update({"batch_size": batch_size})
+        if opt.optuna:
+            loggers_cur_trial.on_params_update({"batch_size": batch_size})
 
     # Optimizer
     nbs = 64  # nominal batch size
@@ -219,6 +266,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        prefix=colorstr('val: '))[0]
 
         if not resume:
+            if plots:
+                plot_labels(labels, names, save_dir)
+
+            # Anchors
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)  # run AutoAnchor
             model.half().float()  # pre-reduce anchor precision
@@ -368,7 +419,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
 
             # Save model
-            if (not nosave) or (final_epoch and not evolve):  # if save
+            save = not nosave
+            is_final_epoch = final_epoch and not evolve
+
+            if save or is_final_epoch or opt.optuna:  # if save
                 ckpt = {
                     'epoch': epoch,
                     'best_fitness': best_fitness,
@@ -376,18 +430,41 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     'ema': deepcopy(ema.ema).half(),
                     'updates': ema.updates,
                     'optimizer': optimizer.state_dict(),
+                    'wandb_id': loggers.wandb.wandb_run.id if (loggers is not None and loggers.wandb) else None,
                     'opt': vars(opt),
                     'git': GIT_INFO,  # {remote, branch, commit} if a git repo
                     'date': datetime.now().isoformat()}
 
-                # Save last, best and delete
-                torch.save(ckpt, last)
-                if best_fitness == fi:
-                    torch.save(ckpt, best)
-                if opt.save_period > 0 and epoch % opt.save_period == 0:
-                    torch.save(ckpt, w / f'epoch{epoch}.pt')
+                save_on_epoch = opt.save_period > 0 and epoch % opt.save_period == 0
+                is_best = best_fitness == fi
+
+                if not evolve or opt.save_every_trial:
+                    save_ckpt(
+                        ckpt=ckpt,
+                        dir_to_save=w,
+                        is_best=is_best,
+                        save_on_epoch=save_on_epoch,
+                        epoch=epoch,
+                    )
+
+                # Save for optuna
+                if opt.optuna:
+                    # Save current trial data
+                    save_ckpt(
+                        ckpt=ckpt,
+                        dir_to_save=trial_last,
+                        is_best=is_best,
+                        save_on_epoch=save_on_epoch,
+                        epoch=epoch,
+                    )
+
+                    yaml_save(trial_last / 'hyp.yaml', hyp)
+
                 del ckpt
                 callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness, fi)
+
+            # when using optuna, we want to prune trials after saving checkpoints
+            callbacks.run('after_model_save', log_vals, epoch, fi)
 
         # EarlyStopping
         if RANK != -1:  # if DDP training
@@ -421,7 +498,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         plots=plots,
                         callbacks=callbacks,
                         compute_loss=compute_loss)  # val best model with plots
-                    if is_coco:
+                    # We don't report this metric in optuna trial
+                    if is_coco and not opt.optuna:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
         callbacks.run('on_train_end', last, best, epoch, results)
@@ -452,7 +530,8 @@ def parse_opt(known=False):
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
-    parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='SGD', help='optimizer')
+    parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW', 'RAdam', 'RMSProp'], default='SGD',
+                        help='optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--project', default=ROOT / 'runs/train', help='save to project/name')
@@ -473,7 +552,40 @@ def parse_opt(known=False):
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='Version of dataset artifact to use')
 
-    return parser.parse_known_args()[0] if known else parser.parse_args()
+    # optuna hyperparameter optimization arguments
+    parser.add_argument('--optuna', action='store_true',
+                        help='Evolve hyperparameters with Optuna, only works with --optuna')
+    parser.add_argument('--no-augs-evolving', action='store_true',
+                        help='Disable evolution search for augmentations, only works with --optuna')
+    parser.add_argument('--no-loss-evolving', action='store_true',
+                        help='Disable evolution search for loss, only works with --optuna')
+    parser.add_argument('--only-wu-epochs-and-lr', action='store_true',
+                        help='Evolution search only for warmup epochs and learning rate, only works with --optuna')
+
+    parser.add_argument('--save-every-trial', action='store_true',
+                        help='Save best and last checkpoints in every Optuna\'s trial')
+    parser.add_argument('--min-res', type=int, default=1,
+                        help='Minimal resources for HyperbandPruner, represent min number of epochs, '
+                        'only works with --optuna')
+    parser.add_argument('--max-res', default='auto',
+                        help='Maximal resources for HyperbandPruner, represent max number of epochs, '
+                        'only works with --optuna')
+    parser.add_argument('--reduction-factor', type=int, default=3, help='Reduction factor of HyperbandPruner, '
+                        'only works with --optuna')
+
+    opt = parser.parse_known_args()[0] if known else parser.parse_args()
+    # max_res should be 'auto' or int
+    opt.max_res = int(opt.max_res) if opt.max_res != 'auto' else opt.max_res
+
+    is_optuna_params = opt.min_res != 1 or opt.max_res != 'auto' or opt.reduction_factor != 3
+
+    if not opt.optuna and is_optuna_params:
+        raise ValueError('--min_res, --max_res, --reduction_factor parameters only works with --optuna')
+
+    if not opt.optuna and opt.save_every_trial:
+        raise NotImplementedError('Every generation saving only works with --optuna')
+
+    return opt
 
 
 def main(opt, callbacks=Callbacks()):
@@ -482,9 +594,12 @@ def main(opt, callbacks=Callbacks()):
         print_args(vars(opt))
         check_git_status()
         check_requirements()
+        if opt.optuna:
+            check_requirements('optuna==2.10.1')
 
     # Resume (from specified or most recent last.pt)
-    if opt.resume and not check_comet_resume(opt) and not opt.evolve:
+    opt.resume_optuna = opt.evolve and opt.optuna and opt.resume
+    if opt.resume and not check_comet_resume(opt) and not opt.evolve:  # resume from specified or most recent last.pt
         last = Path(check_file(opt.resume) if isinstance(opt.resume, str) else get_latest_run())
         opt_yaml = last.parent.parent / 'opt.yaml'  # train options yaml
         opt_data = opt.data  # original dataset
@@ -550,6 +665,7 @@ def main(opt, callbacks=Callbacks()):
             'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
             'hsv_v': (1, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
             'degrees': (1, 0.0, 45.0),  # image rotation (+/- deg)
+            'rotation_prob': (0, 0.0, 1.0),  # probability of image rotation
             'translate': (1, 0.0, 0.9),  # image translation (+/- fraction)
             'scale': (1, 0.0, 0.9),  # image scale (+/- gain)
             'shear': (1, 0.0, 10.0),  # image shear (+/- deg)
@@ -558,59 +674,257 @@ def main(opt, callbacks=Callbacks()):
             'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
             'mosaic': (1, 0.0, 1.0),  # image mixup (probability)
             'mixup': (1, 0.0, 1.0),  # image mixup (probability)
-            'copy_paste': (1, 0.0, 1.0)}  # segment copy-paste (probability)
-
+            'copy_paste': (1, 0.0, 1.0),  # segment copy-paste (probability)
+            'blur': (1, 0.0, 0.9),  # image blurring using a random-sized kernel
+            'median_blur': (1, 0.0, 0.9),  # image blurring using a median kernel
+            'gray': (1, 0.0, 0.9),  # image convert to gray
+            'clahe': (1, 0.0, 0.9),  # image clahe augmentation
+            'random_gamma': (1, 0.0, 0.9),  # image random gamma perturbation
+            'brightness_contrast': (1, 0.0, 0.9),  # random brightness and contrast augmentation
+            'image_compression': (1, 0.0, 0.9),  # image compression
+        }
         with open(opt.hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
             if 'anchors' not in hyp:  # anchors commented in hyp.yaml
                 hyp['anchors'] = 3
         if opt.noautoanchor:
             del hyp['anchors'], meta['anchors']
-        opt.noval, opt.nosave, save_dir = True, True, Path(opt.save_dir)  # only val/save final epoch
+
+        data_dict = check_dataset(opt.data)
+
+        # only val/save final epoch
+        opt.noval, opt.nosave, save_dir = not opt.optuna, not opt.save_every_trial, Path(opt.save_dir)
+
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         evolve_yaml, evolve_csv = save_dir / 'hyp_evolve.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
             os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {evolve_csv}')  # download evolve.csv if exists
 
-        for _ in range(opt.evolve):  # generations to evolve
-            if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
-                # Select parent(s)
-                parent = 'single'  # parent selection method: 'single' or 'weighted'
-                x = np.loadtxt(evolve_csv, ndmin=2, delimiter=',', skiprows=1)
-                n = min(5, len(x))  # number of previous results to consider
-                x = x[np.argsort(-fitness(x))][:n]  # top n mutations
-                w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
-                if parent == 'single' or len(x) == 1:
-                    # x = x[random.randint(0, n - 1)]  # random selection
-                    x = x[random.choices(range(n), weights=w)[0]]  # weighted selection
-                elif parent == 'weighted':
-                    x = (x * w.reshape(n, 1)).sum(0) / w.sum()  # weighted combination
+        if not opt.optuna:  # genetics evolving case
+            for _ in range(opt.evolve):  # generations to evolve
+                if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
+                    # Select parent(s)
+                    parent = 'single'  # parent selection method: 'single' or 'weighted'
+                    x = np.loadtxt(evolve_csv, ndmin=2, delimiter=',', skiprows=1)
+                    n = min(5, len(x))  # number of previous results to consider
+                    x = x[np.argsort(-fitness(x))][:n]  # top n mutations
+                    w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
+                    if parent == 'single' or len(x) == 1:
+                        # x = x[random.randint(0, n - 1)]  # random selection
+                        x = x[random.choices(range(n), weights=w)[0]]  # weighted selection
+                    elif parent == 'weighted':
+                        x = (x * w.reshape(n, 1)).sum(0) / w.sum()  # weighted combination
 
-                # Mutate
-                mp, s = 0.8, 0.2  # mutation probability, sigma
-                npr = np.random
-                npr.seed(int(time.time()))
-                g = np.array([meta[k][0] for k in hyp.keys()])  # gains 0-1
-                ng = len(meta)
-                v = np.ones(ng)
-                while all(v == 1):  # mutate until a change occurs (prevent duplicates)
-                    v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
-                for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
-                    hyp[k] = float(x[i + 7] * v[i])  # mutate
+                    # Mutate
+                    mp, s = 0.8, 0.2  # mutation probability, sigma
+                    npr = np.random
+                    npr.seed(int(time.time()))
+                    g = np.array([meta[k][0] for k in meta])  # gains 0-1
+                    ng = len(meta)
+                    v = np.ones(ng)
+                    while all(v == 1):  # mutate until a change occurs (prevent duplicates)
+                        v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
+                    for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
+                        hyp[k] = float(x[i + 7] * v[i])  # mutate
 
-            # Constrain to limits
-            for k, v in meta.items():
-                hyp[k] = max(hyp[k], v[1])  # lower limit
-                hyp[k] = min(hyp[k], v[2])  # upper limit
-                hyp[k] = round(hyp[k], 5)  # significant digits
+                # Constrain to limits
+                for k, v in meta.items():
+                    hyp[k] = max(hyp[k], v[1])  # lower limit
+                    hyp[k] = min(hyp[k], v[2])  # upper limit
+                    hyp[k] = round(hyp[k], 5)  # significant digits
 
-            # Train mutation
-            results = train(hyp.copy(), opt, device, callbacks)
-            callbacks = Callbacks()
-            # Write mutation results
-            keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-                    'val/obj_loss', 'val/cls_loss')
-            print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
+                # Train mutation
+                results = train(hyp.copy(), opt, device, callbacks)
+                callbacks = Callbacks()
+                # Write mutation results
+                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
+                        'val/obj_loss', 'val/cls_loss')
+                print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
+
+        else:  # optuna evolving case
+            nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
+            if nc == 1:  # disable cls loss optimization
+                meta.pop('cls')
+                meta.pop('cls_pow')
+
+            if opt.no_augs_evolving:
+                # Disabling augmentations as the first number in the tuple is mutation scale
+                augs_keys = (
+                    'hsv_h', 'hsv_s', 'hsv_v', 'degrees', 'rotation_prob', 'translate', 'scale', 'shear', 'perspective',
+                    'flipud', 'fliplr', 'mosaic', 'mixup', 'copy_paste', 'blur', 'median_blur', 'gray', 'clahe',
+                    'random_gamma', 'brightness_contrast', 'image_compression',
+                )
+
+                for key in augs_keys:
+                    meta.pop(key)
+
+            if opt.no_loss_evolving:  # disable losses weights optimization
+                loss_keys = (
+                    'box', 'cls', 'cls_pw', 'obj', 'obj_pw',
+                )
+
+                for key in loss_keys:
+                    meta.pop(key)
+
+            if opt.only_wu_epochs_and_lr:  # optimize only lr0 and warmup_epochs
+                meta = {
+                    'lr0': (1, 1e-5, 1e-1),
+                    'warmup_epochs': (1, 1, 15),
+                }
+
+            pruner = optuna.pruners.HyperbandPruner(
+                min_resource=opt.min_res,
+                max_resource=opt.max_res,
+                reduction_factor=opt.reduction_factor,
+            )
+
+            save_dir.mkdir(parents=True, exist_ok=opt.exist_ok)
+            study_name = (save_dir / 'study').as_posix()
+            storage_name = f"sqlite:///{study_name}.db"
+
+            # we want to re-run failed trials
+            storage = optuna.storages.RDBStorage(
+                storage_name,
+                heartbeat_interval=1,
+                failed_trial_callback=RetryFailedTrialCallback(),
+                engine_kwargs={"connect_args": {"timeout": 100}},
+            )
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ExperimentalWarning)  # suppress optuna warnings
+
+                # we need to save sampler and load it separately when resuming
+                # because it is not stored in the Optuna's study
+                if opt.resume_optuna:
+                    # load TPE sampler, see https://github.com/optuna/optuna/pull/3992
+                    sampler = pickle.load(open(save_dir / 'sampler.pkl', 'rb'))
+                else:
+                    # create TPE sampler
+                    sampler = optuna.samplers.TPESampler(
+                        seed=(opt.seed + 1 + RANK),
+                        multivariate=True
+                    )
+
+                study = optuna.create_study(
+                    direction="maximize",  # in case of metric optimization
+                    pruner=pruner,
+                    sampler=sampler,
+                    study_name=study_name,
+                    storage=storage,
+                    load_if_exists=True,
+                )
+
+            # Add parameters from hyp config as initial optuna parameters
+            root_save_dir = opt.save_dir
+            trial_hyps_keys = list(meta.keys())
+            format_save_dir_with_hyps = len(trial_hyps_keys) < 5
+            # Initialize parameters of first trial
+            start_trial_hyp = {hyp_name: hyp[hyp_name] for hyp_name in trial_hyps_keys}
+
+            if not opt.resume_optuna:
+                # start with start_trial_hyp
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=ExperimentalWarning)  # suppress optuna warnings
+                    # Add first trial in study's queue
+                    study.enqueue_trial(start_trial_hyp)
+
+            def optuna_pruning_callback(log_vals, epoch, fi, trial, study, root_dir):
+                # Report current fitness value
+                trial.report(float(fi), step=epoch)
+
+                is_max_epochs = epoch >= opt.max_res if isinstance(opt.max_res, int) else False
+                results = tuple(val if val > 0 else 0 for val in log_vals[3:-3])  # Get results from log_vals
+
+                # get the list of trial fitness
+                trial_fitness = [x.values[0]
+                                 for x in study.trials
+                                 if x.state in (optuna.trial.TrialState.PRUNED, optuna.trial.TrialState.COMPLETE)]
+
+                best_fitness = max(trial_fitness) if trial_fitness else 0
+
+                if float(fi) >= best_fitness:
+                    # copy the best checkpoints from last
+                    trial_best = Path(root_dir) / 'trial_best'
+                    trial_last = Path(root_dir) / 'trial_last'
+
+                    if os.path.exists(trial_best):
+                        shutil.rmtree(trial_best)
+                    shutil.copytree(trial_last, trial_best)
+
+                if trial.should_prune() or is_max_epochs:
+                
+                    # Replacing standard hyperparameters with parameters from trial
+                    trial_hyp = {**hyp, **trial.params}
+                    # log_vals contains losses, results and lr
+                    keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                            'val/box_loss', 'val/obj_loss', 'val/cls_loss')
+                    print_mutation(keys, results, trial_hyp, save_dir, opt.bucket)
+                    opt.save_dir = root_save_dir
+
+                    torch.cuda.empty_cache()
+                    # raise optuna exception
+                    raise optuna.TrialPruned()
+
+            def optuna_criterion(trial):
+                torch.cuda.empty_cache()
+
+                # dump sampler
+                with open(save_dir / 'sampler.pkl', 'wb') as fout:
+                    pickle.dump(study.sampler, fout)
+
+                # Suggest hyps
+                for hyp_name in trial_hyps_keys:
+                    _, start, end = meta[hyp_name]
+                    trial.suggest_float(hyp_name, start, end)
+
+                # Replacing standard hyperparameters with parameters from trial
+                trial_hyp = {**hyp, **trial.params}
+
+                if opt.save_every_trial:
+                    # Set log directory
+                    trial_dir_name = f'trial_{trial.number}'
+                    opt.save_dir += ('/' + trial_dir_name)
+                    if format_save_dir_with_hyps:
+                        # Formation of the save directory name as a combination of hyperparameter values
+                        hyps_str = '#'.join(f'{k}_{round(v, 5)}' for k, v in trial.params.items())
+                        opt.save_dir += hyps_str
+                    else:
+                        LOGGER.info(emojis(
+                            f'WARNING: Generation save dir is set default name: {opt.save_dir}.'
+                            f'Too many hyperparameters of optimization is specified ⚠️'))
+
+                # Create callbacks and loggers instances
+                callbacks = Callbacks()
+
+                # Set pruning callback
+                trial_pruning_callback = partial(optuna_pruning_callback, trial=trial, study=study,
+                                                 root_dir=root_save_dir)
+                # Report trial's results in on_fit_epoch_end action
+                callbacks.register_action(
+                    'after_model_save',
+                    name='prune_optuna_trial',
+                    callback=trial_pruning_callback
+                )
+
+                LOGGER.info(f"{colorstr(f'Start training trial {trial.number}')}\n")
+
+                # Run training
+                results = train(trial_hyp, opt, device, callbacks)
+                opt.save_dir = root_save_dir
+
+                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                        'val/box_loss', 'val/obj_loss', 'val/cls_loss')
+                print_mutation(keys, results, trial_hyp, save_dir, opt.bucket)
+
+                # If trial is not pruned report value of fitness function
+                return fitness(np.array(results).reshape(1, -1))
+
+            # In case of resume we must keep number of trials
+            n_prev_trials = len([trial
+                                 for trial in study.get_trials()
+                                 if trial.state in (optuna.trial.TrialState.PRUNED, optuna.trial.TrialState.COMPLETE)])
+            n_trials = opt.evolve - n_prev_trials
+            study.optimize(optuna_criterion, n_trials=n_trials)
 
         # Plot results
         plot_evolve(evolve_csv)
