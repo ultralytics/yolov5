@@ -4,7 +4,7 @@
       <img width="850" src="https://raw.githubusercontent.com/ultralytics/assets/master/yolov5/v70/splash.png"></a>
   </p>
 
-  English | [简体中文](.github/README_cn.md)
+  [English](README.md) | [简体中文](README.zh-CN.md)
   <br>
   <div>
     <a href="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml"><img src="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml/badge.svg" alt="YOLOv5 CI"></a>
@@ -15,15 +15,11 @@
     <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
     <a href="https://www.kaggle.com/ultralytics/yolov5"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open In Kaggle"></a>
   </div>
-
   <br>
-  <p>
-    YOLOv5 🚀 is the world's most loved vision AI, representing <a href="https://ultralytics.com">Ultralytics</a>
-    open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
-    <br><br>
-    To request an Enterprise License please complete the form at <a href="https://ultralytics.com/license">Ultralytics Licensing</a>.
-    <br><br>
-  </p>
+
+YOLOv5 🚀 is the world's most loved vision AI, representing <a href="https://ultralytics.com">Ultralytics</a> open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
+
+To request an Enterprise License please complete the form at <a href="https://ultralytics.com/license">Ultralytics Licensing</a>.
 
   <div align="center">
     <a href="https://github.com/ultralytics" style="text-decoration:none;">
@@ -54,9 +50,10 @@
 
 <div align="center">
 
-We're excited to announce our very first [Ultralytics Live Session](https://www.youtube.com/@Ultralytics/streams) ✨ streaming live at https://youtu.be/KS4weDInJYs on **Tuesday, November 29th at 16:00 CET** with [@thepycoder](https://github.com/thepycoder) of [ClearML](https://cutt.ly/yolov5-readme-clearml). Glenn and Victor will discuss all things experiment tracking and how you can maximize the benefits of the new YOLOv5 + ClearML [integration](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml). 🔥
+[Ultralytics Live Session Ep. 2](https://youtu.be/LKpuzZllNpA) ✨ will be streaming live on **Tuesday, December 13th at 19:00 CET** with [Joseph Nelson](https://github.com/josephofiowa) of [Roboflow](https://roboflow.com/?ref=ultralytics) who will join us to discuss the brand new Roboflow x Ultralytics HUB integration. Tune in to ask Glenn and Joseph about how you can make speed up workflows with seamless dataset integration! 🔥
 
-<a align="center" href="https://youtu.be/KS4weDInJYs" target="_blank"><img width="800" src="https://user-images.githubusercontent.com/85292283/203834465-fa67ead1-d87b-4212-8a1d-acfd4d8e7226.png"></a>
+<a align="center" href="https://youtu.be/LKpuzZllNpA" target="_blank">
+<img width="800" src="https://user-images.githubusercontent.com/85292283/205996456-bf3efa33-9c46-455e-b322-a64886cc7a0b.png"></a>
 </div>
 
 ## <div align="center">Segmentation ⭐ NEW</div>
@@ -312,7 +309,7 @@ YOLOv5 has been designed to be super easy to get started and simple to learn. We
 | [YOLOv5s6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5s6.pt)                 | 1280                  | 44.8                 | 63.7              | 385                          | 8.2                           | 3.6                            | 12.6               | 16.8                   |
 | [YOLOv5m6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5m6.pt)                 | 1280                  | 51.3                 | 69.3              | 887                          | 11.1                          | 6.8                            | 35.7               | 50.0                   |
 | [YOLOv5l6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5l6.pt)                 | 1280                  | 53.7                 | 71.3              | 1784                         | 15.8                          | 10.5                           | 76.8               | 111.4                  |
-| [YOLOv5x6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5x6.pt)<br>+ [TTA][TTA] | 1280<br>1536          | 55.0<br>**55.8**     | 72.7<br>**72.7**  | 3136<br>-                    | 26.2<br>-                     | 19.4<br>-                      | 140.7<br>-         | 209.8<br>-             |
+| [YOLOv5x6](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5x6.pt)<br>+ [TTA][tta] | 1280<br>1536          | 55.0<br>**55.8**     | 72.7<br>**72.7**  | 3136<br>-                    | 26.2<br>-                     | 19.4<br>-                      | 140.7<br>-         | 209.8<br>-             |
 
 <details>
   <summary>Table Notes</summary>
@@ -426,6 +423,13 @@ Get started in seconds with our verified environments. Click each icon below for
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="10%" /></a>
 </div>
 
+## <div align="center">App</div>
+
+Run YOLOv5 models on your iOS or Android device by downloading the [Ultralytics App](https://ultralytics.com/app_install)!
+
+<a align="center" href="https://ultralytics.com/app_install" target="_blank">
+<img width="100%" alt="Ultralytics mobile app" src="https://user-images.githubusercontent.com/26833433/202829285-39367043-292a-41eb-bb76-c3e74f38e38e.png">
+
 
 ## <div align="center">Contribute</div>
 
@@ -471,5 +475,4 @@ For YOLOv5 bugs and feature requests please visit [GitHub Issues](https://github
     <img src="https://github.com/ultralytics/assets/raw/master/social/logo-social-instagram.png" width="3%" alt="" /></a>
 </div>
 
-[assets]: https://github.com/ultralytics/yolov5/releases
 [tta]: https://github.com/ultralytics/yolov5/issues/303
