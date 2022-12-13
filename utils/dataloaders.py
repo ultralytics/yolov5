@@ -141,7 +141,7 @@ def create_dataloader(path,
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     generator = torch.Generator()
-    generator.manual_seed(seed + RANK)
+    generator.manual_seed(6148914691236517205 + seed + RANK)
     return loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
