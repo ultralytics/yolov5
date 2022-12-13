@@ -429,6 +429,7 @@ if __name__ == '__main__':
         for s in cfg['scales']:
             cfg['depth_multiple'], cfg['width_multiple'] = cfg['scales'][s]
             model = Model(cfg).to(device)
+            model.fuse()
     else:
         model = Model(opt.cfg).to(device)
     model.eval()
