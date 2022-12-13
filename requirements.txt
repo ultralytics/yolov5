@@ -1,6 +1,5 @@
 # pip install -r requirements.txt
-supervisely==6.47.3
-supervisely[apps]==6.47.3
+supervisely==6.68.49
 
 opencv-python-headless==4.5.5.62
 opencv-python==4.5.5.62
@@ -16,10 +15,8 @@ seaborn==0.11.1
 coremltools==4.1
 onnx>=1.8.0
 onnxruntime==1.8.0
-scikit-learn==1.1.1  # for coreml quantization
+# scikit-learn==1.1.1  # for coreml quantization
 numpy==1.19.0
 # extras --------------------------------------
 thop==0.0.31-2005241907  # FLOPS computation
 pycocotools==2.0.2  # COCO mAP
-
-ffmpeg-python==0.2.0

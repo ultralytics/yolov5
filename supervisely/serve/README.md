@@ -38,9 +38,6 @@ Model serving allows to apply model to image (URL, local file, Supervisely image
     <img src="https://i.imgur.com/UlEMeem.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="max-width:100%;">
 </a>
 
-
-
-
 # Related Apps
 
 You can use served model in next Supervisely Applications ⬇️ 
@@ -92,12 +89,6 @@ change what agent should be used for deploy.
 # For Developers
 
 This python example illustrates available methods of the deployed model. Now you can integrate network predictions to your python script. This is the way how other Supervisely Apps can communicate with NNs. And also you can use serving app as an example - how to use download NN weights outside Supervisely.
-
-To implement serving app developer has just to define four methods:
-- function [`get_session_info`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/sly_serve.py#L50) - information about deployed model (returns python dictionary with any useful information)
-- function [`construct_model_meta`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L16) - returns model output classes and tags in [Supervisely format](https://docs.supervise.ly/data-organization/00_ann_format_navi)
-- function [`load_model`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L37) - how to load model to the device (cpu or/and gpu) - [link](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/sly_serve.py#L165)
-- function [`inference`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L62)  - how to apply model to the image and how to convert predictions to [Supervisely format](https://docs.supervise.ly/data-organization/00_ann_format_navi)
 
 
 ## Python Example: how to communicate with deployed model 
@@ -206,6 +197,20 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
+## Python Example: how to apply model to raw images
+
+You can do inference on image bytes from request when your Serve app is started.
+
+1. Run Serve YOLOv5 app. Open the app's log.
+2. Find the string `✅ To access the app in browser, copy and paste this URL:` and copy the link after this text.
+3. Open [sly_integration/serve/src/demo_request_raw_image.py](https://github.com/supervisely-ecosystem/yolov5/tree/master/supervisely/serve/src/demo_request_raw_image.py) script.
+4. Paste copied link to variable `APP_ADDRESS` instead of current value.
+5. Run this script from `sly_integration/serve/src` path by command:
+
+`python demo_request_raw_image.py`
+
+You will get the result annotation in json format.
 
 ## Example Output
 
