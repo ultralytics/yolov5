@@ -49,7 +49,7 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 
 <div align="center">
 
-[Ultralytics Live Session Ep。 2](https://youtu.be/LKpuzZllNpA) ✨ 将在 **欧洲中部时间 12 月 13 日星期二的 19:00** ，通过 [Joseph Nelson](https://github.com/josephofiowa) 的 [Roboflow](https://roboflow.com/?ref=ultralytics) 直播， 届时他将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。欢迎收听 Glenn 和 Joseph ，以了解如何通过无缝数据集集成来加快工作流程！ 🔥
+[Ultralytics Live Session Ep. 2](https://youtu.be/LKpuzZllNpA) ✨ 将与 [Roboflow](https://roboflow.com/?ref=ultralytics) 的 [Joseph Nelson](https://github.com/josephofiowa) 在 **欧洲中部时间 12 月 13 日星期二的 19:00** ，他将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。欢迎收听 Glenn 和 Joseph ，以了解如何通过无缝数据集集成来加快工作流程！ 🔥
 
 <a align="center" href="https://youtu.be/LKpuzZllNpA" target="_blank">
 <img width="800" src="https://user-images.githubusercontent.com/85292283/205996456-bf3efa33-9c46-455e-b322-a64886cc7a0b.png"></a>
@@ -81,7 +81,7 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 
 -   所有模型使用 SGD 优化器训练， 都使用 `lr0=0.01` 和 `weight_decay=5e-5` 参数， 图像大小为 640 。<br>训练 log 可以查看 https://wandb.ai/glenn-jocher/YOLOv5_v70_official
 -   **准确性**结果都在 COCO 数据集上，使用单模型单尺度测试得到。<br>复现命令 `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt`
--   **推理速度**是使用 100 张图像推理时间进行平均得到，测试环境使用 [Colab Pro](https://colab.research.google.com/signup) 上A100 高 RAM 实例。结果仅表示推理速度（NMS 每张图像增加约 1 毫秒）。<br>复现命令 `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt --batch 1`
+-   **推理速度**是使用 100 张图像推理时间进行平均得到，测试环境使用 [Colab Pro](https://colab.research.google.com/signup) 上 A100 高 RAM 实例。结果仅表示推理速度（NMS 每张图像增加约 1 毫秒）。<br>复现命令 `python segment/val.py --data coco.yaml --weights yolov5s-seg.pt --batch 1`
 -   **模型转换**到 FP32 的 ONNX 和 FP16 的 TensorRT 脚本为 `export.py`.<br>运行命令 `python export.py --weights yolov5s-seg.pt --include engine --device 0 --half`
 
 </details>
