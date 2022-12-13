@@ -49,9 +49,9 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 
 <div align="center">
 
-[Ultralytics Live Session Ep. 2](https://youtu.be/LKpuzZllNpA) ✨ 将与 [Roboflow](https://roboflow.com/?ref=ultralytics) 的 [Joseph Nelson](https://github.com/josephofiowa) 在 **欧洲中部时间 12 月 13 日星期二的 19:00** ，他将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。欢迎收听 Glenn 和 Joseph ，以了解如何通过无缝数据集集成来加快工作流程！ 🔥
+[Ultralytics Live Session Ep. 2](https://youtu.be/QGRtEG7UjtE) ✨ 将与 [Roboflow](https://roboflow.com/?ref=ultralytics) 的 [Joseph Nelson](https://github.com/josephofiowa) 在 **欧洲中部时间 12 月 13 日星期二的 19:00** ，他将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。欢迎收听 Glenn 和 Joseph ，以了解如何通过无缝数据集集成来加快工作流程！ 🔥
 
-<a align="center" href="https://youtu.be/LKpuzZllNpA" target="_blank">
+<a align="center" href="https://youtu.be/QGRtEG7UjtE" target="_blank">
 <img width="800" src="https://user-images.githubusercontent.com/85292283/205996456-bf3efa33-9c46-455e-b322-a64886cc7a0b.png"></a>
 </div>
 
