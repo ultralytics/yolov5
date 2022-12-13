@@ -81,7 +81,21 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
 
         self.custom_settings_path = os.path.join(app_source_path, "custom_settings.yaml")
         self.class_names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
-        # self.model_meta = # TODO: can colors exist in model?
+
+        colors = None
+        if hasattr(self.model, 'module') and hasattr(self.model.module, 'colors'):
+            colors = self.model.module.colors
+        elif hasattr(self.model, 'colors'):
+            colors = self.model.colors
+        else:
+            colors = []
+            for i in range(len(self.class_names)):
+                colors.append(sly.color.generate_rgb(exist_colors=colors))
+
+        obj_classes = [sly.ObjClass(name, sly.Rectangle, color) for name, color in zip(self.class_names, colors)]
+
+        self.model_meta = sly.ProjectMeta(obj_classes=sly.ObjClassCollection(obj_classes),
+                                tag_metas=sly.TagMetaCollection([self._get_confidence_tag_meta()]))
 
         print(f"✅ Model has been successfully loaded on {device.upper()} device")
 
