@@ -204,9 +204,9 @@ You can do inference on image bytes from request when your Serve app is started.
 
 1. Run Serve YOLOv5 app. Open the app's log.
 2. Find the string `✅ To access the app in browser, copy and paste this URL:` and copy the link after this text.
-3. Open [sly_integration/serve/src/demo_request_raw_image.py](https://github.com/supervisely-ecosystem/yolov5/tree/master/supervisely/serve/src/demo_request_raw_image.py) script.
+3. Open [supervisely/serve/src/demo_request_raw_image.py](https://github.com/supervisely-ecosystem/yolov5/tree/master/supervisely/serve/src/demo_request_raw_image.py) script.
 4. Paste copied link to variable `APP_ADDRESS` instead of current value.
-5. Run this script from `sly_integration/serve/src` path by command:
+5. Run this script from `supervisely/serve/src` path by command:
 
 `python demo_request_raw_image.py`
 
