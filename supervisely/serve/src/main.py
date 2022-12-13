@@ -94,7 +94,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
 
         obj_classes = [sly.ObjClass(name, sly.Rectangle, color) for name, color in zip(self.class_names, colors)]
 
-        self.model_meta = sly.ProjectMeta(obj_classes=sly.ObjClassCollection(obj_classes),
+        self._model_meta = sly.ProjectMeta(obj_classes=sly.ObjClassCollection(obj_classes),
                                 tag_metas=sly.TagMetaCollection([self._get_confidence_tag_meta()]))
 
         print(f"✅ Model has been successfully loaded on {device.upper()} device")
