@@ -15,6 +15,7 @@ if [ "$#" -gt 0 ]; then
     --val) val=true ;;
     --test) test=true ;;
     --segments) segments=true ;;
+    --sama) segments=true ;;
     esac
   done
 else
@@ -22,13 +23,16 @@ else
   val=true
   test=false
   segments=false
+  sama=false
 fi
 
 # Download/unzip labels
 d='../datasets' # unzip directory
 url=https://github.com/ultralytics/yolov5/releases/download/v1.0/
 if [ "$segments" == "true" ]; then
-  f='coco2017labels-segments.zip' # 168 MB
+  f='coco2017labels-segments.zip' # 169 MB
+elif [ "$sama" == "true" ]; then
+  f='coco2017labels-segments-sama.zip' # 199 MB https://www.sama.com/sama-coco-dataset/
 else
   f='coco2017labels.zip' # 46 MB
 fi
