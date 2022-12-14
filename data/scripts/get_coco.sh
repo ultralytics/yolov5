@@ -15,7 +15,7 @@ if [ "$#" -gt 0 ]; then
     --val) val=true ;;
     --test) test=true ;;
     --segments) segments=true ;;
-    --sama) segments=true ;;
+    --sama) sama=true ;;
     esac
   done
 else
