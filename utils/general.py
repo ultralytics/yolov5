@@ -49,7 +49,7 @@ NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiproces
 DATASETS_DIR = Path(os.getenv('YOLOv5_DATASETS_DIR', ROOT.parent / 'datasets'))  # global datasets directory
 AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
-TQDM_BAR_FORMAT = '{l_bar}{bar:10}| {n_fmt}/{total_fmt} {elapsed}'  # tqdm bar format
+TQDM_BAR_FORMAT = '{l_bar}{bar:10}{r_bar}'  # tqdm bar format
 FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf
 
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -1036,7 +1036,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve
 
     # Save yaml
     with open(evolve_yaml, 'w') as f:
-        data = pd.read_csv(evolve_csv)
+        data = pd.read_csv(evolve_csv, skipinitialspace=True)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
         i = np.argmax(fitness(data.values[:, :4]))  #
         generations = len(data)
@@ -1115,7 +1115,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     return path
 
 
-# OpenCV Chinese-friendly functions ------------------------------------------------------------------------------------
+# OpenCV Multilanguage-friendly functions ------------------------------------------------------------------------------------
 imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
