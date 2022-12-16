@@ -147,7 +147,7 @@ class ComputeLoss:
                                      requires_grad=False)
 
             with torch.autocast(device_type=self.device.type):
-                self.reg_loss = torch.jit.trace(reg_loss, (_pxy, _pwh, _tbox_i, _anchors_i))
+                self.reg_loss_traced = torch.jit.trace(reg_loss, (_pxy, _pwh, _tbox_i, _anchors_i))
             del _pxy, _pwh, _tbox_i, _anchors_i
 
     def __call__(self, p, targets):  # predictions, targets
@@ -176,14 +176,11 @@ class ComputeLoss:
                     tbox_i = torch.nn.functional.pad(tbox[i], (0, 0, 0, pad_size))
                     anchors_i = torch.nn.functional.pad(anchors[i], (0, 0, 0, pad_size))
                     # compute loss
-                    iou = self.reg_loss(pxy, pwh, tbox_i, anchors_i)
+                    iou = self.reg_loss_traced(pxy, pwh, tbox_i, anchors_i)
                     # Unpad
                     iou = iou[:p_size]
                 else:
-                    pxy = pxy.sigmoid() * 2 - 0.5
-                    pwh = (pwh.sigmoid() * 2) ** 2 * anchors[i]
-                    pbox = torch.cat((pxy, pwh), 1)  # predicted box
-                    iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
+                    iou = reg_loss(pxy, pwh, tbox[i], anchors[i])
 
                 lbox += (1.0 - iou).mean()  # iou loss
 
