@@ -91,7 +91,10 @@ class DFL(nn.Module):
     def __init__(self, c1=16):
         super().__init__()
         self.conv = nn.Conv2d(c1, 1, 1, bias=False).requires_grad_(False)
-        self.conv.weight.data[:] = nn.Parameter(torch.arange(c1, dtype=torch.float).view(1, c1, 1, 1))  # / 120.0
+        x = torch.arange(c1, dtype=torch.float)
+        # x = x / x.sum()
+        # x = x.softmax(0)
+        self.conv.weight.data[:] = nn.Parameter(x.view(1, c1, 1, 1))
         self.c1 = c1
         # self.bn = nn.BatchNorm2d(4)
 
