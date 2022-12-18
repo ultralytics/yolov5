@@ -6,9 +6,9 @@ depth_multiple: 1.00  # model depth multiple
 width_multiple: 1.25  # layer channel multiple
 anchors: [[16,19], [55,65], [178,192]]
 scales:  # model [depth, width] scaling multiples
-  n: [0.33, 0.25]  # nano       238 layers, 3412560 parameters, 3412544 gradients, 10.3 GFLOPs
-  s: [0.33, 0.50]  # small      238 layers, 10800096 parameters, 10800080 gradients, 27.8 GFLOPs
-  m: [0.67, 0.75]  # medium     315 layers, 33009328 parameters, 33009312 gradients, 83.7 GFLOPs
+  n: [0.33, 0.25]  # nano       238 layers, 3106128 parameters, 3106112 gradients, 8.7 GFLOPs
+  s: [0.33, 0.50]  # small      238 layers, 10960992 parameters, 10960976 gradients, 28.3 GFLOPs
+  m: [0.67, 0.75]  # medium     315 layers, 33254512 parameters, 33254496 gradients, 84.6 GFLOPs
   l: [1.00, 1.00]  # large      392 layers, 74945024 parameters, 74945008 gradients, 189.9 GFLOPs
   x: [1.00, 1.25]  # x-large    392 layers, 117057808 parameters, 117057792 gradients, 296.3 GFLOPs
 
