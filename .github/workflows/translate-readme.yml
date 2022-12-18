@@ -6,8 +6,7 @@ name: Translate README
 on:
   push:
     branches:
-      - main
-      - master
+      - translate_readme  # replace with 'master' to enable action
     paths:
       - README.md
 
