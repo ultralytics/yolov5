@@ -92,7 +92,7 @@ class ComputeLoss:
                                             alpha=float(os.getenv('YOLOA', 0.5)),
                                             beta=float(os.getenv('YOLOB', 6.0)))
         self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=use_dfl).to(device)
-        self.proj = torch.arange(m.reg_max).float().to(device) + 1.0
+        self.proj = torch.arange(m.reg_max).float().to(device)
         self.proj = self.proj / self.proj.sum()  # normalize
         # self.proj = self.proj.softmax(0)  # softmax
         self.use_dfl = use_dfl
