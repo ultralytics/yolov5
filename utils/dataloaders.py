@@ -115,7 +115,8 @@ def create_dataloader(path,
                       image_weights=False,
                       quad=False,
                       prefix='',
-                      shuffle=False):
+                      shuffle=False,
+                      seed=0):
     if rect and shuffle:
         LOGGER.warning('WARNING ⚠️ --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -140,7 +141,7 @@ def create_dataloader(path,
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     generator = torch.Generator()
-    generator.manual_seed(6148914691236517205 + RANK)
+    generator.manual_seed(6148914691236517205 + seed + RANK)
     return loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
