@@ -12,6 +12,7 @@ import platform
 import sys
 from copy import deepcopy
 from pathlib import Path
+
 import yaml  # for torch hub
 
 FILE = Path(__file__).resolve()
@@ -47,7 +48,7 @@ class V6Detect(nn.Module):
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch)  # number of detection layers
-        self.reg_max = 16  # DFL channels (ch[0] // 16 to scale 4/8/12/16/20 for n/s/m/l/x)
+        self.reg_max = 1  # DFL channels (ch[0] // 16 to scale 4/8/12/16/20 for n/s/m/l/x)
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.stride = torch.zeros(self.nl)  # strides computed during build
@@ -81,7 +82,7 @@ class V6Detect(nn.Module):
         # ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             a[-1].bn.bias.data[:] = 1.0  # box
-            b[-1].bn.bias.data[:m.nc] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (5 objects and 80 classes per 640 image)
+            b[-1].bn.bias.data[:m.nc] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (5 objects, 80 classes per 640 image)
 
 
 class Detect(nn.Module):
