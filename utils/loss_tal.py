@@ -93,8 +93,8 @@ class ComputeLoss:
                                             alpha=float(os.getenv('YOLOA', 0.5)),
                                             beta=float(os.getenv('YOLOB', 6.0)))
         self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=self.use_dfl).to(device)
-        self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device).softmax(0)
-
+        self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device) + 1.0
+        self.proj = self.proj / self.proj.sum()
 
     def preprocess(self, targets, batch_size, scale_tensor):
         if targets.shape[0] == 0:
