@@ -27,6 +27,28 @@ def smooth(y, f=0.05):
     yp = np.concatenate((p * y[0], y, p * y[-1]), 0)  # y padded
     return np.convolve(yp, np.ones(nf) / nf, mode='valid')  # y-smoothed
 
+def OKS(gt, pred, visibility, scale):
+    distances = torch.linalg.norm(pred - gt, axis=-1)
+    # Compute the exponential part of the equation
+    exp_vector = torch.exp(-(distances**2) / (2 * (scale**2)))
+    # The numerator expression
+    numerator = torch.dot(exp_vector, visibility)
+    # The denominator expression
+    denominator = torch.sum(visibility)
+    return numerator / denominator
+
+def OKS_matrix(labels, preds, kpt_label):
+    matrix = torch.zeros((labels.shape[0], preds.shape[0]), device=preds.device)
+    scales = torch.tensor([(label[3] - label[1]) * (label[4] - label[2]) for label in labels])
+    visibilitys = (labels[:, 6::2] != 0).to(torch.float32)
+    preds = preds[:, 6:].reshape((preds.shape[0], kpt_label, 3))[:, :, :2]
+    labels = labels[:, 6:].reshape((labels.shape[0], kpt_label, 2))
+    for i in range(labels.shape[0]):
+        for j in range(preds.shape[0]):
+            oks = OKS(labels[i], preds[i], visibilitys[i], scales[i])
+            matrix[i, j] = oks
+    return matrix
+
 
 def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16, prefix=""):
     """ Compute the average precision, given the recall and precision curves.
@@ -176,6 +198,7 @@ class ConfusionMatrix:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # predicted background
+
 
     def tp_fp(self):
         tp = self.matrix.diagonal()  # true positives

@@ -1,0 +1,11 @@
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: /ssd/kahharov/keypoints/human/coco/train2017.txt  # 118287 images
+val: /ssd/kahharov/keypoints/human/coco/val2017.txt  # 5000 images
+
+skeleton: [[16,14],[14,12],[17,15],[15,13],[12,13],[6,12],[7,13],[6,7],
+            [6,8],[7,9],[8,10],[9,11],[2,3],[1,2],[1,3],[2,4],[3,5],[4,6],[5,7]]
+
+# number of classes
+nc: 1
+
+names: ['person']

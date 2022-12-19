@@ -83,7 +83,7 @@ class Annotator:
             self.im = im
         self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
 
-    def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
+    def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255), kpts=[], steps=3, skeleton=[]):
         # Add one xyxy box to image with label
         if self.pil or not is_ascii(label):
             self.draw.rectangle(box, width=self.lw, outline=color)  # box
@@ -113,6 +113,33 @@ class Annotator:
                             txt_color,
                             thickness=tf,
                             lineType=cv2.LINE_AA)
+            if len(kpts):
+                radius = 2
+                num_kpts = len(kpts) // steps
+
+                for kid in range(num_kpts):
+                    
+                    x_coord, y_coord = kpts[steps * kid], kpts[steps * kid + 1]
+                    if not (x_coord % 640 == 0 or y_coord % 640 == 0):
+                        if steps == 3:
+                            conf = kpts[steps * kid + 2]
+                            if conf < 0.5:
+                                continue
+                        cv2.circle(self.im, (int(x_coord), int(y_coord)), radius, (255, 255, 0), -1)
+
+                for sk in skeleton:
+                    pos1 = (int(kpts[(sk[0] - 1) * steps]), int(kpts[(sk[0] - 1) * steps + 1]))
+                    pos2 = (int(kpts[(sk[1] - 1) * steps]), int(kpts[(sk[1] - 1) * steps + 1]))
+                    if steps == 3:
+                        conf1 = kpts[(sk[0] - 1) * steps + 2]
+                        conf2 = kpts[(sk[1] - 1) * steps + 2]
+                        if conf1 < 0.5 or conf2 < 0.5:
+                            continue
+                    if pos1[0] % 640 == 0 or pos1[1] % 640==0 or pos1[0] < 0 or pos1[1] < 0:
+                        continue
+                    if pos2[0] % 640 == 0 or pos2[1] % 640 == 0 or pos2[0] < 0 or pos2[1] < 0:
+                        continue
+                    cv2.line(self.im, pos1, pos2, (30, 144, 255), thickness=1)           
 
     def masks(self, masks, colors, im_gpu, alpha=0.5, retina_masks=False):
         """Plot masks at once.

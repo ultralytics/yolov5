@@ -461,15 +461,18 @@ class CometLogger:
 
         return
 
-    def on_val_end(self, nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix):
+    def on_val_end(self, nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix, kpt_label=0, map50_kpt=0, map_kpt=0):
         if self.comet_log_per_class_metrics:
             if self.num_classes > 1:
                 for i, c in enumerate(ap_class):
                     class_name = self.class_names[c]
-                    self.experiment.log_metrics(
+                    if kpt_label:
+                        self.experiment.log_metrics(
                         {
                             'mAP@.5': ap50[i],
                             'mAP@.5:.95': ap[i],
+                            'mAP_kpt@.5':map50_kpt[i],
+                            'mAP_kpt@.5:.95':map_kpt[i],
                             'precision': p[i],
                             'recall': r[i],
                             'f1': f1[i],
@@ -477,6 +480,18 @@ class CometLogger:
                             'false_positives': fp[i],
                             'support': nt[c]},
                         prefix=class_name)
+                    else:
+                        self.experiment.log_metrics(
+                            {
+                                'mAP@.5': ap50[i],
+                                'mAP@.5:.95': ap[i],
+                                'precision': p[i],
+                                'recall': r[i],
+                                'f1': f1[i],
+                                'true_positives': tp[i],
+                                'false_positives': fp[i],
+                                'support': nt[c]},
+                            prefix=class_name)
 
         if self.comet_log_confusion_matrix:
             epoch = self.experiment.curr_epoch
