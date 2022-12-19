@@ -94,7 +94,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
         info = super().get_info()
         info["model_name"] = "YOLOv5"
         info["checkpoint_name"] = pretrained_weights
-        info["pretrained_on_dataset"] = "COCO train 2017"
+        info["pretrained_on_dataset"] = "COCO train 2017" if model_weights_options == "pretrained" else "custom"
         info["device"] = self.device.type
         info["sliding_window_support"] = "advanced"
         info["half"] = str(self.half)
@@ -139,6 +139,45 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
 
         return predictions
 
+
+    def predict_raw(
+        self, image_path: str, settings: Dict[str, Any]
+    ) -> List[sly.nn.PredictionBBox]:
+        conf_thres = settings.get("conf_thres")
+
+        augment = settings.get("augment")
+        # inference_mode = settings.get("inference_mode", "full")
+        image = sly.image.read(image_path)  # RGB image
+        predictions = []
+
+        img0 = image
+        # Padded resize
+        img = letterbox(img0, new_shape=self.imgsz, stride=self.stride)[0]
+        img = img.transpose(2, 0, 1)  # to 3x416x416
+        img = np.ascontiguousarray(img)
+
+        img = torch.from_numpy(img).to(self.device)
+        img = img.half() if self.half else img.float()  # uint8 to fp16/32
+        img /= 255.0  # 0 - 255 to 0.0 - 1.0
+        if img.ndimension() == 3:
+            img = img.unsqueeze(0)
+
+        inf_out = self.model(img, augment=augment)[0][0]
+        
+        inf_out[:, 5:] *= inf_out[:, 4:5]  # conf = obj_conf * cls_conf
+        # Box (center x, center y, width, height) to (x1, y1, x2, y2)
+        box = xywh2xyxy(inf_out[:, :4])
+        conf, j = inf_out[:, 5:].max(1, keepdim=True) # best class
+        det = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
+
+        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
+
+        for *xyxy, conf, cls in reversed(det):
+            bbox = [int(xyxy[1]), int(xyxy[0]), int(xyxy[3]), int(xyxy[2])]
+            predictions.append(sly.nn.PredictionBBox(self.class_names[int(cls)], bbox, conf.item()))
+
+        return predictions
+
 sly.logger.info("Script arguments", extra={
     "teamId": sly.env.team_id(),
     "workspaceId": sly.env.workspace_id(),
@@ -160,7 +199,8 @@ elif model_weights_options == "custom":
 
 m = YOLOv5Model(
     location=location, 
-    custom_inference_settings=os.path.join(app_source_path, "custom_settings.yaml")
+    custom_inference_settings=os.path.join(app_source_path, "custom_settings.yaml"),
+    sliding_window_mode = "advanced"
 )
 m.load_on_device(device)
 
