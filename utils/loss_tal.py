@@ -69,7 +69,7 @@ class BboxLoss(nn.Module):
 
 class ComputeLoss:
     # Compute losses
-    def __init__(self, model, use_dfl=True):
+    def __init__(self, model):
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
@@ -87,13 +87,14 @@ class ComputeLoss:
         self.nl = m.nl  # number of layers
         self.device = device
 
+        self.use_dfl = m.reg_max > 1
         self.assigner = TaskAlignedAssigner(topk=int(os.getenv('YOLOM', 10)),
                                             num_classes=self.nc,
                                             alpha=float(os.getenv('YOLOA', 0.5)),
                                             beta=float(os.getenv('YOLOB', 6.0)))
-        self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=use_dfl).to(device)
+        self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=self.use_dfl).to(device)
         self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device).softmax(0)
-        self.use_dfl = use_dfl
+
 
     def preprocess(self, targets, batch_size, scale_tensor):
         if targets.shape[0] == 0:

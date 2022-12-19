@@ -70,8 +70,8 @@ class V6Detect(nn.Module):
             self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
             self.shape = shape
 
-        dbox = dist2bbox(self.dfl(box), self.anchors.unsqueeze(0), xywh=True, dim=1) * self.strides
-        y = torch.cat((dbox, cls.sigmoid()), 1)
+        dbox = dist2bbox(self.dfl(box) if self.reg_max > 1 else box, self.anchors.unsqueeze(0), xywh=True, dim=1)
+        y = torch.cat((dbox * self.strides, cls.sigmoid()), 1)
         return y if self.export else (y, (x, box, cls))
 
     def bias_init(self):
