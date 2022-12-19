@@ -1,10 +1,23 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Validate a classification model on a dataset
+Validate a trained YOLOv5 classification model on a classification dataset
 
 Usage:
     $ bash data/scripts/get_imagenet.sh --val  # download ImageNet val split (6.3G, 50000 images)
-    $ python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224  # validate
+    $ python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224  # validate ImageNet
+
+Usage - formats:
+    $ python classify/val.py --weights yolov5s-cls.pt                 # PyTorch
+                                       yolov5s-cls.torchscript        # TorchScript
+                                       yolov5s-cls.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                       yolov5s-cls_openvino_model     # OpenVINO
+                                       yolov5s-cls.engine             # TensorRT
+                                       yolov5s-cls.mlmodel            # CoreML (macOS-only)
+                                       yolov5s-cls_saved_model        # TensorFlow SavedModel
+                                       yolov5s-cls.pb                 # TensorFlow GraphDef
+                                       yolov5s-cls.tflite             # TensorFlow Lite
+                                       yolov5s-cls_edgetpu.tflite     # TensorFlow Edge TPU
+                                       yolov5s-cls_paddle_model       # PaddlePaddle
 """
 
 import argparse
@@ -23,7 +36,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import create_classification_dataloader
-from utils.general import LOGGER, Profile, check_img_size, check_requirements, colorstr, increment_path, print_args
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_img_size, check_requirements, colorstr,
+                           increment_path, print_args)
 from utils.torch_utils import select_device, smart_inference_mode
 
 
@@ -87,7 +101,7 @@ def run(
     n = len(dataloader)  # number of batches
     action = 'validating' if dataloader.dataset.root.stem == 'val' else 'testing'
     desc = f"{pbar.desc[:-36]}{action:>36}" if pbar else f"{action}"
-    bar = tqdm(dataloader, desc, n, not training, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
+    bar = tqdm(dataloader, desc, n, not training, bar_format=TQDM_BAR_FORMAT, position=0)
     with torch.cuda.amp.autocast(enabled=device.type != 'cpu'):
         for images, labels in bar:
             with dt[0]:
