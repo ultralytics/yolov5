@@ -93,7 +93,7 @@ class ComputeLoss:
                                             alpha=float(os.getenv('YOLOA', 0.5)),
                                             beta=float(os.getenv('YOLOB', 6.0)))
         self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=self.use_dfl).to(device)
-        self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device)
+        self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device).softmax(0)
 
     def preprocess(self, targets, batch_size, scale_tensor):
         if targets.shape[0] == 0:
@@ -113,7 +113,9 @@ class ComputeLoss:
     def bbox_decode(self, anchor_points, pred_dist):
         if self.use_dfl:
             b, a, c = pred_dist.shape  # batch, anchors, channels
-            pred_dist = pred_dist.view(b, a, 4, c // 4).softmax(3).matmul(self.proj.type(pred_dist.dtype))
+            pred_dist = pred_dist.view(b, a, 4, c // 4).matmul(self.proj.type(pred_dist.dtype))  # no-soft
+            pred_dist = pred_dist.view(b, a, 4, c // 4).softmax(3).matmul(self.proj.type(pred_dist.dtype))  # soft
+
             # pred_dist = pred_dist.view(b, a, c // 4, 4).transpose(2,3).softmax(3).matmul(self.proj.type(pred_dist.dtype))
             # pred_dist = (pred_dist.view(b, a, c // 4, 4).softmax(2) * self.proj.type(pred_dist.dtype).view(1, 1, -1, 1)).sum(2)
         return dist2bbox(pred_dist, anchor_points, xywh=False)
