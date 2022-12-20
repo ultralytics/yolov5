@@ -1,7 +1,7 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Hyperparameters when using Albumentations frameworks
-# python train.py --hyp hyp.noAugmentation.yaml
-# See https://github.com/ultralytics/yolov5/pull/3882 for more information
+# python train.py --hyp hyp.no-augmentation.yaml
+# See https://github.com/ultralytics/yolov5/pull/3882 for YOLOv5 + Albumentations Usage examples
 
 lr0: 0.01  # initial learning rate (SGD=1E-2, Adam=1E-3)
 lrf: 0.1  # final OneCycleLR learning rate (lr0 * lrf)
