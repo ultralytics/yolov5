@@ -250,7 +250,7 @@ class Loggers():
         if self.comet_logger:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
     
-    def on_val_end_kpt(self, nt, tp, fp, p, r, f1, ap, ap50, ap50_kpt, ap_kpt, ap_class, confusion_matrix, kpt_label):
+    def on_val_end_kpt(self, nt, tp, fp, p, r, f1, ap, ap50, ap50_kpt, ap_kpt, ap_class, confusion_matrix, n_kpt):
         # Callback runs on val end
         if self.wandb or self.clearml:
             files = sorted(self.save_dir.glob('val*.jpg'))
@@ -260,11 +260,11 @@ class Loggers():
                 self.clearml.log_debug_samples(files, title='Validation')
 
         if self.comet_logger:
-            self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix, kpt_label, ap50_kpt, ap_kpt)
+            self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix, n_kpt, ap50_kpt, ap_kpt)
 
-    def on_fit_epoch_end(self, vals, epoch, best_fitness, fi, kpt_label):
+    def on_fit_epoch_end(self, vals, epoch, best_fitness, fi, n_kpt):
         # Callback runs at the end of each fit (train+val) epoch
-        if kpt_label:
+        if n_kpt:
             x = dict(zip(self.kpt_keys, vals))
             if self.csv:
                 file = self.save_dir / 'results.csv'

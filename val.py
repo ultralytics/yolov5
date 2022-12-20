@@ -41,7 +41,7 @@ from utils.dataloaders import create_dataloader
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size, check_requirements,
                            check_yaml, coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
                            print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
-from utils.metrics import ConfusionMatrix, ap_per_class, box_iou, OKS_matrix
+from utils.metrics import ConfusionMatrix, ap_per_class, box_iou, obj_kpt_sim_matrix
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
 
@@ -94,22 +94,25 @@ def process_batch(detections, labels, iouv):
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
 
 
-def process_batch_kpt(detections, labels, iouv, kpt_label):
+def process_batch_kpt(predictions, labels, iou_thresholds, n_kpt):
     """
-    Return correct prediction matrix
+    Return correct prediction matrix.
     Arguments:
-        detections (array[N, 6 + num_kpt * 3])
-        labels (array[M, 5 + num_kpt * 2])
+        predictions: (array[N, 6 + num_kpt * 3])
+        labels: (array[M, 5 + num_kpt * 2])
+        iou_thresholds: keypoint iou thresholds.
+        n_kpt: number of keypoints.
     Returns:
         correct (array[N, 10]), for 10 IoU levels
     """
-    correct = torch.zeros((detections.shape[0], iouv.shape[0]), device=iouv.device, dtype=bool)
-    iou = OKS_matrix(labels, detections, kpt_label)
-    correct_class = (labels[:, 0:1] == detections[:, 5]).clone().detach().to(device=iouv.device)
-    for i in range(len(iouv)):
-        x = torch.where((iou >= iouv[i]) & correct_class)  # IoU > threshold and classes match
+    correct = torch.zeros((predictions.shape[0], iou_thresholds.shape[0]), device=iou_thresholds.device, dtype=bool)
+    keypoint_iou = obj_kpt_sim_matrix(labels, predictions, n_kpt)
+    correct_class = (labels[:, 0:1] == predictions[:, 5]).clone().detach().to(device=iou_thresholds.device)
+    for i, iou_threshold in enumerate(iou_thresholds):
+        x = torch.where((keypoint_iou >= iou_threshold) & correct_class)  # IoU > threshold and classes match
         if x[0].shape[0]:
-            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()  # [label, detect, iou]
+            # [label, detect, keypoint_iou]
+            matches = torch.cat((torch.stack(x, 1), keypoint_iou[x[0], x[1]][:, None]), dim=1).cpu().numpy()
             if x[0].shape[0] > 1:
                 matches = matches[matches[:, 2].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
@@ -148,7 +151,7 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-        kpt_label=0,
+        n_kpt=0,
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -205,7 +208,7 @@ def run(
                                        rect=rect,
                                        workers=workers,
                                        prefix=colorstr(f'{task}: '),
-                                       kpt_label=kpt_label)[0]
+                                       n_kpt=n_kpt)[0]
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
@@ -213,13 +216,14 @@ def run(
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    if kpt_label:
-        s = ('%22s' + '%11s' * 6 + '%13s' * 2) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95', 'mAP_kpt50', 'mAP_kpt50-95')
+    if n_kpt:
+        s = ('%22s' + '%11s' * 6 + '%13s' * 2) % (
+        'Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95', 'mAP_kpt50', 'mAP_kpt50-95')
     else:
         s = ('%22s' + '%11s' * 6) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95')
     tp, fp, p, r, f1, mp, mr, map50, ap50, map = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     dt = Profile(), Profile(), Profile()  # profiling times
-    if kpt_label:
+    if n_kpt:
         loss = torch.zeros(5, device=device)
     else:
         loss = torch.zeros(3, device=device)
@@ -240,16 +244,16 @@ def run(
         with dt[1]:
             preds, train_out = model(im) if compute_loss else (model(im, augment=augment), None)
 
-        preds = preds[...,:6] if not kpt_label else preds
-        targets = targets[..., :6] if not kpt_label else targets
+        preds = preds[..., :6] if not n_kpt else preds
+        targets = targets[..., :6] if not n_kpt else targets
 
         # Loss
         if compute_loss:
             loss += compute_loss(train_out, targets)[1]  # box, obj, cls
 
         # NMS
-        if kpt_label:
-            num_points = kpt_label
+        if n_kpt:
+            num_points = n_kpt
             targets[:, 2:] *= torch.Tensor([width, height] * (num_points + 2)).to(device)  # + 2 xywh detector
         else:
             targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
@@ -262,7 +266,7 @@ def run(
                                         multi_label=True,
                                         agnostic=single_cls,
                                         max_det=max_det,
-                                        kpt_label=kpt_label)
+                                        n_kpt=n_kpt)
 
         # Metrics
         for si, pred in enumerate(preds):
@@ -287,24 +291,26 @@ def run(
                 pred[:, 5] = 0
             predn = pred.clone()
             scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
-            if kpt_label:
-                scale_boxes(im[si].shape[1:], predn[:, 6:], shapes[si][0], shapes[si][1], kpt_label=kpt_label, step=3)  # native-space pred
+            if n_kpt:
+                scale_boxes(im[si].shape[1:], predn[:, 6:], shapes[si][0], shapes[si][1], n_kpt=n_kpt,
+                            step=3)  # native-space pred
 
             # Evaluate
             if nl:
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                 scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
-                if kpt_label:
+                if n_kpt:
                     tkpt = labels[:, 5:]
-                    scale_boxes(im[si].shape[1:], tkpt, shapes[si][0], shapes[si][1], kpt_label=kpt_label)  # native-space labels
+                    scale_boxes(im[si].shape[1:], tkpt, shapes[si][0], shapes[si][1],
+                                n_kpt=n_kpt)  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
-                if kpt_label:
-                    correct_kpt = process_batch_kpt(predn, torch.cat((labelsn, labels_kpt), 1), iouv, kpt_label)
+                if n_kpt:
+                    correct_kpt = process_batch_kpt(predn, torch.cat((labelsn, labels_kpt), 1), iouv, n_kpt)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
             stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
-            if kpt_label:
+            if n_kpt:
                 stats_kpt.append((correct_kpt, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
 
             # Save/log
@@ -315,7 +321,7 @@ def run(
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
-        if plots and batch_i < 0: # ПОТОМ УБРАТЬ ПОСЛЕ ПОЧИНКИ ОТРИСОВКИ
+        if plots and batch_i < 0:  # ПОТОМ УБРАТЬ ПОСЛЕ ПОЧИНКИ ОТРИСОВКИ
             plot_images(im, targets, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)  # labels
             plot_images(im, output_to_target(preds), paths, save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 
@@ -327,16 +333,17 @@ def run(
         tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
-    if kpt_label:
+    if n_kpt:
         stats_kpt = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats_kpt)]  # to numpy
         if len(stats_kpt) and stats_kpt[0].any():
-            _, _, p_kpt, r_kpt, _, ap_kpt, ap_kpt_class = ap_per_class(*stats_kpt, plot=plots, save_dir=save_dir, names=names)
+            _, _, p_kpt, r_kpt, _, ap_kpt, ap_kpt_class = ap_per_class(*stats_kpt, plot=plots, save_dir=save_dir,
+                                                                       names=names)
             ap50_kpt, ap_kpt = ap_kpt[:, 0], ap_kpt.mean(1)  # AP@0.5, AP@0.5:0.95
             mp_kpt, mr_kpt, map50_kpt, map_kpt = p_kpt.mean(), r_kpt.mean(), ap50_kpt.mean(), ap_kpt.mean()
     nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
 
     # Print results
-    if kpt_label:
+    if n_kpt:
         pf = '%22s' + '%11i' * 2 + '%11.3g' * 6  # print format
         LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map, map50_kpt, map_kpt))
     else:
@@ -348,7 +355,7 @@ def run(
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            if kpt_label:
+            if n_kpt:
                 LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i], ap50_kpt[i], ap_kpt[i]))
             else:
                 LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
@@ -362,8 +369,9 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        if kpt_label:
-            callbacks.run('on_val_end_kpt', nt, tp, fp, p, r, f1, ap, ap50, ap50_kpt, map_kpt, ap_kpt, confusion_matrix, kpt_label)
+        if n_kpt:
+            callbacks.run('on_val_end_kpt', nt, tp, fp, p, r, f1, ap, ap50, ap50_kpt, map_kpt, ap_kpt, confusion_matrix,
+                          n_kpt)
         else:
             callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
@@ -401,7 +409,7 @@ def run(
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    if kpt_label:
+    if n_kpt:
         return (mp, mr, map50, map, map50_kpt, map_kpt, *(loss.cpu() / len(dataloader)).tolist()), maps, t
     else:
         return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
@@ -431,7 +439,7 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
-    parser.add_argument('--kpt-label', type=int, default=0, help='Use keypoint labels for training')
+    parser.add_argument('--kpt', type=int, default=0, help='Eval keypoint matching')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')

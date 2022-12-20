@@ -27,26 +27,41 @@ def smooth(y, f=0.05):
     yp = np.concatenate((p * y[0], y, p * y[-1]), 0)  # y padded
     return np.convolve(yp, np.ones(nf) / nf, mode='valid')  # y-smoothed
 
-def OKS(gt, pred, visibility, scale):
+
+def obj_kpt_sim(gt: torch.Tensor, pred: torch.Tensor, visibility: torch.Tensor, scale: float):
+    """ Calculate Object Keypoint Similarity metric.
+    Source: https://stackoverflow.com/questions/68250191/how-to-calculate-object-keypoint-similarity
+    # Arguments
+        gt: x, y labels with shape (n_kpt, 2).
+        pred: x, y predictions with shape (n_kpt, 2).
+        visibility: visibility flags (labels).
+        scale:
+    """
     distances = torch.linalg.norm(pred - gt, axis=-1)
     # Compute the exponential part of the equation
-    exp_vector = torch.exp(-(distances**2) / (2 * (scale**2)))
+    exp_vector = torch.exp(-(distances ** 2) / (2 * (scale)))
     # The numerator expression
     numerator = torch.dot(exp_vector, visibility)
     # The denominator expression
     denominator = torch.sum(visibility)
     return numerator / denominator
 
-def OKS_matrix(labels, preds, kpt_label):
+
+def obj_kpt_sim_matrix(labels, preds, n_kpt):
+    """ Compute object keypoint similarity matrix with shape (batch_size, batch_size)
+    # Arguments
+        labels: boxes and keypoint labels in xyxy format.
+        preds:
+        n_kpt: number of keypoints.
+    """
     matrix = torch.zeros((labels.shape[0], preds.shape[0]), device=preds.device)
     scales = torch.tensor([(label[3] - label[1]) * (label[4] - label[2]) for label in labels])
     visibilitys = (labels[:, 6::2] != 0).to(torch.float32)
-    preds = preds[:, 6:].reshape((preds.shape[0], kpt_label, 3))[:, :, :2]
-    labels = labels[:, 6:].reshape((labels.shape[0], kpt_label, 2))
-    for i in range(labels.shape[0]):
+    preds = preds[:, 6:].reshape((preds.shape[0], n_kpt, 3))[:, :, :2]
+    labels = labels[:, 6:].reshape((labels.shape[0], n_kpt, 2))
+    for i, (label, pred, visibility, scale) in enumerate(zip(labels, preds, visibilitys, scales)):
         for j in range(preds.shape[0]):
-            oks = OKS(labels[i], preds[i], visibilitys[i], scales[i])
-            matrix[i, j] = oks
+            matrix[i, j] = obj_kpt_sim(label, pred, visibility, scale)
     return matrix
 
 
@@ -198,7 +213,6 @@ class ConfusionMatrix:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # predicted background
-
 
     def tp_fp(self):
         tp = self.matrix.diagonal()  # true positives

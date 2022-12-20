@@ -80,13 +80,8 @@ def run(
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
-        num_kpt = 0, # number of keypoints
+        kpt=False, #
 ):
-    if num_kpt != 0:
-        with open(data) as f:
-            dataset_conf = yaml.safe_load(f)
-            skeleton = dataset_conf['skeleton']
-
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -99,6 +94,12 @@ def run(
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+
+    if kpt:
+        with open(data) as f:
+            dataset_conf = yaml.safe_load(f)
+            skeleton = dataset_conf['skeleton']
+            num_kpt = dataset_conf['nkpt']
 
     # Load model
     device = select_device(device)
@@ -136,7 +137,8 @@ def run(
 
         # NMS
         with dt[2]:
-            pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, kpt_label=num_kpt)
+            pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det,
+                                       n_kpt=num_kpt)
 
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
@@ -161,7 +163,8 @@ def run(
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
                 if num_kpt:
-                    det[:, 6:] = scale_boxes(im.shape[2:], det[:, 6:], im0.shape, kpt_label=num_kpt, step=3)  # native-space labels
+                    det[:, 6:] = scale_boxes(im.shape[2:], det[:, 6:], im0.shape, n_kpt=num_kpt,
+                                             step=3)  # native-space labels
 
                 # Print results
                 for c in det[:, 5].unique():
@@ -255,7 +258,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
-    parser.add_argument('--num-kpt', type=int, default=0, help='number of keypoints')
+    parser.add_argument('--kpt', action='store_true', help='flag for keypoint using')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))

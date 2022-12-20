@@ -92,15 +92,14 @@ class ComputeLoss:
     sort_obj_iou = False
 
     # Compute losses
-    def __init__(self, model, autobalance=False, kpt_label=False):
-        self.kpt_label = kpt_label
+    def __init__(self, model, autobalance=False, n_kpt=False):
+        self.n_kpt = n_kpt
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
         # Define criteria
         BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device))
         BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device))
-        BCE_kptv = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device))
 
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
         self.cp, self.cn = smooth_BCE(eps=h.get('label_smoothing', 0.0))  # positive, negative BCE targets
@@ -113,12 +112,19 @@ class ComputeLoss:
         m = de_parallel(model).model[-1]  # Detect() module
         self.balance = {3: [4.0, 1.0, 0.4]}.get(m.nl, [4.0, 1.0, 0.25, 0.06, 0.02])  # P3-P7
         self.ssi = list(m.stride).index(16) if autobalance else 0  # stride 16 index
-        self.BCEcls, self.BCEobj, self.BCE_kptv, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, BCE_kptv, 1.0, h, autobalance
+        self.BCEcls = BCEcls
+        self.BCEobj = BCEobj
+        self.BCE_keypoint_visibility = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device))
+        self.gr = 1.0
+        self.hyp = h
+        self.autobalance = autobalance
         self.na = m.na  # number of anchors
         self.nc = m.nc  # number of classes
         self.nl = m.nl  # number of layers
-        if kpt_label:
-            self.nkpt = m.nkpt
+        # TODO: check different number of keypoints in model checkpoint and model config (or dataset yaml)
+        if self.n_kpt and not self.n_kpt == m.nkpt:
+            raise ValueError(
+                f"Number of keypoints in config: {n_kpt} not equal to number of keypoints in model: {m.nkpt}")
         self.anchors = m.anchors
         self.device = device
 
@@ -126,11 +132,11 @@ class ComputeLoss:
         lcls = torch.zeros(1, device=self.device)  # class loss
         lbox = torch.zeros(1, device=self.device)  # box loss
         lobj = torch.zeros(1, device=self.device)  # object loss
-        if self.kpt_label:
-            lkpt = torch.zeros(1, device=self.device)
-            lkptv = torch.zeros(1, device=self.device)
+        if self.n_kpt:
+            keypoint_location_loss = torch.zeros(1, device=self.device)
+            keypoint_visibility_loss = torch.zeros(1, device=self.device)
             tcls, tbox, tkpt, indices, anchors = self.build_targets(p, targets)  # targets
-            sigmas = torch.ones((self.nkpt), device=self.device) / 10
+            sigmas = torch.ones((self.n_kpt), device=self.device) / 10
         else:
             tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
 
@@ -150,19 +156,21 @@ class ComputeLoss:
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
                 lbox += (1.0 - iou).mean()  # iou loss
-                if self.kpt_label:
+                if self.n_kpt:
                     # Direct kpt prediction
                     pkpt_x = ps[:, 6::3] * 2. - 0.5
                     pkpt_y = ps[:, 7::3] * 2. - 0.5
                     pkpt_score = ps[:, 8::3]
-                    # mask
+                    # keypoint visibility mask
                     kpt_mask = (tkpt[i][:, 0::2] != 0)
-                    lkptv += self.BCE_kptv(pkpt_score, kpt_mask.float()) 
+                    keypoint_visibility_loss += self.BCE_keypoint_visibility(pkpt_score, kpt_mask.float())
                     # l2 distance based loss
-                    d = (pkpt_x-tkpt[i][:, 0::2])**2 + (pkpt_y-tkpt[i][:, 1::2])**2
-                    s = torch.prod(tbox[i][:,-2:], dim=1, keepdim=True)
-                    kpt_loss_factor = (torch.sum(kpt_mask != 0) + torch.sum(kpt_mask == 0))/(torch.sum(kpt_mask != 0) + 1e-9)
-                    lkpt += kpt_loss_factor * ((1 - torch.exp(-d/(2 * ( s * sigmas)**2 + 1e-9))) * kpt_mask).mean()
+                    d = (pkpt_x - tkpt[i][:, 0::2]) ** 2 + (pkpt_y - tkpt[i][:, 1::2]) ** 2
+                    s = torch.prod(tbox[i][:, -2:], dim=1, keepdim=True)
+                    kpt_loss_factor = (torch.sum(kpt_mask != 0)
+                                       + torch.sum(kpt_mask == 0)) / (torch.sum(kpt_mask != 0) + 1e-9)
+                    keypoint_location_loss += kpt_loss_factor * \
+                                              ((1 - torch.exp(-d / (2 * (s * sigmas) ** 2 + 1e-9))) * kpt_mask).mean()
 
                 # Objectness
                 iou = iou.detach().clamp(0).type(tobj.dtype)
@@ -193,24 +201,24 @@ class ComputeLoss:
         lbox *= self.hyp['box']
         lobj *= self.hyp['obj']
         lcls *= self.hyp['cls']
-        if self.kpt_label:
-            lkptv *= self.hyp['cls']
-            lkpt *= self.hyp['kpt']
+        if self.n_kpt:
+            keypoint_visibility_loss *= self.hyp['cls']
+            keypoint_location_loss *= self.hyp['kpt']
         bs = tobj.shape[0]  # batch size
-        
-        if self.kpt_label:
-            loss = lbox + lobj + lcls + lkpt + lkptv
-            return loss * bs, torch.cat((lbox, lobj, lcls, lkpt, lkptv)).detach()
-        else:
-            loss = lbox + lobj + lcls
-            return loss * bs, torch.cat((lbox, lobj, lcls)).detach()
+
+        loss = lbox + lobj + lcls
+        losses = [lbox, lobj, lcls]
+        if self.n_kpt:
+            loss += keypoint_location_loss + keypoint_location_loss
+            losses.extend([keypoint_location_loss, keypoint_visibility_loss])
+        return loss * bs, torch.cat(losses).detach()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
         tcls, tbox, tkpt, indices, anch = [], [], [], [], []
-        if self.kpt_label:
-            gain = torch.ones(7 + (self.nkpt * 2), device=targets.device)
+        if self.n_kpt:
+            gain = torch.ones(7 + (self.n_kpt * 2), device=targets.device)
         else:
             gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
         ai = torch.arange(na, device=self.device).float().view(na, 1).repeat(1, nt)  # same as .repeat_interleave(nt)
@@ -230,12 +238,12 @@ class ComputeLoss:
 
         for i in range(self.nl):
             anchors, shape = self.anchors[i], p[i].shape
-            if self.kpt_label:
-                gain[2:6+(self.nkpt * 2)] = torch.tensor(p[i].shape)[(self.nkpt + 2) * [3, 2]]  # xyxy gain
+            if self.n_kpt:
+                gain[2:6 + (self.n_kpt * 2)] = torch.tensor(p[i].shape)[(self.n_kpt + 2) * [3, 2]]  # xyxy gain
             else:
                 gain[2:6] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
             # Match targets to anchors
-            t = targets * gain 
+            t = targets * gain
             if nt:
                 # Matches
                 r = t[..., 4:6] / anchors[:, None]  # wh ratio
@@ -256,7 +264,7 @@ class ComputeLoss:
                 offsets = 0
 
             # Define
-            if self.kpt_label:
+            if self.n_kpt:
                 b, c = t[:, :2].long().T  # image, class
                 gxy = t[:, 2:4]  # grid xy
                 gwh = t[:, 4:6]  # grid wh
@@ -270,16 +278,15 @@ class ComputeLoss:
             # Append
             indices.append((b, a, gj.clamp_(0, shape[2] - 1), gi.clamp_(0, shape[3] - 1)))  # image, anchor, grid
             tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
-            if self.kpt_label:
-                for kpt in range(self.nkpt):
-                    k_p = 6 + 2 * kpt # previous keypoint
-                    k_n = 6 + 2 * (kpt + 1) # next keypoint
+            if self.n_kpt:
+                for kpt in range(self.n_kpt):
+                    k_p = 6 + 2 * kpt  # previous keypoint
+                    k_n = 6 + 2 * (kpt + 1)  # next keypoint
                     t[:, k_p: k_n][t[:, k_p: k_n] != 0] -= gij[t[:, k_p: k_n] != 0]
                 tkpt.append(t[:, 6:-1])
             anch.append(anchors[a])  # anchors
             tcls.append(c)  # class
-        if self.kpt_label:
+        if self.n_kpt:
             return tcls, tbox, tkpt, indices, anch
         else:
             return tcls, tbox, indices, anch
-
