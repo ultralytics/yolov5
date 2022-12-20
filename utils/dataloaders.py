@@ -697,7 +697,6 @@ class LoadImagesAndLabels(Dataset):
                                                  shear=hyp['shear'],
                                                  perspective=hyp['perspective'],
                                                  n_kpt=self.n_kpt)
-
         nl = len(labels)  # number of labels
         if nl:
             labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1E-3)
@@ -1040,7 +1039,6 @@ def verify_image_label(args):
                     segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in lb]  # (cls, xy1...)
                     lb = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
                 lb = np.array(lb, dtype=np.float32)
-            lb[lb > 1.0] = 1.0
             nl = len(lb)
             if nl:
                 assert (lb >= 0).all(), f'negative label values {lb[lb < 0]}'
