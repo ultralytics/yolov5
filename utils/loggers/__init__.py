@@ -97,8 +97,7 @@ class Loggers():
             'val/lkpt_loss',
             'x/lr0',
             'x/lr1',
-            'x/lr2'
-        ]
+            'x/lr2']
         self.best_keys = ['best/epoch', 'best/precision', 'best/recall', 'best/mAP_0.5', 'best/mAP_0.5:0.95']
         for k in LOGGERS:
             setattr(self, k, None)  # init empty logger dictionary
@@ -249,7 +248,7 @@ class Loggers():
 
         if self.comet_logger:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
-    
+
     def on_val_end_kpt(self, nt, tp, fp, p, r, f1, ap, ap50, ap50_kpt, ap_kpt, ap_class, confusion_matrix, n_kpt):
         # Callback runs on val end
         if self.wandb or self.clearml:
@@ -260,7 +259,8 @@ class Loggers():
                 self.clearml.log_debug_samples(files, title='Validation')
 
         if self.comet_logger:
-            self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix, n_kpt, ap50_kpt, ap_kpt)
+            self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix, n_kpt, ap50_kpt,
+                                         ap_kpt)
 
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi, n_kpt):
         # Callback runs at the end of each fit (train+val) epoch
@@ -269,7 +269,8 @@ class Loggers():
             if self.csv:
                 file = self.save_dir / 'results.csv'
                 n = len(x) + 1  # number of cols
-                s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + self.kpt_keys)).rstrip(',') + '\n')  # add header
+                s = '' if file.exists() else (
+                    ('%20s,' * n % tuple(['epoch'] + self.kpt_keys)).rstrip(',') + '\n')  # add header
                 with open(file, 'a') as f:
                     f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
         else:
@@ -277,7 +278,8 @@ class Loggers():
             if self.csv:
                 file = self.save_dir / 'results.csv'
                 n = len(x) + 1  # number of cols
-                s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + self.keys)).rstrip(',') + '\n')  # add header
+                s = '' if file.exists() else (
+                    ('%20s,' * n % tuple(['epoch'] + self.keys)).rstrip(',') + '\n')  # add header
                 with open(file, 'a') as f:
                     f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
 

@@ -118,7 +118,7 @@ class Annotator:
                 num_kpts = len(kpts) // steps
 
                 for kid in range(num_kpts):
-                    
+
                     x_coord, y_coord = kpts[steps * kid], kpts[steps * kid + 1]
                     if not (x_coord % 640 == 0 or y_coord % 640 == 0):
                         if steps == 3:
@@ -135,11 +135,11 @@ class Annotator:
                         conf2 = kpts[(sk[1] - 1) * steps + 2]
                         if conf1 < 0.5 or conf2 < 0.5:
                             continue
-                    if pos1[0] % 640 == 0 or pos1[1] % 640==0 or pos1[0] < 0 or pos1[1] < 0:
+                    if pos1[0] % 640 == 0 or pos1[1] % 640 == 0 or pos1[0] < 0 or pos1[1] < 0:
                         continue
                     if pos2[0] % 640 == 0 or pos2[1] % 640 == 0 or pos2[0] < 0 or pos2[1] < 0:
                         continue
-                    cv2.line(self.im, pos1, pos2, (30, 144, 255), thickness=1)           
+                    cv2.line(self.im, pos1, pos2, (30, 144, 255), thickness=1)
 
     def masks(self, masks, colors, im_gpu, alpha=0.5, retina_masks=False):
         """Plot masks at once.

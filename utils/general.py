@@ -129,12 +129,12 @@ def set_logging(name=LOGGING_NAME, verbose=True):
             name: {
                 "class": "logging.StreamHandler",
                 "formatter": name,
-                "level": level, }},
+                "level": level,}},
         "loggers": {
             name: {
                 "level": level,
                 "handlers": [name],
-                "propagate": False, }}})
+                "propagate": False,}}})
 
 
 set_logging(LOGGING_NAME)  # run before defining LOGGER
@@ -998,10 +998,7 @@ def non_max_suppression(
         n = x.shape[0]  # number of boxes
         if not n:  # no boxes
             continue
-        elif n > max_nms:  # excess boxes
-            x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
-        else:
-            x = x[x[:, 4].argsort(descending=True)]  # sort by confidence
+        x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence and remove excess boxes
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes

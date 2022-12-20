@@ -221,8 +221,8 @@ def run(
         names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
     if n_kpt:
-        s = ('%22s' + '%11s' * 6 + '%13s' * 2) % (
-        'Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95', 'mAP_kpt50', 'mAP_kpt50-95')
+        s = ('%22s' + '%11s' * 6 + '%13s' * 2) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95',
+                                                  'mAP_kpt50', 'mAP_kpt50-95')
     else:
         s = ('%22s' + '%11s' * 6) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95')
     tp, fp, p, r, f1, mp, mr, map50, ap50, map = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -341,7 +341,9 @@ def run(
     if n_kpt:
         stats_kpt = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats_kpt)]  # to numpy
         if len(stats_kpt) and stats_kpt[0].any():
-            _, _, p_kpt, r_kpt, _, ap_kpt, ap_kpt_class = ap_per_class(*stats_kpt, plot=plots, save_dir=save_dir,
+            _, _, p_kpt, r_kpt, _, ap_kpt, ap_kpt_class = ap_per_class(*stats_kpt,
+                                                                       plot=plots,
+                                                                       save_dir=save_dir,
                                                                        names=names)
             ap50_kpt, ap_kpt = ap_kpt[:, 0], ap_kpt.mean(1)  # AP@0.5, AP@0.5:0.95
             mp_kpt, mr_kpt, map50_kpt, map_kpt = p_kpt.mean(), r_kpt.mean(), ap50_kpt.mean(), ap_kpt.mean()
