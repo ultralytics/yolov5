@@ -151,7 +151,7 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-        n_kpt=0,
+        kpt=False,
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -185,6 +185,10 @@ def run(
     # Configure
     model.eval()
     cuda = device.type != 'cpu'
+    if kpt:
+        n_kpt = data.get('nkpt')
+    else:
+        n_kpt = 0
     is_coco = isinstance(data.get('val'), str) and data['val'].endswith(f'coco{os.sep}val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10, device=device)  # iou vector for mAP@0.5:0.95
@@ -244,8 +248,9 @@ def run(
         with dt[1]:
             preds, train_out = model(im) if compute_loss else (model(im, augment=augment), None)
 
-        preds = preds[..., :6] if not n_kpt else preds
-        targets = targets[..., :6] if not n_kpt else targets
+        if compute_loss and not n_kpt:
+            preds = preds[..., :6]
+            targets = targets[..., :6]
 
         # Loss
         if compute_loss:
@@ -439,7 +444,7 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
-    parser.add_argument('--kpt', type=int, default=0, help='Eval keypoint matching')
+    parser.add_argument('--kpt', action='store_true', help='Eval keypoint matching')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
