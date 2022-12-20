@@ -47,10 +47,11 @@ from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download, is_url
-from utils.general import (LOGGER,TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_status, check_img_size,
-                           check_requirements, check_suffix, check_yaml, colorstr, get_latest_run, increment_path,
-                           init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
-                           one_cycle, print_args, print_mutation, strip_optimizer, yaml_save)
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_status,
+                           check_img_size, check_requirements, check_suffix, check_yaml, colorstr, get_latest_run,
+                           increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
+                           labels_to_image_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer,
+                           yaml_save)
 from utils.loggers import Loggers
 from utils.loggers.comet.comet_utils import check_comet_resume
 from utils.loss import ComputeLoss
@@ -133,7 +134,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         with torch_distributed_zero_first(LOCAL_RANK):
             weights = attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location='cpu')  # load checkpoint to CPU to avoid CUDA memory leak
-        model = Model(cfg or ckpt['model'].yaml, ch=3, nc=nc, nkpt=n_kpt, anchors=hyp.get('anchors')).to(device)  # create
+        model = Model(cfg or ckpt['model'].yaml, ch=3, nc=nc, nkpt=n_kpt,
+                      anchors=hyp.get('anchors')).to(device)  # create
         exclude = ['anchor'] if (cfg or hyp.get('anchors')) and not resume else []  # exclude keys
         csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
         csd = intersect_dicts(csd, model.state_dict(), exclude=exclude)  # intersect
@@ -292,9 +294,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
         if n_kpt:
-            LOGGER.info(('\n' + '%11s' * 9) % ('Epoch', 'GPU_mem', 'box_loss', 'obj_loss', 'cls_loss', 'kpt_conf', 'kpt_pos', 'Instances', 'Size'))
+            LOGGER.info(
+                ('\n' + '%11s' * 9) %
+                ('Epoch', 'GPU_mem', 'box_loss', 'obj_loss', 'cls_loss', 'kpt_conf', 'kpt_pos', 'Instances', 'Size'))
         else:
-            LOGGER.info(('\n' + '%11s' * 7) % ('Epoch', 'GPU_mem', 'box_loss', 'obj_loss', 'cls_loss', 'Instances', 'Size'))
+            LOGGER.info(
+                ('\n' + '%11s' * 7) % ('Epoch', 'GPU_mem', 'box_loss', 'obj_loss', 'cls_loss', 'Instances', 'Size'))
         if RANK in {-1, 0}:
             pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
         optimizer.zero_grad()
@@ -350,10 +355,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
                 if n_kpt:
                     pbar.set_description(('%11s' * 2 + '%11.4g' * 7) %
-                                        (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
+                                         (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 else:
                     pbar.set_description(('%11s' * 2 + '%11.4g' * 5) %
-                                        (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
+                                         (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 callbacks.run('on_train_batch_end', model, ni, imgs, targets, paths, list(mloss))
                 if callbacks.stop_training:
                     return

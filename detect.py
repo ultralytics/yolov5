@@ -32,10 +32,10 @@ import argparse
 import os
 import platform
 import sys
-import yaml
 from pathlib import Path
 
 import torch
+import yaml
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -80,7 +80,7 @@ def run(
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
-        kpt=False, #
+        kpt=False,  #
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -137,7 +137,12 @@ def run(
 
         # NMS
         with dt[2]:
-            pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det,
+            pred = non_max_suppression(pred,
+                                       conf_thres,
+                                       iou_thres,
+                                       classes,
+                                       agnostic_nms,
+                                       max_det=max_det,
                                        n_kpt=num_kpt)
 
         # Second-stage classifier (optional)

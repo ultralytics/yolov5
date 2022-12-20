@@ -614,11 +614,11 @@ class LoadImagesAndLabels(Dataset):
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
         desc = f"{prefix}Scanning {path.parent / path.stem}..."
         with Pool(NUM_THREADS) as pool:
-            pbar = tqdm(
-                pool.imap(verify_image_label, zip(self.im_files, self.label_files, repeat(prefix), repeat(n_kpt))),
-                desc=desc,
-                total=len(self.im_files),
-                bar_format=TQDM_BAR_FORMAT)
+            pbar = tqdm(pool.imap(verify_image_label, zip(self.im_files, self.label_files, repeat(prefix),
+                                                          repeat(n_kpt))),
+                        desc=desc,
+                        total=len(self.im_files),
+                        bar_format=TQDM_BAR_FORMAT)
             for im_file, lb, shape, segments, nm_f, nf_f, ne_f, nc_f, msg in pbar:
                 nm += nm_f
                 nf += nf_f
@@ -681,7 +681,11 @@ class LoadImagesAndLabels(Dataset):
 
             labels = self.labels[index].copy()
             if labels.size:  # normalized xywh to pixel xyxy format
-                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1],
+                labels[:, 1:] = xywhn2xyxy(labels[:, 1:],
+                                           ratio[0] * w,
+                                           ratio[1] * h,
+                                           padw=pad[0],
+                                           padh=pad[1],
                                            n_kpt=self.n_kpt)
 
             if self.augment:
@@ -1055,14 +1059,14 @@ def verify_image_label(args):
                         f'non-normalized or out of bounds keypoint coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
                     kpts = np.zeros((lb.shape[0], 5 + n_kpt * 2))
                     for i in range(len(lb)):
-                        kpt = np.delete(lb[i, 5:],
-                                        np.arange(2, lb.shape[1] - 5, 3))  # remove the occlusion paramater from the GT
+                        kpt = np.delete(lb[i, 5:], np.arange(2, lb.shape[1] - 5,
+                                                             3))  # remove the occlusion paramater from the GT
                         kpts[i] = np.hstack((lb[i, :5], kpt))
                     lb = kpts
                 else:
                     assert lb.shape[1] == 5, f'labels require 5 columns, {lb.shape[1]} columns detected'
-                    assert (lb[:,
-                            1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
+                    assert (lb[:, 1:] <=
+                            1).all(), f'non-normalized or out of bounds coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
             else:
                 ne = 1  # label empty
                 if n_kpt:

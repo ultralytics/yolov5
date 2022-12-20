@@ -167,8 +167,8 @@ class ComputeLoss:
                     # l2 distance based loss
                     d = (pkpt_x - tkpt[i][:, 0::2]) ** 2 + (pkpt_y - tkpt[i][:, 1::2]) ** 2
                     s = torch.prod(tbox[i][:, -2:], dim=1, keepdim=True)
-                    kpt_loss_factor = (torch.sum(kpt_mask != 0)
-                                       + torch.sum(kpt_mask == 0)) / (torch.sum(kpt_mask != 0) + 1e-9)
+                    kpt_loss_factor = (torch.sum(kpt_mask != 0) +
+                                       torch.sum(kpt_mask == 0)) / (torch.sum(kpt_mask != 0) + 1e-9)
                     keypoint_location_loss += kpt_loss_factor * \
                                               ((1 - torch.exp(-d / (2 * (s * sigmas) ** 2 + 1e-9))) * kpt_mask).mean()
 
@@ -282,7 +282,7 @@ class ComputeLoss:
                 for kpt in range(self.n_kpt):
                     k_p = 6 + 2 * kpt  # previous keypoint
                     k_n = 6 + 2 * (kpt + 1)  # next keypoint
-                    t[:, k_p: k_n][t[:, k_p: k_n] != 0] -= gij[t[:, k_p: k_n] != 0]
+                    t[:, k_p:k_n][t[:, k_p:k_n] != 0] -= gij[t[:, k_p:k_n] != 0]
                 tkpt.append(t[:, 6:-1])
             anch.append(anchors[a])  # anchors
             tcls.append(c)  # class
