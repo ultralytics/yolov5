@@ -100,6 +100,9 @@ def run(
             dataset_conf = yaml.safe_load(f)
             skeleton = dataset_conf['skeleton']
             num_kpt = dataset_conf['nkpt']
+    else:
+        skeleton = []
+        num_kpt = 0
 
     # Load model
     device = select_device(device)
