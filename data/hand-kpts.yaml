@@ -1,0 +1,13 @@
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+path: ../datasets/hand_labels
+train: train/
+val: test/
+
+skeleton: [[1, 2], [2, 3], [3, 4], [4, 5], [1, 6], [6, 7], [7, 8], [8, 9], [1, 10], [10, 11], [11, 12],
+           [12, 13], [1, 14], [14, 15], [15, 16], [16, 17], [1, 18], [18, 19], [19, 20], [20, 21]]
+
+# number of classes
+nc: 1
+nkpt: 21
+
+names: ['hand']

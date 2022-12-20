@@ -129,12 +129,13 @@ def set_logging(name=LOGGING_NAME, verbose=True):
             name: {
                 "class": "logging.StreamHandler",
                 "formatter": name,
-                "level": level,}},
+                "level": level, }},
         "loggers": {
             name: {
                 "level": level,
                 "handlers": [name],
-                "propagate": False,}}})
+                "propagate": False, }}})
+
 
 set_logging(LOGGING_NAME)  # run before defining LOGGER
 LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
@@ -766,24 +767,24 @@ def xywh2xyxy(x):
     return y
 
 
-def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0, kpt_label=0):
+def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0, n_kpt=0):
     # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
-    y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
-    y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
-    y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
-    if kpt_label:
-        for kpt in range(kpt_label):
-            for kpt_inst in range(y.shape[0]):
-                kpt_x = 4 + 2 * kpt
-                kpt_y = 5 + 2 * kpt
-                if y[kpt_inst, kpt_x] != 0:
-                    y[kpt_inst, kpt_x] = w * y[kpt_inst, kpt_x] + padw
+    xyxy_predict = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+    xyxy_predict[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
+    xyxy_predict[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
+    xyxy_predict[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
+    xyxy_predict[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
+    if n_kpt:
+        for kpt_number in range(n_kpt):
+            for kpt_inst in range(xyxy_predict.shape[0]):
+                kpt_x_index = 4 + 2 * kpt_number
+                kpt_y_index = 5 + 2 * kpt_number
+                if xyxy_predict[kpt_inst, kpt_x_index] != 0:
+                    xyxy_predict[kpt_inst, kpt_x_index] = w * xyxy_predict[kpt_inst, kpt_x_index] + padw
 
-                if y[kpt_inst, kpt_y] != 0:
-                    y[kpt_inst, kpt_y] = h * y[kpt_inst, kpt_y] + padh
-    return y
+                if xyxy_predict[kpt_inst, kpt_y_index] != 0:
+                    xyxy_predict[kpt_inst, kpt_y_index] = h * xyxy_predict[kpt_inst, kpt_y_index] + padh
+    return xyxy_predict
 
 
 def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
@@ -833,7 +834,7 @@ def resample_segments(segments, n=1000):
     return segments
 
 
-def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None, kpt_label=0, step=2):
+def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None, n_kpt=0, step=2):
     # Rescale boxes (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
@@ -843,7 +844,7 @@ def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None, kpt_label=0, step
         pad = ratio_pad[1]
 
     # Rescale point coordinates (xyo...xyo, step=3, for keypoint inference) or (xy...xy, step=2) from img1_shape to img0_shape
-    if kpt_label:
+    if n_kpt:
         boxes[:, 0::step] -= pad[0]  # x padding
         boxes[:, 1::step] -= pad[1]  # y padding
         boxes[:, 0::step] /= gain
@@ -876,7 +877,6 @@ def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=F
     return segments
 
 
-
 def clip_boxes(boxes, shape, step=2):
     # Clip boxes (xyxy) to image shape (height, width)
     if isinstance(boxes, torch.Tensor):  # faster individually
@@ -907,7 +907,7 @@ def non_max_suppression(
         agnostic=False,
         multi_label=False,
         labels=(),
-        kpt_label=0,
+        n_kpt=0,
         max_det=300,
         nm=0,  # number of masks
 ):
@@ -925,7 +925,10 @@ def non_max_suppression(
     if mps:  # MPS not fully supported yet, convert tensors to CPU before NMS
         prediction = prediction.cpu()
     bs = prediction.shape[0]  # batch size
-    nc = prediction.shape[2] - nm - 5 if not kpt_label else prediction.shape[2] - 5 - 3 * kpt_label # number of classes
+    if n_kpt:
+        nc = prediction.shape[2] - 5 - 3 * n_kpt
+    else:
+        nc = prediction.shape[2] - nm - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Checks
@@ -975,7 +978,7 @@ def non_max_suppression(
             i, j = (x[:, 5:mi] > conf_thres).nonzero(as_tuple=False).T
             x = torch.cat((box[i], x[i, 5 + j, None], j[:, None].float(), mask[i]), 1)
         else:  # best class only
-            if kpt_label:
+            if n_kpt:
                 kpts = x[:, 6:]
                 conf, j = x[:, 5:6].max(1, keepdim=True)
                 x = torch.cat((box, conf, j.float(), kpts), 1)[conf.view(-1) > conf_thres]
