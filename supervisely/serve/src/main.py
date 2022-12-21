@@ -104,13 +104,11 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
     def predict(
         self, image_path: str, settings: Dict[str, Any]
     ) -> List[sly.nn.PredictionBBox]:
-        conf_thres = settings.get("conf_thres", self.custom_inference_settings["conf_thres"])
-        iou_thres = settings.get("iou_thres", self.custom_inference_settings["iou_thres"])
+        conf_thres = settings.get("conf_thres", self.custom_inference_settings_dict["conf_thres"])
+        iou_thres = settings.get("iou_thres", self.custom_inference_settings_dict["iou_thres"])
 
-        augment = settings.get("augment", self.custom_inference_settings["augment"])
-        # inference_mode = settings.get("inference_mode", "full")
+        augment = settings.get("augment", self.custom_inference_settings_dict["augment"])
         image = sly.image.read(image_path)  # RGB image
-        predictions = []
 
         img0 = image
         # Padded resize
@@ -128,7 +126,8 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
 
         # Apply NMS
         output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, agnostic=False)
-
+        
+        predictions = []
         for det in output:
             if det is not None and len(det) > 0:
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
