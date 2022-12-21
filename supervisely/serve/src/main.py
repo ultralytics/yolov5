@@ -96,7 +96,7 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
         info["checkpoint_name"] = pretrained_weights
         info["pretrained_on_dataset"] = "COCO train 2017" if model_weights_options == "pretrained" else "custom"
         info["device"] = self.device.type
-        info["sliding_window_support"] = "advanced"
+        info["sliding_window_support"] = self.sliding_window_mode
         info["half"] = str(self.half)
         info["input_size"] = self.imgsz
         return info
@@ -104,10 +104,10 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
     def predict(
         self, image_path: str, settings: Dict[str, Any]
     ) -> List[sly.nn.PredictionBBox]:
-        conf_thres = settings.get("conf_thres")
-        iou_thres = settings.get("iou_thres")
+        conf_thres = settings.get("conf_thres", self.custom_inference_settings["conf_thres"])
+        iou_thres = settings.get("iou_thres", self.custom_inference_settings["iou_thres"])
 
-        augment = settings.get("augment")
+        augment = settings.get("augment", self.custom_inference_settings["augment"])
         # inference_mode = settings.get("inference_mode", "full")
         image = sly.image.read(image_path)  # RGB image
         predictions = []
