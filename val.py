@@ -346,7 +346,7 @@ def run(
                                                                        save_dir=save_dir,
                                                                        names=names)
             ap50_kpt, ap_kpt = ap_kpt[:, 0], ap_kpt.mean(1)  # AP@0.5, AP@0.5:0.95
-            mp_kpt, mr_kpt, map50_kpt, map_kpt = p_kpt.mean(), r_kpt.mean(), ap50_kpt.mean(), ap_kpt.mean()
+            _, _, map50_kpt, map_kpt = p_kpt.mean(), r_kpt.mean(), ap50_kpt.mean(), ap_kpt.mean() # if you want to use precession and recall, then you need to add logging
     nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
 
     # Print results
