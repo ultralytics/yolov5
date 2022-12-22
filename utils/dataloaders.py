@@ -737,7 +737,11 @@ class LoadImagesAndLabels(Dataset):
             r = self.img_size / max(h0, w0)  # ratio
             if r != 1:  # if sizes are not equal
                 interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
-                im = cv2.resize(im, (int(w0 * r), int(h0 * r)), interpolation=interp)
+                
+                min_len=32
+                w0_temp = min_len if int(w0 * r) < min_len else int(w0 * r)
+                h0_temp = min_len if int(h0 * r) < min_len else int(h0 * r)
+                im = cv2.resize(im, (w0_temp, h0_temp), interpolation=interp)
             return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
         return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
 
