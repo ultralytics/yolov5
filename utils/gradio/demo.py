@@ -24,7 +24,7 @@ from utils.general import print_args, check_requirements
 from utils.dataloaders import IMG_FORMATS
 
 
-def run(inp, conf, iou, agnostic_nms):
+def predict(inp, conf, iou, agnostic_nms):
     model.conf = conf
     model.iou = iou
     model.agnostic = agnostic_nms
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     kwargs = {'path': opt.path} if opt.source == 'local' else {}
     repo = ROOT if opt.source == 'local' else 'ultralytics/yolov5'  # source == 'github'
     model = torch.hub.load(repo, opt.model, source=opt.source, **kwargs)
-    demo = gr.Interface(fn=run,
+    demo = gr.Interface(fn=predict,
                         inputs=[gr.Image(), gr.Slider(0, 1, 0.25), gr.Slider(0, 1, 0.45), gr.Checkbox()],
                         outputs="image",
                         examples=examples)
