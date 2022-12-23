@@ -1,5 +1,6 @@
 """
 Run Gradio demo.
+Add --host 0.0.0.0 to share with other machines without --share.
 
 Usage - local model:
 python utils/gradio/demo.py --source local --path MODEL_FILE
