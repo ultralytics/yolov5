@@ -532,13 +532,14 @@ class LoadImagesAndLabels(Dataset):
         # Update labels
         include_class = []  # filter labels to include only these classes (optional)
         include_class_array = np.array(include_class).reshape(1, -1)
-        self.segments = list(self.segments) # convert from tuple to list to allow changes incase of include_class
+        self.segments = list(self.segments)  # convert from tuple to list to allow changes incase of include_class
         for i, (label, segment) in enumerate(zip(self.labels, self.segments)):
             if include_class:
                 j = (label[:, 0:1] == include_class_array).any(1)
                 self.labels[i] = label[j]
                 if segment:
-                    self.segments[i] = np.array(segment)[j] # convert segment from list to np array to pass the bools list j
+                    self.segments[i] = np.array(segment)[
+                        j]  # convert segment from list to np array to pass the bools list j
             if single_cls:  # single-class training, merge all classes into 0
                 self.labels[i][:, 0] = 0
 
