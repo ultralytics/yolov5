@@ -13,6 +13,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+
 import torch
 
 FILE = Path(__file__).resolve()
@@ -21,8 +22,8 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from utils.general import print_args, check_requirements
 from utils.dataloaders import IMG_FORMATS
+from utils.general import check_requirements, print_args
 
 
 def predict(inp, conf, iou, agnostic_nms):
@@ -60,8 +61,9 @@ if __name__ == '__main__':
     repo = ROOT if opt.source == 'local' else 'ultralytics/yolov5'  # source == 'github'
     model = torch.hub.load(repo, opt.model, source=opt.source, **kwargs)
     demo = gr.Interface(fn=predict,
-                        inputs=[gr.Image(), gr.Slider(0, 1, 0.25), gr.Slider(0, 1, 0.45), gr.Checkbox()],
+                        inputs=[gr.Image(), gr.Slider(0, 1, 0.25),
+                                gr.Slider(0, 1, 0.45),
+                                gr.Checkbox()],
                         outputs="image",
                         examples=examples)
     demo.launch(share=opt.share, server_name=opt.host, server_port=opt.port)
-
