@@ -132,7 +132,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
 @try_export
 def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX:')):
     # YOLOv5 ONNX export
-    check_requirements('onnx')
+    check_requirements('onnx>=1.12.0')
     import onnx
 
     LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
@@ -624,7 +624,7 @@ def parse_opt():
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF/TensorRT: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
-    parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
+    parser.add_argument('--opset', type=int, default=17, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
     parser.add_argument('--nms', action='store_true', help='TF: add NMS to model')
