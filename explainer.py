@@ -68,6 +68,7 @@ def run(
 
     grayscale_cam = cam(tensor)[0, :, :]
     cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
+    print('CAM image is now ready')
     Image.Image.show(Image.fromarray(cam_image))
     return Image.fromarray(cam_image)
     
