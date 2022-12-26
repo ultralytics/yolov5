@@ -47,7 +47,10 @@ def run(
         print('\n',results.pandas().xyxy, '\n')
         print('\n',results.xyxy, '\n')
     
-    
+    if verbose: 
+        print('\n', 'model layers: you have to choose a layer or some layers to explain them')
+        for k, v in model.model.model.model.named_parameters():
+            print(k)
 
 def parseopt():
     parser=argparse.ArgumentParser()
