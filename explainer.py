@@ -27,13 +27,15 @@ def run(
     iou_thres=0.45,  # NMS IOU threshold
     device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
 ):
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', 
+     autoshape=False #because otherwise I have to resize the image, I just don't know for now
+     )
     # model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)  # local model
     raw_image=Image.Image.resize(Image.open(source),(640,384))
     results = model([raw_image])
     # Results
     results.print()
-    results.show()
+    results.save()
     return results
 
 
