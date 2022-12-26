@@ -32,7 +32,7 @@ def run(
     device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
 ):
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', 
-     autoshape=False #because otherwise I have to resize the image, I just don't know for now
+     #autoshape=False #because otherwise I have to resize the image, I just don't know for now
      )
     # model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)  # local model
     image_file = Image.open(source,'r')
