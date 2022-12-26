@@ -68,7 +68,7 @@ def run(
 
     grayscale_cam = cam(tensor)[0, :, :]
     cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
-    Image.show(Image.fromarray(cam_image))
+    Image.Image.show(Image.fromarray(cam_image))
     
 
 def parseopt():
