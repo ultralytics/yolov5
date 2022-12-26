@@ -33,6 +33,7 @@ def run(
     results = model([raw_image])
     # Results
     results.print()
+    results.show()
     return results
 
 
