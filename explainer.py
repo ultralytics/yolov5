@@ -83,6 +83,35 @@ class YOLOBoxScoreTarget():
                 output = output + score
         return output
 
+def extract_eigenCAM(model, raw_image_fp):
+    target_layers = [model.model.model.model[-2]]
+    cam = EigenCAM(model, target_layers, use_cuda=False)
+    transform = transforms.ToTensor()
+    tensor = transform(raw_image_fp).unsqueeze(0)
+
+    grayscale_cam = cam(tensor)[0, :, :]
+    cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
+    return cam_image
+
+def extract_gradCAM(model, raw_image_fp):
+    target_layers = [model.model.model.model[-2]]
+    targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
+    cam = GradCAM(model,
+        target_layers, 
+        use_cuda=torch.cuda.is_available(),
+        reshape_transform=yolo_reshape_transform)
+
+    transform = transforms.ToTensor()
+    tensor = transform(raw_image_fp).unsqueeze(0)
+
+    grayscale_cam = cam(tensor, targets=targets)
+    # Take the first image in the batch:
+    grayscale_cam = grayscale_cam[0, :]
+    cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
+    # And lets draw the boxes again:
+    image_with_bounding_boxes = draw_boxes(prediction, cam_image)
+    cam_image=Image.fromarray(image_with_bounding_boxes)
+    return cam_image
 
 def run(
     weights=ROOT / 'yolov5s.pt',  # model path or triton URL
@@ -91,6 +120,7 @@ def run(
     imgsz=(640, 640),  # inference size (height, width)
     iou_thres=0.45,  # NMS IOU threshold
     device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+    method='GradCAM', # the method for interpreting the results
     verbose=False, # verbose output
 ):
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', 
@@ -117,15 +147,11 @@ def run(
 
     raw_image_fp = np.array(raw_image,np.float32)
     raw_image_fp = raw_image_fp / 255
+    if method.lower()=='eigencam':
+        cam_image = extract_eigenCAM(model, raw_image_fp)
+    elif method.lower()=='gradcam':
+        cam_image = extract_gradCAM(model, raw_image_fp) 
 
-    target_layers = [model.model.model.model[-2]]
-    cam = EigenCAM(model, target_layers, use_cuda=False)
-    transform = transforms.ToTensor()
-    tensor = transform(raw_image_fp).unsqueeze(0)
-
-    grayscale_cam = cam(tensor)[0, :, :]
-    cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
-    print('CAM image is now ready')
     # Image.Image.show(Image.fromarray(cam_image))
     return Image.fromarray(cam_image)
     
@@ -137,6 +163,7 @@ def parseopt():
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--method',type=str, default='GradCAM',help= "the method to use for interpreting the feature maps")
     parser.add_argument('--verbose', action='store_true', help='verbose log')
 
     opt = parser.parse_args()
