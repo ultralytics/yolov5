@@ -53,8 +53,10 @@ def run(
     
     if verbose: 
         print('\n', 'model layers: you have to choose a layer or some layers to explain them')
+        layer_number = 0
         for k, v in model.model.model.model.named_parameters():
-            print(k)
+            #print(k)
+            pass
 
     raw_image_fp = np.array(raw_image,np.float32)
     raw_image_fp = raw_image_fp / 255
