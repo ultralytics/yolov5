@@ -2,8 +2,8 @@
 This module implements GradCAM module for YOLOv5 in order to see where the model is attenting to.
 Requirements: pip install grad-cam
 
-Testing:    !python explainer.py --source data/images/zidane.jpg
-or:         from explainer import run; run(source='data/images/zidane.jpg')
+Testing:    !python explainer.py --source data/images/zidane.jpg --verbose
+or:         from explainer import run; run(source='data/images/zidane.jpg') --verbose
 """
 
 import argparse
@@ -30,6 +30,7 @@ def run(
     imgsz=(640, 640),  # inference size (height, width)
     iou_thres=0.45,  # NMS IOU threshold
     device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+    verbose=False, # verbose output
 ):
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', 
      #autoshape=False #because otherwise I have to resize the image, I just don't know for now
@@ -42,10 +43,11 @@ def run(
     results.print()
     results.save()
     
-    print(results.pandas().xyxy)
-    print(results.xyxy)
-
-
+    if verbose:
+        print('\n',results.pandas().xyxy, '\n')
+        print('\n',results.xyxy, '\n')
+    
+    
 
 def parseopt():
     parser=argparse.ArgumentParser()
@@ -54,6 +56,8 @@ def parseopt():
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--verbose', action='store_true', help='verbose log')
+
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
