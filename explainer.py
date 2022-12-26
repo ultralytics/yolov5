@@ -15,7 +15,11 @@ from pathlib import Path
 from utils.general import print_args
 from PIL import Image
 
+import numpy as np
 import torch
+from pytorch_grad_cam import GradCAM, HiResCAM, ScoreCAM, GradCAMPlusPlus, AblationCAM, XGradCAM, EigenCAM, FullGrad
+from pytorch_grad_cam.utils.image import show_cam_on_image, scale_cam_image
+import torchvision.transforms as transforms
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -51,6 +55,19 @@ def run(
         print('\n', 'model layers: you have to choose a layer or some layers to explain them')
         for k, v in model.model.model.model.named_parameters():
             print(k)
+
+    raw_image_fp = np.array(raw_image,np.float32)
+    raw_image_fp = raw_image_fp / 255
+
+    target_layers = [model.model.model.model[-2]]
+    cam = EigenCAM(model, target_layers, use_cuda=False)
+    transform = transforms.ToTensor()
+    tensor = transform(raw_image_fp).unsqueeze(0)
+
+    grayscale_cam = cam(tensor)[0, :, :]
+    cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
+    Image.show(Image.fromarray(cam_image))
+    
 
 def parseopt():
     parser=argparse.ArgumentParser()
