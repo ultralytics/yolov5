@@ -1,5 +1,9 @@
 """
 This module implements GradCAM module for YOLOv5 in order to see where the model is attenting to.
+Requirements: pip install grad-cam
+
+Testing:    !python explainer.py --source data/images/zidane.jpg
+or:         from explainer import run; run(source='data/images/zidane.jpg')
 """
 
 import argparse
