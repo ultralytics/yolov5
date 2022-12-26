@@ -41,7 +41,10 @@ def run(
     # Results
     results.print()
     results.save()
-    return results
+    
+    print(results.pandas().xyxy)
+    print(results.xyxy)
+
 
 
 def parseopt():
