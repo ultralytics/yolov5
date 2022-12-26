@@ -19,6 +19,7 @@ import numpy as np
 import torch
 from pytorch_grad_cam import GradCAM, HiResCAM, ScoreCAM, GradCAMPlusPlus, AblationCAM, XGradCAM, EigenCAM, FullGrad
 from pytorch_grad_cam.utils.image import show_cam_on_image, scale_cam_image
+import torchvision
 import torchvision.transforms as transforms
 
 FILE = Path(__file__).resolve()
@@ -26,6 +27,62 @@ ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+
+
+def yolo_reshape_transform(x):
+    """
+    The backbone outputs different tensors with different spatial sizes, from the FPN. 
+    Our goal here is to aggregate these image tensors, assign them weights, and then aggregate everything.
+    To do that, we’re going to need to write a custom function that takes these tensors with different sizes, 
+    resizes them to a common shape, and concatenates them
+    https://jacobgil.github.io/pytorch-gradcam-book/Class%20Activation%20Maps%20for%20Object%20Detection%20With%20Faster%20RCNN.html
+    """
+    return x
+    target_size = x['pool'].size()[-2 : ]
+    activations = []
+    for key, value in x.items():
+        activations.append(torch.nn.functional.interpolate(torch.abs(value), target_size, mode='bilinear'))
+    activations = torch.cat(activations, axis=1)
+    return activations
+
+class YOLOBoxScoreTarget():
+    """ For every original detected bounding box specified in "bounding boxes",
+        assign a score on how the current bounding boxes match it,
+            1. In IOU
+            2. In the classification score.
+        If there is not a large enough overlap, or the category changed,
+        assign a score of 0.
+
+        The total score is the sum of all the box scores.
+    """
+
+    def __init__(self, labels, bounding_boxes, iou_threshold=0.5):
+        self.labels = labels # true_labels
+        self.bounding_boxes = bounding_boxes # true_bbox
+        self.iou_threshold = iou_threshold 
+
+    def __call__(self, predictions):
+        output = torch.Tensor([0])
+        if torch.cuda.is_available():
+            output = output.cuda()
+
+        if len(predictions) == 0:
+            return output
+
+        breakpoint()
+        for box, label in zip(self.bounding_boxes, self.labels):
+            box = torch.Tensor(box[None, :])
+            if torch.cuda.is_available():
+                box = box.cuda()
+
+            bbox_pred = predictions[['xmin','ymin','xmax','ymax']].to_numpy()
+            ious = torchvision.ops.box_iou(box, torch.tensor(bbox_pred))
+            index = ious.argmax()
+            if ious[0, index] > self.iou_threshold and predictions["class"][index] == label:
+                score = ious[0, index] + predictions["confidence"][index]
+                output = output + score
+        return output
+
 
 def run(
     weights=ROOT / 'yolov5s.pt',  # model path or triton URL
@@ -69,7 +126,7 @@ def run(
     grayscale_cam = cam(tensor)[0, :, :]
     cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
     print('CAM image is now ready')
-    Image.Image.show(Image.fromarray(cam_image))
+    # Image.Image.show(Image.fromarray(cam_image))
     return Image.fromarray(cam_image)
     
 
