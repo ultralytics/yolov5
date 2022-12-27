@@ -324,12 +324,12 @@ def run(
             map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
             LOGGER.info(f'pycocotools unable to run: {e}')
-            
+
         if tide:
             try:
                 check_requirements('tidecv')
-                from tidecv import TIDE, datasets
                 import tidecv.datasets as datasets
+                from tidecv import TIDE, datasets
                 bbox_results = datasets.COCOResult(pred_json)
                 tide = TIDE()
                 gt = datasets.COCO(path=anno_json)
