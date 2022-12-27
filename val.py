@@ -328,11 +328,10 @@ def run(
         if tide:
             try:
                 check_requirements('tidecv')
-                import tidecv.datasets as datasets
-                from tidecv import TIDE, datasets
-                bbox_results = datasets.COCOResult(pred_json)
-                tide = TIDE()
-                gt = datasets.COCO(path=anno_json)
+                import tidecv
+                bbox_results = tidecv.datasets.COCOResult(pred_json)
+                tide = tidecv.TIDE()
+                gt = tidecv.datasets.COCO(path=anno_json)
                 tide.evaluate_range(gt, bbox_results, mode=TIDE.BOX)
                 tide.summarize()
                 tide.plot()
