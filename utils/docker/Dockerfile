@@ -29,7 +29,7 @@ WORKDIR /usr/src/app
 RUN git clone https://github.com/ultralytics/yolov5 /usr/src/app
 
 # Set environment variables
-ENV OMP_NUM_THREADS=8
+ENV OMP_NUM_THREADS=1
 
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
