@@ -309,7 +309,7 @@ def run(
             json.dump(jdict, f)
 
         try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
-            check_requirements('pycocotools')
+            check_requirements('pycocotools>=2.0.6')
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
