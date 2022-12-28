@@ -6,7 +6,7 @@ Usage - Single-GPU training:
     $ python classify/train.py --model yolov5s-cls.pt --data imagenette160 --epochs 5 --img 224
 
 Usage - Multi-GPU DDP training:
-    $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/train.py --model yolov5s-cls.pt --data imagenet --epochs 5 --img 224 --device 0,1,2,3
+    $ python -m torch.distributed.run --nproc_per_node 4 --master_port 2022 classify/train.py --model yolov5s-cls.pt --data imagenet --epochs 5 --img 224 --device 0,1,2,3
 
 Datasets:           --data mnist, fashion-mnist, cifar10, cifar100, imagenette, imagewoof, imagenet, or 'path/to/data'
 YOLOv5-cls models:  --model yolov5n-cls.pt, yolov5s-cls.pt, yolov5m-cls.pt, yolov5l-cls.pt, yolov5x-cls.pt
@@ -40,8 +40,8 @@ from classify import val as validate
 from models.experimental import attempt_load
 from models.yolo import ClassificationModel, DetectionModel
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (DATASETS_DIR, LOGGER, WorkingDirectory, check_git_status, check_requirements, colorstr,
-                           download, increment_path, init_seeds, print_args, yaml_save)
+from utils.general import (DATASETS_DIR, LOGGER, TQDM_BAR_FORMAT, WorkingDirectory, check_git_info, check_git_status,
+                           check_requirements, colorstr, download, increment_path, init_seeds, print_args, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import imshow_cls
 from utils.torch_utils import (ModelEMA, model_info, reshape_classifier_output, select_device, smart_DDP,
@@ -50,6 +50,7 @@ from utils.torch_utils import (ModelEMA, model_info, reshape_classifier_output, 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
+GIT_INFO = check_git_info()
 
 
 def train(opt, device):
@@ -174,7 +175,7 @@ def train(opt, device):
             trainloader.sampler.set_epoch(epoch)
         pbar = enumerate(trainloader)
         if RANK in {-1, 0}:
-            pbar = tqdm(enumerate(trainloader), total=len(trainloader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+            pbar = tqdm(enumerate(trainloader), total=len(trainloader), bar_format=TQDM_BAR_FORMAT)
         for i, (images, labels) in pbar:  # progress bar
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
@@ -237,6 +238,7 @@ def train(opt, device):
                     'updates': ema.updates,
                     'optimizer': None,  # optimizer.state_dict(),
                     'opt': vars(opt),
+                    'git': GIT_INFO,  # {remote, branch, commit} if a git repo
                     'date': datetime.now().isoformat()}
 
                 # Save last, best and delete

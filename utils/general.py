@@ -7,12 +7,12 @@ import contextlib
 import glob
 import inspect
 import logging
+import logging.config
 import math
 import os
 import platform
 import random
 import re
-import shutil
 import signal
 import sys
 import time
@@ -49,6 +49,7 @@ NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiproces
 DATASETS_DIR = Path(os.getenv('YOLOv5_DATASETS_DIR', ROOT.parent / 'datasets'))  # global datasets directory
 AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
+TQDM_BAR_FORMAT = '{l_bar}{bar:10}{r_bar}'  # tqdm bar format
 FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf
 
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -111,23 +112,33 @@ def is_writeable(dir, test=False):
         return False
 
 
-def set_logging(name=None, verbose=VERBOSE):
-    # Sets level and returns logger
-    if is_kaggle() or is_colab():
-        for h in logging.root.handlers:
-            logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
+LOGGING_NAME = "yolov5"
+
+
+def set_logging(name=LOGGING_NAME, verbose=True):
+    # sets up logging for the given name
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
     level = logging.INFO if verbose and rank in {-1, 0} else logging.ERROR
-    log = logging.getLogger(name)
-    log.setLevel(level)
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    handler.setLevel(level)
-    log.addHandler(handler)
+    logging.config.dictConfig({
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            name: {
+                "format": "%(message)s"}},
+        "handlers": {
+            name: {
+                "class": "logging.StreamHandler",
+                "formatter": name,
+                "level": level,}},
+        "loggers": {
+            name: {
+                "level": level,
+                "handlers": [name],
+                "propagate": False,}}})
 
 
-set_logging()  # run before defining LOGGER
-LOGGER = logging.getLogger("yolov5")  # define globally (used in train.py, val.py, detect.py, etc.)
+set_logging(LOGGING_NAME)  # run before defining LOGGER
+LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
 if platform.system() == 'Windows':
     for fn in LOGGER.info, LOGGER.warning:
         setattr(LOGGER, fn.__name__, lambda x: fn(emojis(x)))  # emoji safe logging
@@ -332,6 +343,24 @@ def check_git_status(repo='ultralytics/yolov5', branch='master'):
     LOGGER.info(s)
 
 
+@WorkingDirectory(ROOT)
+def check_git_info(path='.'):
+    # YOLOv5 git info check, return {remote, branch, commit}
+    check_requirements('gitpython')
+    import git
+    try:
+        repo = git.Repo(path)
+        remote = repo.remotes.origin.url.replace('.git', '')  # i.e. 'https://github.com/ultralytics/yolov5'
+        commit = repo.head.commit.hexsha  # i.e. '3134699c73af83aac2a481435550b968d5792c0d'
+        try:
+            branch = repo.active_branch.name  # i.e. 'main'
+        except TypeError:  # not on any branch
+            branch = None  # i.e. 'detached HEAD' state
+        return {'remote': remote, 'branch': branch, 'commit': commit}
+    except git.exc.InvalidGitRepositoryError:  # path is not a git dir
+        return {'remote': None, 'branch': None, 'commit': None}
+
+
 def check_python(minimum='3.7.0'):
     # Check current python version vs. required python version
     check_version(platform.python_version(), minimum, name='Python ', hard=True)
@@ -482,9 +511,10 @@ def check_dataset(data, autodownload=True):
 
     # Checks
     for k in 'train', 'val', 'names':
-        assert k in data, f"data.yaml '{k}:' field missing ❌"
+        assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
     if isinstance(data['names'], (list, tuple)):  # old array format
         data['names'] = dict(enumerate(data['names']))  # convert to dict
+    assert all(isinstance(k, int) for k in data['names'].keys()), 'data.yaml names keys must be integers, i.e. 2: car'
     data['nc'] = len(data['names'])
 
     # Resolve paths
@@ -720,30 +750,30 @@ def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
 def xyxy2xywh(x):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[:, 0] = (x[:, 0] + x[:, 2]) / 2  # x center
-    y[:, 1] = (x[:, 1] + x[:, 3]) / 2  # y center
-    y[:, 2] = x[:, 2] - x[:, 0]  # width
-    y[:, 3] = x[:, 3] - x[:, 1]  # height
+    y[..., 0] = (x[..., 0] + x[..., 2]) / 2  # x center
+    y[..., 1] = (x[..., 1] + x[..., 3]) / 2  # y center
+    y[..., 2] = x[..., 2] - x[..., 0]  # width
+    y[..., 3] = x[..., 3] - x[..., 1]  # height
     return y
 
 
 def xywh2xyxy(x):
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
-    y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
-    y[:, 2] = x[:, 0] + x[:, 2] / 2  # bottom right x
-    y[:, 3] = x[:, 1] + x[:, 3] / 2  # bottom right y
+    y[..., 0] = x[..., 0] - x[..., 2] / 2  # top left x
+    y[..., 1] = x[..., 1] - x[..., 3] / 2  # top left y
+    y[..., 2] = x[..., 0] + x[..., 2] / 2  # bottom right x
+    y[..., 3] = x[..., 1] + x[..., 3] / 2  # bottom right y
     return y
 
 
 def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
     # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
-    y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
-    y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
-    y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
+    y[..., 0] = w * (x[..., 0] - x[..., 2] / 2) + padw  # top left x
+    y[..., 1] = h * (x[..., 1] - x[..., 3] / 2) + padh  # top left y
+    y[..., 2] = w * (x[..., 0] + x[..., 2] / 2) + padw  # bottom right x
+    y[..., 3] = h * (x[..., 1] + x[..., 3] / 2) + padh  # bottom right y
     return y
 
 
@@ -752,18 +782,18 @@ def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
     if clip:
         clip_boxes(x, (h - eps, w - eps))  # warning: inplace clip
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[:, 0] = ((x[:, 0] + x[:, 2]) / 2) / w  # x center
-    y[:, 1] = ((x[:, 1] + x[:, 3]) / 2) / h  # y center
-    y[:, 2] = (x[:, 2] - x[:, 0]) / w  # width
-    y[:, 3] = (x[:, 3] - x[:, 1]) / h  # height
+    y[..., 0] = ((x[..., 0] + x[..., 2]) / 2) / w  # x center
+    y[..., 1] = ((x[..., 1] + x[..., 3]) / 2) / h  # y center
+    y[..., 2] = (x[..., 2] - x[..., 0]) / w  # width
+    y[..., 3] = (x[..., 3] - x[..., 1]) / h  # height
     return y
 
 
 def xyn2xy(x, w=640, h=640, padw=0, padh=0):
     # Convert normalized segments into pixel segments, shape (n,2)
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[:, 0] = w * x[:, 0] + padw  # top left x
-    y[:, 1] = h * x[:, 1] + padh  # top left y
+    y[..., 0] = w * x[..., 0] + padw  # top left x
+    y[..., 1] = h * x[..., 1] + padh  # top left y
     return y
 
 
@@ -803,14 +833,14 @@ def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None):
         gain = ratio_pad[0][0]
         pad = ratio_pad[1]
 
-    boxes[:, [0, 2]] -= pad[0]  # x padding
-    boxes[:, [1, 3]] -= pad[1]  # y padding
-    boxes[:, :4] /= gain
+    boxes[..., [0, 2]] -= pad[0]  # x padding
+    boxes[..., [1, 3]] -= pad[1]  # y padding
+    boxes[..., :4] /= gain
     clip_boxes(boxes, img0_shape)
     return boxes
 
 
-def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None):
+def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=False):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
@@ -823,29 +853,32 @@ def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None):
     segments[:, 1] -= pad[1]  # y padding
     segments /= gain
     clip_segments(segments, img0_shape)
+    if normalize:
+        segments[:, 0] /= img0_shape[1]  # width
+        segments[:, 1] /= img0_shape[0]  # height
     return segments
 
 
 def clip_boxes(boxes, shape):
     # Clip boxes (xyxy) to image shape (height, width)
     if isinstance(boxes, torch.Tensor):  # faster individually
-        boxes[:, 0].clamp_(0, shape[1])  # x1
-        boxes[:, 1].clamp_(0, shape[0])  # y1
-        boxes[:, 2].clamp_(0, shape[1])  # x2
-        boxes[:, 3].clamp_(0, shape[0])  # y2
+        boxes[..., 0].clamp_(0, shape[1])  # x1
+        boxes[..., 1].clamp_(0, shape[0])  # y1
+        boxes[..., 2].clamp_(0, shape[1])  # x2
+        boxes[..., 3].clamp_(0, shape[0])  # y2
     else:  # np.array (faster grouped)
-        boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x2
-        boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
+        boxes[..., [0, 2]] = boxes[..., [0, 2]].clip(0, shape[1])  # x1, x2
+        boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
 
 
-def clip_segments(boxes, shape):
+def clip_segments(segments, shape):
     # Clip segments (xy1,xy2,...) to image shape (height, width)
-    if isinstance(boxes, torch.Tensor):  # faster individually
-        boxes[:, 0].clamp_(0, shape[1])  # x
-        boxes[:, 1].clamp_(0, shape[0])  # y
+    if isinstance(segments, torch.Tensor):  # faster individually
+        segments[:, 0].clamp_(0, shape[1])  # x
+        segments[:, 1].clamp_(0, shape[0])  # y
     else:  # np.array (faster grouped)
-        boxes[:, 0] = boxes[:, 0].clip(0, shape[1])  # x
-        boxes[:, 1] = boxes[:, 1].clip(0, shape[0])  # y
+        segments[:, 0] = segments[:, 0].clip(0, shape[1])  # x
+        segments[:, 1] = segments[:, 1].clip(0, shape[0])  # y
 
 
 def non_max_suppression(
@@ -865,6 +898,9 @@ def non_max_suppression(
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
 
+    # Checks
+    assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
+    assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
     if isinstance(prediction, (list, tuple)):  # YOLOv5 model in validation model, output = (inference_out, loss_out)
         prediction = prediction[0]  # select only inference output
 
@@ -875,10 +911,6 @@ def non_max_suppression(
     bs = prediction.shape[0]  # batch size
     nc = prediction.shape[2] - nm - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
-
-    # Checks
-    assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
-    assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
 
     # Settings
     # min_wh = 2  # (pixels) minimum box width and height
@@ -937,17 +969,13 @@ def non_max_suppression(
         n = x.shape[0]  # number of boxes
         if not n:  # no boxes
             continue
-        elif n > max_nms:  # excess boxes
-            x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
-        else:
-            x = x[x[:, 4].argsort(descending=True)]  # sort by confidence
+        x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence and remove excess boxes
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
         boxes, scores = x[:, :4] + c, x[:, 4]  # boxes (offset by class), scores
         i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS
-        if i.shape[0] > max_det:  # limit detections
-            i = i[:max_det]
+        i = i[:max_det]  # limit detections
         if merge and (1 < n < 3E3):  # Merge NMS (boxes merged using weighted mean)
             # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
             iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix
@@ -1003,7 +1031,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve
 
     # Save yaml
     with open(evolve_yaml, 'w') as f:
-        data = pd.read_csv(evolve_csv)
+        data = pd.read_csv(evolve_csv, skipinitialspace=True)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
         i = np.argmax(fitness(data.values[:, :4]))  #
         generations = len(data)
@@ -1082,7 +1110,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     return path
 
 
-# OpenCV Chinese-friendly functions ------------------------------------------------------------------------------------
+# OpenCV Multilanguage-friendly functions ------------------------------------------------------------------------------------
 imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
@@ -1105,4 +1133,3 @@ def imshow(path, im):
 cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
 
 # Variables ------------------------------------------------------------------------------------------------------------
-NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
