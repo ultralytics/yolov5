@@ -942,6 +942,8 @@ def non_max_suppression(
         if not x.shape[0]:
             continue
 
+        x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence and remove excess boxes
+        
         # Compute conf
         x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
 
@@ -969,7 +971,6 @@ def non_max_suppression(
         n = x.shape[0]  # number of boxes
         if not n:  # no boxes
             continue
-        x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence and remove excess boxes
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
