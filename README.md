@@ -234,8 +234,8 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 - [Architecture Summary](https://github.com/ultralytics/yolov5/issues/6998) 🌟 NEW
 - [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)  🌟 NEW
 - [ClearML Logging](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml) 🌟 NEW
-- [Deci Platform](https://github.com/ultralytics/yolov5/wiki/Deci-Platform) 🌟 NEW
 - [Comet Logging](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/comet) 🌟 NEW
+- [Neural Magic for Model Deployment](https://bit.ly/neural-magic-platform) 🌟 NEW
 
 </details>
 
@@ -258,13 +258,15 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
   <a href="https://bit.ly/yolov5-readme-comet">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-comet.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/master/social/logo-transparent.png" width="15%" height="0" alt="" />
-  <a href="https://bit.ly/yolov5-deci-platform">
-    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-deci.png" width="10%" /></a>
+  <a href="https://bit.ly/neural-magic-platform">
+    <img src="https://user-images.githubusercontent.com/85292283/210244348-5d9f1e9d-8507-4d90-8f91-72248600e9e0.png" width="10%" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/master/social/logo-transparent.png" width="15%" height="0" alt="" />
+
 </div>
 
-|Roboflow|ClearML ⭐ NEW|Comet ⭐ NEW|Deci ⭐ NEW|
+|Roboflow|ClearML ⭐ NEW|Comet ⭐ NEW|Neural Magic ⭐ NEW|
 |:-:|:-:|:-:|:-:|
-|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics)|Automatically track, visualize and even remotely train YOLOv5 using [ClearML](https://cutt.ly/yolov5-readme-clearml) (open-source!)|Free forever, [Comet](https://bit.ly/yolov5-readme-comet2) lets you save YOLOv5 models, resume training, and interactively visualise and debug predictions|Automatically compile and quantize YOLOv5 for better inference performance in one click at [Deci](https://bit.ly/yolov5-deci-platform)|
+|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics)|Automatically track, visualize and even remotely train YOLOv5 using [ClearML](https://cutt.ly/yolov5-readme-clearml) (open-source!)|Free forever, [Comet](https://bit.ly/yolov5-readme-comet2) lets you save YOLOv5 models, resume training, and interactively visualise and debug predictions|Deploy YOLOv5 models to the cloud, data center, or edge with a single scalable platform with [Neural Magic](https://bit.ly/neural-magic-platform)|
 
 
 ## <div align="center">Ultralytics HUB</div>
