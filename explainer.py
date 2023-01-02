@@ -140,7 +140,7 @@ def run(
     
     if verbose: 
         print('\n', 'model layers: you have to choose a layer or some layers to explain them')
-        layer_number = 0
+        layer_number = 1
         for k, v in model.model.model.model.named_parameters():
             #print(k)
             pass
