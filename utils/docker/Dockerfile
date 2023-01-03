@@ -13,6 +13,8 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 # Install linux packages
 RUN apt update && apt install --no-install-recommends -y zip htop screen libgl1-mesa-glx
 
+# Install aws
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install
 # Install pip packages
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip wheel
