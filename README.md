@@ -45,17 +45,6 @@ To request an Enterprise License please complete the form at <a href="https://ul
   </div>
 </div>
 
-
-## <div align="center">Ultralytics Live Session</div>
-
-<div align="center">
-
-[Ultralytics Live Session Ep. 2](https://youtu.be/QGRtEG7UjtE) ✨ will be streaming live on **Tuesday, December 13th at 19:00 CET** with [Joseph Nelson](https://github.com/josephofiowa) of [Roboflow](https://roboflow.com/?ref=ultralytics) who will join us to discuss the brand new Roboflow x Ultralytics HUB integration. Tune in to ask Glenn and Joseph about how you can make speed up workflows with seamless dataset integration! 🔥
-
-<a align="center" href="https://youtu.be/QGRtEG7UjtE" target="_blank">
-<img width="800" src="https://user-images.githubusercontent.com/85292283/205996456-bf3efa33-9c46-455e-b322-a64886cc7a0b.png"></a>
-</div>
-
 ## <div align="center">Segmentation ⭐ NEW</div>
 
 <div align="center">
