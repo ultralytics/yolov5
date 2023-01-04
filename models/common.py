@@ -985,7 +985,7 @@ class ONNX_ORT(nn.Module):
         labels = batched_labels[topk_batch_inds, topk_inds, ...]
         boxes, scores = batched_dets.split((4, 1), -1)
         scores = scores.squeeze(-1)
-        num_dets = (scores > 0).sum(1, keepdim=True)
+        num_dets = (labels > -1).sum(1, keepdim=True)
         return num_dets, boxes, scores, labels
 
 
