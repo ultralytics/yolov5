@@ -30,7 +30,6 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 
-
 def yolo_reshape_transform(x):
     """
     The backbone outputs different tensors with different spatial sizes, from the FPN.
