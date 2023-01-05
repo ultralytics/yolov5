@@ -19,7 +19,8 @@ from PIL import Image
 from pytorch_grad_cam import AblationCAM, EigenCAM, FullGrad, GradCAM, GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
-from utils.general import print_args
+from ..models.experimental import attempt_load
+from ..utils.general import print_args
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -27,7 +28,6 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from ..models.experimental import attempt_load
 
 def yolo_reshape_transform(x):
     """
