@@ -29,6 +29,7 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 
+
 def yolo_reshape_transform(x):
     """
     The backbone outputs different tensors with different spatial sizes, from the FPN.
@@ -86,7 +87,7 @@ class YOLOBoxScoreTarget():
 
 
 def extract_eigenCAM(model, raw_image_fp):
-    # eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it. 
+    # eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
     target_layers = [model.model.model.model[-2]]
     cam = EigenCAM(model, target_layers, use_cuda=False)
     transform = transforms.ToTensor()
