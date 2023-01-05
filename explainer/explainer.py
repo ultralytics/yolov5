@@ -22,7 +22,6 @@ from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 from .models.experimental import attempt_load
 from .utils.general import print_args
 
-
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
