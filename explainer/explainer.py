@@ -19,8 +19,8 @@ from PIL import Image
 from pytorch_grad_cam import AblationCAM, EigenCAM, FullGrad, GradCAM, GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
-from .models.experimental import attempt_load
-from .utils.general import print_args
+from models.experimental import attempt_load
+from utils.general import print_args
 
 
 FILE = Path(__file__).resolve()
