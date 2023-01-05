@@ -27,6 +27,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from ..models.experimental import attempt_load
 
 def yolo_reshape_transform(x):
     """
@@ -85,6 +86,7 @@ class YOLOBoxScoreTarget():
 
 
 def extract_eigenCAM(model, raw_image_fp):
+    # eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it. 
     target_layers = [model.model.model.model[-2]]
     cam = EigenCAM(model, target_layers, use_cuda=False)
     transform = transforms.ToTensor()
@@ -128,6 +130,7 @@ def run(
         'yolov5s',
         #autoshape=False #because otherwise I have to resize the image, I just don't know for now
     )
+    return attempt_load('yolov5s.pt')
     # model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)  # local model
     image_file = Image.open(source, 'r')
     raw_image = Image.Image.resize(image_file, (640, 384))
