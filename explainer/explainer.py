@@ -136,7 +136,8 @@ def run(
     # model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)  # local model
     image_file = Image.open(source, 'r')
     raw_image = Image.Image.resize(image_file, (640, 384))
-    results = model([raw_image])
+    raw_image = np.array(raw_image)
+    results = model(raw_image)
 
     return results
     # Results
