@@ -134,10 +134,10 @@ def run(
     model.eval()
     model.requires_grad_(True)
     # model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)  # local model
-    image_file = Image.open(source, 'r')
-    raw_image = Image.Image.resize(image_file, (640, 384))
-    raw_image = np.array(raw_image)
-    results = model(raw_image)
+    image = Image.open(source, 'r')
+    image = Image.Image.resize(image, (640, 384))
+    image = np.array(image)
+    results = model(image)
 
     return results
     # Results
