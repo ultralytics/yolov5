@@ -222,7 +222,11 @@ class SparseMLWrapper(object):
             template = dict(train_loader.__dict__)
 
             # drop attributes that will be auto-initialized
-            to_drop = [k for k in template if k.startswith("_") or k == "batch_sampler"]
+            to_drop = [
+                k
+                for k in template
+                if k.startswith("_") or k in ["batch_sampler", "iterator"]
+            ]
             for item in to_drop:
                 template.pop(item)
 
@@ -231,24 +235,25 @@ class SparseMLWrapper(object):
                 template.update(kwargs)
             data_loader = type(train_loader)(**template)
 
-            for imgs, targets, *_ in data_loader:
-                imgs = imgs.to(device, non_blocking=True).float() / 255
-                if multi_scale:
-                    sz = (
-                        random.randrange(img_size * 0.5, img_size * 1.5 + grid_size)
-                        // grid_size
-                        * grid_size
-                    )  # size
-                    sf = sz / max(imgs.shape[2:])  # scale factor
-                    if sf != 1:
-                        ns = [
-                            math.ceil(x * sf / grid_size) * grid_size
-                            for x in imgs.shape[2:]
-                        ]  # new shape (stretched to gs-multiple)
-                        imgs = nn.functional.interpolate(
-                            imgs, size=ns, mode="bilinear", align_corners=False
-                        )
-                yield [imgs], {}, targets
+            while True:
+                for imgs, targets, *_ in data_loader:
+                    imgs = imgs.to(device, non_blocking=True).float() / 255
+                    if multi_scale:
+                        sz = (
+                            random.randrange(img_size * 0.5, img_size * 1.5 + grid_size)
+                            // grid_size
+                            * grid_size
+                        )  # size
+                        sf = sz / max(imgs.shape[2:])  # scale factor
+                        if sf != 1:
+                            ns = [
+                                math.ceil(x * sf / grid_size) * grid_size
+                                for x in imgs.shape[2:]
+                            ]  # new shape (stretched to gs-multiple)
+                            imgs = nn.functional.interpolate(
+                                imgs, size=ns, mode="bilinear", align_corners=False
+                            )
+                    yield [imgs], {}, targets
         return _data_loader_builder
 
     def _apply_one_shot(self):
