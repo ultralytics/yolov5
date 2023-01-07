@@ -67,7 +67,7 @@ class YOLOBoxScoreTarget():
         here we need something which we can call backward
         """
         score = 0
-        for class_idx in self.labels:
+        for class_idx in set(self.labels):
             score += output[...,class_idx].sum()
         return score
 
