@@ -103,6 +103,14 @@ def extract_eigenCAM(model, raw_image_fp):
 
 
 def extract_gradCAM(model, raw_image_fp):
+    true_boxes = np.array([
+        [360,20, 570,380 ],
+        [60,100,400,380],
+        [200,234,249,382],
+    ])
+
+    true_labels = [0,0,27]
+
     target_layers = [model.model.model.model[-2]]
     targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
