@@ -130,17 +130,19 @@ def run(
     #     'yolov5s',
     #     #autoshape=False #because otherwise I have to resize the image, I just don't know for now
     # )
-    model = attempt_load('yolov5s.pt')
-    model.eval()
-    model.requires_grad_(True)
-    # model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)  # local model
-    image = Image.open(source, 'r')
-    image = Image.Image.resize(image, (640, 384))
-    image = np.array(image)
-    image = np.transpose(image,(2,0,1))
-    results = model(torch.tensor(image).unsqueeze(dim=0))
-
-    return results
+    # model = attempt_load('yolov5s.pt')
+    # model.eval()
+    # model.requires_grad_(True)
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)  # local model
+    # image = Image.open(source, 'r')
+    # image = Image.Image.resize(image, (640, 384))
+    # image = np.array(image)
+    # image = np.transpose(image,(2,0,1))
+    # results = model(torch.tensor(image).unsqueeze(dim=0))
+    image_file = Image.open(source,'r')
+    raw_image=Image.Image.resize(image_file,(640,384))
+    results = model([raw_image])
+    # return results
     # Results
     results.print()
     results.save()
