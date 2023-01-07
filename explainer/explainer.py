@@ -65,7 +65,7 @@ class YOLOBoxScoreTarget():
     def __call__(self, output):
         score = 0
         for class_idx in self.labels:
-            score += output[...,class_idx]
+            score += output[...,class_idx].sum()
         return score
 
         output = torch.Tensor([0])
