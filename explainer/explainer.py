@@ -91,7 +91,7 @@ def extract_eigenCAM(model, raw_image_fp):
     eigenCAM doesn't also need a target layer. Anything will do.
     maybe this is implemented badly
     """
-    target_layers = None
+    target_layers = [model.model.model.model[-2]]
     cam = EigenCAM(model, target_layers, use_cuda=False)
     transform = transforms.ToTensor()
     tensor = transform(raw_image_fp).unsqueeze(0)
