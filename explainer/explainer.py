@@ -85,12 +85,12 @@ class YOLOBoxScoreTarget():
         return output
 
 
-def extract_eigenCAM(model, raw_image_fp):
+def extract_eigenCAM(model, raw_image_fp, layer= -2):
     """
     eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
     to see eigenCAM layer changes, you have to restart COLAB completely
     """
-    target_layers = [model.model.model.model[-2]]
+    target_layers = [model.model.model.model[layer]]
     cam = EigenCAM(model, target_layers, use_cuda=False)
     transform = transforms.ToTensor()
     tensor = transform(raw_image_fp).unsqueeze(0)
@@ -136,6 +136,7 @@ def run(
         iou_thres=0.45,  # NMS IOU threshold
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         method='EigenCAM',  # the method for interpreting the results
+        layer=-2 ,
         verbose=False,  # verbose output
 ):
     model = torch.hub.load(
