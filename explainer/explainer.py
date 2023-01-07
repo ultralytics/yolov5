@@ -86,8 +86,11 @@ class YOLOBoxScoreTarget():
 
 
 def extract_eigenCAM(model, raw_image_fp):
-    # eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
-    # eigenCAM doesn't also need a target layer. Anything will do fine.
+    """
+    eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
+    eigenCAM doesn't also need a target layer. Anything will do.
+    maybe this is implemented badly
+    """
     target_layers = None
     cam = EigenCAM(model, target_layers, use_cuda=False)
     transform = transforms.ToTensor()
