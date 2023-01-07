@@ -154,7 +154,7 @@ def run(
 
     tensor_image = transforms.ToTensor()(raw_image).unsqueeze(dim=0)
     preds, logits = model(tensor_image)
-    print(logits.shape)
+    print(logits[0].shape)
     #results.save()
 
     # if verbose:
