@@ -63,6 +63,9 @@ class YOLOBoxScoreTarget():
         self.iou_threshold = iou_threshold
 
     def __call__(self, output):
+        """
+        here we need something which we can call backward
+        """
         score = 0
         for class_idx in self.labels:
             score += output[...,class_idx].sum()
@@ -143,12 +146,12 @@ def run(
         layer=-2 ,
         verbose=False,  # verbose output
 ):
-    # model = torch.hub.load(
-    #     'ultralytics/yolov5',
-    #     'yolov5s',
-    #     #autoshape=False #because otherwise I have to resize the image, I just don't know for now
-    # )
-    model = attempt_load('yolov5s.pt')
+    model = torch.hub.load(
+        'ultralytics/yolov5',
+        'yolov5s',
+        #autoshape=False #because otherwise I have to resize the image, I just don't know for now
+    )
+    #model = attempt_load('yolov5s.pt')
     model.requires_grad_(True)
     model.eval() # not sure about this! 
 
