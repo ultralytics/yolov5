@@ -122,7 +122,7 @@ def run(
         imgsz=(640, 640),  # inference size (height, width)
         iou_thres=0.45,  # NMS IOU threshold
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        method='GradCAM',  # the method for interpreting the results
+        method='EigenCAM',  # the method for interpreting the results
         verbose=False,  # verbose output
 ):
     model = torch.hub.load(
@@ -167,7 +167,7 @@ def parseopt():
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--method',
                         type=str,
-                        default='GradCAM',
+                        default='EigenCAM',
                         help="the method to use for interpreting the feature maps")
     parser.add_argument('--verbose', action='store_true', help='verbose log')
 
