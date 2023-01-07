@@ -128,7 +128,7 @@ def extract_gradCAM(model, raw_image_fp,layer):
     cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
-    cam_image = Image.fromarray(image_with_bounding_boxes)
+    #cam_image = Image.fromarray(image_with_bounding_boxes)
     return cam_image
 
 
