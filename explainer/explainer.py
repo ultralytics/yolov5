@@ -93,6 +93,7 @@ def extract_eigenCAM(model, raw_image_fp):
     tensor = transform(raw_image_fp).unsqueeze(0)
 
     grayscale_cam = cam(tensor)[0, :, :]
+    print(cam(tensor).shape)
     cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
     return cam_image
 
