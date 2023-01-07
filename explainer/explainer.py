@@ -136,8 +136,9 @@ def run(
     # model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)  # local model
     image = Image.open(source, 'r')
     image = Image.Image.resize(image, (640, 384))
-    image = np.array(image)
-    results = model(image)
+    image = torch.tensor(np.array(image))
+    breakpoint()
+    results = model()
 
     return results
     # Results
