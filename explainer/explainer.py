@@ -151,7 +151,7 @@ def run(
     model = torch.hub.load(
         'ultralytics/yolov5',
         'yolov5s',
-        #autoshape=False #because otherwise I have to resize the image, I just don't know for now
+        autoshape=False #because otherwise I have to resize the image, I just don't know for now
     )
     #model = attempt_load('yolov5s.pt')
     model.requires_grad_(True)
