@@ -117,6 +117,7 @@ def extract_gradCAM(model, raw_image_fp,layer):
     ])
 
     true_labels = [0,0,27]
+    # no need to send true ones! Just send the predicted ones. 
 
     #target_layers = [model.model[-1].m[0]]
     target_layers= [model.model.model.model[layer]]
