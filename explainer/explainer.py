@@ -120,6 +120,7 @@ def extract_gradCAM(model, raw_image_fp,layer):
     # no need to send true ones! Just send the predicted ones. 
 
     #target_layers = [model.model[-1].m[0]]
+    target_layers =[model.model.model[layer]]
     target_layers= [model.model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
@@ -153,6 +154,7 @@ def run(
         'yolov5s',
         autoshape=False #because otherwise I have to resize the image, I just don't know for now
     )
+    # when autoshape is false, we need model.model.model instead of model.model.model.model
     #model = attempt_load('yolov5s.pt')
     model.requires_grad_(True)
     # model.eval() # not sure about this! 
