@@ -85,7 +85,7 @@ class YOLOBoxScoreTarget():
         return output
 
 
-def extract_eigenCAM(model, raw_image_fp, layer= -2):
+def extract_eigenCAM(model, raw_image_fp, layer=-2):
     """
     eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
     to see eigenCAM layer changes, you have to restart COLAB completely
@@ -101,14 +101,13 @@ def extract_eigenCAM(model, raw_image_fp, layer= -2):
     return cam_image
 
 
-def extract_gradCAM(model, raw_image_fp,layer):
+def extract_gradCAM(model, raw_image_fp, layer):
     true_boxes = np.array([
-        [360,20, 570,380 ],
-        [60,100,400,380],
-        [200,234,249,382],
-    ])
+        [360, 20, 570, 380],
+        [60, 100, 400, 380],
+        [200, 234, 249, 382],])
 
-    true_labels = [0,0,27]
+    true_labels = [0, 0, 27]
 
     target_layers = [model.model.model.model[-2]]
     targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
@@ -135,7 +134,7 @@ def run(
         iou_thres=0.45,  # NMS IOU threshold
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         method='EigenCAM',  # the method for interpreting the results
-        layer=-2 ,
+        layer=-2,
         verbose=False,  # verbose output
 ):
     model = torch.hub.load(
@@ -163,9 +162,9 @@ def run(
     raw_image_fp = np.array(raw_image, np.float32)
     raw_image_fp = raw_image_fp / 255
     if method.lower() == 'eigencam':
-        cam_image = extract_eigenCAM(model= model,raw_image_fp= raw_image_fp,layer=layer)
+        cam_image = extract_eigenCAM(model=model, raw_image_fp=raw_image_fp, layer=layer)
     elif method.lower() == 'gradcam':
-        cam_image = extract_gradCAM(model=model,raw_image_fp= raw_image_fp,layer=layer)
+        cam_image = extract_gradCAM(model=model, raw_image_fp=raw_image_fp, layer=layer)
 
     # Image.Image.show(Image.fromarray(cam_image))
     return Image.fromarray(cam_image)
