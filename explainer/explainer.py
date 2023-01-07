@@ -138,11 +138,12 @@ def run(
         layer=-2 ,
         verbose=False,  # verbose output
 ):
-    model = torch.hub.load(
-        'ultralytics/yolov5',
-        'yolov5s',
-        #autoshape=False #because otherwise I have to resize the image, I just don't know for now
-    )
+    # model = torch.hub.load(
+    #     'ultralytics/yolov5',
+    #     'yolov5s',
+    #     #autoshape=False #because otherwise I have to resize the image, I just don't know for now
+    # )
+    model = attempt_load('yolov5.pt')
     image_file = Image.open(source, 'r')
     raw_image = Image.Image.resize(image_file, (640, 384))
     results = model([raw_image])
