@@ -161,8 +161,8 @@ def run(
     raw_image = Image.Image.resize(image_file, (640, 384))
 
     tensor_image = transforms.ToTensor()(raw_image).unsqueeze(dim=0)
-    preds, logits = model(tensor_image)
-    print(logits[0].shape)
+    results = model(tensor_image)
+    # print(logits[0].shape)
     #results.save()
 
     # if verbose:
