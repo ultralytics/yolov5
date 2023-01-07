@@ -155,7 +155,7 @@ def run(
     )
     #model = attempt_load('yolov5s.pt')
     model.requires_grad_(True)
-    model.eval() # not sure about this! 
+    # model.eval() # not sure about this! 
 
     image_file = Image.open(source, 'r')
     raw_image = Image.Image.resize(image_file, (640, 384))
