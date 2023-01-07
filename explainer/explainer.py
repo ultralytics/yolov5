@@ -62,7 +62,12 @@ class YOLOBoxScoreTarget():
         self.bounding_boxes = bounding_boxes  # true_bbox
         self.iou_threshold = iou_threshold
 
-    def __call__(self, predictions):
+    def __call__(self, output):
+        score = 0
+        for class_idx in self.labels:
+            score += output[...,class_idx]
+        return score
+
         output = torch.Tensor([0])
         if torch.cuda.is_available():
             output = output.cuda()
@@ -122,7 +127,7 @@ def extract_gradCAM(model, raw_image_fp,layer):
     grayscale_cam = grayscale_cam[0, :]
     cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
-    image_with_bounding_boxes = draw_boxes(prediction, cam_image)
+    #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     cam_image = Image.fromarray(image_with_bounding_boxes)
     return cam_image
 
@@ -146,13 +151,15 @@ def run(
     model = attempt_load('yolov5s.pt')
     image_file = Image.open(source, 'r')
     raw_image = Image.Image.resize(image_file, (640, 384))
-    results = model([raw_image])
-    results.print()
-    results.save()
 
-    if verbose:
-        print('\n', results.pandas().xyxy, '\n')
-        print('\n', results.xyxy, '\n')
+    tensor_image = transforms.ToTensor()(raw_image).unsqueeze(dim=0)
+    preds, logits = model(tensor_image)
+    print(logits.shape)
+    #results.save()
+
+    # if verbose:
+    #     print('\n', logits.shape.pandas().xyxy, '\n')
+    #     print('\n', results.xyxy, '\n')
 
     if verbose:
         print('\n', 'model layers: you have to choose a layer or some layers to explain them')
