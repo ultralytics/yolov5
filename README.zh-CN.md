@@ -45,16 +45,6 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
   </div>
 </div>
 
-## <div align="center">Ultralytics 直播会议</div>
-
-<div align="center">
-
-[Ultralytics Live Session Ep. 2](https://youtu.be/QGRtEG7UjtE) ✨ 将与 [Roboflow](https://roboflow.com/?ref=ultralytics) 的 [Joseph Nelson](https://github.com/josephofiowa) 在 **欧洲中部时间 12 月 13 日星期二的 19:00** ，他将与我们一起讨论全新的 Roboflow x Ultralytics HUB 集成。欢迎收听 Glenn 和 Joseph ，以了解如何通过无缝数据集集成来加快工作流程！ 🔥
-
-<a align="center" href="https://youtu.be/QGRtEG7UjtE" target="_blank">
-<img width="800" src="https://user-images.githubusercontent.com/85292283/205996456-bf3efa33-9c46-455e-b322-a64886cc7a0b.png"></a>
-</div>
-
 ## <div align="center">实例分割模型 ⭐  新</div>
 
 <div align="center">
@@ -260,12 +250,12 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-comet.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="15%" height="0" alt="" />
   <a href="https://bit.ly/yolov5-deci-platform">
-    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-deci.png" width="10%" /></a>
+    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-neuralmagic.png" width="10%" /></a>
 </div>
 
-|                                     Roboflow                                                      |                                ClearML ⭐ 新                                            |                                      Comet ⭐ 新                                                        |                                Deci ⭐ 新                                         |
+|                                     Roboflow                                                      |                                ClearML ⭐ 新                                            |                                      Comet ⭐ 新                                                        |                                Neural Magic ⭐ 新                                         |
 | :-----------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------: |
-| 将您的自定义数据集进行标注并直接导出到 YOLOv5 以进行训练 [Roboflow](https://roboflow.com/?ref=ultralytics) | 自动跟踪、可视化甚至远程训练 YOLOv5 [ClearML](https://cutt.ly/yolov5-readme-clearml)（开源！） | 永远免费，[Comet](https://bit.ly/yolov5-readme-comet)可让您保存 YOLOv5 模型、恢复训练以及交互式可视化和调试预测 | 一键自动编译量化 YOLOv5 以获得更好的推理性能[Deci](https://bit.ly/yolov5-deci-platform) |
+| 将您的自定义数据集进行标注并直接导出到 YOLOv5 以进行训练 [Roboflow](https://roboflow.com/?ref=ultralytics) | 自动跟踪、可视化甚至远程训练 YOLOv5 [ClearML](https://cutt.ly/yolov5-readme-clearml)（开源！） | 永远免费，[Comet](https://bit.ly/yolov5-readme-comet)可让您保存 YOLOv5 模型、恢复训练以及交互式可视化和调试预测 | 使用 [Neural Magic DeepSparse](https://bit.ly/yolov5-neuralmagic)，运行 YOLOv5 推理的速度最高可提高6倍 |
 
 ## <div align="center">Ultralytics HUB</div>
 
