@@ -44,13 +44,15 @@ To request an Enterprise License please complete the form at <a href="https://ul
       <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
   </div>
 </div>
+
+
+
 ## <div align="center">Ultralytics Framework and YOLOv8 ⭐ NEW </div>
-
 <div align="center">
-
-<a align="center" href="https://github.com/ultralytics/ultralytics" target="_blank">
+   <p><b>Recommended</b>: Try the new Ultralytics framework with SOTA YOLOv8, YOLOv5 models and more </p>
     <a align="center" href="https://github.com/ultralytics/ultralytics" target="_blank">
       <img width="850" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-yolov8.png"></a></div>
+
 ## <div align="center">Segmentation </div>
 <div align="center">
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
