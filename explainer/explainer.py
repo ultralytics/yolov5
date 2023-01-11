@@ -81,19 +81,18 @@ class YOLOBoxScoreTarget():
         return score.sum()
         
 
-def extract_eigenCAM(model, raw_image_fp, layer= -2):
+def extract_eigenCAM(model, image, layer= -2):
     """
     eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
-    to see eigenCAM layer changes, you have to restart COLAB completely
     """
     target_layers = [model.model.model[layer]]
-    cam = EigenCAM(model, target_layers, use_cuda=False)
+    cam = EigenCAM(model, target_layers, use_cuda=True)
     # transform = transforms.ToTensor()
     # tensor = transform(raw_image_fp).unsqueeze(0)
     breakpoint()
-    grayscale_cam = cam(raw_image_fp)[0, :, :]
+    grayscale_cam = cam(image)[0, :, :]
 
-    cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
+    cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=True)
     return cam_image
 
 
