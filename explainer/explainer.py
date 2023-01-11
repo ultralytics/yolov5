@@ -72,10 +72,8 @@ class YOLOBoxScoreTarget():
         for class_idx in self.classes:
             mask[:, class_idx] = True
 
-        classes = classes[mask]
-        return classes.sum()
-        threshold_filter = objectness>self.objectness_threshold
-        score = objectness[threshold_filter] + classes[threshold_filter]
+        mask = mask & (objectness>self.objectness_threshold)
+        score = objectness[mask] + classes[mask]
         return score.sum()
 
         result = torch.Tensor([0])
