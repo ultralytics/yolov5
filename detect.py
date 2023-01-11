@@ -104,7 +104,8 @@ def run(
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     if interpretable_method:
-        model=model.requires_grad_(True)
+        model = torch.hub.load('.', 'custom', weights, source='local',autoshape=False)
+        model.requires_grad_(True)
         for p in model.parameters():
             p.requires_grad = True  
 
