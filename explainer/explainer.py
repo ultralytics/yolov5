@@ -63,6 +63,9 @@ class YOLOBoxScoreTarget():
         result = torch.Tensor([0])
         for i,data in enumerate(output[0]):
             objectness, xc, yc, width, height, *classes = data
+            if objectness < 0.2:
+                continue
+            
             for class_idx, prob in enumerate(classes):
                 if class_idx in self.classes:
                     result = result + prob
