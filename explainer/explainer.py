@@ -70,9 +70,9 @@ class YOLOBoxScoreTarget():
         for i,data in enumerate(output[0]):
             objectness, xc, yc, width, height, *classes = data
             score = 0
-            if objectness > self.iou_threshold:
+            if objectness > 0.2 and classes[27] > 0.2:
                 #cls_index = 0
-                score = classes[0]
+                score = classes[27]
                 output = output + score
         return output.sum()
         
