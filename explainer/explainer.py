@@ -117,11 +117,11 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres):
     #cam_image = Image.fromarray(image_with_bounding_boxes)
     return cam_image
 
-def explain(method, model,image,layer,classes, objectness_thres):
+def explain(method:str, model,image,layer,classes, objectness_thres:float):
     cam_image = None
-    if method.tolower()=='gradcam':
+    if method.lower()=='gradcam':
         cam_image=extract_gradCAM(model,image,layer,classes,objectness_thres)
-    elif method.tolower()=='eigencam':
+    elif method.lower()=='eigencam':
         cam_image= extract_eigenCAM(model,image,layer)
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
