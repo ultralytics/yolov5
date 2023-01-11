@@ -122,15 +122,16 @@ def run(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
         source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
-        imgsz=(640, 640),  # inference size (height, width)
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        method='EigenCAM',  # the method for interpreting the results
+        method='EigenCAM', # the method for interpreting the results
         layer=-2 ,
         classes= None, # list of class_idx to use for CAM methods
         objectness_thres=0.1, # threshold for objectness
+        imgsz=(640, 640),  # inference size (height, width)
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         dnn=False,  # use OpenCV DNN for ONNX inference
         half=False,  # use FP16 half-precision inference
         verbose=False,  # verbose output
+        vid_stride=1,  # video frame-rate stride
 ):
     
     device = select_device(device)
