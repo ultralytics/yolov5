@@ -25,7 +25,7 @@ RUN pip install google-api-python-client==1.8.0
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN pip uninstall -y torch torchvision torchtext Pillow
-RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook Pillow>=9.1.0 \
+RUN pip install --no-cache -r requirements.txt albumentations clearml wandb gsutil notebook Pillow>=9.1.0 \
     'opencv-python<4.6.0.66' \
     --extra-index-url https://download.pytorch.org/whl/cu113
 
