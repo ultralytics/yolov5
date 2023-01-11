@@ -153,7 +153,7 @@ def run(
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             if interpretable_method:
-                cv2.imwrite(save_path.replace('.jpg',f'-{interpretable_method}.jpg'), im0)
+                cv2.imwrite(save_path.replace('.jpg',f'-{interpretable_method}.jpg'), cam_image)
 
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
