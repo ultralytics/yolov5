@@ -145,7 +145,7 @@ def run(
         method='EigenCAM',  # the method for interpreting the results
         layer=-2 ,
         classes= None, # list of class_idx to use for CAM methods
-        objectness_thres=0.5, # threshold for objectness
+        objectness_thres=0.1, # threshold for objectness
         verbose=False,  # verbose output
 ):
     model = torch.hub.load(
