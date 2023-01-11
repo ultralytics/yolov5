@@ -62,11 +62,11 @@ class YOLOBoxScoreTarget():
         here we need something which we can call backward
         https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
         output structure is taken from this tutorial, it is as follows:
-        "objectness, xc,yc,height, width, classes"
+        "xc,yc,height, width,objectness, classes"
 
         so, the first item would be objectness and items after fifth element are class indexes
         """
-        objectness = output[0, :, 0]
+        objectness = output[0, :, 4]
         classes = output[0, :, 5:]
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
