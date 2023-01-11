@@ -86,7 +86,7 @@ def extract_eigenCAM(model, image, layer= -2):
     eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
     """
     target_layers = [model.model.model[layer]]
-    cam = EigenCAM(model, target_layers, use_cuda=True)
+    cam = EigenCAM(model, target_layers, use_cuda=False)
     # transform = transforms.ToTensor()
     # tensor = transform(raw_image_fp).unsqueeze(0)
     breakpoint()
