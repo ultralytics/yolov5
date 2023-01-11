@@ -37,6 +37,7 @@ def yolo_reshape_transform(x):
     resizes them to a common shape, and concatenates them
     https://jacobgil.github.io/pytorch-gradcam-book/Class%20Activation%20Maps%20for%20Object%20Detection%20With%20Faster%20RCNN.html
     """
+    breakpoint()
     return x
     target_size = x['pool'].size()[-2:]
     activations = []
