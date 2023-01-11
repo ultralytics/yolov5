@@ -70,11 +70,11 @@ class YOLOBoxScoreTarget():
             objectness, xc, yc, width, height, *classes = data
             for class_idx, prob in enumerate(classes):
                 if class_idx in self.classes:
-                    output = output + prob
+                    result = result + prob
                 # if objectness > self.threshold and prob > self.threshold:
                 #     score = prob
                 #     output = output + score
-        return output.sum()
+        return result.sum()
         
 
 
