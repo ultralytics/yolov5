@@ -25,9 +25,8 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.experimental import attempt_load
 from utils.general import print_args
-
+from utils.torch_utils import select_device
 
 def yolo_reshape_transform(x):
     """
@@ -72,23 +71,11 @@ class YOLOBoxScoreTarget():
         for class_idx in self.classes:
             mask[:, class_idx] = True
 
-        # to filter out those values with low threshold    
+        # we have to see if below line has any effect  
         mask[objectness<self.objectness_threshold] = False
         score = classes[mask] # + objectness[mask]
         return score.sum()
-
-        result = torch.Tensor([0])
-        for i,data in enumerate(output[0]):
-            objectness, xc, yc, width, height, *classes = data
-            if objectness < 0.2:
-                continue
-
-            for class_idx, prob in enumerate(classes):
-                if class_idx in self.classes:
-                    result = result + prob
-        return result.sum()
         
-
 
 def extract_eigenCAM(model, raw_image_fp, layer= -2):
     """
@@ -148,6 +135,8 @@ def run(
         objectness_thres=0.1, # threshold for objectness
         verbose=False,  # verbose output
 ):
+
+    device = select_device(device)
     model = torch.hub.load(
         'ultralytics/yolov5',
         'yolov5s',
