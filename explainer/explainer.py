@@ -63,6 +63,8 @@ class YOLOBoxScoreTarget():
         https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
         output structure is taken from this tutorial, it is as follows:
         "objectness, xc,yc,height, width, classes"
+
+        so, the first item would be objectness and items after fifth element are class indexes
         """
         objectness = output[0, :, 0]
         classes = output[0, :, 5:]
