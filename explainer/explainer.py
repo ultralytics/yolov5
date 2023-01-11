@@ -53,25 +53,37 @@ class YOLOBoxScoreTarget():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self,classes):
+    def __init__(self,classes,objectness_threshold):
         self.classes = classes
+        self.objectness_threshold = objectness_threshold
 
     def __call__(self, output):
         """
         here we need something which we can call backward
+        https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
+        output structure is taken from this tutorial, it is as follows:
+        "objectness, xc,yc,height, width, classes"
         """
+        objectness = output[0, :, 0]
+        classes = output[0, :, 5:]
+        mask = torch.zeros_like(classes, dtype=torch.bool)
+        for class_idx in self.classes:
+            mask[:, class_idx] = True
+
+        classes = classes[mask]
+        objectness = objectness[objectness>self.objectness_threshold]
+        score = objectness[:, None] * classes
+        return score.sum()
+
         result = torch.Tensor([0])
         for i,data in enumerate(output[0]):
             objectness, xc, yc, width, height, *classes = data
             if objectness < 0.2:
                 continue
-            
+
             for class_idx, prob in enumerate(classes):
                 if class_idx in self.classes:
                     result = result + prob
-                # if objectness > self.threshold and prob > self.threshold:
-                #     score = prob
-                #     output = output + score
         return result.sum()
         
 
@@ -92,7 +104,7 @@ def extract_eigenCAM(model, raw_image_fp, layer= -2):
     return cam_image
 
 
-def extract_gradCAM(model, raw_image_fp,layer):
+def extract_gradCAM(model, image,layer):
     true_boxes = np.array([
         [360,20, 570,380 ],
         [60,100,400,380],
@@ -110,12 +122,12 @@ def extract_gradCAM(model, raw_image_fp,layer):
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
 
     transform = transforms.ToTensor()
-    tensor = transform(raw_image_fp).unsqueeze(0)
+    tensor = transform(image).unsqueeze(0)
 
     grayscale_cam = cam(tensor, targets=targets)
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
-    cam_image = show_cam_on_image(raw_image_fp, grayscale_cam, use_rgb=True)
+    cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     #cam_image = Image.fromarray(image_with_bounding_boxes)
@@ -165,9 +177,9 @@ def run(
     raw_image_fp = np.array(raw_image, np.float32)
     raw_image_fp = raw_image_fp / 255
     if method.lower() == 'eigencam':
-        cam_image = extract_eigenCAM(model= model,raw_image_fp= raw_image_fp,layer=layer)
+        cam_image = extract_eigenCAM(model= model,image= raw_image_fp,layer=layer)
     elif method.lower() == 'gradcam':
-        cam_image = extract_gradCAM(model=model,raw_image_fp= raw_image_fp,layer=layer)
+        cam_image = extract_gradCAM(model=model,image= raw_image_fp,layer=layer)
 
     # Image.Image.show(Image.fromarray(cam_image))
     return Image.fromarray(cam_image)
