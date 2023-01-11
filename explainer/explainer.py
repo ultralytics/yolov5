@@ -105,10 +105,11 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres):
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
 
-    transform = transforms.ToTensor()
-    tensor = transform(image).unsqueeze(0)
+    # transform = transforms.ToTensor()
+    # tensor = transform(image).unsqueeze(0)
 
-    grayscale_cam = cam(tensor, targets=targets)
+    # grayscale_cam = cam(tensor, targets=targets)
+    grayscale_cam= cam(image,targets=targets)
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
     cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=True)
