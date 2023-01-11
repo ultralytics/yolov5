@@ -103,12 +103,6 @@ def run(
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
-    if interpretable_method:
-        model = torch.hub.load('.', 'custom', weights, source='local',autoshape=False)
-        model.requires_grad_(True)
-        for p in model.parameters():
-            p.requires_grad = True  
-
     # Dataloader
     bs = 1  # batch_size
     if webcam:
@@ -124,6 +118,13 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+
+    if interpretable_method:
+        model = torch.hub.load('.', 'custom', weights, source='local',autoshape=False)
+        model.requires_grad_(True)
+        for p in model.parameters():
+            p.requires_grad = True  
+            
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
