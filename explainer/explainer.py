@@ -73,6 +73,7 @@ class YOLOBoxScoreTarget():
             mask[:, class_idx] = True
 
         classes = classes[mask]
+        breakpoint()
         objectness = objectness[objectness>self.objectness_threshold]
         score = objectness[:, None] * classes
         return score.sum()
