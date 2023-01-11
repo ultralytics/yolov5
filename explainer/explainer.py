@@ -58,7 +58,7 @@ class YOLOBoxScoreTarget():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self, threshold,classes):
+    def __init__(self,classes):
         self.classes = classes
 
     def __call__(self, output):
