@@ -37,7 +37,7 @@ def yolo_reshape_transform(x):
     resizes them to a common shape, and concatenates them
     https://jacobgil.github.io/pytorch-gradcam-book/Class%20Activation%20Maps%20for%20Object%20Detection%20With%20Faster%20RCNN.html
     """
-    #breakpoint()
+    breakpoint()
     return x
     target_size = x['pool'].size()[-2:]
     activations = []
@@ -59,7 +59,6 @@ class YOLOBoxScoreTarget():
     """
 
     def __init__(self, threshold,classes):
-        self.threshold = threshold
         self.classes = classes
 
     def __call__(self, output):
@@ -109,7 +108,7 @@ def extract_gradCAM(model, raw_image_fp,layer):
     target_layers =[model.model.model[layer]]
     # target_layers= [model.model.model.model[layer]]
     #targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
-    targets = [YOLOBoxScoreTarget(threshold=0.5, classes=[27])]
+    targets = [YOLOBoxScoreTarget(classes=[27])]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
 
     transform = transforms.ToTensor()
