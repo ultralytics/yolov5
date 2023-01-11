@@ -54,7 +54,7 @@ class YOLOBoxScoreTarget():
     """
 
     def __init__(self,classes,objectness_threshold):
-        self.classes = classes
+        self.classes = set(classes)
         self.objectness_threshold = objectness_threshold
 
     def __call__(self, output):
