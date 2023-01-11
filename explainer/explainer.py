@@ -74,7 +74,7 @@ class YOLOBoxScoreTarget():
                 #cls_index = 0
                 score = classes[0]
                 output = output + score
-        return output
+        return output.sum()
         
 
         score = 0
