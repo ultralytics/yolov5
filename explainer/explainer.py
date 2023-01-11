@@ -118,7 +118,7 @@ def extract_gradCAM(model, image,layer):
     target_layers =[model.model.model[layer]]
     # target_layers= [model.model.model.model[layer]]
     #targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
-    targets = [YOLOBoxScoreTarget(classes=[27])]
+    targets = [YOLOBoxScoreTarget(classes=[27], objectness_threshold=0.4)]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
 
     transform = transforms.ToTensor()
