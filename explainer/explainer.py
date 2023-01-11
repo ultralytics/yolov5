@@ -57,10 +57,9 @@ class YOLOBoxScoreTarget():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self, labels, bounding_boxes, iou_threshold=0.5):
-        self.labels = labels  # true_labels
-        self.bounding_boxes = bounding_boxes  # true_bbox
-        self.iou_threshold = iou_threshold
+    def __init__(self, threshold,classes):
+        self.threshold = threshold
+        self.classes = classes
 
     def __call__(self, output):
         """
@@ -69,39 +68,12 @@ class YOLOBoxScoreTarget():
         result = torch.Tensor([0])
         for i,data in enumerate(output[0]):
             objectness, xc, yc, width, height, *classes = data
-            score = 0
-            if objectness > 0.2 and classes[0] > 0.2:
-                #cls_index = 0
-                score = classes[0]
-                output = output + score
+            for class_idx, prob in enumerate(classes):
+                if objectness > self.threshold and prob > self.threshold:
+                    score = prob
+                    output = output + score
         return output.sum()
         
-
-        score = 0
-        for class_idx in set(self.labels):
-            score += output[...,class_idx].sum()
-        return score
-
-        output = torch.Tensor([0])
-        if torch.cuda.is_available():
-            output = output.cuda()
-
-        if len(predictions) == 0:
-            return output
-
-        breakpoint()
-        for box, label in zip(self.bounding_boxes, self.labels):
-            box = torch.Tensor(box[None, :])
-            if torch.cuda.is_available():
-                box = box.cuda()
-
-            bbox_pred = predictions[['xmin', 'ymin', 'xmax', 'ymax']].to_numpy()
-            ious = torchvision.ops.box_iou(box, torch.tensor(bbox_pred))
-            index = ious.argmax()
-            if ious[0, index] > self.iou_threshold and predictions["class"][index] == label:
-                score = ious[0, index] + predictions["confidence"][index]
-                output = output + score
-        return output
 
 
 def extract_eigenCAM(model, raw_image_fp, layer= -2):
@@ -133,7 +105,8 @@ def extract_gradCAM(model, raw_image_fp,layer):
     #target_layers = [model.model[-1].m[0]]
     target_layers =[model.model.model[layer]]
     # target_layers= [model.model.model.model[layer]]
-    targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
+    #targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
+    targets = [YOLOBoxScoreTarget(threshold=0.5, classes=[27])]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
 
     transform = transforms.ToTensor()
