@@ -154,7 +154,7 @@ def run(
             save_path = str(save_dir / p.name)  # im.jpg
             if interpretable_method:
                 cv2.imwrite(save_path.replace('.jpg',f'-{interpretable_method}.jpg'), im0)
-                
+
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
@@ -255,6 +255,10 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
+    parser.add_argument('--interpretable-method', type=str, default='', help='gradcam or eigencam')
+    parser.add_argument('-layer', type=int, default=-2, help='layer to use for interpretability')
+    parser.add_argument('--objectness-thres', type=float, default=0.1, help='objectness threshold used in interpretability')
+
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
