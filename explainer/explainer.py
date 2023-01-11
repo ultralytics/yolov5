@@ -28,6 +28,10 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from utils.general import print_args
 from utils.torch_utils import select_device
 
+from models.common import DetectMultiBackend
+from utils.dataloaders import LoadImages
+from utils.general import check_img_size
+
 def yolo_reshape_transform(x):
     """
     The backbone outputs different tensors with different spatial sizes, from the FPN.
@@ -94,19 +98,10 @@ def extract_eigenCAM(model, raw_image_fp, layer= -2):
 
 
 def extract_gradCAM(model, image,layer,classes, objectness_thres):
-    true_boxes = np.array([
-        [360,20, 570,380 ],
-        [60,100,400,380],
-        [200,234,249,382],
-    ])
-
-    true_labels = [0,0,27]
-    # no need to send true ones! Just send the predicted ones. 
-
+    
     #target_layers = [model.model[-1].m[0]]
     target_layers =[model.model.model[layer]]
     # target_layers= [model.model.model.model[layer]]
-    #targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
 
@@ -133,19 +128,24 @@ def run(
         layer=-2 ,
         classes= None, # list of class_idx to use for CAM methods
         objectness_thres=0.1, # threshold for objectness
+        dnn=False,  # use OpenCV DNN for ONNX inference
+        half=False,  # use FP16 half-precision inference
         verbose=False,  # verbose output
 ):
-
+    
     device = select_device(device)
-    model = torch.hub.load(
-        'ultralytics/yolov5',
-        'yolov5s',
-        autoshape=False #because otherwise I have to resize the image, I just don't know for now
-    )
-    # when autoshape is false, we need model.model.model instead of model.model.model.model
-    #model = attempt_load('yolov5s.pt')
+    # model = torch.hub.load(
+    #     'ultralytics/yolov5',
+    #     'yolov5s',
+    #     autoshape=False #because otherwise I have to resize the image, I just don't know for now
+    # )
+    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    stride, names, pt = model.stride, model.names, model.pt
+    imgsz = check_img_size(imgsz, s=stride)  # check image size
+
     model.requires_grad_(True)
     # model.eval() # not sure about this! 
+    dataset =LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
     image_file = Image.open(source, 'r')
     raw_image = Image.Image.resize(image_file, (640, 384))
