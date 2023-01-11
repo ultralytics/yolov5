@@ -105,6 +105,8 @@ def run(
 
     if interpretable_method:
         model.requires_grad_(True)
+        for p in model.parameters():
+            p.requires_grad = True  # for training
 
     # Dataloader
     bs = 1  # batch_size
