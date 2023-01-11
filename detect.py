@@ -78,7 +78,11 @@ def run(
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
-        vid_stride=1,  # video frame-rate stride
+        vid_stride=1,  # video frame-rate stride,
+        ### interpretability ###
+        interpretable_method='EigenCAM', # the method for interpreting the results
+        layer=-2 , # layer to use for interpretability
+        objectness_thres=0.1, # threshold for objectness
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -126,6 +130,9 @@ def run(
         with dt[1]:
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
             pred = model(im, augment=augment, visualize=visualize)
+            if interpretable_method:
+                from explainer.explainer import explain
+                cam_image=explain(interpretable_method, model, im,layer, classes,objectness_thres)
 
         # NMS
         with dt[2]:
@@ -145,6 +152,9 @@ def run(
 
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
+            if interpretable_method:
+                cv2.imwrite(save_path.replace('.jpg',f'-{interpretable_method}.jpg'), im0)
+                
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh

@@ -25,11 +25,11 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from utils.general import print_args
+from utils.general import print_args,check_file
 from utils.torch_utils import select_device
 
 from models.common import DetectMultiBackend
-from utils.dataloaders import LoadImages
+from utils.dataloaders import LoadImages,IMG_FORMATS, VID_FORMATS
 from utils.general import check_img_size
 
 def yolo_reshape_transform(x):
@@ -117,6 +117,16 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres):
     #cam_image = Image.fromarray(image_with_bounding_boxes)
     return cam_image
 
+def explain(method, model,image,layer,classes, objectness_thres):
+    cam_image = None
+    if method.tolower()=='gradcam':
+        cam_image=extract_gradCAM(model,image,layer,classes,objectness_thres)
+    elif method.tolower()=='eigencam':
+        cam_image= extract_eigenCAM(model,image,layer)
+    else:
+        raise NotImplementedError('The method that you requested has not yet been implemented')
+
+    return cam_image
 
 def run(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
@@ -128,22 +138,27 @@ def run(
         objectness_thres=0.1, # threshold for objectness
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        nosave=False,  # do not save images/videos
         dnn=False,  # use OpenCV DNN for ONNX inference
         half=False,  # use FP16 half-precision inference
         verbose=False,  # verbose output
         vid_stride=1,  # video frame-rate stride
 ):
-    
+    # copied from detect.py
+    source = str(source)
+    save_img = not nosave and not source.endswith('.txt')  # save inference images
+    is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
+    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
+    webcam = source.isnumeric() or source.endswith('.streams') or (is_url and not is_file)
+    screenshot = source.lower().startswith('screen')
+    if is_url and is_file:
+        source = check_file(source)  # download
+    # copied from detect.py
+
     device = select_device(device)
-    # model = torch.hub.load(
-    #     'ultralytics/yolov5',
-    #     'yolov5s',
-    #     autoshape=False #because otherwise I have to resize the image, I just don't know for now
-    # )
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-
     model.requires_grad_(True)
     # model.eval() # not sure about this! 
     dataset =LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
