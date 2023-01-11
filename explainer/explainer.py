@@ -71,7 +71,7 @@ class YOLOBoxScoreTarget():
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
             mask[:, class_idx] = True
-
+        breakpoint()
         mask = mask & (objectness>self.objectness_threshold)
         score = objectness[mask] + classes[mask]
         return score.sum()
