@@ -106,7 +106,7 @@ def extract_eigenCAM(model, raw_image_fp, layer= -2):
     return cam_image
 
 
-def extract_gradCAM(model, image,layer):
+def extract_gradCAM(model, image,layer,classes, objectness_thres):
     true_boxes = np.array([
         [360,20, 570,380 ],
         [60,100,400,380],
@@ -120,7 +120,7 @@ def extract_gradCAM(model, image,layer):
     target_layers =[model.model.model[layer]]
     # target_layers= [model.model.model.model[layer]]
     #targets = [YOLOBoxScoreTarget(labels=true_labels, bounding_boxes=true_boxes)]
-    targets = [YOLOBoxScoreTarget(classes=[27], objectness_threshold=0.4)]
+    targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
 
     transform = transforms.ToTensor()
@@ -141,10 +141,11 @@ def run(
         source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
-        iou_thres=0.45,  # NMS IOU threshold
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         method='EigenCAM',  # the method for interpreting the results
         layer=-2 ,
+        classes= None, # list of class_idx to use for CAM methods
+        objectness_thres=0.5, # threshold for objectness
         verbose=False,  # verbose output
 ):
     model = torch.hub.load(
@@ -181,7 +182,8 @@ def run(
     if method.lower() == 'eigencam':
         cam_image = extract_eigenCAM(model= model,image= raw_image_fp,layer=layer)
     elif method.lower() == 'gradcam':
-        cam_image = extract_gradCAM(model=model,image= raw_image_fp,layer=layer)
+        cam_image = extract_gradCAM(model=model,image= raw_image_fp,layer=layer, 
+                                classes=classes, objectness_thres=objectness_thres)
 
     # Image.Image.show(Image.fromarray(cam_image))
     return Image.fromarray(cam_image)
