@@ -36,15 +36,10 @@ def yolo_reshape_transform(x):
     To do that, we’re going to need to write a custom function that takes these tensors with different sizes,
     resizes them to a common shape, and concatenates them
     https://jacobgil.github.io/pytorch-gradcam-book/Class%20Activation%20Maps%20for%20Object%20Detection%20With%20Faster%20RCNN.html
+
+    it seems that output is always the same shape in yolo. So, this is not needed.
     """
-    breakpoint()
     return x
-    target_size = x['pool'].size()[-2:]
-    activations = []
-    for key, value in x.items():
-        activations.append(torch.nn.functional.interpolate(torch.abs(value), target_size, mode='bilinear'))
-    activations = torch.cat(activations, axis=1)
-    return activations
 
 
 class YOLOBoxScoreTarget():
