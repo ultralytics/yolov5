@@ -66,8 +66,17 @@ class YOLOBoxScoreTarget():
         """
         here we need something which we can call backward
         """
-        breakpoint()
-        return output[...,0].sum()
+        result = torch.Tensor([0])
+        for i,data in enumerate(output[0]):
+            objectness, xc, yc, width, height, *classes = data
+            score = 0
+            if objectness > self.iou_threshold:
+                #cls_index = 0
+                score = classes[0]
+                output = output + score
+        return output
+        
+
         score = 0
         for class_idx in set(self.labels):
             score += output[...,class_idx].sum()
