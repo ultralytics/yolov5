@@ -351,6 +351,7 @@ class GenericLogger:
         
         if clearml and 'clearml' in self.include:
             try:
+                # Hyp is not available in classification mode
                 if 'hyp' not in opt:
                     hyp = {}
                 else:

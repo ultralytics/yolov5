@@ -90,7 +90,7 @@ class ClearmlLogger:
         if self.clearml:
             self.task = Task.init(
                 project_name=opt.project if not str(opt.project).startswith('runs/') else 'YOLOv5',
-                task_name=opt.name if opt.name != 'exp' else "Training",
+                task_name=opt.name if opt.name != 'exp' else 'Training',
                 tags=['YOLOv5'],
                 output_uri=True,
                 reuse_last_task_id=opt.exist_ok,
