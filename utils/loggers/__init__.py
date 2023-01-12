@@ -300,11 +300,8 @@ class Loggers():
         if self.clearml and not self.opt.evolve:
             self.clearml.log_summary(dict(zip(self.keys[3:10], results)))
             [self.clearml.log_plot(title=f.stem, plot_path=f) for f in files]
-            self.clearml.log_model(
-                str(best if best.exists() else last),
-                "Best Model" if best.exists() else "Last Model",
-                epoch
-            )
+            self.clearml.log_model(str(best if best.exists() else last),
+                                   "Best Model" if best.exists() else "Last Model", epoch)
 
         if self.comet_logger:
             final_results = dict(zip(self.keys[3:10], results))
@@ -348,14 +345,14 @@ class GenericLogger:
                                     config=opt)
         else:
             self.wandb = None
-        
+
         if clearml and 'clearml' in self.include:
             try:
                 # Hyp is not available in classification mode
                 if 'hyp' not in opt:
                     hyp = {}
                 else:
-                    hyp = opt.hyp                    
+                    hyp = opt.hyp
                 self.clearml = ClearmlLogger(opt, hyp)
             except Exception:
                 self.clearml = None
@@ -364,7 +361,6 @@ class GenericLogger:
                                f' See https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml#readme')
         else:
             self.clearml = None
-            
 
     def log_metrics(self, metrics, epoch):
         # Log metrics dictionary to all loggers
@@ -381,10 +377,9 @@ class GenericLogger:
 
         if self.wandb:
             self.wandb.log(metrics, step=epoch)
-        
+
         if self.clearml:
             self.clearml.log_scalars(metrics, epoch)
-
 
     def log_images(self, files, name='Images', epoch=0):
         # Log images to all loggers
@@ -397,7 +392,7 @@ class GenericLogger:
 
         if self.wandb:
             self.wandb.log({name: [wandb.Image(str(f), caption=f.name) for f in files]}, step=epoch)
-        
+
         if self.clearml:
             if name == 'Results':
                 [self.clearml.log_plot(f.stem, f) for f in files]

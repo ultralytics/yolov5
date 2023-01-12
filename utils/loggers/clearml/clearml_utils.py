@@ -3,8 +3,8 @@ import glob
 import re
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
@@ -94,7 +94,9 @@ class ClearmlLogger:
                 tags=['YOLOv5'],
                 output_uri=True,
                 reuse_last_task_id=opt.exist_ok,
-                auto_connect_frameworks={'pytorch': False, 'matplotlib': False}
+                auto_connect_frameworks={
+                    'pytorch': False,
+                    'matplotlib': False}
                 # We disconnect pytorch auto-detection, because we added manual model save points in the code
             )
             # ClearML's hooks will already grab all general parameters
@@ -116,11 +118,11 @@ class ClearmlLogger:
                 # Set data to data_dict because wandb will crash without this information and opt is the best way
                 # to give it to them
                 opt.data = self.data_dict
-    
+
     def log_scalars(self, metrics, epoch):
         """
         Log scalars/metrics to ClearML
-        
+
         arguments:
         metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
         epoch (int) iteration number for the current set of metrics
@@ -128,47 +130,44 @@ class ClearmlLogger:
         for k, v in metrics.items():
             title, series = k.split('/')
             self.task.get_logger().report_scalar(title, series, v, epoch)
-    
+
     def log_model(self, model_path, model_name, epoch=0):
         """
         Log model weights to ClearML
-        
+
         arguments:
         model_path (PosixPath or str) Path to the model weights
         model_name (str) Name of the model visible in ClearML
         epoch (int) Iteration / epoch of the model weights
         """
-        self.task.update_output_model(
-            model_path=str(model_path),
-            name=model_name,
-            iteration=epoch,
-            auto_delete_file=False
-        )
-    
+        self.task.update_output_model(model_path=str(model_path),
+                                      name=model_name,
+                                      iteration=epoch,
+                                      auto_delete_file=False)
+
     def log_summary(self, metrics):
         """
         Log final metrics to a summary table
-        
+
         arguments:
         metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
         """
         for k, v in metrics.items():
             self.task.get_logger().report_single_value(k, v)
-    
+
     def log_plot(self, title, plot_path):
         """
         Log image as plot in the plot section of ClearML
-        
+
         arguments:
         title (str) Title of the plot
         plot_path (PosixPath or str) Path to the saved image file
         """
         img = mpimg.imread(plot_path)
         fig = plt.figure()
-        ax = fig.add_axes([0, 0, 1, 1], frameon=False, aspect='auto',
-                          xticks=[], yticks=[])  # no ticks
+        ax = fig.add_axes([0, 0, 1, 1], frameon=False, aspect='auto', xticks=[], yticks=[])  # no ticks
         ax.imshow(img)
-        
+
         self.task.get_logger().report_matplotlib_figure(title, "", figure=fig, report_interactive=False)
 
     def log_debug_samples(self, files, title='Debug Samples'):
