@@ -107,32 +107,30 @@ class Segment(Detect):
 
 
 class Keypoint(Detect):
+
     def __init__(self, nc=80, anchors=(), nkpt=None, ch=(), inplace=True, dw_conv_kpt=False):
         super().__init__(nc, anchors, ch, inplace)
-        self.nkpt = nkpt # number of keypoints
+        self.nkpt = nkpt  # number of keypoints
         self.dw_conv_kpt = dw_conv_kpt
-        self.no_kpt = 3 * self.nkpt # number of outputs per anchor for keypoints
+        self.no_kpt = 3 * self.nkpt  # number of outputs per anchor for keypoints
         self.no_det = nc + 5  # number of outputs per anchor for box and class
-        self.no = self.no_det + self.no_kpt # number of outputs per anchor
+        self.no = self.no_det + self.no_kpt  # number of outputs per anchor
         self.m = nn.ModuleList(nn.Conv2d(x, self.no_det * self.na, 1) for x in ch)  # output conv
         self.detect = Detect.forward
 
         if self.nkpt is not None:
-            if self.dw_conv_kpt: #keypoint head is slightly more complex
+            if self.dw_conv_kpt:  #keypoint head is slightly more complex
                 self.m_kpt = nn.ModuleList(
-                            nn.Sequential(DWConv(x, x, k=3), Conv(x,x),
-                                          DWConv(x, x, k=3), Conv(x, x),
-                                          DWConv(x, x, k=3), Conv(x,x),
-                                          DWConv(x, x, k=3), Conv(x, x),
-                                          DWConv(x, x, k=3), Conv(x, x),
-                                          DWConv(x, x, k=3), nn.Conv2d(x, self.no_kpt * self.na, 1)) for x in ch)
-            else: #keypoint head is a single convolution
+                    nn.Sequential(DWConv(x, x, k=3), Conv(x, x), DWConv(x, x, k=3), Conv(x, x), DWConv(x, x, k=3),
+                                  Conv(x, x), DWConv(x, x, k=3), Conv(x, x), DWConv(x, x, k=3), Conv(x, x),
+                                  DWConv(x, x, k=3), nn.Conv2d(x, self.no_kpt * self.na, 1)) for x in ch)
+            else:  #keypoint head is a single convolution
                 self.m_kpt = nn.ModuleList(nn.Conv2d(x, self.no_kpt * self.na, 1) for x in ch)
-    
+
     def forward(self, x):
         z = []  # inference output
         for i in range(self.nl):
-            x[i] = torch.cat((self.m[i](x[i]), self.m_kpt[i](x[i])), axis=1)        
+            x[i] = torch.cat((self.m[i](x[i]), self.m_kpt[i](x[i])), axis=1)
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
             x_det = x[i][..., :6]
@@ -146,18 +144,19 @@ class Keypoint(Detect):
                 kpt_grid_y = self.grid[i][..., 1:2]
 
                 y = x_det.sigmoid()
-                
+
                 xy = (y[..., 0:2] * 2 + self.grid[i]) * self.stride[i]  # xy
-                wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i] # wh
+                wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                 if self.nkpt != 0:
-                    x_kpt[..., 0::3] = (x_kpt[..., ::3] * 2. + kpt_grid_x.repeat(1,1,1,1,17)) * self.stride[i]  # xy
-                    x_kpt[..., 1::3] = (x_kpt[..., 1::3] * 2. + kpt_grid_y.repeat(1,1,1,1,17)) * self.stride[i]  # xy
+                    x_kpt[..., 0::3] = (x_kpt[..., ::3] * 2. + kpt_grid_x.repeat(1, 1, 1, 1, 17)) * self.stride[i]  # xy
+                    x_kpt[...,
+                          1::3] = (x_kpt[..., 1::3] * 2. + kpt_grid_y.repeat(1, 1, 1, 1, 17)) * self.stride[i]  # xy
                     x_kpt[..., 2::3] = x_kpt[..., 2::3].sigmoid()
                 y = torch.cat((xy, wh, y[..., 4:], x_kpt), -1)
                 z.append(y.view(bs, -1, self.no))
 
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
-        
+
 
 class BaseModel(nn.Module):
     # YOLOv5 base model
@@ -348,7 +347,9 @@ class ClassificationModel(BaseModel):
         # Create a YOLOv5 classification model from a *.yaml file
         self.model = None
 
+
 class KeypointModel(DetectionModel):
+
     def __init__(self, cfg='yolov5s-kpt.yaml', ch=3, nc=None, anchors=None):
         super().__init__(cfg, ch, nc, anchors)
 
@@ -356,7 +357,8 @@ class KeypointModel(DetectionModel):
 def parse_model(d, ch):  # model_dict, input_channels(3)
     # Parse a YOLOv5 model.yaml dictionary
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    anchors, nc, gd, gw, act, nkpt = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('activation'), d.get('nkpt')
+    anchors, nc, gd, gw, act, nkpt = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get(
+        'activation'), d.get('nkpt')
     if act:
         Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
         LOGGER.info(f"{colorstr('activation:')} {act}")  # print
@@ -386,9 +388,11 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             if m in {BottleneckCSP, C3, C3TR, C3Ghost, C3x}:
                 args.insert(2, n)  # number of repeats
                 n = 1
-            if m in [Conv, GhostConv, Bottleneck, GhostBottleneck, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP, C3, C3TR]:
+            if m in [
+                    Conv, GhostConv, Bottleneck, GhostBottleneck, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP,
+                    C3, C3TR]:
                 if 'act' in d.keys():
-                    args_dict = {"act" : d['act']}
+                    args_dict = {"act": d['act']}
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
@@ -401,7 +405,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             if m is Segment:
                 args[3] = make_divisible(args[3] * gw, 8)
             if m is Keypoint:
-                args_dict = {"dw_conv_kpt" : d['dw_conv_kpt']}
+                args_dict = {"dw_conv_kpt": d['dw_conv_kpt']}
         elif m is Contract:
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
