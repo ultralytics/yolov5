@@ -79,14 +79,16 @@ class ClearmlLogger:
         # Maximum number of images to log to clearML per epoch
         self.max_imgs_to_log_per_epoch = 16
         # Get the interval of epochs when bounding box images should be logged
-        self.bbox_interval = opt.bbox_interval
+        # Only for detection task though!
+        if 'bbox_interval' in opt:
+            self.bbox_interval = opt.bbox_interval
         self.clearml = clearml
         self.task = None
         self.data_dict = None
         if self.clearml:
             self.task = Task.init(
-                project_name=opt.project if opt.project != 'runs/train' else 'YOLOv5',
-                task_name=opt.name if opt.name != 'exp' else 'Training',
+                project_name=opt.project if not str(opt.project).startswith('runs/') else 'YOLOv5',
+                task_name=opt.name if opt.name != 'exp' else "Training",
                 tags=['YOLOv5'],
                 output_uri=True,
                 reuse_last_task_id=opt.exist_ok,
@@ -112,6 +114,44 @@ class ClearmlLogger:
                 # Set data to data_dict because wandb will crash without this information and opt is the best way
                 # to give it to them
                 opt.data = self.data_dict
+    
+    def log_scalars(self, metrics, epoch):
+        """
+        Log scalars/metrics to ClearML
+        
+        arguments:
+        metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
+        epoch (int) iteration number for the current set of metrics
+        """
+        for k, v in metrics.items():
+            title, series = k.split('/')
+            self.task.get_logger().report_scalar(title, series, v, epoch)
+    
+    def log_model(self, model_path, model_name, epoch=0):
+        """
+        Log model weights to ClearML
+        
+        arguments:
+        model_path (PosixPath or str) Path to the model weights
+        model_name (str) Name of the model visible in ClearML
+        epoch (int) Iteration / epoch of the model weights
+        """
+        self.task.update_output_model(
+            model_path=str(model_path),
+            name=model_name,
+            iteration=epoch,
+            auto_delete_file=False
+        )
+    
+    def log_summary(self, metrics):
+        """
+        Log final metrics to a summary table
+        
+        arguments:
+        metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
+        """
+        for k, v in metrics.items():
+            self.task.get_logger().report_single_value(k, v)
 
     def log_debug_samples(self, files, title='Debug Samples'):
         """
@@ -126,7 +166,7 @@ class ClearmlLogger:
                 it = re.search(r'_batch(\d+)', f.name)
                 iteration = int(it.groups()[0]) if it else 0
                 self.task.get_logger().report_image(title=title,
-                                                    series=f.name.replace(it.group(), ''),
+                                                    series=f.name.replace(f"_batch{iteration}", ''),
                                                     local_path=str(f),
                                                     iteration=iteration)
 
