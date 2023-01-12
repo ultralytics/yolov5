@@ -1,4 +1,4 @@
-# YOLOv5 🚀 requirements
+# YOLOv5 requirements
 # Usage: pip install -r requirements.txt
 
 # Base ------------------------------------------------------------------------
@@ -44,6 +44,6 @@ seaborn>=0.11.0
 # Extras ----------------------------------------------------------------------
 # mss  # screenshots
 # albumentations>=1.0.3
-# pycocotools>=2.0  # COCO mAP
+# pycocotools>=2.0.6  # COCO mAP
 # roboflow
 # ultralytics  # HUB https://hub.ultralytics.com
