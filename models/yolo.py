@@ -87,7 +87,7 @@ class Detect(nn.Module):
         y = torch.arange(ny, device=d, dtype=t)
         x = torch.arange(nx, device=d, dtype=t)
         yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)  # torch>=0.7 compatibility
-        grid = torch.stack((xv, yv), 2).expand(shape) - 0.5 # add grid offset, i.e. y = 2.0 * x - 0.5
+        grid = torch.stack((xv, yv), 2).expand(shape) - 0.5  # add grid offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape)
         return grid, anchor_grid
 
@@ -110,6 +110,7 @@ class Segment(Detect):
 
 
 class Keypoint(Detect):
+
     def __init__(self, nc=80, anchors=(), nkpt=None, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
         self.nkpt = nkpt  # number of keypoints
@@ -143,16 +144,17 @@ class Keypoint(Detect):
                 xy = (y[..., 0:2] * 2 + self.grid[i]) * self.stride[i]  # xy
                 wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                 if self.nkpt != 0:
-                    x_kpt[..., 0::3] = (x_kpt[..., ::3] * 2.
-                                        + kpt_grid_x.repeat(1, 1, 1, 1, self.nkpt)) * self.stride[i]  # xy
-                    x_kpt[..., 1::3] = (x_kpt[..., 1::3] * 2.
-                                        + kpt_grid_y.repeat(1, 1, 1, 1, self.nkpt)) * self.stride[i]  # xy
+                    x_kpt[..., 0::3] = (x_kpt[..., ::3] * 2. +
+                                        kpt_grid_x.repeat(1, 1, 1, 1, self.nkpt)) * self.stride[i]  # xy
+                    x_kpt[..., 1::3] = (x_kpt[..., 1::3] * 2. +
+                                        kpt_grid_y.repeat(1, 1, 1, 1, self.nkpt)) * self.stride[i]  # xy
 
                     x_kpt[..., 2::3] = x_kpt[..., 2::3].sigmoid()  # visibility confidence
                 y = torch.cat((xy, wh, y[..., 4:], x_kpt), -1)
                 output.append(y.view(bs, -1, self.no))
 
-        return head_features if self.training else (torch.cat(output, 1),) if self.export else (torch.cat(output, 1), head_features)
+        return head_features if self.training else (torch.cat(output, 1),) if self.export else (torch.cat(output, 1),
+                                                                                                head_features)
 
 
 class BaseModel(nn.Module):
@@ -213,7 +215,12 @@ class BaseModel(nn.Module):
 
 class DetectionModel(BaseModel):
     # YOLOv5 detection model
-    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, nkpt=None, anchors=None):  # model, input channels, number of classes
+    def __init__(self,
+                 cfg='yolov5s.yaml',
+                 ch=3,
+                 nc=None,
+                 nkpt=None,
+                 anchors=None):  # model, input channels, number of classes
         super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -349,6 +356,7 @@ class ClassificationModel(BaseModel):
 
 
 class KeypointModel(DetectionModel):
+
     def __init__(self, cfg='yolov5s-kpt.yaml', ch=3, nc=None, nkpt=None, anchors=None):
         super().__init__(cfg, ch, nc, nkpt, anchors)
 
@@ -356,7 +364,8 @@ class KeypointModel(DetectionModel):
 def parse_model(d, ch):  # model_dict, input_channels(3)
     # Parse a YOLOv5 model.yaml dictionary
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    anchors, nc, gd, gw, act, nkpt = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('activation'), d.get('nkpt')
+    anchors, nc, gd, gw, act, nkpt = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get(
+        'activation'), d.get('nkpt')
     if act:
         Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
         LOGGER.info(f"{colorstr('activation:')} {act}")  # print
@@ -375,8 +384,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                 args[j] = eval(a) if isinstance(a, str) else a  # eval strings
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in {Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
-                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x}:
+        if m in {
+                Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
+                BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x}:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
@@ -385,8 +395,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             if m in {BottleneckCSP, C3, C3TR, C3Ghost, C3x}:
                 args.insert(2, n)  # number of repeats
                 n = 1
-            if m in [Conv, GhostConv, Bottleneck, GhostBottleneck, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP,
-                     C3, C3TR]:
+            if m in [
+                    Conv, GhostConv, Bottleneck, GhostBottleneck, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP,
+                    C3, C3TR]:
                 if 'act' in d.keys():
                     args_dict = {"act": d['act']}
         elif m is nn.BatchNorm2d:
