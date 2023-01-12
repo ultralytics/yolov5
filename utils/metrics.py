@@ -59,9 +59,9 @@ def obj_kpt_sim_matrix(labels, preds, n_kpt):
     visibilitys = (labels[:, 6::2] != 0).to(torch.float32)
     preds = preds[:, 6:].reshape((preds.shape[0], n_kpt, 3))[:, :, :2]
     labels = labels[:, 6:].reshape((labels.shape[0], n_kpt, 2))
-    for i, (label, pred, visibility, scale) in enumerate(zip(labels, preds, visibilitys, scales)):
+    for i in range(labels.shape[0]):
         for j in range(preds.shape[0]):
-            matrix[i, j] = obj_kpt_sim(label, pred, visibility, scale)
+            matrix[i, j] = obj_kpt_sim(labels[i], preds[j], visibilitys[i], scales[i])
     return matrix
 
 

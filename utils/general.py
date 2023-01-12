@@ -750,30 +750,30 @@ def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
 def xyxy2xywh(x):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = (x[..., 0] + x[..., 2]) / 2  # x center
-    y[..., 1] = (x[..., 1] + x[..., 3]) / 2  # y center
-    y[..., 2] = x[..., 2] - x[..., 0]  # width
-    y[..., 3] = x[..., 3] - x[..., 1]  # height
+    y[:, 0] = (x[:, 0] + x[:, 2]) / 2  # x center
+    y[:, 1] = (x[:, 1] + x[:, 3]) / 2  # y center
+    y[:, 2] = x[:, 2] - x[:, 0]  # width
+    y[:, 3] = x[:, 3] - x[:, 1]  # height
     return y
 
 
 def xywh2xyxy(x):
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = x[..., 0] - x[..., 2] / 2  # top left x
-    y[..., 1] = x[..., 1] - x[..., 3] / 2  # top left y
-    y[..., 2] = x[..., 0] + x[..., 2] / 2  # bottom right x
-    y[..., 3] = x[..., 1] + x[..., 3] / 2  # bottom right y
+    y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
+    y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
+    y[:, 2] = x[:, 0] + x[:, 2] / 2  # bottom right x
+    y[:, 3] = x[:, 1] + x[:, 3] / 2  # bottom right y
     return y
 
 
 def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0, n_kpt=0):
     # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
     xyxy_predict = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    xyxy_predict[..., 0] = w * (x[..., 0] - x[..., 2] / 2) + padw  # top left x
-    xyxy_predict[..., 1] = h * (x[..., 1] - x[..., 3] / 2) + padh  # top left y
-    xyxy_predict[..., 2] = w * (x[..., 0] + x[..., 2] / 2) + padw  # bottom right x
-    xyxy_predict[..., 3] = h * (x[..., 1] + x[..., 3] / 2) + padh  # bottom right y
+    xyxy_predict[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
+    xyxy_predict[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
+    xyxy_predict[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
+    xyxy_predict[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
     if n_kpt:
         for kpt_number in range(n_kpt):
             for kpt_inst in range(xyxy_predict.shape[0]):
@@ -792,18 +792,18 @@ def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
     if clip:
         clip_boxes(x, (h - eps, w - eps))  # warning: inplace clip
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = ((x[..., 0] + x[..., 2]) / 2) / w  # x center
-    y[..., 1] = ((x[..., 1] + x[..., 3]) / 2) / h  # y center
-    y[..., 2] = (x[..., 2] - x[..., 0]) / w  # width
-    y[..., 3] = (x[..., 3] - x[..., 1]) / h  # height
+    y[:, 0] = ((x[:, 0] + x[:, 2]) / 2) / w  # x center
+    y[:, 1] = ((x[:, 1] + x[:, 3]) / 2) / h  # y center
+    y[:, 2] = (x[:, 2] - x[:, 0]) / w  # width
+    y[:, 3] = (x[:, 3] - x[:, 1]) / h  # height
     return y
 
 
 def xyn2xy(x, w=640, h=640, padw=0, padh=0):
     # Convert normalized segments into pixel segments, shape (n,2)
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = w * x[..., 0] + padw  # top left x
-    y[..., 1] = h * x[..., 1] + padh  # top left y
+    y[:, 0] = w * x[:, 0] + padw  # top left x
+    y[:, 1] = h * x[:, 1] + padh  # top left y
     return y
 
 
@@ -845,15 +845,15 @@ def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None, n_kpt=0, step=2):
 
     # Rescale point coordinates (xyo...xyo, step=3, for keypoint inference) or (xy...xy, step=2) from img1_shape to img0_shape
     if n_kpt:
-        boxes[..., 0::step] -= pad[0]  # x padding
-        boxes[..., 1::step] -= pad[1]  # y padding
-        boxes[..., 0::step] /= gain
-        boxes[..., 1::step] /= gain
+        boxes[:, 0::step] -= pad[0]  # x padding
+        boxes[:, 1::step] -= pad[1]  # y padding
+        boxes[:, 0::step] /= gain
+        boxes[:, 1::step] /= gain
         clip_boxes(boxes, img0_shape, step=step)
     else:
-        boxes[..., [0, 2]] -= pad[0]  # x padding
-        boxes[..., [1, 3]] -= pad[1]  # y padding
-        boxes[..., :4] /= gain
+        boxes[:, [0, 2]] -= pad[0]  # x padding
+        boxes[:, [1, 3]] -= pad[1]  # y padding
+        boxes[:, :4] /= gain
         clip_boxes(boxes[0:4], img0_shape)
     return boxes
 
@@ -880,13 +880,13 @@ def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=F
 def clip_boxes(boxes, shape, step=2):
     # Clip boxes (xyxy) to image shape (height, width)
     if isinstance(boxes, torch.Tensor):  # faster individually
-        boxes[..., 0].clamp_(0, shape[1])  # x1
-        boxes[..., 1].clamp_(0, shape[0])  # y1
-        boxes[..., 2].clamp_(0, shape[1])  # x2
-        boxes[..., 3].clamp_(0, shape[0])  # y2
+        boxes[:, 0].clamp_(0, shape[1])  # x1
+        boxes[:, 1].clamp_(0, shape[0])  # y1
+        boxes[:, 2].clamp_(0, shape[1])  # x2
+        boxes[:, 3].clamp_(0, shape[0])  # y2
     else:  # np.array (faster grouped)
-        boxes[..., 0::step] = boxes[..., 0::step].clip(0, shape[1])  # x1, x2
-        boxes[..., 1::step] = boxes[..., 1::step].clip(0, shape[0])  # y1, y2
+        boxes[:, 0::step] = boxes[:, 0::step].clip(0, shape[1])  # x1, x2
+        boxes[:, 1::step] = boxes[:, 1::step].clip(0, shape[0])  # y1, y2
 
 
 def clip_segments(segments, shape):
@@ -966,7 +966,7 @@ def non_max_suppression(
             continue
 
         # Compute conf
-        x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
+        x[:, 5:mi] *= x[:, 4:5]  # conf = obj_conf * cls_conf
 
         # Box/Mask
         box = xywh2xyxy(x[:, :4])  # center_x, center_y, width, height) to (x1, y1, x2, y2)
@@ -1020,9 +1020,9 @@ def non_max_suppression(
         output[xi] = x[i]
         if mps:
             output[xi] = output[xi].to(device)
-        if (time.time() - t) > time_limit:
-            LOGGER.warning(f'WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded')
-            break  # time limit exceeded
+        # if (time.time() - t) > time_limit:
+        #     LOGGER.warning(f'WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded')
+        #     break  # time limit exceeded
 
     return output
 

@@ -248,7 +248,7 @@ class Loggers():
 
         if self.comet_logger:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
-
+    
     def on_val_end_kpt(self, nt, tp, fp, p, r, f1, ap, ap50, ap50_kpt, ap_kpt, ap_class, confusion_matrix, n_kpt):
         # Callback runs on val end
         if self.wandb or self.clearml:
