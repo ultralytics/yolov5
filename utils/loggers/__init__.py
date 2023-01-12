@@ -169,10 +169,11 @@ class Loggers():
             paths = self.save_dir.glob('*labels*.jpg')  # training labels
             if self.wandb:
                 self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
-            # if self.clearml:
-            #    pass  # ClearML saves these images automatically using hooks
             if self.comet_logger:
                 self.comet_logger.on_pretrain_routine_end(paths)
+            if self.clearml:
+                for path in paths:
+                    self.clearml.log_plot(title=path.stem, plot_path=path)
 
     def on_train_batch_end(self, model, ni, imgs, targets, paths, vals):
         log_dict = dict(zip(self.keys[0:3], vals))
@@ -298,7 +299,7 @@ class Loggers():
 
         if self.clearml and not self.opt.evolve:
             self.clearml.log_summary(dict(zip(self.keys[3:10], results)))
-            self.clearml.log_debug_samples(files, title="Results")
+            [self.clearml.log_plot(title=f.stem, plot_path=f) for f in files]
             self.clearml.log_model(
                 str(best if best.exists() else last),
                 "Best Model" if best.exists() else "Last Model",

@@ -3,6 +3,8 @@ import glob
 import re
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import numpy as np
 import yaml
 
@@ -92,7 +94,7 @@ class ClearmlLogger:
                 tags=['YOLOv5'],
                 output_uri=True,
                 reuse_last_task_id=opt.exist_ok,
-                auto_connect_frameworks={'pytorch': False}
+                auto_connect_frameworks={'pytorch': False, 'matplotlib': False}
                 # We disconnect pytorch auto-detection, because we added manual model save points in the code
             )
             # ClearML's hooks will already grab all general parameters
@@ -152,6 +154,22 @@ class ClearmlLogger:
         """
         for k, v in metrics.items():
             self.task.get_logger().report_single_value(k, v)
+    
+    def log_plot(self, title, plot_path):
+        """
+        Log image as plot in the plot section of ClearML
+        
+        arguments:
+        title (str) Title of the plot
+        plot_path (PosixPath or str) Path to the saved image file
+        """
+        img = mpimg.imread(plot_path)
+        fig = plt.figure()
+        ax = fig.add_axes([0, 0, 1, 1], frameon=False, aspect='auto',
+                          xticks=[], yticks=[])  # no ticks
+        ax.imshow(img)
+        
+        self.task.get_logger().report_matplotlib_figure(title, "", figure=fig, report_interactive=False)
 
     def log_debug_samples(self, files, title='Debug Samples'):
         """
