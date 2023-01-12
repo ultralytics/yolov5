@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel = "stylesheet" type= "text/css" href= "{{ url_for('static',filename='estilo.css') }}">
+      <title>Videostreaming</title>
+  </head>
+  <body class = "container">
+    <script src="{{ url_for('static',filename='funciones.js') }}"></script>
+    <table class = 'default'>
+        <table class = 'tabla'>
+              <tr id="aligcenter" > 
+                <h2> Selección de distancias </h2>
+                  <td>
+                    <form action = "/res" method = "POST">
+                            <table class = 'tabla'>
+                                  <tr>
+                                      <td id = "columnal"></td>
+                                      <td id = "columnas">Valor</td>
+                                      <td id = "columnam">Valor actual</td>
+                                      <td id = "columnaxl">Error</td>
+                                  </tr>
+                                  <tr>
+                                      <td id = "aligizq">Distancia minima</td>
+                                      <td><input class = "label" type="text" name = "min" placeholder="# m" required = 'required'></td>
+                                      <td id = "aligdcha"> {{tmin}} mm</td>
+                                      <td id = "aligdcha"> {{terror}}</td>
+                                  </tr>
+                                  <tr>
+                                      <td id = "aligizq">Distancia media</td>
+                                      <td><input class = "label" type="text" name = "med" placeholder="# m" required = 'required'></td>
+                                      <td id = "aligdcha"> {{tmed}} mm</td>
+                                      <td id = "aligdcha"> {{terror}}</td>
+                                  </tr>
+                                  <tr>
+                                      <td id = "aligizq">Distancia maxima</td>
+                                      <td><input class = "label" type="text" name = "max" placeholder="# m" required = 'required'></td>
+                                      <td id = "aligdcha"> {{tmax}} mm</td>
+                                      <td id = "aligdcha"> {{terror}}</td>
+                                  </tr>
+                                  <tr>
+                                      <td></td>
+                                      <td><button class = "button" type = "submit"> Enviar</button></td>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                            </table>
+                        </form>
+                  </td>
+              </tr>
+              
+        </table>
+      
+    </table>
+  </body>
+</html>
+
+
+
+
