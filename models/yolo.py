@@ -57,7 +57,9 @@ class Detect(nn.Module):
         z = []  # inference output
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
-            bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
+            bs, _, ny, nx = x[i].shape
+
+            # x(bs,255,20,20) to x(bs,3,20,20,85)
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
@@ -82,9 +84,10 @@ class Detect(nn.Module):
         d = self.anchors[i].device
         t = self.anchors[i].dtype
         shape = 1, self.na, ny, nx, 2  # grid shape
-        y, x = torch.arange(ny, device=d, dtype=t), torch.arange(nx, device=d, dtype=t)
+        y = torch.arange(ny, device=d, dtype=t)
+        x = torch.arange(nx, device=d, dtype=t)
         yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)  # torch>=0.7 compatibility
-        grid = torch.stack((xv, yv), 2).expand(shape) - 0.5  # add grid offset, i.e. y = 2.0 * x - 0.5
+        grid = torch.stack((xv, yv), 2).expand(shape) - 0.5 # add grid offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape)
         return grid, anchor_grid
 
@@ -107,11 +110,9 @@ class Segment(Detect):
 
 
 class Keypoint(Detect):
-
-    def __init__(self, nc=80, anchors=(), nkpt=None, ch=(), inplace=True, dw_conv_kpt=False):
+    def __init__(self, nc=80, anchors=(), nkpt=None, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
         self.nkpt = nkpt  # number of keypoints
-        self.dw_conv_kpt = dw_conv_kpt
         self.no_kpt = 3 * self.nkpt  # number of outputs per anchor for keypoints
         self.no_det = nc + 5  # number of outputs per anchor for box and class
         self.no = self.no_det + self.no_kpt  # number of outputs per anchor
@@ -119,25 +120,19 @@ class Keypoint(Detect):
         self.detect = Detect.forward
 
         if self.nkpt is not None:
-            if self.dw_conv_kpt:  #keypoint head is slightly more complex
-                self.m_kpt = nn.ModuleList(
-                    nn.Sequential(DWConv(x, x, k=3), Conv(x, x), DWConv(x, x, k=3), Conv(x, x), DWConv(x, x, k=3),
-                                  Conv(x, x), DWConv(x, x, k=3), Conv(x, x), DWConv(x, x, k=3), Conv(x, x),
-                                  DWConv(x, x, k=3), nn.Conv2d(x, self.no_kpt * self.na, 1)) for x in ch)
-            else:  #keypoint head is a single convolution
-                self.m_kpt = nn.ModuleList(nn.Conv2d(x, self.no_kpt * self.na, 1) for x in ch)
+            self.m_kpt = nn.ModuleList(nn.Conv2d(x, self.no_kpt * self.na, 1) for x in ch)
 
-    def forward(self, x):
-        z = []  # inference output
+    def forward(self, head_features):
+        output = []  # inference output
         for i in range(self.nl):
-            x[i] = torch.cat((self.m[i](x[i]), self.m_kpt[i](x[i])), axis=1)
-            bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
-            x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
-            x_det = x[i][..., :6]
-            x_kpt = x[i][..., 6:]
+            head_features[i] = torch.cat((self.m[i](head_features[i]), self.m_kpt[i](head_features[i])), axis=1)
+            bs, _, ny, nx = head_features[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
+            head_features[i] = head_features[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
+            x_det = head_features[i][..., :6]  # (obj, conf, x, y, w, h)
+            x_kpt = head_features[i][..., 6:]  # (kpt_i_x, kpt_i_y, kpt_i_conf)
 
             if not self.training:  # inference
-                if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
+                if self.dynamic or self.grid[i].shape[2:4] != head_features[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
 
                 kpt_grid_x = self.grid[i][..., 0:1]
@@ -148,14 +143,16 @@ class Keypoint(Detect):
                 xy = (y[..., 0:2] * 2 + self.grid[i]) * self.stride[i]  # xy
                 wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                 if self.nkpt != 0:
-                    x_kpt[..., 0::3] = (x_kpt[..., ::3] * 2. + kpt_grid_x.repeat(1, 1, 1, 1, 17)) * self.stride[i]  # xy
-                    x_kpt[...,
-                          1::3] = (x_kpt[..., 1::3] * 2. + kpt_grid_y.repeat(1, 1, 1, 1, 17)) * self.stride[i]  # xy
-                    x_kpt[..., 2::3] = x_kpt[..., 2::3].sigmoid()
-                y = torch.cat((xy, wh, y[..., 4:], x_kpt), -1)
-                z.append(y.view(bs, -1, self.no))
+                    x_kpt[..., 0::3] = (x_kpt[..., ::3] * 2.
+                                        + kpt_grid_x.repeat(1, 1, 1, 1, self.nkpt)) * self.stride[i]  # xy
+                    x_kpt[..., 1::3] = (x_kpt[..., 1::3] * 2.
+                                        + kpt_grid_y.repeat(1, 1, 1, 1, self.nkpt)) * self.stride[i]  # xy
 
-        return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
+                    x_kpt[..., 2::3] = x_kpt[..., 2::3].sigmoid()  # visibility confidence
+                y = torch.cat((xy, wh, y[..., 4:], x_kpt), -1)
+                output.append(y.view(bs, -1, self.no))
+
+        return head_features if self.training else (torch.cat(output, 1),) if self.export else (torch.cat(output, 1), head_features)
 
 
 class BaseModel(nn.Module):
@@ -216,7 +213,7 @@ class BaseModel(nn.Module):
 
 class DetectionModel(BaseModel):
     # YOLOv5 detection model
-    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
+    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, nkpt=None, anchors=None):  # model, input channels, number of classes
         super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -231,6 +228,9 @@ class DetectionModel(BaseModel):
         if nc and nc != self.yaml['nc']:
             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
             self.yaml['nc'] = nc  # override yaml value
+        if nkpt and nkpt != self.yaml['nkpt']:
+            LOGGER.info(f"Overriding model.yaml nkpt={self.yaml['nkpt']} with nkpt={nkpt}")
+            self.yaml['nkpt'] = nkpt
         if anchors:
             LOGGER.info(f'Overriding model.yaml anchors with anchors={anchors}')
             self.yaml['anchors'] = round(anchors)  # override yaml value
@@ -349,16 +349,14 @@ class ClassificationModel(BaseModel):
 
 
 class KeypointModel(DetectionModel):
-
-    def __init__(self, cfg='yolov5s-kpt.yaml', ch=3, nc=None, anchors=None):
-        super().__init__(cfg, ch, nc, anchors)
+    def __init__(self, cfg='yolov5s-kpt.yaml', ch=3, nc=None, nkpt=None, anchors=None):
+        super().__init__(cfg, ch, nc, nkpt, anchors)
 
 
 def parse_model(d, ch):  # model_dict, input_channels(3)
     # Parse a YOLOv5 model.yaml dictionary
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    anchors, nc, gd, gw, act, nkpt = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get(
-        'activation'), d.get('nkpt')
+    anchors, nc, gd, gw, act, nkpt = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('activation'), d.get('nkpt')
     if act:
         Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
         LOGGER.info(f"{colorstr('activation:')} {act}")  # print
@@ -377,9 +375,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                 args[j] = eval(a) if isinstance(a, str) else a  # eval strings
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in {
-                Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
-                BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x}:
+        if m in {Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
+                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x}:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
@@ -388,9 +385,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             if m in {BottleneckCSP, C3, C3TR, C3Ghost, C3x}:
                 args.insert(2, n)  # number of repeats
                 n = 1
-            if m in [
-                    Conv, GhostConv, Bottleneck, GhostBottleneck, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP,
-                    C3, C3TR]:
+            if m in [Conv, GhostConv, Bottleneck, GhostBottleneck, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP,
+                     C3, C3TR]:
                 if 'act' in d.keys():
                     args_dict = {"act": d['act']}
         elif m is nn.BatchNorm2d:
@@ -404,8 +400,6 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                 args[1] = [list(range(args[1] * 2))] * len(f)
             if m is Segment:
                 args[3] = make_divisible(args[3] * gw, 8)
-            if m is Keypoint:
-                args_dict = {"dw_conv_kpt": d['dw_conv_kpt']}
         elif m is Contract:
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
