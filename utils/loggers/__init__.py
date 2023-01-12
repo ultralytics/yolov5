@@ -399,7 +399,10 @@ class GenericLogger:
             self.wandb.log({name: [wandb.Image(str(f), caption=f.name) for f in files]}, step=epoch)
         
         if self.clearml:
-            self.clearml.log_debug_samples(files, title=name)
+            if name == 'Results':
+                [self.clearml.log_plot(f.stem, f) for f in files]
+            else:
+                self.clearml.log_debug_samples(files, title=name)
 
     def log_graph(self, model, imgsz=(640, 640)):
         # Log model graph to all loggers
