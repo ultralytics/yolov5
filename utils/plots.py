@@ -120,12 +120,11 @@ class Annotator:
                 for kid in range(num_kpts):
 
                     x_coord, y_coord = kpts[steps * kid], kpts[steps * kid + 1]
-                    if not (x_coord % 640 == 0 or y_coord % 640 == 0):
-                        if steps == 3:
-                            conf = kpts[steps * kid + 2]
-                            if conf < 0.5:
-                                continue
-                        cv2.circle(self.im, (int(x_coord), int(y_coord)), radius, (255, 255, 0), -1)
+                    if steps == 3:
+                        conf = kpts[steps * kid + 2]
+                        if conf < 0.5:
+                            continue
+                    cv2.circle(self.im, (int(x_coord), int(y_coord)), radius, (255, 255, 0), -1)
 
                 for sk in skeleton:
                     pos1 = (int(kpts[(sk[0] - 1) * steps]), int(kpts[(sk[0] - 1) * steps + 1]))

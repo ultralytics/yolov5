@@ -59,6 +59,7 @@ def run(
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
         hard_fail=False,  # throw error on benchmark failure
+        kpt=False, # benchmark keypoint detection task
 ):
     y, t = [], time.time()
     device = select_device(device)
@@ -76,7 +77,7 @@ def run(
             if f == '-':
                 w = weights  # PyTorch format
             else:
-                w = export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # all others
+                w = export.run(weights=weights, imgsz=[imgsz], batch_size=batch_size, include=[f], device=device, half=half)[-1]  # all others
             assert suffix in str(w), 'export failed'
 
             # Validate
@@ -84,7 +85,7 @@ def run(
                 result = val_seg(data, w, batch_size, imgsz, plots=False, device=device, task='speed', half=half)
                 metric = result[0][7]  # (box(p, r, map50, map), mask(p, r, map50, map), *loss(box, obj, cls))
             else:  # DetectionModel:
-                result = val_det(data, w, batch_size, imgsz, plots=False, device=device, task='speed', half=half)
+                result = val_det(data, w, batch_size, imgsz, plots=False, device=device, task='speed', half=half, kpt=opt.kpt)
                 metric = result[0][3]  # (p, r, map50, map, *loss(box, obj, cls))
             speed = result[2][1]  # times (preprocess, inference, postprocess)
             y.append([name, round(file_size(w), 1), round(metric, 4), round(speed, 2)])  # MB, mAP, t_inference
@@ -127,7 +128,7 @@ def test(
     for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
             w = weights if f == '-' else \
-                export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # weights
+                export.run(weights=weights, imgsz=[imgsz], batch_size=batch_size, include=[f], device=device, half=half)[-1]  # weights
             assert suffix in str(w), 'export failed'
             y.append([name, True])
         except Exception:
@@ -154,6 +155,7 @@ def parse_opt():
     parser.add_argument('--test', action='store_true', help='test exports only')
     parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')
     parser.add_argument('--hard-fail', nargs='?', const=True, default=False, help='Exception on error or < min metric')
+    parser.add_argument('--kpt', action='store_true', help='keypoint detection task')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     print_args(vars(opt))
