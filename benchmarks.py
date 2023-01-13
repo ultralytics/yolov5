@@ -59,7 +59,7 @@ def run(
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
         hard_fail=False,  # throw error on benchmark failure
-        kpt=False, # benchmark keypoint detection task
+        kpt=False,  # benchmark keypoint detection task
 ):
     y, t = [], time.time()
     device = select_device(device)
@@ -77,7 +77,12 @@ def run(
             if f == '-':
                 w = weights  # PyTorch format
             else:
-                w = export.run(weights=weights, imgsz=[imgsz], batch_size=batch_size, include=[f], device=device, half=half)[-1]  # all others
+                w = export.run(weights=weights,
+                               imgsz=[imgsz],
+                               batch_size=batch_size,
+                               include=[f],
+                               device=device,
+                               half=half)[-1]  # all others
             assert suffix in str(w), 'export failed'
 
             # Validate
@@ -85,7 +90,15 @@ def run(
                 result = val_seg(data, w, batch_size, imgsz, plots=False, device=device, task='speed', half=half)
                 metric = result[0][7]  # (box(p, r, map50, map), mask(p, r, map50, map), *loss(box, obj, cls))
             else:  # DetectionModel:
-                result = val_det(data, w, batch_size, imgsz, plots=False, device=device, task='speed', half=half, kpt=opt.kpt)
+                result = val_det(data,
+                                 w,
+                                 batch_size,
+                                 imgsz,
+                                 plots=False,
+                                 device=device,
+                                 task='speed',
+                                 half=half,
+                                 kpt=opt.kpt)
                 metric = result[0][3]  # (p, r, map50, map, *loss(box, obj, cls))
             speed = result[2][1]  # times (preprocess, inference, postprocess)
             y.append([name, round(file_size(w), 1), round(metric, 4), round(speed, 2)])  # MB, mAP, t_inference
