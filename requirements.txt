@@ -4,7 +4,7 @@
 # Base ------------------------------------------------------------------------
 gitpython
 ipython  # interactive notebook
-matplotlib>=3.2.2
+matplotlib>=3.3
 numpy>=1.18.5
 opencv-python>=4.1.1
 Pillow>=7.1.2
