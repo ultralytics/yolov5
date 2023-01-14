@@ -54,7 +54,7 @@ ENV OMP_NUM_THREADS=1
 # t=ultralytics/yolov5:latest tnew=ultralytics/yolov5:v6.2 && sudo docker pull $t && sudo docker tag $t $tnew && sudo docker push $tnew
 
 # Clean up
-# docker system prune -a --volumes
+# sudo docker system prune -a --volumes
 
 # Update Ubuntu drivers
 # https://www.maketecheasier.com/install-nvidia-drivers-ubuntu/
