@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel = "stylesheet" type= "text/css" href= "{{ url_for('static',filename='estilo.css') }}">
+     <title>Videostreaming</title>
+</head>
+<body class = "container">
+     <script src="{{ url_for('static',filename='funciones.js') }}"></script>
+     <table class = 'tabla'>
+          <tr>
+               <td>
+                    <h1>Deteccion de camaras</h1>
+               </td>
+          </tr>
+          <tr>
+               <td>
+                    <img src="{{ url_for('video_feed') }}">
+               </td>
+          </tr>
+          <tr>
+               <td>
+                    <form action = "/login" method = "POST">
+                         <button class = "button" type = "submit">Log in</button>
+                    </form>
+               </td>
+          </tr>
+     </table>
+</body>
+</html>

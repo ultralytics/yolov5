@@ -400,7 +400,7 @@ class LoadStreams:
                     self.imgs[i] = np.zeros_like(self.imgs[i])
                     cap.open(stream)  # re-open stream if signal was lost
             time.sleep(0.0)  # wait time
-
+    
     def __iter__(self):
         self.count = -1
         return self
@@ -424,6 +424,69 @@ class LoadStreams:
     def __len__(self):
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
+#GTG-------------------------------
+class LoadStreamsGTG:
+    # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
+    def __init__(self, sources='', img_size=640, stride=32, auto=True, transforms=None, vid_stride=1, camera = None):
+        torch.backends.cudnn.benchmark = True  # faster for fixed-size inference
+        self.img_size = img_size
+        self.stride = stride
+        self.vid_stride = vid_stride  # video frame-rate stride
+        n = len(sources)
+        self.sources = [clean_str(x) for x in sources]  # clean source names for later
+        self.imgs, self.fps, self.frames, self.threads = [None] * n, [0] * n, [0] * n, [None] * n
+        for i, s in enumerate(sources):  # index, source
+            # Start thread to read frames from video stream
+            st = f'{i + 1}/{n}: {s}... '
+            s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
+            #GTG
+            w, h, fps = camera.values()
+            color_image, depth_image = camera.get_frames()
+            self.imgs[i] = color_image
+            self.threads[i] = Thread(target=self.update_gtg, args=([i, camera, s]), daemon=True)
+            LOGGER.info(f"{st} Success RealSense Camera({h}x{w} at {fps:.2f} FPS)")
+            self.threads[i].start()                
+            #GTG
+        LOGGER.info('')  # newline
+
+        # check for common shapes
+        s = np.stack([letterbox(x, img_size, stride=stride, auto=auto)[0].shape for x in self.imgs])
+        self.rect = np.unique(s, axis=0).shape[0] == 1  # rect inference if all shapes equal
+        self.auto = auto and self.rect
+        self.transforms = transforms  # optional
+        if not self.rect:
+            LOGGER.warning('WARNING ⚠️ Stream shapes differ. For optimal performance supply similarly-shaped streams.')
+
+    def update_gtg(self, i, camera, s):
+        # Read stream `i` frames in daemon thread
+        while True:
+            color_image, depth_image = camera.get_frames()
+            self.imgs[i] = color_image
+            time.sleep(0.0)
+    
+    def __iter__(self):
+        self.count = -1
+        return self
+
+    def __next__(self):
+        self.count += 1
+        if not all(x.is_alive() for x in self.threads) or cv2.waitKey(1) == ord('q'):  # q to quit
+            cv2.destroyAllWindows()
+            raise StopIteration
+
+        im0 = self.imgs.copy()
+        if self.transforms:
+            im = np.stack([self.transforms(x) for x in im0])  # transforms
+        else:
+            im = np.stack([letterbox(x, self.img_size, stride=self.stride, auto=self.auto)[0] for x in im0])  # resize
+            im = im[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW
+            im = np.ascontiguousarray(im)  # contiguous
+
+        return self.sources, im, im0, None, ''
+
+    def __len__(self):
+        return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
+#GTG--------------------------------
 
 def img2label_paths(img_paths):
     # Define label paths as a function of image paths

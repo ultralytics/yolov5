@@ -1,0 +1,15 @@
+.container{margin: 0; padding: 0; width: 100%; height: 100vh;
+    background-color: #87baca; color: black; text-align: center;}
+.label{width: 80px;text-align: center}
+.buton{width: 50px; text-align: center; color: black;}
+.imagen{width: 300px; height: 300px;}
+.tabla{align-items: center; table-layout: auto; justify-content: center; margin: 0 auto;}
+
+#columnaxl{width: 250px; text-align: center; font-weight: bold;}
+#columnal{width: 175px; text-align: center; font-weight: bold;}
+#columnam{width: 150px; text-align: center; font-weight: bold;}
+#columnas{width: 100px; text-align: center; font-weight: bold;}
+#aligdcha{text-align: right;}
+#aligizq{text-align: left;}
+#aligcenter{text-align: center;}
+
