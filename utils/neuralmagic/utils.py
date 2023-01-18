@@ -24,7 +24,7 @@ __all__ = [
     "export_sample_inputs_outputs",
 ]
 
-
+SAVE_ROOT = Path.cwd()
 RANK = int(os.getenv("RANK", -1))
 ALMOST_ONE = 1 - 1e-9  # for incrementing epoch to be applied to recipe
 
@@ -153,7 +153,7 @@ def neuralmagic_onnx_export(
             one_shot_str = str(weights_path).split("zoo:")[1].replace("/", "_")
             sub_dir = f"{sub_dir}_one_shot_{one_shot_str}"
 
-        save_dir = Path("DeepSparse_Deployment") / sub_dir
+        save_dir = Path(SAVE_ROOT) / "DeepSparse_Deployment" / sub_dir
         onnx_file_name = "model.onnx"
 
     else:
