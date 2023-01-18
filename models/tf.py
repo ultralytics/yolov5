@@ -301,7 +301,7 @@ class TFDetect(keras.layers.Layer):
             if not self.training:  # inference
                 y = x[i]
                 grid = tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5
-                anchor_grid = tf.repeat(self.anchor_grid[i], repeats=tf.cast(ny * nx,tf.int32), axis=0)
+                anchor_grid = tf.repeat(self.anchor_grid[i], repeats=tf.cast(ny * nx, tf.int32), axis=0)
 
                 xy = (tf.sigmoid(y[..., 0:2]) * 2 + grid) * self.stride[i]  # xy
                 wh = (tf.sigmoid(y[..., 2:4]) ** 2) * anchor_grid
