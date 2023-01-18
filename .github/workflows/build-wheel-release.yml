@@ -1,0 +1,38 @@
+---
+name: Upload Release Wheel
+
+on:
+  push:
+    branches:
+      - "release/*"
+
+jobs:
+  build-wheel:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+      - name: Build wheel
+        run: | 
+          ./build_wheel.sh
+          echo "::set-output name=wheel_path::$(ls dist/*.whl)"
+          echo "::set-output name=wheel_name::$(basename $(ls dist/*.whl))"
+        id: build_wheel
+      - name: Get Tag
+        id: extract_tag
+        run: echo "##[set-output name=tag;]$(echo v${GITHUB_REF_NAME#*/})"
+      - name: Tag Repo
+        uses: richardsimko/update-tag@v1
+        with:
+          tag_name: ${{ steps.extract_tag.outputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Wheel Asset
+        id: upload-release-asset 
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ steps.build_wheel.outputs.wheel_path }}
+          asset_name: ${{ steps.build_wheel.outputs.wheel_name }}
+          tag: ${{ steps.extract_tag.outputs.tag }}
+          overwrite: true
