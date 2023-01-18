@@ -164,7 +164,7 @@ def neuralmagic_onnx_export(
         )
         onnx_file_name = weights_path.name
 
-    save_dir.mkdir(exist_ok=True)
+    save_dir.mkdir(parents=True, exist_ok=True)
 
     nm_log_console("Exporting model to ONNX format")
 
