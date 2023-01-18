@@ -3,6 +3,7 @@ include LICENSE
 include setup.py
 recursive-include yolov5/data *
 recursive-include yolov5/models *
-recursive-include yolov5/models_v5.0 *
-recursive-include yolov5/utils/loggers *.py
+recursive-include yolov5/classify *
+recursive-include yolov5/segment *
+recursive-include yolov5/utils *
 include yolov5/requirements.txt

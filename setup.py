@@ -8,7 +8,7 @@ def read_requirements():
 
 setuptools.setup(
     name="yolov5",
-    version='6.1.0',
+    version='6.2.0',
     author="",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
