@@ -411,7 +411,7 @@ def main(opt):
             plot_val_study(x=x)  # plot
 
 def val_run(**kwargs):
-    parse_opt() if not kwargs else parse_opt(skip_parse=True)
+    opt = parse_opt() if not kwargs else parse_opt(skip_parse=True)
     for k, v in kwargs.items():
         setattr(opt, k, v)
     main(opt)
