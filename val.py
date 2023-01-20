@@ -366,7 +366,6 @@ def parse_opt(skip_parse=False):
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--deepsparse', action='store_true', help='use the DeepSparse engine for ONNX inference')
     opt = parser.parse_args()
-    opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.save_txt |= opt.save_hybrid
     print_args(vars(opt))
@@ -381,6 +380,7 @@ def parse_opt(skip_parse=False):
 def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
 
+    opt.data = check_yaml(opt.data)  # check YAML
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
             LOGGER.info(f'WARNING ⚠️ confidence threshold {opt.conf_thres} > 0.001 produces invalid results')
