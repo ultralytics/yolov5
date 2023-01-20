@@ -610,7 +610,7 @@ def run(
     return f  # return list of exported files/dirs
 
 
-def parse_opt():
+def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
@@ -638,7 +638,7 @@ def parse_opt():
         nargs='+',
         default=['torchscript'],
         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle')
-    opt = parser.parse_args()
+    opt = parser.parse_known_args()[0] if known else parser.parse_args()
     print_args(vars(opt))
     return opt
 
