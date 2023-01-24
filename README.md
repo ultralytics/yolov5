@@ -329,6 +329,7 @@ YOLOv5 has been designed to be super easy to get started and simple to learn. We
 
 YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) brings support for classification model training, validation and deployment! See full details in our [Release Notes](https://github.com/ultralytics/yolov5/releases/v6.2) and visit our [YOLOv5 Classification Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/classify/tutorial.ipynb) for quickstart tutorials.
 
+###### YOLOV5 classification  on imagnet : Gradio live app : https://huggingface.co/spaces/akashAD/yolov5-classify
 <details>
   <summary>Classification Checkpoints</summary>
 
