@@ -91,6 +91,11 @@ def load_sparsified_model(
 
     # Load state dict
     model.load_state_dict(ckpt["ema"] or ckpt["model"], strict=True)
+
+    model.hyp = ckpt.get("hyp")
+    model.nc = ckpt.get("nc")
+    model.sparsified = True
+
     return model
 
 

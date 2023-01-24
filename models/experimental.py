@@ -80,9 +80,6 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
         ckpt = torch.load(attempt_download(w) if not str(w).startswith("zoo:") 
                 else sparsezoo_download(w), map_location='cpu')  # load
         sparsified = bool(ckpt.get("checkpoint_recipe"))
-
-        if sparsified:
-            nc = ckpt["nc"]
         
         ckpt = (
             (ckpt.get('ema') or ckpt['model']).to(device).float() 
@@ -95,9 +92,6 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
             ckpt.stride = torch.tensor([32.])
         if hasattr(ckpt, 'names') and isinstance(ckpt.names, (list, tuple)):
             ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
-        if sparsified:
-            ckpt.nc = nc
-            ckpt.sparsified = True
 
         model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') and not sparsified else ckpt.eval())  # model in eval mode
 
