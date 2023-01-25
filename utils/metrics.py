@@ -351,7 +351,7 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
 
     y = smooth(py.mean(0), 0.05)
     ax.set_yticks(np.arange(min(y), max(y) + 1, 0.05))  #set step size on yaxis
-    ax.set_xticks(np.arange(min(px), max(px) + 1, 0.05))  #set step size on yaxis
+    ax.set_xticks(np.arange(min(px), max(px) + 1, 0.1))  #set step size on xaxis
     ax.plot(px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
