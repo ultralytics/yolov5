@@ -340,18 +340,17 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
 @threaded
 def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confidence', ylabel='Metric'):
     # Metric-confidence curve
-    fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
+    fig, ax = plt.subplots(1, 1, figsize=(12, 9), tight_layout=True)
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
         for i, y in enumerate(py):
-            ax.plot(px, y, linewidth=1,
-                    label=f'{names[i]} {y.max():.2f} at {px[y.argmax()]:.3f}')  # plot(confidence, metric)
+            ax.plot(px, y, linewidth=1, label=f'{names[i]} {y.max():.2f} at {px[y.argmax()]:.3f}')  # plot(confidence, metric)
     else:
         ax.plot(px, py.T, linewidth=1, color='grey')  # plot(confidence, metric)
 
     y = smooth(py.mean(0), 0.05)
-    ax.set_yticks(np.arange(min(y), max(y) + 1, 0.05))  #set step size on yaxis
-    ax.set_xticks(np.arange(min(px), max(px) + 1, 0.1))  #set step size on xaxis
+    ax.set_yticks(np.arange(min(y),max(y) + 1, 0.05)) #set step size on yaxis
+    ax.set_xticks(np.arange(min(px),max(px) + 1, 0.05)) #set step size on yaxis
     ax.plot(px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -359,5 +358,6 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_ylim(0, 1)
     ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     ax.set_title(f'{ylabel}-Confidence Curve')
+    ax.grid(visible=True, axis='both')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
