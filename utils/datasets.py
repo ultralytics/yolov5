@@ -97,6 +97,7 @@ def create_dataloader(path,
                       imgsz,
                       batch_size,
                       stride,
+                      device,
                       single_cls=False,
                       hyp=None,
                       augment=False,
@@ -112,7 +113,7 @@ def create_dataloader(path,
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
-    with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
+    with torch_distributed_zero_first(rank, device):  # init dataset *.cache only once if DDP
         dataset = LoadImagesAndLabels(
             path,
             imgsz,
@@ -131,13 +132,19 @@ def create_dataloader(path,
     nd = torch.cuda.device_count()  # number of CUDA devices
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
+    pin_memory_device = None
+    if device == 'cuda' or device == 'hpu':
+        pin_memory_device = device
+    if device == 'hpu':
+        torch.cuda.current_device = lambda: None
+        torch.cuda.set_device = lambda x: None
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     return loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
                   num_workers=nw,
                   sampler=sampler,
-                  pin_memory=True,
+                  pin_memory=True if device.lower() != 'cpu' else False, pin_memory_device=pin_memory_device,
                   collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn), dataset
 
 
@@ -428,7 +435,6 @@ class LoadImagesAndLabels(Dataset):
                 p = Path(p)  # os-agnostic
                 if p.is_dir():  # dir
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
-                    # f = list(p.rglob('*.*'))  # pathlib
                 elif p.is_file():  # file
                     with open(p) as t:
                         t = t.read().strip().splitlines()

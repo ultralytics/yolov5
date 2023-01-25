@@ -30,14 +30,19 @@ warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\'
 
 
 @contextmanager
-def torch_distributed_zero_first(local_rank: int):
+def torch_distributed_zero_first(local_rank: int , device='cuda'):
     # Decorator to make all processes in distributed training wait for each local_master to do something
     if local_rank not in [-1, 0]:
-        dist.barrier(device_ids=[local_rank])
+        if device == 'hpu':
+            dist.barrier()
+        else:
+            dist.barrier(device_ids=[local_rank])
     yield
     if local_rank == 0:
-        dist.barrier(device_ids=[0])
-
+        if device == 'hpu':
+            dist.barrier()
+        else:
+            dist.barrier(device_ids=[0])
 
 def device_count():
     # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Only works on Linux.
@@ -49,35 +54,40 @@ def device_count():
         return 0
 
 
-def select_device(device='', batch_size=0, newline=True):
-    # device = 'cpu' or '0' or '0,1,2,3'
+def select_device(device='', batch_size=0, newline=True, gpu_devices=''):
+    # device = 'cpu' 'hpu' or cuda
     s = f'YOLOv5 🚀 {git_describe() or file_update_date()} torch {torch.__version__} '  # string
     device = str(device).strip().lower().replace('cuda:', '')  # to string, 'cuda:0' to '0'
     cpu = device == 'cpu'
-    if cpu:
+    hpu = device.lower() == 'hpu'
+    cuda = device.lower() == 'cuda' and torch.cuda.is_available()
+    if cpu or hpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
-        os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable - must be before assert is_available()
+        os.environ['CUDA_VISIBLE_DEVICES'] = gpu_devices  # set environment variable
         assert torch.cuda.is_available() and torch.cuda.device_count() >= len(device.replace(',', '')), \
-            f"Invalid CUDA '--device {device}' requested, use '--device cpu' or pass valid CUDA device(s)"
+            f"Invalid CUDA '--device {gpu_devices}' requested, use '--device cpu' or pass valid CUDA device(s)"
 
-    cuda = not cpu and torch.cuda.is_available()
     if cuda:
-        devices = device.split(',') if device else '0'  # range(torch.cuda.device_count())  # i.e. 0,1,6,7
+        devices = gpu_devices.split(',') if gpu_devices else '0'  # range(torch.cuda.device_count())  # i.e. 0,1,6,7
         n = len(devices)  # device count
         if n > 1 and batch_size > 0:  # check batch_size is divisible by device_count
             assert batch_size % n == 0, f'batch-size {batch_size} not multiple of GPU count {n}'
         space = ' ' * (len(s) + 1)
+        device = 'cuda:0'
+
         for i, d in enumerate(devices):
             p = torch.cuda.get_device_properties(i)
             s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / (1 << 20):.0f}MiB)\n"  # bytes to MB
+    elif hpu:
+        s += 'HPU\n'
     else:
         s += 'CPU\n'
 
     if not newline:
         s = s.rstrip()
     LOGGER.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
-    return torch.device('cuda:0' if cuda else 'cpu')
+    return torch.device(device)
 
 
 def time_sync():

@@ -61,8 +61,22 @@ LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
+def init_distributed_mode():
+    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+        WORLD_SIZE = int(os.environ['WORLD_SIZE'])
+        LOCAL_RANK = int(os.environ['LOCAL_RANK'])
+
+    print('| distributed init (rank {})'.format(LOCAL_RANK), flush=True)
+
+    process_per_node = WORLD_SIZE
+    if WORLD_SIZE  > 1:
+        os.environ["LOCAL_RANK"] = str(LOCAL_RANK % process_per_node )
+        import habana_frameworks.torch.distributed.hccl
+        dist.init_process_group('hccl', rank=LOCAL_RANK, world_size=WORLD_SIZE)
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
+    if(opt.device == 'hpu'):
+        import habana_frameworks.torch.core as htcore
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
@@ -101,9 +115,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Config
     plots = not evolve and not opt.noplots  # create plots
-    cuda = device.type != 'cpu'
+    cuda = device.type == 'cuda'
     init_seeds(1 + RANK)
-    with torch_distributed_zero_first(LOCAL_RANK):
+    with torch_distributed_zero_first(LOCAL_RANK, device.type):
         data_dict = data_dict or check_dataset(data)  # check if None
     train_path, val_path = data_dict['train'], data_dict['val']
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
@@ -115,7 +129,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     check_suffix(weights, '.pt')  # check weights
     pretrained = weights.endswith('.pt')
     if pretrained:
-        with torch_distributed_zero_first(LOCAL_RANK):
+        with torch_distributed_zero_first(LOCAL_RANK, device.type):
             weights = attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location='cpu')  # load checkpoint to CPU to avoid CUDA memory leak
         model = Model(cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
@@ -125,7 +139,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         model.load_state_dict(csd, strict=False)  # load
         LOGGER.info(f'Transferred {len(csd)}/{len(model.state_dict())} items from {weights}')  # report
     else:
-        model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+        if opt.is_hmp:
+            from habana_frameworks.torch.hpex import hmp
+            with hmp.disable_casts():   #TODO: Remove later -no need to disable here (running on CPU here)
+                model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+        else:
+            model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
 
     # Freeze
     freeze = [f'model.{x}.' for x in (freeze if len(freeze) > 1 else range(freeze[0]))]  # layers to freeze
@@ -165,7 +184,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     elif opt.optimizer == 'AdamW':
         optimizer = AdamW(g[2], lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
     else:
-        optimizer = SGD(g[2], lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
+        if not opt.disable_fuse_sgd_ema:
+            from habana_frameworks.torch.hpex.optimizers import FusedSGD
+            optimizer = FusedSGD(g[2], lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
+        else:
+            optimizer = SGD(g[2], lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
 
     optimizer.add_param_group({'params': g[0], 'weight_decay': hyp['weight_decay']})  # add g0 with weight_decay
     optimizer.add_param_group({'params': g[1]})  # add g1 (BatchNorm2d weights)
@@ -181,7 +204,14 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
-    ema = ModelEMA(model) if RANK in [-1, 0] else None
+    if not opt.disable_fuse_sgd_ema:
+        from habana_frameworks.torch.hpex.movingavrg import FusedEMA
+        ema = FusedEMA(model) if RANK in [-1, 0] else None
+    else:
+        ema = ModelEMA(model) if RANK in [-1, 0] else None
+
+    if opt.run_lazy_mode:
+        htcore.mark_step()
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -222,6 +252,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               imgsz,
                                               batch_size // WORLD_SIZE,
                                               gs,
+                                              opt.device,
                                               single_cls,
                                               hyp=hyp,
                                               augment=True,
@@ -243,9 +274,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        imgsz,
                                        batch_size // WORLD_SIZE * 2,
                                        gs,
+                                       opt.device,
                                        single_cls,
                                        hyp=hyp,
-                                       cache=None if noval else opt.cache,
+                                       cache=None if (noval or (opt.noval_all)) else opt.cache,
                                        rect=True,
                                        rank=-1,
                                        workers=workers * 2,
@@ -263,13 +295,15 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Anchors
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
-            model.half().float()  # pre-reduce anchor precision
 
         callbacks.run('on_pretrain_routine_end')
 
     # DDP mode
-    if cuda and RANK != -1:
-        model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
+    if RANK != -1:
+        if cuda:
+            model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
+        elif opt.device == 'hpu':
+            model = DDP(model, broadcast_buffers=False, gradient_as_bucket_view=False)
 
     # Model attributes
     nl = de_parallel(model).model[-1].nl  # number of detection layers (to scale hyps)
@@ -292,7 +326,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     stopper = EarlyStopping(patience=opt.patience)
-    compute_loss = ComputeLoss(model)  # init loss class
+    compute_loss = ComputeLoss(model, run_build_targets_cpu=opt.run_build_targets_cpu)  # init loss class
     callbacks.run('on_train_start')
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} val\n'
                 f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
@@ -347,33 +381,61 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Forward
             with amp.autocast(enabled=cuda):
                 pred = model(imgs)  # forward
-                loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
+                targetsDevice = "cpu" if opt.run_build_targets_cpu else device
+                if opt.device == 'hpu' and opt.run_lazy_mode:
+                    htcore.mark_step()
+                loss, loss_items = compute_loss(pred, targets.to(targetsDevice), run_loss_cpu=opt.run_loss_on_cpu, run_build_targets_cpu=opt.run_build_targets_cpu)  # loss scaled by batch_size
                 if RANK != -1:
                     loss *= WORLD_SIZE  # gradient averaged between devices in DDP mode
                 if opt.quad:
                     loss *= 4.
+            if(opt.device == 'hpu'):
+                if opt.run_lazy_mode:
+                    htcore.mark_step()
+                loss.backward()
 
+                # Optimize
+                if ni - last_opt_step >= accumulate:
+                    if opt.run_lazy_mode:
+                        htcore.mark_step()
+                    if opt.is_hmp:
+                        from habana_frameworks.torch.hpex import hmp
+                        with hmp.disable_casts():
+                            optimizer.step()
+                    else:
+                        optimizer.step()
+                    if not opt.disable_fuse_sgd_ema:
+                        if opt.run_lazy_mode:# NEEDED MS after for FusedSGD
+                            htcore.mark_step()
+                    optimizer.zero_grad()
+                    if ema:
+                        ema.update(model)
+                    last_opt_step = ni
+            else:
             # Backward
-            scaler.scale(loss).backward()
+                scaler.scale(loss).backward()
 
-            # Optimize
-            if ni - last_opt_step >= accumulate:
-                scaler.step(optimizer)  # optimizer.step
-                scaler.update()
-                optimizer.zero_grad()
-                if ema:
-                    ema.update(model)
-                last_opt_step = ni
+                # Optimize
+                if ni - last_opt_step >= accumulate:
+                    scaler.step(optimizer)  # optimizer.step
+                    scaler.update()
+                    optimizer.zero_grad()
+                    if ema:
+                        ema.update(model)
+                    last_opt_step = ni
 
             # Log
             if RANK in (-1, 0):
-                mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
-                mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
-                pbar.set_description(('%10s' * 2 + '%10.4g' * 5) %
-                                     (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
+                if i % opt.print_loss_freq == 0:
+                    mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
+                    mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
+                    pbar.set_description(('%10s' * 2 + '%10.4g' * 5) %
+                                        (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots)
                 if callbacks.stop_training:
                     return
+            if opt.limit_batch_number_train != -1 and i >= opt.limit_batch_number_train:
+                break
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -385,7 +447,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             callbacks.run('on_train_epoch_end', epoch=epoch)
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
-            if not noval or final_epoch:  # Calculate mAP
+            if (not noval or final_epoch) and not opt.noval_all:  # Calculate mAP
+                if (opt.device == 'hpu') and opt.run_test_cpu:
+                    # flipping the model - to test it on CPU - Remove this later
+                    print ("running test on cpu")
+                    ema.ema.to("cpu")
                 results, maps, _ = val.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE * 2,
                                            imgsz=imgsz,
@@ -395,8 +461,13 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                            save_dir=save_dir,
                                            plots=False,
                                            callbacks=callbacks,
-                                           compute_loss=compute_loss)
-
+                                           compute_loss=compute_loss,
+                                           run_build_targets_cpu=opt.run_build_targets_cpu,
+                                           run_loss_on_cpu=opt.run_loss_on_cpu,
+                                           limit_batch_number=opt.limit_batch_number_test)
+                if (opt.device == 'hpu') and opt.run_test_cpu:
+                    # flipping back the model - to HPU
+                    ema.ema.to("hpu")
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             if fi > best_fitness:
@@ -406,11 +477,37 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
+                model_to_save = deepcopy(de_parallel(model))
+                ema_to_save = deepcopy(ema.ema)
+
+                if (opt.device == "hpu"):
+                    for state in optimizer.state.values():
+                        for k, v in state.items():
+                            if isinstance(v, torch.Tensor):
+                                state[k] = v.to('cpu')
+                    model_to_save_cpu = model_to_save.to("cpu")
+                    if hasattr(model_to_save, "class_weights"):
+                        model_to_save_cpu.class_weights = model_to_save.class_weights.to("cpu")
+                    ema_to_save_cpu = ema_to_save.to("cpu")
+                    if hasattr(ema_to_save, "class_weights"):
+                        ema_to_save_cpu.class_weights = ema_to_save.class_weights.to("cpu")
+                    for i,l in enumerate(ema_to_save_cpu.model._modules):
+                        if (hasattr(ema_to_save_cpu.model._modules[l], "grid") and isinstance(ema_to_save_cpu.model._modules[l].grid, list)):
+                            for j,t in enumerate(ema_to_save_cpu.model._modules[l].grid):
+                                ema_to_save_cpu.model._modules[l].grid[j] = t.to("cpu")
+                    del model_to_save
+                    del ema_to_save
+                    model_to_save = model_to_save_cpu
+                    ema_to_save = ema_to_save_cpu
+                else:
+                    model_to_save = model_to_save.half()
+                    ema_to_save = ema_to_save.half()
+
                 ckpt = {
                     'epoch': epoch,
                     'best_fitness': best_fitness,
-                    'model': deepcopy(de_parallel(model)).half(),
-                    'ema': deepcopy(ema.ema).half(),
+                    'model': model_to_save,
+                    'ema': ema_to_save,
                     'updates': ema.updates,
                     'optimizer': optimizer.state_dict(),
                     'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
@@ -422,7 +519,16 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     torch.save(ckpt, best)
                 if (epoch > 0) and (opt.save_period > 0) and (epoch % opt.save_period == 0):
                     torch.save(ckpt, w / f'epoch{epoch}.pt')
+                if(opt.device == 'hpu'):
+
+                    for state in optimizer.state.values():
+                        for k, v in state.items():
+                            if isinstance(v, torch.Tensor):
+                                state[k] = v.to('hpu')
                 del ckpt
+                del model_to_save
+                del ema_to_save
+
                 callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness, fi)
 
             # Stop Single-GPU
@@ -439,20 +545,33 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         # if stop:
         #    break  # must break all DDP ranks
 
+
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in (-1, 0):
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
+    if RANK in (-1, 0) and (not opt.noval_all):
         for f in last, best:
             if f.exists():
                 strip_optimizer(f)  # strip optimizers
                 if f is best:
                     LOGGER.info(f'\nValidating {f}...')
+                    if opt.run_test_cpu:
+                        device = torch.device("cpu")
+                    if (device.type=="hpu"):
+                        attempted_model_cpu = attempt_load(f, torch.device("cpu"))
+                        attempted_model = attempted_model_cpu.to("hpu")
+                        if hasattr(attempted_model_cpu, "class_weights"):
+                            attempted_model.class_weights = attempted_model_cpu.class_weights.to("hpu")
+                    else:
+                        attempted_model = attempt_load(f, device)
+                    if str(device) == 'cuda':
+                        attempted_model = attempted_model.half()
                     results, _, _ = val.run(
                         data_dict,
                         batch_size=batch_size // WORLD_SIZE * 2,
                         imgsz=imgsz,
-                        model=attempt_load(f, device).half(),
+                        model=attempted_model,
                         iou_thres=0.65 if is_coco else 0.60,  # best pycocotools results at 0.65
                         single_cls=single_cls,
                         dataloader=val_loader,
@@ -461,7 +580,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         verbose=True,
                         plots=plots,
                         callbacks=callbacks,
-                        compute_loss=compute_loss)  # val best model with plots
+                        compute_loss=compute_loss,
+                        run_build_targets_cpu=opt.run_build_targets_cpu,
+                        run_loss_on_cpu=opt.run_loss_on_cpu,
+                        limit_batch_number=opt.limit_batch_number_test)  # val best model with plots
                     if is_coco:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
@@ -487,11 +609,12 @@ def parse_opt(known=False):
     parser.add_argument('--noval', action='store_true', help='only validate final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')
     parser.add_argument('--noplots', action='store_true', help='save no plot files')
+    parser.add_argument('--noval_all', action='store_true', help='skip everything in validation')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='', help='hpu cpu or cuda device')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
     parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='SGD', help='optimizer')
@@ -514,16 +637,47 @@ def parse_opt(known=False):
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
 
+    # Flags for HPU
+    parser.add_argument('--run_lazy_mode', action='store_true',
+                        help='run model in lazy execution mode')
+    parser.add_argument('--gpu_devices', default='', help='if device is cuda, mention whitch gpu devices to selcet')
+    parser.add_argument('--run-build-targets-cpu', type=int, default=0, help='run build targets on CPU if enabled')
+    parser.add_argument('--print-loss-freq', type=int, default=1, help='freq to print loss at the end of each iteration')
+    parser.add_argument('--run-test-cpu', action='store_true', help='run test on CPU if enabled')
+    parser.add_argument('--hmp', dest='is_hmp', action='store_true', help='enable hmp mode')
+    parser.add_argument('--hmp-bf16', default='ops_bf16_yolov5.txt', help='path to bf16 ops list in hmp O1 mode')
+    parser.add_argument('--hmp-fp32', default='ops_fp32_yolov5.txt', help='path to fp32 ops list in hmp O1 mode')
+    parser.add_argument('--hmp-opt-level', default='O2', help='choose optimization level for hmp')
+    parser.add_argument('--hmp-verbose', action='store_true', help='enable verbose mode for hmp')
+    parser.add_argument('--limit-batch-number-train', type=int, default=-1, help='set to positive to stop after X batches in train')
+    parser.add_argument('--limit-batch-number-test', type=int, default=-1, help='set to positive to stop after X batches in test')
+    parser.add_argument('--run-loss-on-cpu', action='store_true',
+                        help='run loss on cpu')
+    parser.add_argument('--disable-fuse-sgd-ema', action='store_true', help='enable fused SGD and fused EMA optimization')
+
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
 
 def main(opt, callbacks=Callbacks()):
+
+    if(opt.device == 'hpu'):
+        os.environ["PT_HPU_ENABLE_REFINE_DYNAMIC_SHAPES"] = "1"
+        os.environ["PT_HPU_DYNAMIC_MIN_POLICY_ORDER"] = "4,3,1"
+        os.environ["RUN_TPC_FUSER"] = "0"
+        os.environ["ENABLE_EXPERIMENTAL_FLAGS"] = "true"
+        if opt.run_lazy_mode:
+            os.environ["PT_HPU_LAZY_MODE"] = "1"
+
+        if opt.is_hmp:
+            from habana_frameworks.torch.hpex import hmp
+            hmp.convert(opt_level=opt.hmp_opt_level, bf16_file_path=opt.hmp_bf16,
+            fp32_file_path=opt.hmp_fp32, isVerbose=opt.hmp_verbose)
+
     # Checks
     if RANK in (-1, 0):
         print_args(vars(opt))
         check_git_status()
-        check_requirements(exclude=['thop'])
 
     # Resume
     if opt.resume and not check_wandb_resume(opt) and not opt.evolve:  # resume an interrupted run
@@ -546,8 +700,8 @@ def main(opt, callbacks=Callbacks()):
         opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
     # DDP mode
-    device = select_device(opt.device, batch_size=opt.batch_size)
-    if LOCAL_RANK != -1:
+    device = select_device(opt.device, batch_size=opt.batch_size, gpu_devices=opt.gpu_devices)
+    if opt.device != 'hpu' and LOCAL_RANK != -1:
         msg = 'is not compatible with YOLOv5 Multi-GPU DDP training'
         assert not opt.image_weights, f'--image-weights {msg}'
         assert not opt.evolve, f'--evolve {msg}'
@@ -558,10 +712,14 @@ def main(opt, callbacks=Callbacks()):
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
 
+    if opt.device == 'hpu' and WORLD_SIZE > 1 :
+        assert opt.batch_size % WORLD_SIZE == 0, '--batch-size must be multiple of HPU device count'
+        init_distributed_mode()
+
     # Train
     if not opt.evolve:
         train(opt.hyp, opt, device, callbacks)
-        if WORLD_SIZE > 1 and RANK == 0:
+        if opt.device != 'hpu' and WORLD_SIZE > 1 and RANK == 0:
             LOGGER.info('Destroying process group... ')
             dist.destroy_process_group()
 

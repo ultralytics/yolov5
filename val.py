@@ -78,6 +78,9 @@ def process_batch(detections, labels, iouv):
     Returns:
         correct (Array[N, 10]), for 10 IoU levels
     """
+    detections = detections.to("cpu")
+    labels = labels.to("cpu")
+    iouv = iouv.to("cpu")
     correct = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
     iou = box_iou(labels[:, 1:], detections[:, :4])
     x = torch.where((iou >= iouv[0]) & (labels[:, 0:1] == detections[:, 5]))  # IoU above threshold and classes match
@@ -90,7 +93,7 @@ def process_batch(detections, labels, iouv):
             matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
         matches = torch.from_numpy(matches).to(iouv.device)
         correct[matches[:, 1].long()] = matches[:, 2:3] >= iouv
-    return correct
+    return correct.to("hpu")
 
 
 @torch.no_grad()
@@ -122,12 +125,15 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
+        run_build_targets_cpu=False,
+        run_loss_on_cpu=False,
+        limit_batch_number=-1,
 ):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
-        half &= device.type != 'cpu'  # half precision only supported on CUDA
+        half &= device.type == 'cuda'  # half precision only supported on CUDA
         model.half() if half else model.float()
     else:  # called directly
         device = select_device(device, batch_size=batch_size)
@@ -154,7 +160,8 @@ def run(
 
     # Configure
     model.eval()
-    cuda = device.type != 'cpu'
+    cuda = device.type == 'cuda'
+    hpu = device.type == 'hpu'
     is_coco = isinstance(data.get('val'), str) and data['val'].endswith(f'coco{os.sep}val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10, device=device)  # iou vector for mAP@0.5:0.95
@@ -174,6 +181,7 @@ def run(
                                        imgsz,
                                        batch_size,
                                        stride,
+                                       device,
                                        single_cls,
                                        pad=pad,
                                        rect=rect,
@@ -193,9 +201,9 @@ def run(
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         callbacks.run('on_val_batch_start')
         t1 = time_sync()
-        if cuda:
+        if cuda or hpu:
             im = im.to(device, non_blocking=True)
-            targets = targets.to(device)
+
         im = im.half() if half else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         nb, _, height, width = im.shape  # batch size, channels, height, width
@@ -208,15 +216,18 @@ def run(
 
         # Loss
         if compute_loss:
-            loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
+            targets_device = "cpu" if run_build_targets_cpu else device
+            loss += compute_loss([x.float() for x in train_out], targets.to(targets_device),
+                                 run_loss_cpu=run_loss_on_cpu, run_build_targets_cpu=run_build_targets_cpu)[1][:3]  # box, obj, cls
+
+            # loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
 
         # NMS
-        targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
+        targets[:, 2:] *= torch.tensor([width, height, width, height])  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t3 = time_sync()
         out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls)
         dt[2] += time_sync() - t3
-
         # Metrics
         for si, pred in enumerate(out):
             labels = targets[targets[:, 0] == si, 1:]
@@ -227,7 +238,7 @@ def run(
 
             if npr == 0:
                 if nl:
-                    stats.append((correct, *torch.zeros((3, 0), device=device)))
+                    stats.append((correct.cpu(), *torch.zeros([3, 0], device = "cpu")))
                 continue
 
             # Predictions
@@ -244,7 +255,7 @@ def run(
                 correct = process_batch(predn, labelsn, iouv)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
-            stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
+            stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), labels[:, 0].cpu()))  # (correct, conf, pcls, tcls)
 
             # Save/log
             if save_txt:
@@ -261,6 +272,8 @@ def run(
             Thread(target=plot_images, args=(im, output_to_target(out), paths, f, names), daemon=True).start()
 
         callbacks.run('on_val_batch_end')
+        if limit_batch_number != -1 and batch_i >= limit_batch_number:
+            break
 
     # Compute metrics
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
