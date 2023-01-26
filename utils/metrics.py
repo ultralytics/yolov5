@@ -333,7 +333,7 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     ax.set_ylim(0, 1)
     ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     ax.set_title('Precision-Recall Curve')
-    ax.grid(visible=True, axis='both') # add grid
+    ax.grid(visible=True, axis='both')  # add grid
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
 
@@ -360,6 +360,6 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_ylim(0, 1)
     ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     ax.set_title(f'{ylabel}-Confidence Curve')
-    ax.grid(visible=True, axis='both') # add grid
+    ax.grid(visible=True, axis='both')  # add grid
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
