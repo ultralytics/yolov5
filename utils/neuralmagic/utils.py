@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -11,7 +12,7 @@ from sparsezoo import Model
 from models.yolo import Model as Yolov5Model
 from utils.dataloaders import create_dataloader
 from utils.general import LOGGER, check_dataset, check_yaml, colorstr
-from utils.neuralmagic.quantization import update_model_bottlenecks
+from utils.neuralmagic.quantization import _Add, update_model_bottlenecks
 from utils.torch_utils import ModelEMA
 
 __all__ = [
@@ -27,6 +28,12 @@ __all__ = [
 SAVE_ROOT = Path.cwd()
 RANK = int(os.getenv("RANK", -1))
 ALMOST_ONE = 1 - 1e-9  # for incrementing epoch to be applied to recipe
+
+# In previous integrations of NM YOLOv5, we were pickling models as long as they are
+# not quantized. We've now changed to never pickling a model touched by us. This
+# namespace hacking is meant to address backwards compatibility with previously
+# pickled, pruned models.
+sys.modules["yolov5.models.common._Add"] = _Add
 
 
 class ToggleableModelEMA(ModelEMA):
