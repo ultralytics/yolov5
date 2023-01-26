@@ -738,7 +738,15 @@ class Detections:
         self.t = tuple(x.t / self.n * 1E3 for x in times)  # timestamps (ms)
         self.s = tuple(shape)  # inference BCHW shape
 
-    def _run(self, pprint=False, show=False, save=False, crop=False, render=False, labels=True, hide_conf = False, save_dir=Path('')):
+    def _run(self,
+             pprint=False,
+             show=False,
+             save=False,
+             crop=False,
+             render=False,
+             labels=True,
+             hide_conf=False,
+             save_dir=Path('')):
         s, crops = '', []
         for i, (im, pred) in enumerate(zip(self.ims, self.pred)):
             s += f'\nimage {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '  # string
