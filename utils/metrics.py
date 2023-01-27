@@ -333,7 +333,9 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     ax.set_ylim(0, 1)
     ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     ax.set_title('Precision-Recall Curve')
-    ax.grid(visible=True, axis='both')  # add grid
+    ax.set_yticks(np.arange(0.0, 1.05, 0.05))  # set step size on yaxis
+    ax.set_xticks(np.arange(0.0, 1.05, 0.05))  # set step size on xaxis
+    ax.grid()  # add grid
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
 
@@ -351,8 +353,6 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
         ax.plot(px, py.T, linewidth=1, color='grey')  # plot(confidence, metric)
 
     y = smooth(py.mean(0), 0.05)
-    ax.set_yticks(np.arange(min(y), max(y) + 1, 0.05))  # set step size on yaxis
-    ax.set_xticks(np.arange(min(px), max(px) + 1, 0.05))  # set step size on yaxis
     ax.plot(px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -360,6 +360,8 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_ylim(0, 1)
     ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     ax.set_title(f'{ylabel}-Confidence Curve')
-    ax.grid(visible=True, axis='both')  # add grid
+    ax.set_yticks(np.arange(0.0, 1.05, 0.05))  # set step size on yaxis
+    ax.set_xticks(np.arange(0.0, 1.05, 0.05))  # set step size on xaxis
+    ax.grid()  # add grid
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
