@@ -317,7 +317,7 @@ def wh_iou(wh1, wh2, eps=1e-7):
 @threaded
 def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     # Precision-recall curve
-    fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
+    fig, ax = plt.subplots(1, 1, figsize=(12, 9), tight_layout=True)
     py = np.stack(py, axis=1)
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
