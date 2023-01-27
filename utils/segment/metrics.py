@@ -182,14 +182,14 @@ KEYS = [
     "train/seg_loss",  # train loss
     "train/obj_loss",
     "train/cls_loss",
-    "metrics/precision(B)",
-    "metrics/recall(B)",
-    "metrics/mAP_0.5(B)",
-    "metrics/mAP_0.5:0.95(B)",  # metrics
-    "metrics/precision(M)",
-    "metrics/recall(M)",
-    "metrics/mAP_0.5(M)",
-    "metrics/mAP_0.5:0.95(M)",  # metrics
+    "metrics/precision_B",
+    "metrics/recall_B",
+    "metrics/mAP_0.5_B",
+    "metrics/mAP_0.5:0.95_B",  # metrics
+    "metrics/precision_M",
+    "metrics/recall_M",
+    "metrics/mAP_0.5_M",
+    "metrics/mAP_0.5:0.95_M",  # metrics
     "val/box_loss",
     "val/seg_loss",  # val loss
     "val/obj_loss",
@@ -200,11 +200,11 @@ KEYS = [
 
 BEST_KEYS = [
     "best/epoch",
-    "best/precision(B)",
-    "best/recall(B)",
-    "best/mAP_0.5(B)",
-    "best/mAP_0.5:0.95(B)",
-    "best/precision(M)",
-    "best/recall(M)",
-    "best/mAP_0.5(M)",
-    "best/mAP_0.5:0.95(M)",]
+    "best/precision_B",
+    "best/recall_B",
+    "best/mAP_0.5_B",
+    "best/mAP_0.5:0.95_B",
+    "best/precision_M",
+    "best/recall_M",
+    "best/mAP_0.5_M",
+    "best/mAP_0.5:0.95_M",]
