@@ -386,7 +386,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     ema.update(model)
                 last_opt_step = ni
                 
-            elif sparsification_manager:
+            elif sparsification_manager and sparsification_manager.train_manager:
                 # Call for SparseML integration since the number of steps per epoch can vary
                 # This keeps the number of steps per epoch equivalent to the number of batches per epoch
                 # Does not step the scaler or the optimizer
