@@ -175,6 +175,7 @@ ENV*/
 .DS_Store
 .AppleDouble
 .LSOverride
+best_weights/*
 
 # Icon must end with two \r
 Icon
