@@ -436,9 +436,9 @@ def parse_opt(known=False):
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=100, help='total training epochs')
-    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs, -1 for autobatch')
+    parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.custom.ca.yaml', help='hyperparameters path')
+    parser.add_argument('--epochs', type=int, default=50, help='total training epochs')
+    parser.add_argument('--batch-size', type=int, default=-1, help='total batch size for all GPUs, -1 for autobatch')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
@@ -448,14 +448,14 @@ def parse_opt(known=False):
     parser.add_argument('--noplots', action='store_true', help='save no plot files')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
-    parser.add_argument('--cache', type=str, nargs='?', const='ram', help='image --cache ram/disk')
+    parser.add_argument('--cache', type=str, default=True, nargs='?', const='ram', help='image --cache ram/disk')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
     parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='SGD', help='optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
-    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
+    parser.add_argument('--workers', type=int, default=1, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--project', default=ROOT / 'runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
@@ -530,37 +530,72 @@ def main(opt, callbacks=Callbacks()):
     # Evolve hyperparameters (optional)
     else:
         # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
+        #TODO change unnecessary parameters (inital_value, min, max)
         meta = {
-            'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
-            'lrf': (1, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
-            'momentum': (0.3, 0.6, 0.98),  # SGD momentum/Adam beta1
-            'weight_decay': (1, 0.0, 0.001),  # optimizer weight decay
-            'warmup_epochs': (1, 0.0, 5.0),  # warmup epochs (fractions ok)
-            'warmup_momentum': (1, 0.0, 0.95),  # warmup initial momentum
-            'warmup_bias_lr': (1, 0.0, 0.2),  # warmup initial bias lr
-            'box': (1, 0.02, 0.2),  # box loss gain
-            'cls': (1, 0.2, 4.0),  # cls loss gain
-            'cls_pw': (1, 0.5, 2.0),  # cls BCELoss positive_weight
-            'obj': (1, 0.2, 4.0),  # obj loss gain (scale with pixels)
-            'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
-            'iou_t': (0, 0.1, 0.7),  # IoU training threshold
-            'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
-            'anchors': (2, 2.0, 10.0),  # anchors per output grid (0 to ignore)
-            'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
-            'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
-            'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
-            'hsv_v': (1, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
-            'degrees': (1, 0.0, 45.0),  # image rotation (+/- deg)
-            'translate': (1, 0.0, 0.9),  # image translation (+/- fraction)
-            'scale': (1, 0.0, 0.9),  # image scale (+/- gain)
-            'shear': (1, 0.0, 10.0),  # image shear (+/- deg)
-            'perspective': (0, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
-            'flipud': (1, 0.0, 1.0),  # image flip up-down (probability)
-            'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
-            'mosaic': (1, 0.0, 1.0),  # image mixup (probability)
-            'mixup': (1, 0.0, 1.0),  # image mixup (probability)
-            'copy_paste': (1, 0.0, 1.0)}  # segment copy-paste (probability)
+            'lr0': (1e-4, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
+            'lrf': (.01, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
+            'momentum': (0.937, 0.937, 0.937),  # SGD momentum/Adam beta1
+            'weight_decay': (0.0005, 0.0005, 0.0005),  # optimizer weight decay
+            'warmup_epochs': (3, 3.0, 3.0),  # warmup epochs (fractions ok)
+            'warmup_momentum': (.8, 0.8, 0.8),  # warmup initial momentum
+            'warmup_bias_lr': (.1, 0.1, 0.1),  # warmup initial bias lr
+            'box': (0.05, 0.05, 0.05),  # box loss gain
+            'cls': (.5, 0.5, 0.5),  # cls loss gain
+            'cls_pw': (1, 1.0, 1.0),  # cls BCELoss positive_weight
+            'obj': (1, 1.0, 1.0),  # obj loss gain (scale with pixels)
+            'obj_pw': (1, 1.0, 1.0),  # obj BCELoss positive_weight
+            'iou_t': (.2, 0.2, 0.2),  # IoU training threshold
+            'anchor_t': (4, 4.0, 4.0),  # anchor-multiple threshold
+            'anchors': (0, 0.0, 0.0),  # anchors per output grid (0 to ignore)
+            'fl_gamma': (0, 0.0, 0.0),  # focal loss gamma (efficientDet default gamma=1.5)
+            'hsv_h': (1, 1.0, 1.0),  # image HSV-Hue augmentation (fraction)
+            'hsv_s': (.4, 0.4, 0.4),  # image HSV-Saturation augmentation (fraction)
+            'hsv_v': (.2, 0.2, 0.2),  # image HSV-Value augmentation (fraction)
+            'degrees': (0, 0.0, 0.0),  # image rotation (+/- deg)
+            'translate': (.2, 0.2, 0.2),  # image translation (+/- fraction)
+            'scale': (0, 0.0, 0.0),  # image scale (+/- gain)
+            'shear': (0, 0.0, 0.0),  # image shear (+/- deg)
+            'perspective': (0, 0.0, 0.0),  # image perspective (+/- fraction), range 0-0.001
+            'flipud': (1, 1.0, 1.0),  # image flip up-down (probability)
+            'fliplr': (1, 1.0, 1.0),  # image flip left-right (probability)
+            'mosaic': (0, 0.0, 0.0),  # image mixup (probability)
+            'mixup': (0, 0.0, 0.0),  # image mixup (probability)
+            'copy_paste': (0, 0.0, 0.0) # segment copy-paste (probability)
+        }
 
+        # DEFAULT VALUES
+        # meta = {
+        #     'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
+        #     'lrf': (1, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
+        #     'momentum': (0.3, 0.6, 0.98),  # SGD momentum/Adam beta1
+        #     'weight_decay': (1, 0.0, 0.001),  # optimizer weight decay
+        #     'warmup_epochs': (1, 0.0, 5.0),  # warmup epochs (fractions ok)
+        #     'warmup_momentum': (1, 0.0, 0.95),  # warmup initial momentum
+        #     'warmup_bias_lr': (1, 0.0, 0.2),  # warmup initial bias lr
+        #     'box': (1, 0.02, 0.2),  # box loss gain
+        #     'cls': (1, 0.2, 4.0),  # cls loss gain
+        #     'cls_pw': (1, 0.5, 2.0),  # cls BCELoss positive_weight
+        #     'obj': (1, 0.2, 4.0),  # obj loss gain (scale with pixels)
+        #     'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
+        #     'iou_t': (0, 0.1, 0.7),  # IoU training threshold
+        #     'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
+        #     'anchors': (2, 2.0, 10.0),  # anchors per output grid (0 to ignore)
+        #     'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
+        #     'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
+        #     'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
+        #     'hsv_v': (1, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
+        #     'degrees': (1, 0.0, 45.0),  # image rotation (+/- deg)
+        #     'translate': (1, 0.0, 0.9),  # image translation (+/- fraction)
+        #     'scale': (1, 0.0, 0.9),  # image scale (+/- gain)
+        #     'shear': (1, 0.0, 10.0),  # image shear (+/- deg)
+        #     'perspective': (0, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
+        #     'flipud': (1, 0.0, 1.0),  # image flip up-down (probability)
+        #     'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
+        #     'mosaic': (1, 0.0, 1.0),  # image mixup (probability)
+        #     'mixup': (1, 0.0, 1.0),  # image mixup (probability)
+        #     'copy_paste': (1, 0.0, 1.0) # segment copy-paste (probability)
+        # }  
+    
         with open(opt.hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
             if 'anchors' not in hyp:  # anchors commented in hyp.yaml
