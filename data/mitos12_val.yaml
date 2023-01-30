@@ -1,0 +1,8 @@
+path: D:\DEEP_LEARNING\TopMitosRuns\detection\best\split_validation_set\m12 # dataset root dir
+train: train/images # train images (relative to 'path') 128 images
+val: val/images # val images (relative to 'path') 128 images
+#test: test/images #test images (optional)
+
+# Classes
+names:
+  0: mitotic

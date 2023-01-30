@@ -208,7 +208,7 @@ class ConfusionMatrix:
                        vmin=0.0,
                        xticklabels=ticklabels,
                        yticklabels=ticklabels).set_facecolor((1, 1, 1))
-        ax.set_xlabel('True')
+        ax.set_ylabel('True')
         ax.set_ylabel('Predicted')
         ax.set_title('Confusion Matrix')
         fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
@@ -317,7 +317,7 @@ def wh_iou(wh1, wh2, eps=1e-7):
 @threaded
 def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     # Precision-recall curve
-    fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
+    fig, ax = plt.subplots(1, 1, figsize=(12, 9), tight_layout=True)
     py = np.stack(py, axis=1)
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
@@ -333,6 +333,9 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     ax.set_ylim(0, 1)
     ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     ax.set_title('Precision-Recall Curve')
+    ax.set_yticks(np.arange(0.0, 1.05, 0.05))  # set step size on yaxis
+    ax.set_xticks(np.arange(0.0, 1.05, 0.05))  # set step size on xaxis
+    ax.grid()  # add grid
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
 
@@ -340,7 +343,7 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
 @threaded
 def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confidence', ylabel='Metric'):
     # Metric-confidence curve
-    fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
+    fig, ax = plt.subplots(1, 1, figsize=(12, 9), tight_layout=True)
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
         for i, y in enumerate(py):
@@ -356,5 +359,8 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_ylim(0, 1)
     ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     ax.set_title(f'{ylabel}-Confidence Curve')
+    ax.set_yticks(np.arange(0.0, 1.05, 0.05))  # set step size on yaxis
+    ax.set_xticks(np.arange(0.0, 1.05, 0.05))  # set step size on xaxis
+    ax.grid()  # add grid
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
