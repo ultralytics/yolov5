@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -11,7 +12,7 @@ from sparsezoo import Model
 from models.yolo import Model as Yolov5Model
 from utils.dataloaders import create_dataloader
 from utils.general import LOGGER, check_dataset, check_yaml, colorstr
-from utils.neuralmagic.quantization import update_model_bottlenecks
+from utils.neuralmagic.quantization import _Add, update_model_bottlenecks
 from utils.torch_utils import ModelEMA
 
 __all__ = [
@@ -27,6 +28,20 @@ __all__ = [
 SAVE_ROOT = Path.cwd()
 RANK = int(os.getenv("RANK", -1))
 ALMOST_ONE = 1 - 1e-9  # for incrementing epoch to be applied to recipe
+
+# In previous integrations of NM YOLOv5, we were pickling models as long as they are
+# not quantized. We've now changed to never pickling a model touched by us. This
+# namespace hacking is meant to address backwards compatibility with previously
+# pickled, pruned models.
+import models
+from models import common
+setattr(common, "_Add", _Add)  # Definition of the _Add module has moved
+
+# If using yolov5 as a repo and not a package, allow loading of models pickled w package
+if "yolov5" not in sys.modules:
+    sys.modules["yolov5"] = ""
+    sys.modules["yolov5.models"] = models
+    sys.modules["yolov5.models.common"] = common
 
 
 class ToggleableModelEMA(ModelEMA):
@@ -81,20 +96,27 @@ def load_sparsified_model(
     # Load checkpoint if not yet loaded
     ckpt = ckpt if isinstance(ckpt, dict) else torch.load(ckpt, map_location=device)
 
-    # Construct randomly initialized model model and apply sparse structure modifiers
-    model = Yolov5Model(ckpt.get("yaml"))
-    model = update_model_bottlenecks(model).to(device)
-    checkpoint_manager = ScheduledModifierManager.from_yaml(ckpt["checkpoint_recipe"])
-    checkpoint_manager.apply_structure(
-        model, ckpt["epoch"] + ALMOST_ONE if ckpt["epoch"] >= 0 else float("inf")
-    )
+    if isinstance(ckpt["model"], torch.nn.Module):
+        model = ckpt["model"]
 
-    # Load state dict
-    model.load_state_dict(ckpt["ema"] or ckpt["model"], strict=True)
+    else:
+        # Construct randomly initialized model model and apply sparse structure modifiers
+        model = Yolov5Model(ckpt.get("yaml"))
+        model = update_model_bottlenecks(model).to(device)
+        checkpoint_manager = ScheduledModifierManager.from_yaml(
+            ckpt["checkpoint_recipe"]
+        )
+        checkpoint_manager.apply_structure(
+            model, ckpt["epoch"] + ALMOST_ONE if ckpt["epoch"] >= 0 else float("inf")
+        )
 
-    model.hyp = ckpt.get("hyp")
-    model.nc = ckpt.get("nc")
+        # Load state dict
+        model.load_state_dict(ckpt["ema"] or ckpt["model"], strict=True)
+        model.hyp = ckpt.get("hyp")
+        model.nc = ckpt.get("nc")
+
     model.sparsified = True
+    model.float()
 
     return model
 
