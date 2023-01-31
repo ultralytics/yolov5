@@ -550,7 +550,7 @@ def parse_opt(known=False, skip_parse=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
-    parser.add_argument('--sparsification-recipe', type=str, default=None, help='Path to a sparsification recipe, '
+    parser.add_argument('--sparsification-recipe', '--recipe', type=str, default=None, help='Path to a sparsification recipe, '
                                                                  'see https://github.com/neuralmagic/sparseml for more information')
     parser.add_argument("--recipe-args", type=str, default=None, help = 'A json string, csv key=value string, or dictionary '
                                                                         'containing arguments to override the root arguments '
