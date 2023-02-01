@@ -21,7 +21,7 @@ test: # test images (optional)
 
 # Classes
 names:
-  0: aeroplane
+  0: drone
   1: bicycle
   2: bird
   3: boat
