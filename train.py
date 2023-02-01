@@ -255,7 +255,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # DDP mode
     if cuda and RANK != -1:
         model = smart_DDP(model)
-        teacher_model = smart_DDP(teacher_model) if teacher_model else teacher_model
 
     # Model attributes
     nl = de_parallel(model).model[-1].nl  # number of detection layers (to scale hyps)
