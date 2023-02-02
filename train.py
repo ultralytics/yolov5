@@ -122,11 +122,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         with torch_distributed_zero_first(LOCAL_RANK):
             weights = ( # download if not found locally
                 attempt_download(weights) if not weights.startswith("zoo:") 
-                else sparsezoo_download(weights, opt.sparsification_recipe)
+                else sparsezoo_download(weights, opt.recipe)
             ) 
         ckpt = torch.load(weights, map_location='cpu')  # load checkpoint to CPU to avoid CUDA memory leak
         model = Model(cfg or ckpt.get('yaml') or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
-        sparsification_manager = maybe_create_sparsification_manager(model, ckpt=ckpt, train_recipe=opt.sparsification_recipe, recipe_args=opt.recipe_args, device=device, resumed=opt.resume)
+        sparsification_manager = maybe_create_sparsification_manager(model, ckpt=ckpt, train_recipe=opt.recipe, recipe_args=opt.recipe_args, device=device, resumed=opt.resume)
         exclude = ['anchor'] if (cfg or hyp.get('anchors')) and not resume else []  # exclude keys
         csd = ckpt['model'].float().state_dict() if isinstance(ckpt['model'], nn.Module) else ckpt['model'] # checkpoint state_dict as FP32
         csd = intersect_dicts(csd, model.state_dict(), exclude=exclude)  # intersect
@@ -135,8 +135,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     else:
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
         sparsification_manager = (
-            SparsificationManager(model, train_recipe=opt.sparsification_recipe, recipe_args=opt.recipe_args, device=device) 
-            if opt.sparsification_recipe 
+            SparsificationManager(model, train_recipe=opt.recipe, recipe_args=opt.recipe_args, device=device) 
+            if opt.recipe 
             else None
         )
     amp = check_amp(model)  # check AMP
@@ -549,7 +549,7 @@ def parse_opt(known=False, skip_parse=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
-    parser.add_argument('--sparsification-recipe', '--recipe', type=str, default=None, help='Path to a sparsification recipe, '
+    parser.add_argument('--recipe', type=str, default=None, help='Path to a sparsification recipe, '
                                                                  'see https://github.com/neuralmagic/sparseml for more information')
     parser.add_argument("--recipe-args", type=str, default=None, help = 'A json string, csv key=value string, or dictionary '
                                                                         'containing arguments to override the root arguments '

@@ -58,12 +58,12 @@ class ToggleableModelEMA(ModelEMA):
             super().update(*args, **kwargs)
 
 
-def sparsezoo_download(path: str, sparsification_recipe: Optional[str] = None) -> str:
+def sparsezoo_download(path: str, recipe: Optional[str] = None) -> str:
     """
     Loads model from the SparseZoo and override the path with the new download path
     """
     return download_framework_model_by_recipe_type(
-        Model(path), sparsification_recipe, "pt"
+        Model(path), recipe, "pt"
     )
 
 
