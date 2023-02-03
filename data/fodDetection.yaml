@@ -1,0 +1,8 @@
+train: F:\FOD YOLO Dataset\yolov5 with dataset\dataset\YoloAnnotations\images\Train
+val:  F:\FOD YOLO Dataset\yolov5 with dataset\dataset\YoloAnnotations\images\Validate
+test: F:\FOD YOLO Dataset\yolov5 with dataset\dataset\YoloAnnotations\images\Test
+# number of classes
+nc: 2
+
+# class names
+names: ["FOD", "RunwayCrack"]
