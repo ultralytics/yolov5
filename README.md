@@ -141,7 +141,17 @@ git clone https://github.com/ultralytics/yolov5  # clone
 cd yolov5
 pip install -r requirements.txt  # install
 ```
-
+### Python pip package with improved yolov5u models 🌟 NEW
+  ```bash
+  pip install ultralytics
+  ```
+  ```python
+  from ultralytics import YOLO
+  model = YOLO("yolov5n.pt")
+  result = model(img)
+  model.train(data="coco128.yaml")
+  ```
+  
 </details>
 
 <details>
