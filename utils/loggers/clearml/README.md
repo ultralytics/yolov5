@@ -135,6 +135,7 @@ Basically we need the following keys: `path`, `train`, `test`, `val`, `nc`, `nam
 ### Upload Your Dataset
 
 To get this dataset into ClearML as a versioned dataset, go to the dataset root folder and run the following command:
+
 ```bash
 cd coco128
 clearml-data sync --project YOLOv5 --name coco128 --folder .
@@ -211,6 +212,7 @@ With our agent running, we can give it some work. Remember from the HPO section 
 Now you can clone a task like we explained above, or simply mark your current script by adding `task.execute_remotely()` and on execution it will be put into a queue, for the agent to start working on!
 
 To run the YOLOv5 training script remotely, all you have to do is add this line to the training.py script after the clearml logger has been instantiated:
+
 ```python
 # ...
 # Loggers
