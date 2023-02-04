@@ -23,7 +23,6 @@ And so much more. It's up to you how many of these tools you want to use, you ca
 
 ![ClearML scalars dashboard](https://github.com/thepycoder/clearml_screenshots/raw/main/experiment_manager_with_compare.gif)
 
-
 <br />
 <br />
 
@@ -35,15 +34,15 @@ Either sign up for free to the [ClearML Hosted Service](https://cutt.ly/yolov5-t
 
 1. Install the `clearml` python package:
 
-    ```bash
-    pip install clearml
-    ```
+   ```bash
+   pip install clearml
+   ```
 
 1. Connect the ClearML SDK to the server by [creating credentials](https://app.clear.ml/settings/workspace-configuration) (go right top to Settings -> Workspace -> Create new credentials), then execute the command below and follow the instructions:
 
-    ```bash
-    clearml-init
-    ```
+   ```bash
+   clearml-init
+   ```
 
 That's it! You're done 😎
 
@@ -67,11 +66,13 @@ python train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yo
 ```
 
 or with custom project and task name:
+
 ```bash
 python train.py --project my_project --name my_training --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --cache
 ```
 
 This will capture:
+
 - Source code + uncommitted changes
 - Installed packages
 - (Hyper)parameters
@@ -112,6 +113,7 @@ The YOLOv5 repository supports a number of different datasets by using yaml file
         |_ LICENSE
         |_ README.txt
 ```
+
 But this can be any dataset you wish. Feel free to use your own, as long as you keep to this folder structure.
 
 Next, ⚠️**copy the corresponding yaml file to the root of the dataset folder**⚠️. This yaml files contains the information ClearML will need to properly use the dataset. You can make this yourself too, of course, just follow the structure of the example yamls.
@@ -139,6 +141,7 @@ clearml-data sync --project YOLOv5 --name coco128 --folder .
 ```
 
 The command `clearml-data sync` is actually a shorthand command. You could also run these commands one after the other:
+
 ```bash
 # Optionally add --parent <parent_dataset_id> if you want to base
 # this version on another dataset version, so no duplicate files are uploaded!
@@ -186,6 +189,7 @@ This is where the ClearML Agent comes into play. Check out what the agent can do
 In short: every experiment tracked by the experiment manager contains enough information to reproduce it on a different machine (installed packages, uncommitted changes etc.). So a ClearML agent does just that: it listens to a queue for incoming tasks and when it finds one, it recreates the environment and runs it while still reporting scalars, plots etc. to the experiment manager.
 
 You can turn any machine (a cloud VM, a local GPU machine, your own laptop ... ) into a ClearML agent by simply running:
+
 ```bash
 clearml-agent daemon --queue <queues_to_listen_to> [--docker]
 ```
@@ -214,11 +218,12 @@ data_dict = None
 if RANK in {-1, 0}:
     loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
     if loggers.clearml:
-        loggers.clearml.task.execute_remotely(queue='my_queue')  # <------ ADD THIS LINE
+        loggers.clearml.task.execute_remotely(queue="my_queue")  # <------ ADD THIS LINE
         # Data_dict is either None is user did not choose for ClearML dataset or is filled in by ClearML
         data_dict = loggers.clearml.data_dict
 # ...
 ```
+
 When running the training script after this change, python will run the script up until that line, after which it will package the code and send it to the queue instead!
 
 ### Autoscaling workers
