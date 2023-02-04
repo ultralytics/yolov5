@@ -208,7 +208,7 @@ class WandbLogger():
         opt (namespace)-- Commandline arguments for current run
 
         returns:
-        Updated dataset info dictionary where local dataset paths are replaced by WAND_ARFACT_PREFIX links.
+        Updated dataset info dictionary where local dataset paths are replaced by WAND_ARTIFACT_PREFIX links.
         """
         assert wandb, 'Install wandb to upload dataset'
         config_path = self.log_dataset_artifact(opt.data, opt.single_cls,
@@ -265,7 +265,7 @@ class WandbLogger():
             if opt.evolve or opt.noplots:
                 self.bbox_interval = opt.bbox_interval = opt.epochs + 1  # disable bbox_interval
         train_from_artifact = self.train_artifact_path is not None and self.val_artifact_path is not None
-        # Update the the data_dict to point to local artifacts dir
+        # Update the data_dict to point to local artifacts dir
         if train_from_artifact:
             self.data_dict = data_dict
 
@@ -278,13 +278,13 @@ class WandbLogger():
         alias (str)-- alias of the artifact to be download/used for training
 
         returns:
-        (str, wandb.Artifact) -- path of the downladed dataset and it's corresponding artifact object if dataset
+        (str, wandb.Artifact) -- path of the downloaded dataset and it's corresponding artifact object if dataset
         is found otherwise returns (None, None)
         """
         if isinstance(path, str) and path.startswith(WANDB_ARTIFACT_PREFIX):
             artifact_path = Path(remove_prefix(path, WANDB_ARTIFACT_PREFIX) + ":" + alias)
             dataset_artifact = wandb.use_artifact(artifact_path.as_posix().replace("\\", "/"))
-            assert dataset_artifact is not None, "'Error: W&B dataset artifact doesn\'t exist'"
+            assert dataset_artifact is not None, "'Error: W&B dataset artifact does not exist'"
             datadir = dataset_artifact.download()
             return datadir, dataset_artifact
         return None, None
@@ -412,7 +412,6 @@ class WandbLogger():
         returns:
         dataset artifact to be logged or used
         """
-        # TODO: Explore multiprocessing to slpit this loop parallely| This is essential for speeding up the the logging
         artifact = wandb.Artifact(name=name, type="dataset")
         img_files = tqdm([dataset.path]) if isinstance(dataset.path, str) and Path(dataset.path).is_dir() else None
         img_files = tqdm(dataset.im_files) if not img_files else img_files

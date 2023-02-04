@@ -11,7 +11,7 @@
 
 Think of [W&B](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) like GitHub for machine learning models. With a few lines of code, save everything you need to debug, compare and reproduce your models — architecture, hyperparameters, git commits, model weights, GPU usage, and even datasets and predictions.
 
-Used by top researchers including teams at OpenAI, Lyft, Github, and MILA, W&B is part of the new standard of best practices for machine learning. How W&B can help you optimize your machine learning workflows:
+Used by top researchers including teams at OpenAI, Lyft, GitHub, and MILA, W&B is part of the new standard of best practices for machine learning. How W&B can help you optimize your machine learning workflows:
 
 - [Debug](https://wandb.ai/wandb/getting-started/reports/Visualize-Debug-Machine-Learning-Models--VmlldzoyNzY5MDk#Free-2) model performance in real time
 - [GPU usage](https://wandb.ai/wandb/getting-started/reports/Visualize-Debug-Machine-Learning-Models--VmlldzoyNzY5MDk#System-4) visualized automatically
@@ -68,7 +68,7 @@ Run information streams from your environment to the W&B cloud console as you tr
 You can leverage W&B artifacts and Tables integration to easily visualize and manage your datasets, models and training evaluations. Here are some quick examples to get you started.
 
 <details open>
- <h3> 1: Train and Log Evaluation simultaneousy </h3>
+ <h3> 1: Train and Log Evaluation simultaneously </h3>
    This is an extension of the previous section, but it'll also training after uploading the dataset. <b> This also evaluation Table</b>
    Evaluation table compares your predictions and ground truths across the validation set for each epoch. It uses the references to the already uploaded datasets,
    so no images will be uploaded from your system more than once.
@@ -102,7 +102,7 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
 </details>
 
 <h3> 4: Save model checkpoints as artifacts </h3>
-  To enable saving and versioning checkpoints of your experiment, pass `--save_period n` with the base cammand, where `n` represents checkpoint interval.
+  To enable saving and versioning checkpoints of your experiment, pass `--save_period n` with the base command, where `n` represents checkpoint interval.
   You can also log both the dataset and model checkpoints simultaneously. If not passed, only the final model will be logged
 
 <details>
@@ -142,7 +142,7 @@ Any run can be resumed using artifacts if the <code>--resume</code> argument sta
 </details>
 
 <h3> Reports </h3>
-W&B Reports can be created from your saved runs for sharing online. Once a report is created you will receive a link you can use to publically share your results. Here is an example report created from the COCO128 tutorial trainings of all four YOLOv5 models ([link](https://wandb.ai/glenn-jocher/yolov5_tutorial/reports/YOLOv5-COCO128-Tutorial-Results--VmlldzozMDI5OTY)).
+W&B Reports can be created from your saved runs for sharing online. Once a report is created you will receive a link you can use to publicly share your results. Here is an example report created from the COCO128 tutorial trainings of all four YOLOv5 models ([link](https://wandb.ai/glenn-jocher/yolov5_tutorial/reports/YOLOv5-COCO128-Tutorial-Results--VmlldzozMDI5OTY)).
 
 <img width="900" alt="Weights & Biases Reports" src="https://user-images.githubusercontent.com/26833433/135394029-a17eaf86-c6c1-4b1d-bb80-b90e83aaffa7.png">
 

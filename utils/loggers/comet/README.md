@@ -23,7 +23,7 @@ pip install comet_ml
 
 There are two ways to configure Comet with YOLOv5.
 
-You can either set your credentials through enviroment variables
+You can either set your credentials through environment variables
 
 **Environment Variables**
 
@@ -49,7 +49,7 @@ project_name=<Your Comet Project Name> # This will default to 'yolov5'
 python train.py --img 640 --batch 16 --epochs 5 --data coco128.yaml --weights yolov5s.pt
 ```
 
-That's it! Comet will automatically log your hyperparameters, command line arguments, training and valiation metrics. You can visualize and analyze your runs in the Comet UI
+That's it! Comet will automatically log your hyperparameters, command line arguments, training and validation metrics. You can visualize and analyze your runs in the Comet UI
 
 <img width="1920" alt="yolo-ui" src="https://user-images.githubusercontent.com/26833433/202851203-164e94e1-2238-46dd-91f8-de020e9d6b41.png">
 
@@ -221,7 +221,7 @@ python train.py \
 
 ## Hyperparameter Search with the Comet Optimizer
 
-YOLOv5 is also integrated with Comet's Optimizer, making is simple to visualie hyperparameter sweeps in the Comet UI.
+YOLOv5 is also integrated with Comet's Optimizer, making is simple to visualize hyperparameter sweeps in the Comet UI.
 
 ### Configuring an Optimizer Sweep
 
