@@ -58,7 +58,7 @@ Glenn will be joined by Michael Goin of Neural Magic on February 8th at 12 EST/1
 To join the webinar, visit our [YouTube Channel](https://www.youtube.com/@Ultralytics/streams) and turn on your notifications!
 
 <a align="center" href="https://www.youtube.com/watch?v=FXIbVnat2eU" target="_blank">
-<img width="80%" src="https://user-images.githubusercontent.com/85292283/216307765-c76c6183-5ea1-4dbb-92fd-4dc2d66b590c.png"></a>
+<img width="80%" src="https://user-images.githubusercontent.com/26833433/216767629-85a1bafb-8e7e-45e0-b342-35444ff65b2e.png"></a>
 
 </div>
 
