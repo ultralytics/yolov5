@@ -49,14 +49,17 @@ To request an Enterprise License please complete the form at <a href="https://ul
 
 <div align="center">
 
-[Ultralytics Live Session 3](https://youtu.be/IPcpYO5ITa8) ✨ is here! Join us on January 24th at 18 CET as we dive into the latest advancements in YOLOv8, and demonstrate how to use this cutting-edge, SOTA model to improve your object detection, instance segmentation, and image classification projects. See firsthand how YOLOv8's speed, accuracy, and ease of use make it a top choice for professionals and researchers alike.
+⚡️ Stay tuned for [Ultralytics Live Session 4](https://www.youtube.com/watch?v=FXIbVnat2eU) ⚡️ 
 
-In addition to learning about the exciting new features and improvements of Ultralytics YOLOv8, you will also have the opportunity to ask questions and interact with our team during the live Q&A session. We encourage you to come prepared with any questions you may have.
+Over the past couple of years we found that 22% percent of you experience difficulty in deploying your vision AI models. To improve this step in the ML pipeline, we've partnered with [Neural Magic](https://bit.ly/yolov5-neuralmagic), whose DeepSparse tool takes advantage of sparsity and low-precision arithmetic within neural networks to offer exceptional performance on commodity hardware.
+
+Glenn will be joined by Michael Goin of Neural Magic on February 8th at 12 EST/18 CET to discuss how to achieve GPU-class performance for YOLOv5 on CPUs. Be sure to come prepared with any questions you have about the model deployment process!
 
 To join the webinar, visit our [YouTube Channel](https://www.youtube.com/@Ultralytics/streams) and turn on your notifications!
 
-<a align="center" href="https://youtu.be/IPcpYO5ITa8" target="_blank">
-<img width="80%" src="https://user-images.githubusercontent.com/107626595/212887899-e94b006c-5192-40fa-8b24-7b5428e065e8.png"></a>
+<a align="center" href="https://www.youtube.com/watch?v=FXIbVnat2eU" target="_blank">
+<img width="80%" src="https://user-images.githubusercontent.com/26833433/216767629-85a1bafb-8e7e-45e0-b342-35444ff65b2e.png"></a>
+
 </div>
 
 ## <div align="center">Segmentation ⭐ NEW</div>
