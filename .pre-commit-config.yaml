@@ -31,7 +31,7 @@ repos:
         args: [ --py37-plus ]
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.11.4
+    rev: 5.11.2
     hooks:
       - id: isort
         name: Sort imports
