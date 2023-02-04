@@ -50,7 +50,7 @@ To request an Enterprise License please complete the form at <a href="https://ul
 
 <div align="center">
 
-⚡️ Stay tuned for [Ultralytics Live Session 4](https://www.youtube.com/watch?v=FXIbVnat2eU) ⚡️ 
+⚡️ Stay tuned for [Ultralytics Live Session 4](https://www.youtube.com/watch?v=FXIbVnat2eU) ⚡️
 
 Over the past couple of years we found that 22% percent of you experience difficulty in deploying your vision AI models. To improve this step in the ML pipeline, we've partnered with [Neural Magic](https://bit.ly/yolov5-neuralmagic), whose DeepSparse tool takes advantage of sparsity and low-precision arithmetic within neural networks to offer exceptional performance on commodity hardware.
 
