@@ -1,6 +1,6 @@
-train: F:\FOD YOLO Dataset\yolov5 with dataset\dataset\YoloAnnotations\images\Train
-val:  F:\FOD YOLO Dataset\yolov5 with dataset\dataset\YoloAnnotations\images\Validate
-test: F:\FOD YOLO Dataset\yolov5 with dataset\dataset\YoloAnnotations\images\Test
+train: /kaggle/input/yolo-dataset/YoloAnnotations/images/Train
+val:  /kaggle/input/yolo-dataset/YoloAnnotations/images/Validate
+test: /kaggle/input/yolo-dataset/YoloAnnotations/images/Test
 # number of classes
 nc: 2
 
