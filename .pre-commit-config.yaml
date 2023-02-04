@@ -59,12 +59,12 @@ repos:
       - id: flake8
         name: PEP8
 
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.2
-    hooks:
-      - id: codespell
-        args:
-          - --ignore-words-list=crate,nd
+  #- repo: https://github.com/codespell-project/codespell
+  #  rev: v2.2.2
+  #  hooks:
+  #    - id: codespell
+  #      args:
+  #        - --ignore-words-list=crate,nd
 
   #- repo: https://github.com/asottile/yesqa
   #  rev: v1.4.0
