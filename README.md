@@ -127,7 +127,9 @@ python segment/predict.py --weights yolov5m-seg.pt --data data/images/bus.jpg
 ```
 
 ```python
-model = torch.hub.load("ultralytics/yolov5", "custom", "yolov5m-seg.pt")  # load from PyTorch Hub (WARNING: inference not yet supported)
+model = torch.hub.load(
+    "ultralytics/yolov5", "custom", "yolov5m-seg.pt"
+)  # load from PyTorch Hub (WARNING: inference not yet supported)
 ```
 
 | ![zidane](https://user-images.githubusercontent.com/26833433/203113421-decef4c4-183d-4a0a-a6c2-6435b33bc5d3.jpg) | ![bus](https://user-images.githubusercontent.com/26833433/203113416-11fe0025-69f7-4874-a0a6-65d0bfe2999a.jpg) |
@@ -405,7 +407,9 @@ python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
 ```
 
 ```python
-model = torch.hub.load("ultralytics/yolov5", "custom", "yolov5s-cls.pt")  # load from PyTorch Hub
+model = torch.hub.load(
+    "ultralytics/yolov5", "custom", "yolov5s-cls.pt"
+)  # load from PyTorch Hub
 ```
 
 ### Export
@@ -441,7 +445,6 @@ Get started in seconds with our verified environments. Click each icon below for
   <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="10%" /></a>
 </div>
-
 
 ## <div align="center">Contribute</div>
 
