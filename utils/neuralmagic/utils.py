@@ -189,7 +189,7 @@ def neuralmagic_onnx_export(
             if weights_path.parent.stem == "weights"
             else weights_path.parent / "DeepSparse_Deployment"
         )
-        onnx_file_name = weights_path.name
+        onnx_file_name = weights_path.with_suffix(".onnx").name
 
     save_dir.mkdir(parents=True, exist_ok=True)
 
