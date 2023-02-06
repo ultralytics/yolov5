@@ -46,6 +46,25 @@ To request an Enterprise License please complete the form at <a href="https://ul
 </div>
 
 
+## <div align="center">Ultralytics Live Session</div>
+
+<div align="center">
+
+⚡️ Stay tuned for [Ultralytics Live Session 4](https://www.youtube.com/watch?v=FXIbVnat2eU) ⚡️ 
+
+Over the past couple of years we found that 22% percent of you experience difficulty in deploying your vision AI models. To improve this step in the ML pipeline, we've partnered with [Neural Magic](https://bit.ly/yolov5-neuralmagic), whose DeepSparse tool takes advantage of sparsity and low-precision arithmetic within neural networks to offer exceptional performance on commodity hardware.
+
+Glenn will be joined by Michael Goin of Neural Magic on February 8th at 12 EST/18 CET to discuss how to achieve GPU-class performance for YOLOv5 on CPUs. Be sure to come prepared with any questions you have about the model deployment process!
+
+To join the webinar, visit our [YouTube Channel](https://www.youtube.com/@Ultralytics/streams) and turn on your notifications!
+
+<a align="center" href="https://www.youtube.com/watch?v=FXIbVnat2eU" target="_blank">
+<img width="80%" src="https://user-images.githubusercontent.com/26833433/216767629-85a1bafb-8e7e-45e0-b342-35444ff65b2e.png"></a>
+
+</div>
+
+## <div align="center">Segmentation ⭐ NEW</div>
+
 
 ## <div align="center">Ultralytics Framework and YOLOv8 ⭐ NEW </div>
 <div align="center">
