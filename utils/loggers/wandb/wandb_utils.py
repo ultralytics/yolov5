@@ -15,17 +15,17 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
+RANK = int(os.getenv('RANK', -1))
+DEPRECATION_WARNING = f"{colorstr('wandb')}: WARNING ⚠️ wandb is deprecated and will be removed in a future release. " \
+                      f"See supported integrations at https://github.com/ultralytics/yolov5#integrations."
 
 try:
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
+    LOGGER.warning(DEPRECATION_WARNING)
 except (ImportError, AssertionError):
     wandb = None
-
-RANK = int(os.getenv('RANK', -1))
-DEPRECATION_WARNING = f"{colorstr('wandb')}: WARNING ⚠️ wandb is deprecated and will be removed in a future release. " \
-                      f"See supported integrations at https://github.com/ultralytics/yolov5#integrations."
 
 
 class WandbLogger():
@@ -64,7 +64,6 @@ class WandbLogger():
         self.max_imgs_to_log = 16
         self.data_dict = None
         if self.wandb:
-            LOGGER.warning(DEPRECATION_WARNING)
             self.wandb_run = wandb.init(config=opt,
                                         resume="allow",
                                         project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
@@ -73,6 +72,7 @@ class WandbLogger():
                                         job_type=job_type,
                                         id=run_id,
                                         allow_val_change=True) if not wandb.run else wandb.run
+            LOGGER.warning(DEPRECATION_WARNING)
 
         if self.wandb_run:
             if self.job_type == 'Training':
