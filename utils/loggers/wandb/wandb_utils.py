@@ -72,7 +72,6 @@ class WandbLogger():
                                         job_type=job_type,
                                         id=run_id,
                                         allow_val_change=True) if not wandb.run else wandb.run
-            LOGGER.warning(DEPRECATION_WARNING)
 
         if self.wandb_run:
             if self.job_type == 'Training':
