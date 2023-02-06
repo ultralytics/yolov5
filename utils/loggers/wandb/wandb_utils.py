@@ -60,7 +60,6 @@ class WandbLogger():
         self.train_artifact_path, self.val_artifact_path = None, None
         self.result_artifact = None
         self.val_table, self.result_table = None, None
-        self.bbox_media_panel_images = []
         self.max_imgs_to_log = 16
         self.data_dict = None
         if self.wandb:
@@ -157,8 +156,6 @@ class WandbLogger():
         """
         if self.wandb_run:
             with all_logging_disabled():
-                if self.bbox_media_panel_images:
-                    self.log_dict["BoundingBoxDebugger"] = self.bbox_media_panel_images
                 try:
                     wandb.log(self.log_dict)
                 except BaseException as e:
@@ -167,9 +164,7 @@ class WandbLogger():
                     )
                     self.wandb_run.finish()
                     self.wandb_run = None
-
                 self.log_dict = {}
-                self.bbox_media_panel_images = []
 
     def finish_run(self):
         """
