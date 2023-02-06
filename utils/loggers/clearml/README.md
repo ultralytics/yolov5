@@ -23,7 +23,6 @@ And so much more. It's up to you how many of these tools you want to use, you ca
 
 ![ClearML scalars dashboard](https://github.com/thepycoder/clearml_screenshots/raw/main/experiment_manager_with_compare.gif)
 
-
 <br />
 <br />
 
@@ -35,15 +34,15 @@ Either sign up for free to the [ClearML Hosted Service](https://cutt.ly/yolov5-t
 
 1. Install the `clearml` python package:
 
-    ```bash
-    pip install clearml
-    ```
+   ```bash
+   pip install clearml
+   ```
 
 1. Connect the ClearML SDK to the server by [creating credentials](https://app.clear.ml/settings/workspace-configuration) (go right top to Settings -> Workspace -> Create new credentials), then execute the command below and follow the instructions:
 
-    ```bash
-    clearml-init
-    ```
+   ```bash
+   clearml-init
+   ```
 
 That's it! You're done 😎
 
@@ -60,18 +59,20 @@ pip install clearml>=1.2.0
 This will enable integration with the YOLOv5 training script. Every training run from now on, will be captured and stored by the ClearML experiment manager.
 
 If you want to change the `project_name` or `task_name`, use the `--project` and `--name` arguments of the `train.py` script, by default the project will be called `YOLOv5` and the task `Training`.
-PLEASE NOTE: ClearML uses `/` as a delimter for subprojects, so be careful when using `/` in your project name!
+PLEASE NOTE: ClearML uses `/` as a delimiter for subprojects, so be careful when using `/` in your project name!
 
 ```bash
 python train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --cache
 ```
 
 or with custom project and task name:
+
 ```bash
 python train.py --project my_project --name my_training --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --cache
 ```
 
 This will capture:
+
 - Source code + uncommitted changes
 - Installed packages
 - (Hyper)parameters
@@ -94,7 +95,7 @@ There even more we can do with all of this information, like hyperparameter opti
 
 ## 🔗 Dataset Version Management
 
-Versioning your data separately from your code is generally a good idea and makes it easy to aqcuire the latest version too. This repository supports supplying a dataset version ID and it will make sure to get the data if it's not there yet. Next to that, this workflow also saves the used dataset ID as part of the task parameters, so you will always know for sure which data was used in which experiment!
+Versioning your data separately from your code is generally a good idea and makes it easy to acquire the latest version too. This repository supports supplying a dataset version ID, and it will make sure to get the data if it's not there yet. Next to that, this workflow also saves the used dataset ID as part of the task parameters, so you will always know for sure which data was used in which experiment!
 
 ![ClearML Dataset Interface](https://github.com/thepycoder/clearml_screenshots/raw/main/clearml_data.gif)
 
@@ -112,6 +113,7 @@ The YOLOv5 repository supports a number of different datasets by using yaml file
         |_ LICENSE
         |_ README.txt
 ```
+
 But this can be any dataset you wish. Feel free to use your own, as long as you keep to this folder structure.
 
 Next, ⚠️**copy the corresponding yaml file to the root of the dataset folder**⚠️. This yaml files contains the information ClearML will need to properly use the dataset. You can make this yourself too, of course, just follow the structure of the example yamls.
@@ -132,13 +134,15 @@ Basically we need the following keys: `path`, `train`, `test`, `val`, `nc`, `nam
 
 ### Upload Your Dataset
 
-To get this dataset into ClearML as a versionned dataset, go to the dataset root folder and run the following command:
+To get this dataset into ClearML as a versioned dataset, go to the dataset root folder and run the following command:
+
 ```bash
 cd coco128
 clearml-data sync --project YOLOv5 --name coco128 --folder .
 ```
 
 The command `clearml-data sync` is actually a shorthand command. You could also run these commands one after the other:
+
 ```bash
 # Optionally add --parent <parent_dataset_id> if you want to base
 # this version on another dataset version, so no duplicate files are uploaded!
@@ -177,7 +181,7 @@ python utils/loggers/clearml/hpo.py
 
 ## 🤯 Remote Execution (advanced)
 
-Running HPO locally is really handy, but what if we want to run our experiments on a remote machine instead? Maybe you have access to a very powerful GPU machine on-site or you have some budget to use cloud GPUs.
+Running HPO locally is really handy, but what if we want to run our experiments on a remote machine instead? Maybe you have access to a very powerful GPU machine on-site, or you have some budget to use cloud GPUs.
 This is where the ClearML Agent comes into play. Check out what the agent can do here:
 
 - [YouTube video](https://youtu.be/MX3BrXnaULs)
@@ -186,6 +190,7 @@ This is where the ClearML Agent comes into play. Check out what the agent can do
 In short: every experiment tracked by the experiment manager contains enough information to reproduce it on a different machine (installed packages, uncommitted changes etc.). So a ClearML agent does just that: it listens to a queue for incoming tasks and when it finds one, it recreates the environment and runs it while still reporting scalars, plots etc. to the experiment manager.
 
 You can turn any machine (a cloud VM, a local GPU machine, your own laptop ... ) into a ClearML agent by simply running:
+
 ```bash
 clearml-agent daemon --queue <queues_to_listen_to> [--docker]
 ```
@@ -194,11 +199,11 @@ clearml-agent daemon --queue <queues_to_listen_to> [--docker]
 
 With our agent running, we can give it some work. Remember from the HPO section that we can clone a task and edit the hyperparameters? We can do that from the interface too!
 
-🪄 Clone the experiment by right clicking it
+🪄 Clone the experiment by right-clicking it
 
 🎯 Edit the hyperparameters to what you wish them to be
 
-⏳ Enqueue the task to any of the queues by right clicking it
+⏳ Enqueue the task to any of the queues by right-clicking it
 
 ![Enqueue a task from the UI](https://github.com/thepycoder/clearml_screenshots/raw/main/enqueue.gif)
 
@@ -206,7 +211,8 @@ With our agent running, we can give it some work. Remember from the HPO section 
 
 Now you can clone a task like we explained above, or simply mark your current script by adding `task.execute_remotely()` and on execution it will be put into a queue, for the agent to start working on!
 
-To run the YOLOv5 training script remotely, all you have to do is add this line to the training.py script after the clearml logger has been instatiated:
+To run the YOLOv5 training script remotely, all you have to do is add this line to the training.py script after the clearml logger has been instantiated:
+
 ```python
 # ...
 # Loggers
@@ -214,16 +220,17 @@ data_dict = None
 if RANK in {-1, 0}:
     loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
     if loggers.clearml:
-        loggers.clearml.task.execute_remotely(queue='my_queue')  # <------ ADD THIS LINE
+        loggers.clearml.task.execute_remotely(queue="my_queue")  # <------ ADD THIS LINE
         # Data_dict is either None is user did not choose for ClearML dataset or is filled in by ClearML
         data_dict = loggers.clearml.data_dict
 # ...
 ```
+
 When running the training script after this change, python will run the script up until that line, after which it will package the code and send it to the queue instead!
 
 ### Autoscaling workers
 
-ClearML comes with autoscalers too! This tool will automatically spin up new remote machines in the cloud of your choice (AWS, GCP, Azure) and turn them into ClearML agents for you whenever there are experiments detected in the queue. Once the tasks are processed, the autoscaler will automatically shut down the remote machines and you stop paying!
+ClearML comes with autoscalers too! This tool will automatically spin up new remote machines in the cloud of your choice (AWS, GCP, Azure) and turn them into ClearML agents for you whenever there are experiments detected in the queue. Once the tasks are processed, the autoscaler will automatically shut down the remote machines, and you stop paying!
 
 Check out the autoscalers getting started video below.
 
