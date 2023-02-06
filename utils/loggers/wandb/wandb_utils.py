@@ -7,11 +7,11 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from utils.general import LOGGER
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-
 
 try:
     import wandb
@@ -22,6 +22,7 @@ except (ImportError, AssertionError):
 
 RANK = int(os.getenv('RANK', -1))
 DEP_WANRN = "wandb integration is not maintained and will be removed in future release. See supported integrations here - https://github.com/ultralytics/yolov5#integrations"
+
 
 class WandbLogger():
     """Log training runs, datasets, models, and predictions to Weights & Biases.
@@ -104,7 +105,6 @@ class WandbLogger():
             if opt.evolve or opt.noplots:
                 self.bbox_interval = opt.bbox_interval = opt.epochs + 1  # disable bbox_interval
 
-
     def log_model(self, path, opt, epoch, fitness_score, best_model=False):
         """
         Log the model checkpoint as W&B artifact
@@ -129,7 +129,6 @@ class WandbLogger():
         wandb.log_artifact(model_artifact,
                            aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
-
 
     def val_one_image(self, pred, predn, path, names, im):
         """
