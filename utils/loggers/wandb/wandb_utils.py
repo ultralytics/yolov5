@@ -26,7 +26,6 @@ except (ImportError, AssertionError):
 RANK = int(os.getenv('RANK', -1))
 
 
-
 class WandbLogger():
     """Log training runs, datasets, models, and predictions to Weights & Biases.
 
