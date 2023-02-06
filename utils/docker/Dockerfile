@@ -17,7 +17,7 @@ RUN apt install --no-install-recommends -y gcc git zip curl htop libgl1-mesa-glx
 # RUN alias python=python3
 
 # Create working directory
-RUN mkdir -p /usr/src/app
+RUN rm -rf /usr/src/app && mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy contents
