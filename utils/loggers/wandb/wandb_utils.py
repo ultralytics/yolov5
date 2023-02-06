@@ -1,6 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 
-# WARNING ⚠️ wandb is no longer maintained and will be removed in future release.
+# WARNING ⚠️ wandb is deprecated and will be removed in future release.
 # See supported integrations at https://github.com/ultralytics/yolov5#integrations
 
 import logging
@@ -9,7 +9,7 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 
-from utils.general import LOGGER
+from utils.general import LOGGER, colorstr
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
@@ -24,6 +24,8 @@ except (ImportError, AssertionError):
     wandb = None
 
 RANK = int(os.getenv('RANK', -1))
+DEPRECATION_WARNING = f"{colorstr('wandb')}: WARNING ⚠️ wandb is deprecated and will be removed in a future release. " \
+                      f"See supported integrations at https://github.com/ultralytics/yolov5#integrations."
 
 
 class WandbLogger():
@@ -62,6 +64,7 @@ class WandbLogger():
         self.max_imgs_to_log = 16
         self.data_dict = None
         if self.wandb:
+            LOGGER.warning(DEPRECATION_WARNING)
             self.wandb_run = wandb.init(config=opt,
                                         resume="allow",
                                         project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
@@ -70,8 +73,7 @@ class WandbLogger():
                                         job_type=job_type,
                                         id=run_id,
                                         allow_val_change=True) if not wandb.run else wandb.run
-            LOGGER.warning("WARNING ⚠️ wandb is no longer maintained and will be removed in future release. "
-                           "See supported integrations at https://github.com/ultralytics/yolov5#integrations")
+
         if self.wandb_run:
             if self.job_type == 'Training':
                 if isinstance(opt.data, dict):
@@ -174,8 +176,7 @@ class WandbLogger():
                 with all_logging_disabled():
                     wandb.log(self.log_dict)
             wandb.run.finish()
-            LOGGER.warning("WARNING ⚠️ wandb is no longer maintained and will be removed in future release. "
-                           "See supported integrations at https://github.com/ultralytics/yolov5#integrations")
+            LOGGER.warning(DEPRECATION_WARNING)
 
 
 @contextmanager
