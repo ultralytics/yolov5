@@ -1,4 +1,7 @@
-"""Utilities and tools for tracking runs with Weights & Biases."""
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
+# WARNING ⚠️ wandb is no longer maintained and will be removed in future release.
+# See supported integrations at https://github.com/ultralytics/yolov5#integrations
 
 import logging
 import os
@@ -7,11 +10,11 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from utils.general import LOGGER
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-
 
 try:
     import wandb
@@ -21,7 +24,7 @@ except (ImportError, AssertionError):
     wandb = None
 
 RANK = int(os.getenv('RANK', -1))
-DEP_WANRN = "wandb integration is not maintained and will be removed in future release. See supported integrations here - https://github.com/ultralytics/yolov5#integrations"
+
 
 class WandbLogger():
     """Log training runs, datasets, models, and predictions to Weights & Biases.
@@ -51,7 +54,7 @@ class WandbLogger():
        """
         # Pre-training routine --
         self.job_type = job_type
-        self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
+        self.wandb, self.wandb_run = wandb, wandb.run if wandb else None
         self.val_artifact, self.train_artifact = None, None
         self.train_artifact_path, self.val_artifact_path = None, None
         self.result_artifact = None
@@ -68,7 +71,8 @@ class WandbLogger():
                                         job_type=job_type,
                                         id=run_id,
                                         allow_val_change=True) if not wandb.run else wandb.run
-            LOGGER.info(f"Deprication Warning: {DEP_WANRN}")
+            LOGGER.warning("WARNING ⚠️ wandb is no longer maintained and will be removed in future release. "
+                           "See supported integrations at https://github.com/ultralytics/yolov5#integrations")
         if self.wandb_run:
             if self.job_type == 'Training':
                 if isinstance(opt.data, dict):
@@ -91,19 +95,18 @@ class WandbLogger():
         self.log_dict, self.current_epoch = {}, 0
         self.bbox_interval = opt.bbox_interval
         if isinstance(opt.resume, str):
-            modeldir, _ = self.download_model_artifact(opt)
-            if modeldir:
-                self.weights = Path(modeldir) / "last.pt"
+            model_dir, _ = self.download_model_artifact(opt)
+            if model_dir:
+                self.weights = Path(model_dir) / "last.pt"
                 config = self.wandb_run.config
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp, opt.imgsz = str(
-                    self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs,\
+                    self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs, \
                     config.hyp, config.imgsz
 
         if opt.bbox_interval == -1:
             self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else 1
             if opt.evolve or opt.noplots:
                 self.bbox_interval = opt.bbox_interval = opt.epochs + 1  # disable bbox_interval
-
 
     def log_model(self, path, opt, epoch, fitness_score, best_model=False):
         """
@@ -130,31 +133,8 @@ class WandbLogger():
                            aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
 
-
     def val_one_image(self, pred, predn, path, names, im):
-        """
-        Log validation data for one image. updates the result Table if validation dataset is uploaded and log bbox media panel
-
-        arguments:
-        pred (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
-        predn (list): list of predictions in the native space - [xmin, ymin, xmax, ymax, confidence, class]
-        path (str): local path of the current evaluation image
-        """
-        if len(self.bbox_media_panel_images) < self.max_imgs_to_log and self.current_epoch > 0:
-            if self.current_epoch % self.bbox_interval == 0:
-                box_data = [{
-                    "position": {
-                        "minX": xyxy[0],
-                        "minY": xyxy[1],
-                        "maxX": xyxy[2],
-                        "maxY": xyxy[3]},
-                    "class_id": int(cls),
-                    "box_caption": f"{names[int(cls)]} {conf:.3f}",
-                    "scores": {
-                        "class_score": conf},
-                    "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
-                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                self.bbox_media_panel_images.append(wandb.Image(im, boxes=boxes, caption=path.name))
+        pass
 
     def log(self, log_dict):
         """
@@ -199,6 +179,8 @@ class WandbLogger():
                 with all_logging_disabled():
                     wandb.log(self.log_dict)
             wandb.run.finish()
+            LOGGER.warning("WARNING ⚠️ wandb is no longer maintained and will be removed in future release. "
+                           "See supported integrations at https://github.com/ultralytics/yolov5#integrations")
 
 
 @contextmanager
