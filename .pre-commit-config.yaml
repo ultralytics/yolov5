@@ -4,6 +4,7 @@
 default_language_version:
   python: python3.8
 
+exclude: 'docs/'
 # Define bot property if installed via https://github.com/marketplace/pre-commit-ci
 ci:
   autofix_prs: true
@@ -28,13 +29,13 @@ repos:
     hooks:
       - id: pyupgrade
         name: Upgrade code
-        args: [ --py37-plus ]
+        args: [--py37-plus]
 
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.11.4
-    hooks:
-      - id: isort
-        name: Sort imports
+  # - repo: https://github.com/PyCQA/isort
+  #   rev: 5.11.4
+  #   hooks:
+  #     - id: isort
+  #       name: Sort imports
 
   - repo: https://github.com/pre-commit/mirrors-yapf
     rev: v0.32.0
@@ -50,15 +51,22 @@ repos:
         additional_dependencies:
           - mdformat-gfm
           - mdformat-black
-        exclude: "README.md|README.zh-CN.md"
-
-  - repo: https://github.com/asottile/yesqa
-    rev: v1.4.0
-    hooks:
-      - id: yesqa
+        # exclude: "README.md|README.zh-CN.md|CONTRIBUTING.md"
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
+    rev: 5.0.4
     hooks:
       - id: flake8
         name: PEP8
+
+  #- repo: https://github.com/codespell-project/codespell
+  #  rev: v2.2.2
+  #  hooks:
+  #    - id: codespell
+  #      args:
+  #        - --ignore-words-list=crate,nd
+
+  #- repo: https://github.com/asottile/yesqa
+  #  rev: v1.4.0
+  #  hooks:
+  #    - id: yesqa
