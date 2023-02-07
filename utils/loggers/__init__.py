@@ -84,10 +84,6 @@ class Loggers():
         self.csv = True  # always log to csv
 
         # Messages
-        # if not wandb:
-        #     prefix = colorstr('Weights & Biases: ')
-        #     s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs in Weights & Biases"
-        #     self.logger.info(s)
         if not clearml:
             prefix = colorstr('ClearML: ')
             s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 in ClearML"
@@ -105,14 +101,8 @@ class Loggers():
 
         # W&B
         if wandb and 'wandb' in self.include:
-            wandb_artifact_resume = isinstance(self.opt.resume, str) and self.opt.resume.startswith('wandb-artifact://')
-            run_id = torch.load(self.weights).get('wandb_id') if self.opt.resume and not wandb_artifact_resume else None
             self.opt.hyp = self.hyp  # add hyperparameters
-            self.wandb = WandbLogger(self.opt, run_id)
-            # temp warn. because nested artifacts not supported after 0.12.10
-            # if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.11'):
-            #    s = "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected."
-            #    self.logger.warning(s)
+            self.wandb = WandbLogger(self.opt)
         else:
             self.wandb = None
 
@@ -175,7 +165,7 @@ class Loggers():
                 self.comet_logger.on_pretrain_routine_end(paths)
 
     def on_train_batch_end(self, model, ni, imgs, targets, paths, vals):
-        log_dict = dict(zip(self.keys[0:3], vals))
+        log_dict = dict(zip(self.keys[:3], vals))
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
         if self.plots:
@@ -221,10 +211,10 @@ class Loggers():
         # Callback runs on val end
         if self.wandb or self.clearml:
             files = sorted(self.save_dir.glob('val*.jpg'))
-            if self.wandb:
-                self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
-            if self.clearml:
-                self.clearml.log_debug_samples(files, title='Validation')
+        if self.wandb:
+            self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
+        if self.clearml:
+            self.clearml.log_debug_samples(files, title='Validation')
 
         if self.comet_logger:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
@@ -253,7 +243,7 @@ class Loggers():
                 for i, name in enumerate(self.best_keys):
                     self.wandb.wandb_run.summary[name] = best_results[i]  # log best results in the summary
             self.wandb.log(x)
-            self.wandb.end_epoch(best_result=best_fitness == fi)
+            self.wandb.end_epoch()
 
         if self.clearml:
             self.clearml.current_epoch_logged_images = set()  # reset epoch image limit

@@ -128,9 +128,9 @@ def run(
         LOGGER.info(f"{'Class':>24}{'Images':>12}{'top1_acc':>12}{'top5_acc':>12}")
         LOGGER.info(f"{'all':>24}{targets.shape[0]:>12}{top1:>12.3g}{top5:>12.3g}")
         for i, c in model.names.items():
-            aci = acc[targets == i]
-            top1i, top5i = aci.mean(0).tolist()
-            LOGGER.info(f"{c:>24}{aci.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
+            acc_i = acc[targets == i]
+            top1i, top5i = acc_i.mean(0).tolist()
+            LOGGER.info(f"{c:>24}{acc_i.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
 
         # Print results
         t = tuple(x.t / len(dataloader.dataset.samples) * 1E3 for x in dt)  # speeds per image

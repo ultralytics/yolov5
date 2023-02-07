@@ -23,7 +23,7 @@ pip install comet_ml
 
 There are two ways to configure Comet with YOLOv5.
 
-You can either set your credentials through enviroment variables
+You can either set your credentials through environment variables
 
 **Environment Variables**
 
@@ -49,11 +49,12 @@ project_name=<Your Comet Project Name> # This will default to 'yolov5'
 python train.py --img 640 --batch 16 --epochs 5 --data coco128.yaml --weights yolov5s.pt
 ```
 
-That's it! Comet will automatically log your hyperparameters, command line arguments, training and valiation metrics. You can visualize and analyze your runs in the Comet UI
+That's it! Comet will automatically log your hyperparameters, command line arguments, training and validation metrics. You can visualize and analyze your runs in the Comet UI
 
 <img width="1920" alt="yolo-ui" src="https://user-images.githubusercontent.com/26833433/202851203-164e94e1-2238-46dd-91f8-de020e9d6b41.png">
 
 # Try out an Example!
+
 Check out an example of a [completed run here](https://www.comet.com/examples/comet-example-yolov5/a0e29e0e9b984e4a822db2a62d0cb357?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=step&utm_source=yolov5&utm_medium=partner&utm_campaign=partner_yolov5_2022&utm_content=github)
 
 Or better yet, try it out yourself in this Colab Notebook
@@ -65,6 +66,7 @@ Or better yet, try it out yourself in this Colab Notebook
 By default, Comet will log the following items
 
 ## Metrics
+
 - Box Loss, Object Loss, Classification Loss for the training and validation data
 - mAP_0.5, mAP_0.5:0.95 metrics for the validation data.
 - Precision and Recall for the validation data
@@ -120,7 +122,6 @@ You can control the frequency of logged predictions and the associated images by
 **Note:** The YOLOv5 validation dataloader will default to a batch size of 32, so you will have to set the logging frequency accordingly.
 
 Here is an [example project using the Panel](https://www.comet.com/examples/comet-example-yolov5?shareable=YcwMiJaZSXfcEXpGOHDD12vA1&utm_source=yolov5&utm_medium=partner&utm_campaign=partner_yolov5_2022&utm_content=github)
-
 
 ```shell
 python train.py \
@@ -192,6 +193,7 @@ If you would like to use a dataset from Comet Artifacts, set the `path` variable
 # contents of artifact.yaml file
 path: "comet://<workspace name>/<artifact name>:<artifact version or alias>"
 ```
+
 Then pass this file to your training script in the following way
 
 ```shell
@@ -221,7 +223,7 @@ python train.py \
 
 ## Hyperparameter Search with the Comet Optimizer
 
-YOLOv5 is also integrated with Comet's Optimizer, making is simple to visualie hyperparameter sweeps in the Comet UI.
+YOLOv5 is also integrated with Comet's Optimizer, making is simple to visualize hyperparameter sweeps in the Comet UI.
 
 ### Configuring an Optimizer Sweep
 
