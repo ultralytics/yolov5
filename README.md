@@ -46,7 +46,6 @@ To request an Enterprise License please complete the form at <a href="https://ul
   </div>
 </div>
 
-
 ## <div align="center">Ultralytics Live Session</div>
 
 <div align="center">
@@ -66,14 +65,15 @@ To join the webinar, visit our [YouTube Channel](https://www.youtube.com/@Ultral
 
 ## <div align="center">Segmentation ⭐ NEW</div>
 
-
 ## <div align="center">Ultralytics Framework and YOLOv8 ⭐ NEW </div>
+
 <div align="center">
    <p><b>Recommended</b>: Try the new Ultralytics framework with SOTA YOLOv8, YOLOv5 models and more </p>
     <a align="center" href="https://github.com/ultralytics/ultralytics" target="_blank">
       <img width="850" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-yolov8.png"></a></div>
 
 ## <div align="center">Segmentation</div>
+
 <div align="center">
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
 <img width="800" src="https://user-images.githubusercontent.com/61612323/204180385-84f3aca9-a5e9-43d8-a617-dda7ca12e54a.png"></a>
@@ -170,17 +170,21 @@ git clone https://github.com/ultralytics/yolov5  # clone
 cd yolov5
 pip install -r requirements.txt  # install
 ```
+
 ### Python pip package with improved yolov5u models 🌟 NEW
-  ```bash
-  pip install ultralytics
-  ```
-  ```python
-  from ultralytics import YOLO
-  model = YOLO("yolov5n.pt")
-  result = model(img)
-  model.train(data="coco128.yaml")
-  ```
-  
+
+```bash
+pip install ultralytics
+```
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolov5n.pt")
+result = model(img)
+model.train(data="coco128.yaml")
+```
+
 </details>
 
 <details>
@@ -464,7 +468,6 @@ Get started in seconds with our verified environments. Click each icon below for
   <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="10%" /></a>
 </div>
-
 
 ## <div align="center">Contribute</div>
 
