@@ -481,7 +481,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     if RANK in {-1, 0}:
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
         best_models = [best] if not sparsification_manager else [ w / f"best_{phase}.pt" for phase in sparsification_manager.passed_phases]
-        final_models = [last] + best_models
+        final_models = best_models + [last]
         for f in final_models:
             if f.exists():
                 strip_optimizer(f) if not sparsification_manager else sparsification_manager.strip_sparsified_optimizer(f)  # strip optimizers
