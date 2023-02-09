@@ -39,6 +39,7 @@ seaborn>=0.11.0
 # openvino-dev  # OpenVINO export
 
 # Deploy ----------------------------------------------------------------------
+wheel>=0.38.0 # Snyk vulnerability fix
 # tritonclient[all]~=2.24.0
 
 # Extras ----------------------------------------------------------------------
@@ -47,5 +48,3 @@ seaborn>=0.11.0
 # pycocotools>=2.0.6  # COCO mAP
 # roboflow
 # ultralytics  # HUB https://hub.ultralytics.com
-setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
-wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
