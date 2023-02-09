@@ -631,8 +631,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             for i in range(retry + 1):
                 if curl:
                     s = 'sS' if threads > 1 else ''  # silent
-                    r = os.system(
-                        f'curl -# -{s}L "{url}" -o "{f}" --retry 9 -C -')  # curl download with retry, continue
+                    r = subprocess.run(f'curl -# -{s}L "{url}" -o "{f}" --retry 9 -C -'.split())
                     success = r == 0
                 else:
                     torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
