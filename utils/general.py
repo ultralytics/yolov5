@@ -130,12 +130,12 @@ def set_logging(name=LOGGING_NAME, verbose=True):
             name: {
                 "class": "logging.StreamHandler",
                 "formatter": name,
-                "level": level,}},
+                "level": level, }},
         "loggers": {
             name: {
                 "level": level,
                 "handlers": [name],
-                "propagate": False,}}})
+                "propagate": False, }}})
 
 
 set_logging(LOGGING_NAME)  # run before defining LOGGER
@@ -1047,7 +1047,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve
                                                                                          for x in vals) + '\n\n')
 
     if bucket:
-        subprocess.run([f'gsutil', 'cp', f'{evolve_csv}', f'{evolve_yaml}', f'gs://{bucket}'])  # upload
+        subprocess.run(['gsutil', 'cp', f'{evolve_csv}', f'{evolve_yaml}', f'gs://{bucket}'])  # upload
 
 
 def apply_classifier(x, model, img, im0):
