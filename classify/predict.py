@@ -60,7 +60,7 @@ class UseModel:
         self.stride, self.names, self.pt = self.model.stride, self.model.names, self.model.pt
         self.imgsz = check_img_size(imgsz, s=self.stride)  # check image size
 
-    def predict(self, source='../datasets/unp/', view_img=False, save_txt=False, nosave=False, augment=False, visualize=False, update=False, project='runs/predict-cls', name='exp', exist_ok=False, vid_stride=1):
+    def predict(self, source='to_predict/img.jpg', view_img=False, save_txt=False, nosave=False, augment=False, visualize=False, update=False, project='runs/predict-cls', name='exp', exist_ok=False, vid_stride=1):
         source = str(source)
         save_img = not nosave and not source.endswith('.txt')  # save inference images
         is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -127,40 +127,4 @@ class UseModel:
                 print(f"{self.names[top5i[0]]} -- {prob[top5i[0]]:.2f}")
                 result.append(self.names[top5i[0]] if prob[top5i[0]] >= 0.25 else "unknown")
         
-                # Write results
-                '''text = '\n'.join(f'{prob[j]:.2f} {self.names[j]}' for j in top5i)
-                if save_img or view_img:  # Add bbox to image
-                    annotator.text((32, 32), text, txt_color=(255, 255, 255))
-                if save_txt:  # Write to file
-                    with open(f'{txt_path}.txt', 'a') as f:
-                        f.write(text + '\n')
-
-                # Stream results
-                im0 = annotator.result()
-                if view_img:
-                    if platform.system() == 'Linux' and p not in windows:
-                        windows.append(p)
-                        cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
-                        cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                    cv2.imshow(str(p), im0)
-                    cv2.waitKey(1)  # 1 millisecond
-
-                # Save results (image with detections)
-                if save_img:
-                    if dataset.mode == 'image':
-                        cv2.imwrite(save_path, im0)
-                    else:  # 'video' or 'stream'
-                        if vid_path[i] != save_path:  # new video
-                            vid_path[i] = save_path
-                            if isinstance(vid_writer[i], cv2.VideoWriter):
-                                vid_writer[i].release()  # release previous video writer
-                            if vid_cap:  # video
-                                fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                                w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                                h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                            else:  # stream
-                                fps, w, h = 30, im0.shape[1], im0.shape[0]
-                            save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                            vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                        vid_writer[i].write(im0)'''
         return result
