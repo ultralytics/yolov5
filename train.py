@@ -572,7 +572,8 @@ def main(opt, callbacks=Callbacks()):
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         evolve_yaml, evolve_csv = save_dir / 'hyp_evolve.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
-            subprocess.run(f'gsutil cp gs://{opt.bucket}/evolve.csv {evolve_csv}'.split())  # download evolve.csv if exists
+            subprocess.run(
+                f'gsutil cp gs://{opt.bucket}/evolve.csv {evolve_csv}'.split())  # download evolve.csv if exists
 
         for _ in range(opt.evolve):  # generations to evolve
             if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
