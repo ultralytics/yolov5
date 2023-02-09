@@ -649,9 +649,9 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             if is_zipfile(f):
                 unzip_file(f, dir)  # unzip
             elif is_tarfile(f):
-                subprocess.run(f'tar xf {f} --directory {f.parent}', shell=True)  # unzip
+                subprocess.run(['tar', 'xf', f, '--directory', f.parent], check=True)  # unzip
             elif f.suffix == '.gz':
-                subprocess.run(f'tar xfz {f} --directory {f.parent}', shell=True)  # unzip
+                subprocess.run(['tar', 'xfz', f, '--directory', f.parent], check=True)  # unzip
             if delete:
                 f.unlink()  # remove zip
 
@@ -1023,7 +1023,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve
     if bucket:
         url = f'gs://{bucket}/evolve.csv'
         if gsutil_getsize(url) > (evolve_csv.stat().st_size if evolve_csv.exists() else 0):
-            subprocess.run(f'gsutil cp {url} {save_dir}', shell=True)  # download evolve.csv if larger than local
+            subprocess.run(['gsutil', 'cp', f'{url}', f'{save_dir}'])  # download evolve.csv if larger than local
 
     # Log to evolve.csv
     s = '' if evolve_csv.exists() else (('%20s,' * n % keys).rstrip(',') + '\n')  # add header
@@ -1047,7 +1047,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve
                                                                                          for x in vals) + '\n\n')
 
     if bucket:
-        subprocess.run(f'gsutil cp {evolve_csv} {evolve_yaml} gs://{bucket}', shell=True)  # upload
+        subprocess.run(['gsutil', 'cp', f'{evolve_csv}', f'{evolve_yaml}', f'gs://{bucket}'])  # upload
 
 
 def apply_classifier(x, model, img, im0):
