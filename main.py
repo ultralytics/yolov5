@@ -3,6 +3,7 @@ from PIL import Image
 import io
 from classify.predict import UseModel
 app = Flask(__name__)
+import os
 
 model = UseModel(weights=["car_reco_model.pt"])
 
@@ -20,6 +21,6 @@ def predict():
 
     return jsonify({'msg': 'success', 'predicted': result[0]})
 
-app.run(host="0.0.0.0", port=5555)
+app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 
         

@@ -49,4 +49,5 @@ wheel>=0.38.0 # Snyk vulnerability fix
 # pycocotools>=2.0.6  # COCO mAP
 # roboflow
 # ultralytics  # HUB https://hub.ultralytics.com
-flask
+Flask==2.1.0
+gunicorn==20.1.0
