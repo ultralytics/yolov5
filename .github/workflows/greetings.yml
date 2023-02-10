@@ -25,11 +25,9 @@ jobs:
           issue-message: |
             👋 Hello @${{ github.actor }}, thank you for your interest in YOLOv5 🚀! Please visit our ⭐️ [Tutorials](https://github.com/ultralytics/yolov5/wiki#tutorials) to get started, where you can find quickstart guides for simple tasks like [Custom Data Training](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) all the way to advanced concepts like [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607).
 
-            If this is a 🐛 Bug Report, please provide screenshots and **minimum viable code to reproduce your issue**, otherwise we can not help you.
+            If this is a 🐛 Bug Report, please provide a **minimum reproducible example** to help us debug it.
 
-            If this is a custom training ❓ Question, please provide as much information as possible, including dataset images, training logs, screenshots, and a public link to online [W&B logging](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data#visualize) if available.
-
-            For business inquiries or professional support requests please visit https://ultralytics.com or email support@ultralytics.com.
+            If this is a custom training ❓ Question, please provide as much information as possible, including dataset image examples and training logs, and verify you are following our [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results).
 
             ## Requirements
 
@@ -55,3 +53,9 @@ jobs:
 
             If this badge is green, all [YOLOv5 GitHub Actions](https://github.com/ultralytics/yolov5/actions) Continuous Integration (CI) tests are currently passing. CI tests verify correct operation of YOLOv5 [training](https://github.com/ultralytics/yolov5/blob/master/train.py), [validation](https://github.com/ultralytics/yolov5/blob/master/val.py), [inference](https://github.com/ultralytics/yolov5/blob/master/detect.py), [export](https://github.com/ultralytics/yolov5/blob/master/export.py) and [benchmarks](https://github.com/ultralytics/yolov5/blob/master/benchmarks.py) on MacOS, Windows, and Ubuntu every 24 hours and on every commit.
 
+            ## YOLOv8
+
+            Ultralytics YOLOv8 🚀 is our new cutting-edge, state-of-the-art (SOTA) model released at [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics). YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent choice for a wide range of object detection, image segmentation and image classification tasks. See the [YOLOv8 Docs] for details and get started with:
+            ```bash
+            pip install ultralytics
+            ```
