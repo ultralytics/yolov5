@@ -14,6 +14,7 @@ import platform
 import random
 import re
 import signal
+import subprocess
 import sys
 import time
 import urllib
@@ -551,7 +552,7 @@ def check_dataset(data, autodownload=True):
                 r = None  # success
             elif s.startswith('bash '):  # bash script
                 LOGGER.info(f'Running {s} ...')
-                r = os.system(s)
+                r = subprocess.run(s, shell=True)
             else:  # python script
                 r = exec(s, {'yaml': data})  # return None
             dt = f'({round(time.time() - t, 1)}s)'
@@ -630,8 +631,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             for i in range(retry + 1):
                 if curl:
                     s = 'sS' if threads > 1 else ''  # silent
-                    r = os.system(
-                        f'curl -# -{s}L "{url}" -o "{f}" --retry 9 -C -')  # curl download with retry, continue
+                    r = subprocess.run(f'curl -# -{s}L "{url}" -o "{f}" --retry 9 -C -'.split())
                     success = r == 0
                 else:
                     torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
@@ -648,9 +648,9 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             if is_zipfile(f):
                 unzip_file(f, dir)  # unzip
             elif is_tarfile(f):
-                os.system(f'tar xf {f} --directory {f.parent}')  # unzip
+                subprocess.run(['tar', 'xf', f, '--directory', f.parent], check=True)  # unzip
             elif f.suffix == '.gz':
-                os.system(f'tar xfz {f} --directory {f.parent}')  # unzip
+                subprocess.run(['tar', 'xfz', f, '--directory', f.parent], check=True)  # unzip
             if delete:
                 f.unlink()  # remove zip
 
@@ -1022,7 +1022,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve
     if bucket:
         url = f'gs://{bucket}/evolve.csv'
         if gsutil_getsize(url) > (evolve_csv.stat().st_size if evolve_csv.exists() else 0):
-            os.system(f'gsutil cp {url} {save_dir}')  # download evolve.csv if larger than local
+            subprocess.run(['gsutil', 'cp', f'{url}', f'{save_dir}'])  # download evolve.csv if larger than local
 
     # Log to evolve.csv
     s = '' if evolve_csv.exists() else (('%20s,' * n % keys).rstrip(',') + '\n')  # add header
@@ -1046,7 +1046,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve
                                                                                          for x in vals) + '\n\n')
 
     if bucket:
-        os.system(f'gsutil cp {evolve_csv} {evolve_yaml} gs://{bucket}')  # upload
+        subprocess.run(['gsutil', 'cp', f'{evolve_csv}', f'{evolve_yaml}', f'gs://{bucket}'])  # upload
 
 
 def apply_classifier(x, model, img, im0):
