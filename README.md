@@ -46,7 +46,6 @@ To request an Enterprise License please complete the form at <a href="https://ul
   </div>
 </div>
 
-
 ## <div align="center">YOLOv8</div>
 
 <div align="center">
@@ -56,18 +55,18 @@ To request an Enterprise License please complete the form at <a href="https://ul
   </p>
 </div>
 
-We are thrilled to announce the launch of Ultralytics YOLOv8 🚀, our NEW cutting-edge, state-of-the-art (SOTA) model 
-released at [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics). 
-YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent choice for a wide range of 
-object detection, image segmentation and image classification tasks. 
+We are thrilled to announce the launch of Ultralytics YOLOv8 🚀, our NEW cutting-edge, state-of-the-art (SOTA) model
+released at [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics).
+YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent choice for a wide range of
+object detection, image segmentation and image classification tasks.
 
 <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/yolo-comparison-plots.png"></a>
 
 See the [YOLOv8 Docs](https://docs.ultralytics.com) for details and get started with:
+
 ```commandline
 pip install ultralytics
 ```
-
 
 ## <div align="center">Documentation</div>
 
