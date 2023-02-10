@@ -486,7 +486,7 @@ YOLOv5 is available under two different licenses:
 
 ## <div align="center">Contact</div>
 
-For YOLOv5 bugs and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues). For professional support please [Contact Us](https://ultralytics.com/contact).
+For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues) or [GitHub Discussion](https://github.com/ultralytics/yolov5/discussions).
 
 <br>
 <div align="center">
