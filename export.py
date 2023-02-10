@@ -426,7 +426,7 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
 
 
 @try_export
-def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
+def export_tfjs(file, int8, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     check_requirements('tensorflowjs')
     import tensorflowjs as tfjs
@@ -436,7 +436,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
     f_pb = file.with_suffix('.pb')  # *.pb path
     f_json = f'{f}/model.json'  # *.json path
 
-    cmd = f'tensorflowjs_converter --input_format=tf_frozen_model ' \
+    int8_export = ' --quantize_uint8 ' if int8 else ''
+
+    cmd = f'tensorflowjs_converter --input_format=tf_frozen_model {int8_export}' \
           f'--output_node_names=Identity,Identity_1,Identity_2,Identity_3 {f_pb} {f}'
     subprocess.run(cmd.split())
 
@@ -588,7 +590,7 @@ def run(
                 f[8], _ = export_edgetpu(file)
             add_tflite_metadata(f[8] or f[7], metadata, num_outputs=len(s_model.outputs))
         if tfjs:
-            f[9], _ = export_tfjs(file)
+            f[9], _ = export_tfjs(file, int8)
     if paddle:  # PaddlePaddle
         f[10], _ = export_paddle(model, im, file, metadata)
 
