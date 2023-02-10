@@ -54,6 +54,7 @@ YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent
 object detection, image segmentation and image classification tasks.
 
 See the [YOLOv8 Docs](https://docs.ultralytics.com) for details and get started with:
+
 ```commandline
 pip install ultralytics
 ```
@@ -62,8 +63,6 @@ pip install ultralytics
   <a href="https://ultralytics.com/yolov8" target="_blank">
   <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/yolo-comparison-plots.png"></a>
 </div>
-
-
 
 ## <div align="center">Documentation</div>
 
