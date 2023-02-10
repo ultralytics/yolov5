@@ -43,6 +43,28 @@ def autopad(k, p=None, d=1):  # kernel, padding, dilation
     return p
 
 
+class ImplicitA(nn.Module):
+    def __init__(self, channel):
+        super(ImplicitA, self).__init__()
+        self.channel = channel
+        self.implicit = nn.Parameter(torch.zeros(1, channel, 1, 1))
+        nn.init.normal_(self.implicit, std=.02)
+
+    def forward(self, x):
+        return self.implicit.expand_as(x) + x
+
+
+class ImplicitM(nn.Module):
+    def __init__(self, channel):
+        super(ImplicitM, self).__init__()
+        self.channel = channel
+        self.implicit = nn.Parameter(torch.ones(1, channel, 1, 1))
+        nn.init.normal_(self.implicit, mean=1., std=.02)
+
+    def forward(self, x):
+        return self.implicit.expand_as(x) * x
+
+
 class Conv(nn.Module):
     # Standard convolution with args(ch_in, ch_out, kernel, stride, padding, groups, dilation, activation)
     default_act = nn.SiLU()  # default activation

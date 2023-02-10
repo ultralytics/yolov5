@@ -1,0 +1,12 @@
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+path: ./datasets/freihand
+train: [ train/, ]  # 118287 images
+val: [ val/, ]  # 5000 images
+
+skeleton: [[1, 2], [2, 3], [3, 4], [4, 5], [6, 7], [7, 8], [8, 9], [10, 11], [11, 12], [12, 13], [14, 15], [15, 16], [16, 17], [18, 19], [19, 20], [20, 0], [1, 6], [1, 10], [1, 14], [1, 18]]
+
+# number of classes
+nc: 1
+nkpt: 21
+
+names: ['hand']
