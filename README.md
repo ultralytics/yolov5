@@ -45,7 +45,7 @@ To request an Enterprise License please complete the form at <a href="https://ul
       <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
   </div>
 </div>
-
+<br>
 
 ## <div align="center">YOLOv8 🚀 NEW</div>
 
