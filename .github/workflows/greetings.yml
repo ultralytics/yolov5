@@ -53,9 +53,13 @@ jobs:
 
             If this badge is green, all [YOLOv5 GitHub Actions](https://github.com/ultralytics/yolov5/actions) Continuous Integration (CI) tests are currently passing. CI tests verify correct operation of YOLOv5 [training](https://github.com/ultralytics/yolov5/blob/master/train.py), [validation](https://github.com/ultralytics/yolov5/blob/master/val.py), [inference](https://github.com/ultralytics/yolov5/blob/master/detect.py), [export](https://github.com/ultralytics/yolov5/blob/master/export.py) and [benchmarks](https://github.com/ultralytics/yolov5/blob/master/benchmarks.py) on MacOS, Windows, and Ubuntu every 24 hours and on every commit.
 
-            ## YOLOv8
+            ## Introducing YOLOv8 🚀
 
-            Ultralytics YOLOv8 🚀 is our new cutting-edge, state-of-the-art (SOTA) model released at [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics). YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent choice for a wide range of object detection, image segmentation and image classification tasks. See the [YOLOv8 Docs] for details and get started with:
+            We're excited to announce the launch of our latest state-of-the-art (SOTA) object detection model for 2023 - [YOLOv8](https://github.com/ultralytics/ultralytics) 🚀!
+
+            Designed to be fast, accurate, and easy to use, YOLOv8 is an ideal choice for a wide range of object detection, image segmentation and image classification tasks. With YOLOv8, you'll be able to quickly and accurately detect objects in real-time, streamline your workflows, and achieve new levels of accuracy in your projects.
+
+            Check out our [YOLOv8 Docs](https://docs.ultralytics.com/) for details and get started with:
             ```bash
             pip install ultralytics
             ```
