@@ -461,7 +461,6 @@ YOLOv5 在两种不同的 License 下可用：
 
 请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues) 或 [Ultralytics Community Forum](https://community.ultralytis.com) 以报告 YOLOv5 错误和请求功能。
 
-
 <br>
 <div align="center">
   <a href="https://github.com/ultralytics" style="text-decoration:none;">
