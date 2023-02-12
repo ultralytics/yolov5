@@ -98,7 +98,6 @@ def extract_eigenCAM(model, image, layer= -2):
 
 
 def extract_gradCAM(model, image,layer,classes, objectness_thres):
-    breakpoint()
     #target_layers = [model.model[-1].m[0]]
     target_layers =[model.model.model[layer]]
     # target_layers= [model.model.model.model[layer]]
@@ -112,6 +111,7 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres):
     grayscale_cam= cam(image,targets=targets)
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
+    breakpoint()
     return grayscale_cam
     cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
@@ -173,6 +173,8 @@ def run(
         pred = model(im) 
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
                     classes=classes, objectness_thres=objectness_thres)
+
+        # for now, we only support one image at a time
         return cam_image
     #         return pred
     # image_file = Image.open(source, 'r')
