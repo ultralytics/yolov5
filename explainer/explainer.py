@@ -169,7 +169,7 @@ def run(
             im = im[None]  # expand for batch dim
 
         pred = model(im)
-        print(len(pred))
+        print(pred[0].shape, pred[1].shape)
     # image_file = Image.open(source, 'r')
     # raw_image = Image.Image.resize(image_file, (640, 384))
 
