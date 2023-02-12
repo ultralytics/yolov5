@@ -184,11 +184,8 @@ def run(
 
     raw_image_fp = np.array(raw_image, np.float32)
     raw_image_fp = raw_image_fp / 255
-    if method.lower() == 'eigencam':
-        cam_image = extract_eigenCAM(model= model,image= raw_image_fp,layer=layer)
-    elif method.lower() == 'gradcam':
-        cam_image = extract_gradCAM(model=model,image= raw_image_fp,layer=layer, 
-                                classes=classes, objectness_thres=objectness_thres)
+    cam_image = explain(method=method,model= model, image=raw_image, layer=layer, 
+                classes=classes, objectness_thres=objectness_thres)
 
     # Image.Image.show(Image.fromarray(cam_image))
     return Image.fromarray(cam_image)
