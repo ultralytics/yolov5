@@ -109,9 +109,10 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres):
 
     # grayscale_cam = cam(tensor, targets=targets)
     grayscale_cam= cam(image,targets=targets)
+    breakpoint()
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
-    breakpoint()
+    
     return grayscale_cam
     cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
