@@ -44,8 +44,9 @@ def autopad(k, p=None, d=1):  # kernel, padding, dilation
 
 
 class ImplicitA(nn.Module):
+
     def __init__(self, channel):
-        super(ImplicitA, self).__init__()
+        super().__init__()
         self.channel = channel
         self.implicit = nn.Parameter(torch.zeros(1, channel, 1, 1))
         nn.init.normal_(self.implicit, std=.02)
@@ -55,8 +56,9 @@ class ImplicitA(nn.Module):
 
 
 class ImplicitM(nn.Module):
+
     def __init__(self, channel):
-        super(ImplicitM, self).__init__()
+        super().__init__()
         self.channel = channel
         self.implicit = nn.Parameter(torch.ones(1, channel, 1, 1))
         nn.init.normal_(self.implicit, mean=1., std=.02)
