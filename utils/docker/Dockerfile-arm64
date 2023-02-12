@@ -3,7 +3,7 @@
 # Image is aarch64-compatible for Apple M1 and other ARM architectures i.e. Jetson Nano and Raspberry Pi
 
 # Start FROM Ubuntu image https://hub.docker.com/_/ubuntu
-FROM arm64v8/ubuntu:20.04
+FROM arm64v8/ubuntu:rolling
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
@@ -18,11 +18,9 @@ RUN apt install --no-install-recommends -y python3-pip git zip curl htop gcc lib
 # Install pip packages
 COPY requirements.txt .
 RUN python3 -m pip install --upgrade pip wheel
-RUN pip install --no-cache -r requirements.txt ultralytics gsutil notebook \
-    tensorflow-aarch64
-    # tensorflowjs \
-    # onnx onnx-simplifier onnxruntime \
-    # coremltools openvino-dev \
+RUN pip install --no-cache -r requirements.txt albumentations gsutil notebook \
+    coremltools onnx onnxruntime
+    # tensorflow-aarch64 tensorflowjs \
 
 # Create working directory
 RUN mkdir -p /usr/src/app
