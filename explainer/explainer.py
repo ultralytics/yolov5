@@ -149,8 +149,6 @@ def run(
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
     is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
-    webcam = source.isnumeric() or source.endswith('.streams') or (is_url and not is_file)
-    screenshot = source.lower().startswith('screen')
     if is_url and is_file:
         source = check_file(source)  # download
     # copied from detect.py
@@ -163,11 +161,20 @@ def run(
     # model.eval() # not sure about this! 
     dataset =LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
-    image_file = Image.open(source, 'r')
-    raw_image = Image.Image.resize(image_file, (640, 384))
+    for path, im, im0s, vid_cap, s in dataset:
+        im = torch.from_numpy(im).to(model.device)
+        im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
+        im /= 255  # 0 - 255 to 0.0 - 1.0
+        if len(im.shape) == 3:
+            im = im[None]  # expand for batch dim
 
-    tensor_image = transforms.ToTensor()(raw_image).unsqueeze(dim=0)
-    results = model(tensor_image)
+        pred = model(im)
+        print(pred.shape)
+    # image_file = Image.open(source, 'r')
+    # raw_image = Image.Image.resize(image_file, (640, 384))
+
+    # tensor_image = transforms.ToTensor()(raw_image).unsqueeze(dim=0)
+    # results = model(tensor_image)
     # print(logits[0].shape)
     #results.save()
 
@@ -175,20 +182,20 @@ def run(
     #     print('\n', logits.shape.pandas().xyxy, '\n')
     #     print('\n', results.xyxy, '\n')
 
-    if verbose:
-        print('\n', 'model layers: you have to choose a layer or some layers to explain them')
-        layer_number = 1
-        for k, v in model.model.model.model.named_parameters():
-            #print(k)
-            pass
+    # if verbose:
+    #     print('\n', 'model layers: you have to choose a layer or some layers to explain them')
+    #     layer_number = 1
+    #     for k, v in model.model.model.model.named_parameters():
+    #         #print(k)
+    #         pass
 
-    raw_image_fp = np.array(raw_image, np.float32)
-    raw_image_fp = raw_image_fp / 255
-    cam_image = explain(method=method,model= model, image=raw_image, layer=layer, 
-                classes=classes, objectness_thres=objectness_thres)
+    # raw_image_fp = np.array(raw_image, np.float32)
+    # raw_image_fp = raw_image_fp / 255
+    # cam_image = explain(method=method,model= model, image=raw_image, layer=layer, 
+    #             classes=classes, objectness_thres=objectness_thres)
 
-    # Image.Image.show(Image.fromarray(cam_image))
-    return Image.fromarray(cam_image)
+    # # Image.Image.show(Image.fromarray(cam_image))
+    # return Image.fromarray(cam_image)
 
 
 def parseopt():
