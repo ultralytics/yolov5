@@ -169,7 +169,10 @@ def run(
             im = im[None]  # expand for batch dim
 
         pred = model(im)
-        return pred
+        cam_image = explain(method=method,model= model, image=im, layer=layer, 
+                    classes=classes, objectness_thres=objectness_thres)
+        return Image.fromarray(cam_image)
+    #         return pred
     # image_file = Image.open(source, 'r')
     # raw_image = Image.Image.resize(image_file, (640, 384))
 
