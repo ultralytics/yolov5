@@ -1,6 +1,6 @@
-train: /kaggle/input/yolo-dataset/YoloAnnotations/images/Train
-val:  /kaggle/input/yolo-dataset/YoloAnnotations/images/Validate
-test: /kaggle/input/yolo-dataset/YoloAnnotations/images/Test
+train: /kaggle/input/chirag-data-set/Chirag Data set/images/train
+val:  /kaggle/input/chirag-data-set/Chirag Data set/images/validate
+test: /kaggle/input/chirag-data-set/Chirag Data set/images/test
 # number of classes
 nc: 2
 
