@@ -36,7 +36,7 @@ def yolo_reshape_transform(x):
     """
     The backbone outputs different tensors with different spatial sizes, from the FPN.
     Our goal here is to aggregate these image tensors, assign them weights, and then aggregate everything.
-    To do that, we’re going to need to write a custom function that takes these tensors with different sizes,
+    To do that, we are going to need to write a custom function that takes these tensors with different sizes,
     resizes them to a common shape, and concatenates them
     https://jacobgil.github.io/pytorch-gradcam-book/Class%20Activation%20Maps%20for%20Object%20Detection%20With%20Faster%20RCNN.html
 
@@ -88,10 +88,11 @@ def extract_eigenCAM(model, image, layer= -2):
     eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
     """
     target_layers = [model.model.model[layer]]
+    targets = 1 # not None
     cam = EigenCAM(model, target_layers, use_cuda=False)
     # transform = transforms.ToTensor()
     # tensor = transform(raw_image_fp).unsqueeze(0)
-    grayscale_cam = cam(image)[0, :]
+    grayscale_cam = cam(image,targets=targets)[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     return cam_image
