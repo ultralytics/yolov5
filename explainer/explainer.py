@@ -71,8 +71,8 @@ class YOLOBoxScoreTarget():
         """
         breakpoint()
         pred = output[0]
-        objectness = pred[0, :, 4]
-        classes = pred[0, :, 5:]
+        objectness = pred[:, 4]
+        classes = pred[:, 5:]
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
             mask[:, class_idx] = True
