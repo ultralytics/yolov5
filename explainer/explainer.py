@@ -92,34 +92,28 @@ def extract_eigenCAM(model, image, layer= -2):
     # transform = transforms.ToTensor()
     # tensor = transform(raw_image_fp).unsqueeze(0)
     grayscale_cam = cam(image)[0, :, :]
-
-    cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=True)
+    fixed_image = np.array(image[0]).transpose(1,2,0)
+    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     return cam_image
 
 
 def extract_gradCAM(model, image,layer,classes, objectness_thres):
-    #target_layers = [model.model[-1].m[0]]
     target_layers =[model.model.model[layer]]
     # target_layers= [model.model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
     cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
 
-    # transform = transforms.ToTensor()
-    # tensor = transform(image).unsqueeze(0)
-
-    # grayscale_cam = cam(tensor, targets=targets)
     grayscale_cam= cam(image,targets=targets)
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
-    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
-    return cam_image
-    
+
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
-    #cam_image = Image.fromarray(image_with_bounding_boxes)
-    return cam_image
 
+    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
+    return cam_image
+  
 def explain(method:str, model,image,layer,classes, objectness_thres:float):
     cam_image = None
     if method.lower()=='gradcam':
