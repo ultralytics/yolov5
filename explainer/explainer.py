@@ -69,8 +69,9 @@ class YOLOBoxScoreTarget():
 
         so, the first item would be objectness and items after fifth element are class indexes
         """
-        objectness = output[0, :, 4]
-        classes = output[0, :, 5:]
+        pred = output[0]
+        objectness = pred[0, :, 4]
+        classes = pred[0, :, 5:]
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
             mask[:, class_idx] = True
@@ -89,7 +90,6 @@ def extract_eigenCAM(model, image, layer= -2):
     cam = EigenCAM(model, target_layers, use_cuda=False)
     # transform = transforms.ToTensor()
     # tensor = transform(raw_image_fp).unsqueeze(0)
-    breakpoint()
     grayscale_cam = cam(image)[0, :, :]
 
     cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=True)
