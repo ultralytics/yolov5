@@ -69,7 +69,8 @@ class YOLOBoxScoreTarget():
 
         so, the first item would be objectness and items after fifth element are class indexes
         """
-        pred = output[0]
+        pred = output[0] 
+        # first item is important, second item contains three arrays 
         objectness = pred[:, 4]
         classes = pred[:, 5:]
         mask = torch.zeros_like(classes, dtype=torch.bool)
@@ -169,7 +170,7 @@ def run(
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
 
-        pred = model(im)
+        pred = model(im) 
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
                     classes=classes, objectness_thres=objectness_thres)
         return cam_image
