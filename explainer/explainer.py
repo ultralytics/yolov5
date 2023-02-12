@@ -109,11 +109,11 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres):
 
     # grayscale_cam = cam(tensor, targets=targets)
     grayscale_cam= cam(image,targets=targets)
-    breakpoint()
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
-    # cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=True)
-    return grayscale_cam, image
+    fixed_image = np.array(image[0]).transpose(1,2,0)
+    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
+    return cam_image
     
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
