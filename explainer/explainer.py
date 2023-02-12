@@ -90,8 +90,6 @@ def extract_eigenCAM(model, image, layer= -2):
     target_layers = [model.model.model[layer]]
     targets = 1 # not None
     cam = EigenCAM(model, target_layers, use_cuda=False)
-    # transform = transforms.ToTensor()
-    # tensor = transform(raw_image_fp).unsqueeze(0)
     grayscale_cam = cam(image,targets=targets)[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
@@ -100,18 +98,15 @@ def extract_eigenCAM(model, image, layer= -2):
 
 def extract_gradCAM(model, image,layer,classes, objectness_thres):
     target_layers =[model.model.model[layer]]
-    # target_layers= [model.model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
-    cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), reshape_transform=yolo_reshape_transform)
-
+    cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), 
+            reshape_transform=yolo_reshape_transform)
     grayscale_cam= cam(image,targets=targets)
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
-
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
-
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     return cam_image
   
@@ -172,33 +167,7 @@ def run(
 
         # for now, we only support one image at a time
         return cam_image
-    #         return pred
-    # image_file = Image.open(source, 'r')
-    # raw_image = Image.Image.resize(image_file, (640, 384))
-
-    # tensor_image = transforms.ToTensor()(raw_image).unsqueeze(dim=0)
-    # results = model(tensor_image)
-    # print(logits[0].shape)
-    #results.save()
-
-    # if verbose:
-    #     print('\n', logits.shape.pandas().xyxy, '\n')
-    #     print('\n', results.xyxy, '\n')
-
-    # if verbose:
-    #     print('\n', 'model layers: you have to choose a layer or some layers to explain them')
-    #     layer_number = 1
-    #     for k, v in model.model.model.model.named_parameters():
-    #         #print(k)
-    #         pass
-
-    # raw_image_fp = np.array(raw_image, np.float32)
-    # raw_image_fp = raw_image_fp / 255
-    # cam_image = explain(method=method,model= model, image=raw_image, layer=layer, 
-    #             classes=classes, objectness_thres=objectness_thres)
-
-    # # Image.Image.show(Image.fromarray(cam_image))
-    # return Image.fromarray(cam_image)
+    
 
 
 def parseopt():
