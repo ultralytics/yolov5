@@ -69,7 +69,6 @@ class YOLOBoxScoreTarget():
 
         so, the first item would be objectness and items after fifth element are class indexes
         """
-        breakpoint()
         pred = output[0]
         objectness = pred[:, 4]
         classes = pred[:, 5:]
@@ -98,7 +97,7 @@ def extract_eigenCAM(model, image, layer= -2):
 
 
 def extract_gradCAM(model, image,layer,classes, objectness_thres):
-    
+    breakpoint()
     #target_layers = [model.model[-1].m[0]]
     target_layers =[model.model.model[layer]]
     # target_layers= [model.model.model.model[layer]]
