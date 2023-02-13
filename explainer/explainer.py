@@ -16,7 +16,8 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from PIL import Image
-from pytorch_grad_cam import AblationCAM, EigenCAM, FullGrad, GradCAM, GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM, EigenGradCAM
+from pytorch_grad_cam import (AblationCAM, EigenCAM, FullGrad, GradCAM, 
+GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM, EigenGradCAM, GradCAMElementWise, LayerCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
 FILE = Path(__file__).resolve()
@@ -119,6 +120,16 @@ def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cu
         method_obj = XGradCAM
     elif method.lower()=='HiResCAM'.lower():
         method_obj= HiResCAM
+    elif method.lower()=='FullGrad'.lower():
+        method_obj= FullGrad
+    elif method.lower()=='ScoreCAM'.lower():
+        method_obj= ScoreCAM
+    elif method.lower()=='AblationCAM'.lower():
+        method_obj= AblationCAM
+    elif method.lower()=='GradCAMElementWise'.lower():
+        method_obj= GradCAMElementWise
+    elif method.lower()=='LayerCAM'.lower():
+        method_obj= LayerCAM
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
