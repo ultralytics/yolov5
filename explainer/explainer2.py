@@ -79,7 +79,7 @@ def run(
         cam = SSCAM(model, model.model.model[-2])
         with torch.no_grad():
             prediction, heads = model(im) 
-            return cam(class_idx=class_idx[0])
+            return cam(class_idx=27)
         
         
     
