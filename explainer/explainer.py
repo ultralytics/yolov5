@@ -76,7 +76,6 @@ class YOLOBoxScoreTarget():
         "xc,yc,height, width,objectness, classes"
         so, the forth item would be objectness and items after fifth element are class indexes
         """
-        breakpoint()
         if len(output.shape)==2:
             output = torch.unsqueeze(output,dim=0)
 
