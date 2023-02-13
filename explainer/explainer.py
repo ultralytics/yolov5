@@ -149,6 +149,17 @@ def extract_XGradCAM(model,image,layer,classes,objectness_thres,use_cuda:bool):
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     return cam_image
 
+def extract_HiResCAM(model,image,layer,classes,objectness_thres,use_cuda:bool):
+    target_layers =[model.model.model[layer]]
+    targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
+    cam = HiResCAM(model, target_layers, use_cuda=use_cuda, 
+            reshape_transform=yolo_reshape_transform)
+    grayscale_cam= cam(image,targets=targets)
+    grayscale_cam = grayscale_cam[0, :]
+    fixed_image = np.array(image[0]).transpose(1,2,0)
+    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
+    return cam_image
+
 def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cuda:bool):
     cam_image = None
     if method.lower()=='gradcam':
@@ -159,8 +170,10 @@ def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cu
         cam_image=extract_EigenGradCAM(model,image,layer,classes,objectness_thres,use_cuda)
     elif method.lower()=='gradcamplusplus':
         cam_image=extract_GradCAMPlusPlus(model,image,layer,classes,objectness_thres,use_cuda)
-    elif method.lower()=='xgradcam':
+    elif method.lower()=='xgradcam'.lower():
         cam_image=extract_XGradCAM(model,image,layer,classes,objectness_thres,use_cuda)
+    elif method.lower()=='HiResCAM'.lower():
+        cam_image=extract_HiResCAM(model,image,layer,classes,objectness_thres,use_cuda)
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
