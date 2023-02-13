@@ -105,9 +105,9 @@ def extract_eigenCAM(model, image,layer,use_cuda:bool):
 def extract_gradCAM(model, image,layer,classes, objectness_thres,use_cuda:bool):
     target_layers =[model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
-    cam = GradCAM(model, target_layers, use_cuda=torch.cuda.is_available(), 
+    cam = GradCAM(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform)
-    grayscale_cam= cam(image,targets=targets,use_cuda=use_cuda)
+    grayscale_cam= cam(image,targets=targets)
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
@@ -119,7 +119,7 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres,use_cuda:bool):
 def extract_ablationcam(model,image,layer,classes,objectness_thres,use_cuda:bool):
     target_layers =[model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
-    cam = AblationCAM(model, target_layers, use_cuda=torch.cuda.is_available(), 
+    cam = AblationCAM(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform)
     grayscale_cam= cam(image,targets=targets,use_cuda=use_cuda)
     grayscale_cam = grayscale_cam[0, :]
