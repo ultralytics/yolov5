@@ -83,10 +83,11 @@ class YOLOBoxScoreTarget():
             mask[:, class_idx] = True
 
         # we have to see if below line has any effect  
+        # I couldn't see any effect. Its effect is binary.
+        # It doesn't do anything until 
         mask[objectness<self.objectness_threshold] = False
         score = classes[mask] # + objectness[mask]
-        return score.sum()
-        
+        return score.sum()     
 
 def extract_eigenCAM(model, image,layer,use_cuda:bool):
     """
@@ -114,13 +115,26 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres,use_cuda:bool):
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     return cam_image
-  
-def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cuda:str):
+
+def extract_othercam(model,image,layer,classes,objectness_thres,use_cuda:bool):
+    target_layers =[model.model.model[layer]]
+    targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
+    cam = AblationCAM(model, target_layers, use_cuda=torch.cuda.is_available(), 
+            reshape_transform=yolo_reshape_transform)
+    grayscale_cam= cam(image,targets=targets,use_cuda=use_cuda)
+    grayscale_cam = grayscale_cam[0, :]
+    fixed_image = np.array(image[0]).transpose(1,2,0)
+    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
+    return cam_image
+
+def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cuda:bool):
     cam_image = None
     if method.lower()=='gradcam':
         cam_image=extract_gradCAM(model,image,layer,classes,objectness_thres,use_cuda)
     elif method.lower()=='eigencam':
         cam_image= extract_eigenCAM(model,image,layer,use_cuda)
+    elif method.lower()=='ablationcam':
+        cam_image=extract_gradCAM(model,image,layer,classes,objectness_thres,use_cuda)
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
