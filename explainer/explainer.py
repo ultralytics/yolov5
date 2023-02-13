@@ -101,6 +101,7 @@ def extract_CAM(method, model: torch.nn.Module,image,layer:int,classes, objectne
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
     grayscale_cam= cam(image,targets=targets)
+    breakpoint()
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
@@ -156,9 +157,11 @@ class YoloOutputWrapper(torch.nn.Module):
         self.model = model
     
     def forward(self, x):
+        """
+        first one is a 3 dim array which contains predictions
+        second one is a list of heads with their corresponding predictions
+        """
         total_prediction, _ = self.model(x)
-        # first one is a 3 dim array which contains predictions
-        # second one is a list of heads with their corresponding predictions
         return total_prediction
 
 def run(
