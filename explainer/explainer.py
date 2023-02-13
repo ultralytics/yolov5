@@ -86,12 +86,11 @@ class YOLOBoxScoreTarget():
          # first item would be image index,
          # second: number of predictions 
          # third:  predicited bboxes 
-        breakpoint()
-        objectness = output[:, 4] 
-        classes = output[:, 5:] 
+        objectness = output[:,:, 4] 
+        classes = output[:,:, 5:] 
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
-            mask[:, class_idx] = True
+            mask[:,:, class_idx] = True
  
         mask[objectness<self.objectness_threshold] = False
         score = classes[mask] # + objectness[mask]
