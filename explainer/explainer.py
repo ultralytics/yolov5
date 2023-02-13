@@ -83,7 +83,8 @@ class YOLOBoxScoreTarget():
             breakpoint()
             output = output[0]
             print('output type list')
-    
+        
+        assert len(output.shape) == 3
          # first item would be image index, number of images
          # second: number of predictions 
          # third:  predicited bboxes 
