@@ -77,7 +77,7 @@ def run(
         
         from torchcam.methods import SSCAM
         cam = SSCAM(model, model.model.model[-2])
-        with torch.nograd():
+        with torch.no_grad():
             prediction, heads = model(im) 
             return cam(class_idx=class_idx[0])
         
