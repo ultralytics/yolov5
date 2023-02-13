@@ -76,7 +76,9 @@ class YOLOBoxScoreTarget():
         "xc,yc,height, width,objectness, classes"
         so, the forth item would be objectness and items after fifth element are class indexes
         """
-        breakpoint()
+        if len(output.shape) == 5:
+            return 0 
+            
         pred = output[0] 
         objectness = pred[:, 4] 
         classes = pred[:, 5:] 
