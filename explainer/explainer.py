@@ -76,6 +76,7 @@ class YOLOBoxScoreTarget():
         "xc,yc,height, width,objectness, classes"
         so, the forth item would be objectness and items after fifth element are class indexes
         """
+        breakpoint()
         pred = output[0] 
         objectness = pred[:, 4] 
         classes = pred[:, 5:] 
@@ -91,7 +92,7 @@ class YOLOBoxScoreTarget():
         return score.sum()     
 
 
-def extract_CAM(method, model,image,layer:int,classes, objectness_score:float, use_cuda:bool,
+def extract_CAM(method, model: torch.nn.Module,image,layer:int,classes, objectness_score:float, use_cuda:bool,
     **kwargs):
     target_layers =[model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
