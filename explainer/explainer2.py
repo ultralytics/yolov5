@@ -75,14 +75,13 @@ def run(
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
         
-        prediction, heads = model(im) 
-        return prediction, heads
-        cam_image = explain(method=method,model= model, image=im, layer=layer, 
-                    classes=class_idx, objectness_thres=objectness_thres,use_cuda=use_cuda)
-
-        # for now, we only support one image at a time
-        # then we should save the image in a file
-        return cam_image
+        from torchcam.methods import SSCAM
+        cam = SSCAM(model, model.model.model.model[-2])
+        with torch.nograd():
+            prediction, heads = model(im) 
+            return cam(class_idx=class_idx[0])
+        
+        
     
 
 
