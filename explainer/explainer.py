@@ -80,7 +80,7 @@ class YOLOBoxScoreTarget():
         # we choose the first dimension
 
         if type(output) == list:
-            return 0 
+            return torch.tensor([0]) 
         
         assert len(output.shape) == 3
          # first item would be image index, number of images
