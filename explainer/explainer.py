@@ -127,7 +127,7 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         method='EigenCAM', # the method for interpreting the results
         layer=-2 ,
-        classes= None, # list of class_idx to use for CAM methods
+        class_names= None, # list of class names to use for CAM methods
         objectness_thres=0.1, # threshold for objectness
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
@@ -154,6 +154,10 @@ def run(
     # model.eval() # not sure about this! 
     dataset =LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
+    # reverse key,values pairs since we to index with reverse 
+    model_classes =dict((v,k) for k,v in model.names.items())
+    class_idx = [model_classes[item] for item in class_names]
+
     for path, im, im0s, vid_cap, s in dataset:
         im = torch.from_numpy(im).to(model.device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -163,9 +167,11 @@ def run(
 
         pred = model(im) 
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
-                    classes=classes, objectness_thres=objectness_thres)
+                    classes=class_idx, objectness_thres=objectness_thres)
 
         # for now, we only support one image at a time
+        # then we should save the image in a file
+
         return cam_image
     
 
