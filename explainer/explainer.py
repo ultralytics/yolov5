@@ -108,7 +108,7 @@ def extract_CAM(method, model,image,layer:int,classes, objectness_score:float, u
 def explain(method:str, model,image,layer:int,classes, objectness_thres:float,use_cuda:bool):
     cam_image = None
     method_obj = None
-    extra_arguments = dict()
+    extra_arguments = {}
 
     if method.lower()=='gradcam':
         method_obj = GradCAM
@@ -128,7 +128,7 @@ def explain(method:str, model,image,layer:int,classes, objectness_thres:float,us
     elif method.lower()=='ScoreCAM'.lower():
         method_obj= ScoreCAM
     elif method.lower()=='AblationCAM'.lower():
-        dict = {'ablation_layer': None, 'batch_size': 32, 'ratio_channels_to_ablate': 1.0 }
+        extra_arguments = {'ablation_layer': None, 'batch_size': 32, 'ratio_channels_to_ablate': 1.0 }
         method_obj= AblationCAM
     elif method.lower()=='GradCAMElementWise'.lower():
         method_obj= GradCAMElementWise
