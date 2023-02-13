@@ -80,6 +80,7 @@ class YOLOBoxScoreTarget():
         # we choose the first dimension
 
         if type(output) == list:
+            breakpoint()
             output = output[0]
             print('output type list')
     
