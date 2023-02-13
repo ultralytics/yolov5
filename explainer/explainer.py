@@ -16,7 +16,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from PIL import Image
-from pytorch_grad_cam import AblationCAM, EigenCAM, FullGrad, GradCAM, GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM
+from pytorch_grad_cam import AblationCAM, EigenCAM, FullGrad, GradCAM, GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM, EigenGradCAM
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
 FILE = Path(__file__).resolve()
@@ -119,7 +119,7 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres,use_cuda:bool):
 def extract_ablationcam(model,image,layer,classes,objectness_thres,use_cuda:bool):
     target_layers =[model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
-    cam = ScoreCAM(model, target_layers, use_cuda=use_cuda, 
+    cam = EigenGradCAM(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform)
     grayscale_cam= cam(image,targets=targets)
     grayscale_cam = grayscale_cam[0, :]
