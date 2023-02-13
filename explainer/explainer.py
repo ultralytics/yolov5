@@ -116,7 +116,7 @@ def extract_gradCAM(model, image,layer,classes, objectness_thres,use_cuda:bool):
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     return cam_image
 
-def extract_othercam(model,image,layer,classes,objectness_thres,use_cuda:bool):
+def extract_ablationcam(model,image,layer,classes,objectness_thres,use_cuda:bool):
     target_layers =[model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
     cam = AblationCAM(model, target_layers, use_cuda=torch.cuda.is_available(), 
@@ -134,7 +134,7 @@ def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cu
     elif method.lower()=='eigencam':
         cam_image= extract_eigenCAM(model,image,layer,use_cuda)
     elif method.lower()=='ablationcam':
-        cam_image=extract_gradCAM(model,image,layer,classes,objectness_thres,use_cuda)
+        cam_image=extract_ablationcam(model,image,layer,classes,objectness_thres,use_cuda)
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
