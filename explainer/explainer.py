@@ -97,7 +97,7 @@ def extract_CAM(method, model,image,layer:int,classes, objectness_score:float, u
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
-    grayscale_cam= cam(image,targets=targets,aug_smooth=True)
+    grayscale_cam= cam(image,targets=targets,aug_smooth=True,)
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
