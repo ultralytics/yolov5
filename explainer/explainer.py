@@ -104,6 +104,7 @@ def extract_CAM(method, model: torch.nn.Module,image,layer:int,classes, objectne
     breakpoint()
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
+    breakpoint()
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
