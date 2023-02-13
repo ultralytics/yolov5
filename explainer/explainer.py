@@ -83,7 +83,7 @@ class YOLOBoxScoreTarget():
             output = output[0]
             print('output type list')
     
-         # first item would be image index,
+         # first item would be image index, number of images
          # second: number of predictions 
          # third:  predicited bboxes 
         objectness = output[:,:, 4] 
