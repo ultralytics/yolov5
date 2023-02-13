@@ -80,9 +80,9 @@ def run(
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride,
         ### interpretability ###
-        interpretable_method='EigenCAM', # the method for interpreting the results
-        layer=-2 , # layer to use for interpretability
-        objectness_thres=0.1, # threshold for objectness
+    interpretable_method='EigenCAM',  # the method for interpreting the results
+        layer=-2,  # layer to use for interpretability
+        objectness_thres=0.1,  # threshold for objectness
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -120,11 +120,11 @@ def run(
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
 
     if interpretable_method:
-        model = torch.hub.load('.', 'custom', weights, source='local',autoshape=False)
+        model = torch.hub.load('.', 'custom', weights, source='local', autoshape=False)
         model.requires_grad_(True)
         for p in model.parameters():
-            p.requires_grad = True  
-            
+            p.requires_grad = True
+
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
@@ -139,7 +139,7 @@ def run(
             pred = model(im, augment=augment, visualize=visualize)
             if interpretable_method:
                 from explainer.explainer import explain
-                cam_image=explain(interpretable_method, model, im,layer, classes,objectness_thres)
+                cam_image = explain(interpretable_method, model, im, layer, classes, objectness_thres)
 
         # NMS
         with dt[2]:
@@ -160,7 +160,7 @@ def run(
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             if interpretable_method:
-                cv2.imwrite(save_path.replace('.jpg',f'-{interpretable_method}.jpg'), cam_image)
+                cv2.imwrite(save_path.replace('.jpg', f'-{interpretable_method}.jpg'), cam_image)
 
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
@@ -264,7 +264,10 @@ def parse_opt():
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
     parser.add_argument('--interpretable-method', type=str, default='', help='gradcam or eigencam')
     parser.add_argument('-layer', type=int, default=-2, help='layer to use for interpretability')
-    parser.add_argument('--objectness-thres', type=float, default=0.1, help='objectness threshold used in interpretability')
+    parser.add_argument('--objectness-thres',
+                        type=float,
+                        default=0.1,
+                        help='objectness threshold used in interpretability')
 
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
