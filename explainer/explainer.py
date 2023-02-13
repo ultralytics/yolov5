@@ -76,20 +76,23 @@ class YOLOBoxScoreTarget():
         "xc,yc,height, width,objectness, classes"
         so, the forth item would be objectness and items after fifth element are class indexes
         """
-        breakpoint()
-        if len(output.shape) == 5:
-            return 0 
+        # this will have three dimensions in normal situations
+        # we choose the first dimension
 
-        pred = output[0] 
-        objectness = pred[:, 4] 
-        classes = pred[:, 5:] 
+        if type(output) == list:
+            output = output[0]
+            print('output type list')
+    
+         # first item would be image index,
+         # second: number of predictions 
+         # third:  predicited bboxes 
+        breakpoint()
+        objectness = output[:, 4] 
+        classes = output[:, 5:] 
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
             mask[:, class_idx] = True
-
-        # we have to see if below line has any effect  
-        # I couldn't see any effect. Its effect is binary.
-        # It doesn't do anything until 
+ 
         mask[objectness<self.objectness_threshold] = False
         score = classes[mask] # + objectness[mask]
         return score.sum()     
