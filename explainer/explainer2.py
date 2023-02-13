@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from torchcam.methods import cam
+# from torchcam.methods import cam
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
