@@ -76,7 +76,7 @@ def run(
             im = im[None]  # expand for batch dim
         
         from torchcam.methods import SSCAM
-        cam = SSCAM(model, model.model.model.model[-2])
+        cam = SSCAM(model, model.model.model[-2])
         with torch.nograd():
             prediction, heads = model(im) 
             return cam(class_idx=class_idx[0])
