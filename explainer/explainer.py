@@ -65,14 +65,19 @@ class YOLOBoxScoreTarget():
         here we need something which we can call backward
         https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
         output structure is taken from this tutorial, it is as follows:
-        "xc,yc,height, width,objectness, classes"
 
-        so, the first item would be objectness and items after fifth element are class indexes
+        first item is important, second item contains three arrays which contain prediction from three heads
+        we would use the first array as it is the final prediction.
+        pred = output[0] 
+        Here, we take the first item as the second item contains predictions from three heads. Also, each head dimension would be different 
+        as we have different dimensions per head. 
+
+        "xc,yc,height, width,objectness, classes"
+        so, the forth item would be objectness and items after fifth element are class indexes
         """
         pred = output[0] 
-        # first item is important, second item contains three arrays 
-        objectness = pred[:, 4]
-        classes = pred[:, 5:]
+        objectness = pred[:, 4] 
+        classes = pred[:, 5:] 
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
             mask[:, class_idx] = True
@@ -88,7 +93,7 @@ def extract_eigenCAM(model, image,layer,use_cuda:bool):
     eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
     """
     target_layers = [model.model.model[layer]]
-    targets = 1 # not None
+    targets = 1 # not None, everything not None would be acceptable
     cam = EigenCAM(model, target_layers, use_cuda=use_cuda)
     grayscale_cam = cam(image,targets=targets)[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
