@@ -97,7 +97,7 @@ def extract_CAM(method, model,image,layer:int,classes, objectness_score:float, u
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
-    grayscale_cam= cam(image,targets=targets)
+    grayscale_cam= cam(image,targets=targets,aug_smooth=True)
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
@@ -110,11 +110,10 @@ def explain(method:str, model,image,layer:int,classes, objectness_thres:float,us
     method_obj = None
     extra_arguments = {}
 
-    if method.lower()=='gradcam':
+    if method.lower()=='GradCAM'.lower():
         method_obj = GradCAM
-    elif method.lower()=='eigencam':
+    elif method.lower()=='EigenCAM'.lower():
         method_obj = EigenCAM
-        # eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
     elif method.lower()=='EigenGradCAM'.lower():
         method_obj = EigenGradCAM
     elif method.lower()=='GradCAMPlusPlus'.lower():
@@ -138,6 +137,7 @@ def explain(method:str, model,image,layer:int,classes, objectness_thres:float,us
     elif method.lower()=='LayerCAM'.lower():
         method_obj= LayerCAM
     elif method.lower()=='RandomCAM'.lower():
+        # this is not an actual method. It is random
         method_obj= RandomCAM
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
