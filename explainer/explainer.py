@@ -101,10 +101,8 @@ def extract_CAM(method, model: torch.nn.Module,image,layer:int,classes, objectne
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
     grayscale_cam= cam(image,targets=targets)
-    breakpoint()
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
-    breakpoint()
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
@@ -218,7 +216,6 @@ def run(
 
         # for now, we only support one image at a time
         # then we should save the image in a file
-        breakpoint()
         return cam_image
     
 
