@@ -165,8 +165,9 @@ def run(
         source = check_file(source)  # download
     # copied from detect.py
 
-    device = select_device(device)
     use_cuda = len(device) > 0 # for now we can not choose GPU device
+    device = select_device(device)
+    
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
