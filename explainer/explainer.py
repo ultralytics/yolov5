@@ -81,7 +81,7 @@ class YOLOBoxScoreTarget():
 
         if type(output) == list:
             assert output[0].shape == 5 
-            # 
+            
             return torch.tensor([0])
         
         assert len(output.shape) == 3
@@ -201,6 +201,7 @@ def run(
             im = im[None]  # expand for batch dim
 
         pred,logits = model(im) 
+        breakpoint()
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
                     classes=class_idx, objectness_thres=objectness_thres,use_cuda=use_cuda)
 
