@@ -38,7 +38,7 @@ import torchvision
 import yaml
 
 from utils import TryExcept, emojis
-from utils.downloads import gsutil_getsize
+from utils.downloads import gsutil_getsize, curl_download
 from utils.metrics import box_iou, fitness
 
 FILE = Path(__file__).resolve()
@@ -630,9 +630,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             LOGGER.info(f'Downloading {url} to {f}...')
             for i in range(retry + 1):
                 if curl:
-                    s = 'sS' if threads > 1 else ''  # silent
-                    proc = subprocess.run(f'curl -# -{s}L "{url}" -o "{f}" --retry 9 -C -'.split())
-                    success = proc.returncode == 0
+                    success = curl_download(url, f, silent=(threads > 1))
                 else:
                     torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
                     success = f.is_file()
