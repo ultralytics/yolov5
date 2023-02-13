@@ -36,6 +36,25 @@ def url_getsize(url='https://ultralytics.com/images/bus.jpg'):
     return int(response.headers.get('content-length', -1))
 
 
+def curl_download(url, filename, *, silent: bool = False) -> bool:
+    """
+    Download a file from a url to a filename using curl.
+    """
+    silent_option = 'sS' if silent else ''  # silent
+    proc = subprocess.run([
+        'curl',
+        '-#',
+        f'-{silent_option}L',
+        url,
+        '--output',
+        filename,
+        '--retry',
+        '9',
+        '-C',
+        '-',])
+    return proc.returncode == 0
+
+
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
     # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
     from utils.general import LOGGER
@@ -51,18 +70,7 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
             file.unlink()  # remove partial downloads
         LOGGER.info(f'ERROR: {e}\nRe-attempting {url2 or url} to {file}...')
         # curl download, retry and resume on fail
-        subprocess.run([
-            'curl',
-            '-#',
-            '-L',
-            url2 or url,
-            '-o',
-            file,
-            '--retry',
-            '3',
-            '-C',
-            '-',
-        ])
+        curl_download(url2 or url, file)
     finally:
         if not file.exists() or file.stat().st_size < min_bytes:  # check
             if file.exists():
