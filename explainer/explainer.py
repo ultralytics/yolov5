@@ -80,9 +80,7 @@ class YOLOBoxScoreTarget():
         # we choose the first dimension
 
         if type(output) == list:
-            breakpoint()
-            output = output[0]
-            print('output type list')
+            return 0 
         
         assert len(output.shape) == 3
          # first item would be image index, number of images
@@ -200,7 +198,7 @@ def run(
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
 
-        pred = model(im) 
+        pred,logits = model(im) 
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
                     classes=class_idx, objectness_thres=objectness_thres,use_cuda=use_cuda)
 
