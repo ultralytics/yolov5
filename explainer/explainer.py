@@ -89,33 +89,6 @@ class YOLOBoxScoreTarget():
         score = classes[mask] # + objectness[mask]
         return score.sum()     
 
-def extract_EigenCAM(model, image,layer,use_cuda:bool):
-    """
-    eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
-    """
-    target_layers = [model.model.model[layer]]
-    targets = 1 # not None, everything not None would be acceptable
-    cam = EigenCAM(model, target_layers, use_cuda=use_cuda)
-    grayscale_cam = cam(image,targets=targets)[0, :]
-    fixed_image = np.array(image[0]).transpose(1,2,0)
-    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
-    return cam_image
-
-
-def extract_GradCAM(model, image,layer,classes, objectness_thres,use_cuda:bool):
-    target_layers =[model.model.model[layer]]
-    targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_thres)]
-    cam = GradCAM(model, target_layers, use_cuda=use_cuda, 
-            reshape_transform=yolo_reshape_transform)
-    grayscale_cam= cam(image,targets=targets)
-    # Take the first image in the batch:
-    grayscale_cam = grayscale_cam[0, :]
-    fixed_image = np.array(image[0]).transpose(1,2,0)
-    # And lets draw the boxes again:
-    #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
-    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
-    return cam_image
-
 
 def extract_CAM(method, model,image,layer,classes, objectness_score, use_cuda:bool):
     target_layers =[model.model.model[layer]]
@@ -126,25 +99,30 @@ def extract_CAM(method, model,image,layer,classes, objectness_score, use_cuda:bo
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
+    # And lets draw the boxes again:
+    #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     return cam_image
 
 def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cuda:bool):
     cam_image = None
+    method_obj = None
     if method.lower()=='gradcam':
-        cam_image=extract_GradCAM(model,image,layer,classes,objectness_thres,use_cuda)
+        method_obj = GradCAM
     elif method.lower()=='eigencam':
-        cam_image= extract_EigenCAM(model,image,layer,use_cuda)
+        method_obj = EigenCAM
+        # eigenCAM doesn't acutally needs YOLOBoxScoreTarget. It doesn't call it.
     elif method.lower()=='EigenGradCAM'.lower():
-        cam_image=extract_CAM(EigenGradCAM,model,image,layer,classes,objectness_thres,use_cuda)
+        method_obj = EigenGradCAM
     elif method.lower()=='GradCAMPlusPlus'.lower():
-        cam_image=extract_CAM(GradCAMPlusPlus,model,image,layer,classes,objectness_thres,use_cuda)
+        method_obj = GradCAMPlusPlus
     elif method.lower()=='XGradCAM'.lower():
-        cam_image=extract_CAM(XGradCAM,model,image,layer,classes,objectness_thres,use_cuda)
+        method_obj = XGradCAM
     elif method.lower()=='HiResCAM'.lower():
-        cam_image=extract_CAM(HiResCAM,model,image,layer,classes,objectness_thres,use_cuda)
+        method_obj= HiResCAM
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
+    cam_image=extract_CAM(method_obj,model,image,layer,classes,objectness_thres,use_cuda)
     return cam_image
 
 def run(
