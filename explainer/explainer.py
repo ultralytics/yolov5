@@ -76,13 +76,6 @@ class YOLOBoxScoreTarget():
         "xc,yc,height, width,objectness, classes"
         so, the forth item would be objectness and items after fifth element are class indexes
         """
-        # this will have three dimensions in normal situations
-        # we choose the first dimension
-
-        if type(output) == list:
-            assert output[0].shape == 5 
-            
-            return torch.tensor([0])
         
         assert len(output.shape) == 3
          # first item would be image index, number of images
@@ -154,6 +147,18 @@ def explain(method:str, model,image,layer:int,classes, objectness_thres:float,us
             objectness_thres,use_cuda, **extra_arguments)
     return cam_image
 
+
+class YoloOutputWrapper(torch.nn.Module):
+    def __init__(self, model):
+        super(YoloOutputWrapper, self).__init__()
+        self.model = model
+    
+    def forward(self, x):
+        total_prediction, _ = self.model(x)
+        # first one is a 3 dim array which contains predictions
+        # second one is a list of heads with their corresponding predictions
+        return total_prediction
+
 def run(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
         source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
@@ -199,8 +204,9 @@ def run(
         im /= 255  # 0 - 255 to 0.0 - 1.0
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
-
-        pred,logits = model(im) 
+        
+        model = YoloOutputWrapper(model)
+        _ = model(im) 
         breakpoint()
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
                     classes=class_idx, objectness_thres=objectness_thres,use_cuda=use_cuda)
