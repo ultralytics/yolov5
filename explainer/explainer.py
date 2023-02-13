@@ -17,7 +17,7 @@ import torchvision
 import torchvision.transforms as transforms
 from PIL import Image
 from pytorch_grad_cam import (AblationCAM, EigenCAM, FullGrad, GradCAM, 
-GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM, EigenGradCAM, GradCAMElementWise, LayerCAM)
+GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM, EigenGradCAM, GradCAMElementWise, LayerCAM,RandomCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
 FILE = Path(__file__).resolve()
@@ -91,11 +91,12 @@ class YOLOBoxScoreTarget():
         return score.sum()     
 
 
-def extract_CAM(method, model,image,layer,classes, objectness_score, use_cuda:bool):
+def extract_CAM(method, model,image,layer:int,classes, objectness_score:float, use_cuda:bool,
+    **kwargs):
     target_layers =[model.model.model[layer]]
     targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
     cam = method(model, target_layers, use_cuda=use_cuda, 
-            reshape_transform=yolo_reshape_transform)
+            reshape_transform=yolo_reshape_transform, **kwargs)
     grayscale_cam= cam(image,targets=targets)
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
@@ -104,9 +105,11 @@ def extract_CAM(method, model,image,layer,classes, objectness_score, use_cuda:bo
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     return cam_image
 
-def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cuda:bool):
+def explain(method:str, model,image,layer:int,classes, objectness_thres:float,use_cuda:bool):
     cam_image = None
     method_obj = None
+    extra_arguments = dict()
+
     if method.lower()=='gradcam':
         method_obj = GradCAM
     elif method.lower()=='eigencam':
@@ -125,15 +128,19 @@ def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cu
     elif method.lower()=='ScoreCAM'.lower():
         method_obj= ScoreCAM
     elif method.lower()=='AblationCAM'.lower():
+        dict = {'ablation_layer': None, 'batch_size': 32, 'ratio_channels_to_ablate': 1.0 }
         method_obj= AblationCAM
     elif method.lower()=='GradCAMElementWise'.lower():
         method_obj= GradCAMElementWise
     elif method.lower()=='LayerCAM'.lower():
         method_obj= LayerCAM
+    elif method.lower()=='RandomCAM'.lower():
+        method_obj= RandomCAM
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image=extract_CAM(method_obj,model,image,layer,classes,objectness_thres,use_cuda)
+    cam_image=extract_CAM(method_obj,model,image,layer,classes,
+            objectness_thres,use_cuda, **extra_arguments)
     return cam_image
 
 def run(
