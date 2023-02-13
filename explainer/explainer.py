@@ -147,7 +147,7 @@ def explain(method:str, model,image,layer,classes, objectness_thres:float,use_cu
     elif method.lower()=='eigengradcam':
         cam_image=extract_EigenGradCAM(model,image,layer,classes,objectness_thres,use_cuda)
     elif method.lower()=='othercam':
-        cam_image=extract_othercam(model,image,layer,classes,objectness_thres,use_cuda)
+        cam_image=extract_otherCAM(model,image,layer,classes,objectness_thres,use_cuda)
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
