@@ -76,7 +76,7 @@ class YOLOBoxScoreTarget():
         "xc,yc,height, width,objectness, classes"
         so, the forth item would be objectness and items after fifth element are class indexes
         """
-        
+        breakpoint()
         assert len(output.shape) == 3
          # first item would be image index, number of images
          # second: number of predictions 
@@ -207,7 +207,6 @@ def run(
         
         model = YoloOutputWrapper(model)
         _ = model(im) 
-        breakpoint()
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
                     classes=class_idx, objectness_thres=objectness_thres,use_cuda=use_cuda)
 
