@@ -77,6 +77,9 @@ class YOLOBoxScoreTarget():
         so, the forth item would be objectness and items after fifth element are class indexes
         """
         breakpoint()
+        if len(output.shape)==2:
+            torch.unsqueeze(output,dim=0)
+            
         assert len(output.shape) == 3
          # first item would be image index, number of images
          # second: number of predictions 
