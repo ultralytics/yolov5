@@ -26,7 +26,7 @@ def is_url(url, check=True):
 
 def gsutil_getsize(url=''):
     # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
-    s = subprocess.check_output(f'gsutil du {url}', shell=True).decode('utf-8')
+    s = subprocess.check_output(['gsutil', 'du', url], shell=True).decode('utf-8')
     return eval(s.split(' ')[0]) if len(s) else 0  # bytes
 
 
@@ -50,8 +50,19 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         if file.exists():
             file.unlink()  # remove partial downloads
         LOGGER.info(f'ERROR: {e}\nRe-attempting {url2 or url} to {file}...')
-        subprocess.run(
-            f"curl -# -L '{url2 or url}' -o '{file}' --retry 3 -C -".split())  # curl download, retry and resume on fail
+        # curl download, retry and resume on fail
+        subprocess.run([
+            'curl',
+            '-#',
+            '-L',
+            url2 or url,
+            '-o',
+            file,
+            '--retry',
+            '3',
+            '-C',
+            '-',
+        ])
     finally:
         if not file.exists() or file.stat().st_size < min_bytes:  # check
             if file.exists():
