@@ -80,7 +80,9 @@ class YOLOBoxScoreTarget():
         # we choose the first dimension
 
         if type(output) == list:
-            return torch.tensor([0]) 
+            assert output[0].shape == 5 
+            # 
+            return torch.tensor([0])
         
         assert len(output.shape) == 3
          # first item would be image index, number of images
@@ -94,7 +96,7 @@ class YOLOBoxScoreTarget():
  
         mask[objectness<self.objectness_threshold] = False
         score = classes[mask] # + objectness[mask]
-        return score.sum()     
+        return score.sum()
 
 
 def extract_CAM(method, model: torch.nn.Module,image,layer:int,classes, objectness_score:float, use_cuda:bool,
