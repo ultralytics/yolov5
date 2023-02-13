@@ -166,7 +166,7 @@ def run(
     # copied from detect.py
 
     use_cuda = len(device) > 0 # for now we can not choose GPU device
-    device = select_device(device)
+    #device = select_device(device)
     
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
     stride, pt = model.stride, model.pt
