@@ -78,8 +78,8 @@ class YOLOBoxScoreTarget():
         """
         breakpoint()
         if len(output.shape)==2:
-            torch.unsqueeze(output,dim=0)
-            
+            output = torch.unsqueeze(output,dim=0)
+
         assert len(output.shape) == 3
          # first item would be image index, number of images
          # second: number of predictions 
