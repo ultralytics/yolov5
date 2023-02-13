@@ -218,7 +218,7 @@ def run(
 
         # for now, we only support one image at a time
         # then we should save the image in a file
-
+        breakpoint()
         return cam_image
     
 
