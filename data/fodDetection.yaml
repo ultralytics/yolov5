@@ -1,6 +1,6 @@
-train: /kaggle/input/chirag-data-set/Chirag Data set/images/train
-val:  /kaggle/input/chirag-data-set/Chirag Data set/images/validate
-test: /kaggle/input/chirag-data-set/Chirag Data set/images/test
+train: /kaggle/input/maindata/main/images/train
+val:  /kaggle/input/maindata/main/images/validate
+test: /kaggle/input/maindata/main/images/test
 # number of classes
 nc: 2
 
