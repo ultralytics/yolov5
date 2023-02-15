@@ -85,7 +85,7 @@ class UseModel:
 
         # Run inference
         self.model.warmup(imgsz=(1 if self.pt else bs, 3, *self.imgsz))  # warmup
-        seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+        seen, dt = 0, (Profile(), Profile(), Profile())
         result = []
         for path, im, im0s, vid_cap, s in dataset:
             with dt[0]:
@@ -122,3 +122,4 @@ class UseModel:
                 result.append(self.names[top5i[0]] if prob[top5i[0]] >= 0.25 else "unknown")
         
         return result
+    

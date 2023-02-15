@@ -4,6 +4,7 @@ import io
 from classify.predict import UseModel
 app = Flask(__name__)
 import os
+import time
 
 model = UseModel(weights=["car_reco_model.pt"])
 
@@ -16,8 +17,11 @@ def predict():
         im_file = request.files["image"]
         im_bytes = im_file.read()
         im = Image.open(io.BytesIO(im_bytes))
-        im = im.save("./to_predict/im.jpg")
-        result = model.predict("to_predict/im.jpg")
+        image_stream = io.BytesIO(im_bytes)
+        
+        name = time.time()
+        im = im.save(f"./to_predict/{name}.jpg")
+        result = model.predict(f"to_predict/{name}.jpg")
 
     return jsonify({'msg': 'success', 'predicted': result[0]})
 
