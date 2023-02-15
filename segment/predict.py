@@ -32,6 +32,7 @@ import argparse
 import os
 import platform
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import torch
@@ -54,6 +55,7 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 @smart_inference_mode()
 def run(
+    save_bbox_conf_cls=False, # save bboxes, confidences and classes to *.txt
     weights=ROOT / 'yolov5s-seg.pt',  # model.pt path(s)
     source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
     data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
@@ -95,6 +97,7 @@ def run(
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+    (save_dir / 'info' if save_bbox_conf_cls else save_dir).mkdir(parents=True, exist_ok=True) # make info dir
 
     # Load model
     device = select_device(device)
@@ -133,6 +136,8 @@ def run(
         # NMS
         with dt[2]:
             pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32)
+        
+        date = datetime.now() # for saving time of detection
 
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
@@ -149,6 +154,7 @@ def run(
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+            info_path = str(save_dir / 'info' / p.stem) + ('' if dataset.mode == 'image' else f'_{str(frame).zfill(6)}')  # infos.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
@@ -180,7 +186,19 @@ def run(
                     255 if retina_masks else im[i])
 
                 # Write results
+                
+                # Saves time in .txt file containing bbox, confidences and classes
+                if save_bbox_conf_cls:
+                    with open(f'{info_path}','a') as f:
+                        f.write(f"{date.strftime('%Y%m%d%H%M%S%f')[:-3]}\n")
+
                 for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
+                    if save_bbox_conf_cls:  # Write bbox, confidences and classes to file
+                        with open(f'{info_path}','a') as f:
+                            for value in range(len(det[j,:6])):
+                                f.write(str(det[j,:6][value].item())+' ')
+                            f.write('\n')
+                    
                     if save_txt:  # Write to file
                         seg = segments[j].reshape(-1)  # (n,2) to (n*2)
                         line = (cls, *seg, conf) if save_conf else (cls, *seg)  # label format
@@ -240,6 +258,7 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--save-bbox-conf-cls', action='store_true', help='save bbox, confidences and classes results to *.txt')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-seg.pt', help='model path(s)')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
