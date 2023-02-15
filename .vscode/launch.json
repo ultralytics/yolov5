@@ -1,0 +1,32 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "detect",
+            "type": "python",
+            "request": "launch",
+            "program": "detect.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--weights=yolov5s.pt",
+                "--source=data/video/video.mp4",
+                "--save-bbox-conf-cls"
+            ]
+        },
+        {
+            "name": "segment_predict",
+            "type": "python",
+            "request": "launch",
+            "program": "segment/predict.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--weights=yolov5s-seg.pt",
+                "--source=data/video/video.mp4",
+                "--save-bbox-conf-cls",
+            ]
+        }
+    ]
+}
