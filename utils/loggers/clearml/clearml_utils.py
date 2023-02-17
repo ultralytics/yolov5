@@ -25,7 +25,7 @@ def construct_dataset(clearml_info_string):
     dataset_root_path = Path(dataset.get_local_copy())
 
     # We'll search for the yaml file definition in the dataset
-    yaml_filenames = list(glob.glob(str(dataset_root_path / "*.yaml")) + glob.glob(str(dataset_root_path / "*.yml")))
+    yaml_filenames = list(glob.glob(str(dataset_root_path / '*.yaml')) + glob.glob(str(dataset_root_path / '*.yml')))
     if len(yaml_filenames) > 1:
         raise ValueError('More than one yaml file was found in the dataset root, cannot determine which one contains '
                          'the dataset definition this way.')
@@ -100,7 +100,7 @@ class ClearmlLogger:
             self.task.connect(opt, name='Args')
 
             # Make sure the code is easily remotely runnable by setting the docker image to use by the remote agent
-            self.task.set_base_docker("ultralytics/yolov5:latest",
+            self.task.set_base_docker('ultralytics/yolov5:latest',
                                       docker_arguments='--ipc=host -e="CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1"',
                                       docker_setup_bash_script='pip install clearml')
 
@@ -150,7 +150,7 @@ class ClearmlLogger:
 
                     class_name = class_names[int(class_nr)]
                     confidence_percentage = round(float(conf) * 100, 2)
-                    label = f"{class_name}: {confidence_percentage}%"
+                    label = f'{class_name}: {confidence_percentage}%'
 
                     if conf > conf_threshold:
                         annotator.rectangle(box.cpu().numpy(), outline=color)

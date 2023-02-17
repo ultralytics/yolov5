@@ -450,7 +450,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     plt.savefig(f, dpi=300, bbox_inches='tight')
     plt.close()
     if verbose:
-        LOGGER.info(f"Saving {f}")
+        LOGGER.info(f'Saving {f}')
         if labels is not None:
             LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:nmax]))
         if pred is not None:

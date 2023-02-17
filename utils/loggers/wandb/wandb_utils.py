@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 RANK = int(os.getenv('RANK', -1))
 DEPRECATION_WARNING = f"{colorstr('wandb')}: WARNING ⚠️ wandb is deprecated and will be removed in a future release. " \
-                      f"See supported integrations at https://github.com/ultralytics/yolov5#integrations."
+                      f'See supported integrations at https://github.com/ultralytics/yolov5#integrations.'
 
 try:
     import wandb
@@ -65,7 +65,7 @@ class WandbLogger():
         self.data_dict = None
         if self.wandb:
             self.wandb_run = wandb.init(config=opt,
-                                        resume="allow",
+                                        resume='allow',
                                         project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                         entity=opt.entity,
                                         name=opt.name if opt.name != 'exp' else None,
@@ -97,7 +97,7 @@ class WandbLogger():
         if isinstance(opt.resume, str):
             model_dir, _ = self.download_model_artifact(opt)
             if model_dir:
-                self.weights = Path(model_dir) / "last.pt"
+                self.weights = Path(model_dir) / 'last.pt'
                 config = self.wandb_run.config
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp, opt.imgsz = str(
                     self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs, \
@@ -131,7 +131,7 @@ class WandbLogger():
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
         wandb.log_artifact(model_artifact,
                            aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
-        LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
+        LOGGER.info(f'Saving model artifact on epoch {epoch + 1}')
 
     def val_one_image(self, pred, predn, path, names, im):
         pass
@@ -160,7 +160,7 @@ class WandbLogger():
                     wandb.log(self.log_dict)
                 except BaseException as e:
                     LOGGER.info(
-                        f"An error occurred in wandb logger. The training will proceed without interruption. More info\n{e}"
+                        f'An error occurred in wandb logger. The training will proceed without interruption. More info\n{e}'
                     )
                     self.wandb_run.finish()
                     self.wandb_run = None
