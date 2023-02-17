@@ -120,10 +120,9 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v7.0'):
 
         file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         if name in assets:
-            safe_download(
-                file,
-                url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
-                min_bytes=1E5,
-                error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/{tag}')
+            safe_download(file,
+                          url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
+                          min_bytes=1E5,
+                          error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/{tag}')
 
     return str(file)
