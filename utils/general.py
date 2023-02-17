@@ -38,7 +38,7 @@ import torchvision
 import yaml
 
 from utils import TryExcept, emojis
-from utils.downloads import gsutil_getsize, curl_download
+from utils.downloads import curl_download, gsutil_getsize
 from utils.metrics import box_iou, fitness
 
 FILE = Path(__file__).resolve()
