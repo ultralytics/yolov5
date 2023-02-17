@@ -375,7 +375,7 @@ class GenericLogger:
             wandb.log_artifact(art)
 
     def update_params(self, params):
-        # Update the paramters logged
+        # Update the parameters logged
         if self.wandb:
             wandb.run.config.update(params, allow_val_change=True)
 
