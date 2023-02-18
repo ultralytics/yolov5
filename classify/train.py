@@ -78,7 +78,7 @@ def train(opt, device):
             LOGGER.info(f'\nDataset not found ⚠️, missing path {data_dir}, attempting download...')
             t = time.time()
             if str(data) == 'imagenet':
-                subprocess.run(["bash", str(ROOT / 'data/scripts/get_imagenet.sh')], shell=True, check=True)
+                subprocess.run(['bash', str(ROOT / 'data/scripts/get_imagenet.sh')], shell=True, check=True)
             else:
                 url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
                 download(url, dir=data_dir.parent)
@@ -220,11 +220,11 @@ def train(opt, device):
 
             # Log
             metrics = {
-                "train/loss": tloss,
-                f"{val}/loss": vloss,
-                "metrics/accuracy_top1": top1,
-                "metrics/accuracy_top5": top5,
-                "lr/0": optimizer.param_groups[0]['lr']}  # learning rate
+                'train/loss': tloss,
+                f'{val}/loss': vloss,
+                'metrics/accuracy_top1': top1,
+                'metrics/accuracy_top5': top5,
+                'lr/0': optimizer.param_groups[0]['lr']}  # learning rate
             logger.log_metrics(metrics, epoch)
 
             # Save model
@@ -251,11 +251,11 @@ def train(opt, device):
     if RANK in {-1, 0} and final_epoch:
         LOGGER.info(f'\nTraining complete ({(time.time() - t0) / 3600:.3f} hours)'
                     f"\nResults saved to {colorstr('bold', save_dir)}"
-                    f"\nPredict:         python classify/predict.py --weights {best} --source im.jpg"
-                    f"\nValidate:        python classify/val.py --weights {best} --data {data_dir}"
-                    f"\nExport:          python export.py --weights {best} --include onnx"
+                    f'\nPredict:         python classify/predict.py --weights {best} --source im.jpg'
+                    f'\nValidate:        python classify/val.py --weights {best} --data {data_dir}'
+                    f'\nExport:          python export.py --weights {best} --include onnx'
                     f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{best}')"
-                    f"\nVisualize:       https://netron.app\n")
+                    f'\nVisualize:       https://netron.app\n')
 
         # Plot examples
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
@@ -263,7 +263,7 @@ def train(opt, device):
         file = imshow_cls(images, labels, pred, model.names, verbose=False, f=save_dir / 'test_images.jpg')
 
         # Log results
-        meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
+        meta = {'epochs': epochs, 'top1_acc': best_fitness, 'date': datetime.now().isoformat()}
         logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
         logger.log_model(best, epochs, metadata=meta)
 
@@ -310,7 +310,7 @@ def main(opt):
         assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
-        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
+        dist.init_process_group(backend='nccl' if dist.is_nccl_available() else 'gloo')
 
     # Parameters
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
@@ -328,6 +328,6 @@ def run(**kwargs):
     return opt
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)

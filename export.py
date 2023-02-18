@@ -120,7 +120,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
     f = file.with_suffix('.torchscript')
 
     ts = torch.jit.trace(model, im, strict=False)
-    d = {"shape": im.shape, "stride": int(max(model.stride)), "names": model.names}
+    d = {'shape': im.shape, 'stride': int(max(model.stride)), 'names': model.names}
     extra_files = {'config.txt': json.dumps(d)}  # torch._C.ExtraFilesMap()
     if optimize:  # https://pytorch.org/tutorials/recipes/mobile_interpreter.html
         optimize_for_mobile(ts)._save_for_lite_interpreter(str(f), _extra_files=extra_files)
@@ -195,13 +195,13 @@ def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     f = str(file).replace('.pt', f'_openvino_model{os.sep}')
 
     args = [
-        "mo",
-        "--input_model",
+        'mo',
+        '--input_model',
         str(file.with_suffix('.onnx')),
-        "--output_dir",
+        '--output_dir',
         f,
-        "--data_type",
-        ("FP16" if half else "FP32"),]
+        '--data_type',
+        ('FP16' if half else 'FP32'),]
     subprocess.run(args, check=True, env=os.environ)  # export
     yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
@@ -237,7 +237,7 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     if bits < 32:
         if MACOS:  # quantization only supported on macOS
             with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning
+                warnings.filterwarnings('ignore', category=DeprecationWarning)  # suppress numpy==1.20 float warning
                 ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
         else:
             print(f'{prefix} quantization only supported on macOS, skipping...')
@@ -293,7 +293,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
 
     if dynamic:
         if im.shape[0] <= 1:
-            LOGGER.warning(f"{prefix} WARNING ⚠️ --dynamic model requires maximum --batch-size argument")
+            LOGGER.warning(f'{prefix} WARNING ⚠️ --dynamic model requires maximum --batch-size argument')
         profile = builder.create_optimization_profile()
         for inp in inputs:
             profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
@@ -403,7 +403,7 @@ def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=c
         converter.target_spec.supported_ops.append(tf.lite.OpsSet.SELECT_TF_OPS)
 
     tflite_model = converter.convert()
-    open(f, "wb").write(tflite_model)
+    open(f, 'wb').write(tflite_model)
     return f, None
 
 
@@ -618,14 +618,14 @@ def run(
         det &= not seg  # segmentation models inherit from SegmentationModel(DetectionModel)
         dir = Path('segment' if seg else 'classify' if cls else '')
         h = '--half' if half else ''  # --half FP16 inference arg
-        s = "# WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference" if cls else \
-            "# WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference" if seg else ''
+        s = '# WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference' if cls else \
+            '# WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference' if seg else ''
         LOGGER.info(f'\nExport complete ({time.time() - t:.1f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
                     f"\nDetect:          python {dir / ('detect.py' if det else 'predict.py')} --weights {f[-1]} {h}"
                     f"\nValidate:        python {dir / 'val.py'} --weights {f[-1]} {h}"
                     f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')  {s}"
-                    f"\nVisualize:       https://netron.app")
+                    f'\nVisualize:       https://netron.app')
     return f  # return list of exported files/dirs
 
 
@@ -667,6 +667,6 @@ def main(opt):
         run(**vars(opt))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)

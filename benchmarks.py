@@ -164,6 +164,6 @@ def main(opt):
     test(**vars(opt)) if opt.test else run(**vars(opt))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)

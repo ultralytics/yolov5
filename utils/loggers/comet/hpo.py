@@ -21,7 +21,7 @@ from utils.torch_utils import select_device
 
 # Project Configuration
 config = comet_ml.config.get_config()
-COMET_PROJECT_NAME = config.get_string(os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5")
+COMET_PROJECT_NAME = config.get_string(os.getenv('COMET_PROJECT_NAME'), 'comet.project_name', default='yolov5')
 
 
 def get_args(known=False):
@@ -68,30 +68,30 @@ def get_args(known=False):
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
 
     # Comet Arguments
-    parser.add_argument("--comet_optimizer_config", type=str, help="Comet: Path to a Comet Optimizer Config File.")
-    parser.add_argument("--comet_optimizer_id", type=str, help="Comet: ID of the Comet Optimizer sweep.")
-    parser.add_argument("--comet_optimizer_objective", type=str, help="Comet: Set to 'minimize' or 'maximize'.")
-    parser.add_argument("--comet_optimizer_metric", type=str, help="Comet: Metric to Optimize.")
-    parser.add_argument("--comet_optimizer_workers",
+    parser.add_argument('--comet_optimizer_config', type=str, help='Comet: Path to a Comet Optimizer Config File.')
+    parser.add_argument('--comet_optimizer_id', type=str, help='Comet: ID of the Comet Optimizer sweep.')
+    parser.add_argument('--comet_optimizer_objective', type=str, help="Comet: Set to 'minimize' or 'maximize'.")
+    parser.add_argument('--comet_optimizer_metric', type=str, help='Comet: Metric to Optimize.')
+    parser.add_argument('--comet_optimizer_workers',
                         type=int,
                         default=1,
-                        help="Comet: Number of Parallel Workers to use with the Comet Optimizer.")
+                        help='Comet: Number of Parallel Workers to use with the Comet Optimizer.')
 
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
 
 def run(parameters, opt):
-    hyp_dict = {k: v for k, v in parameters.items() if k not in ["epochs", "batch_size"]}
+    hyp_dict = {k: v for k, v in parameters.items() if k not in ['epochs', 'batch_size']}
 
     opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))
-    opt.batch_size = parameters.get("batch_size")
-    opt.epochs = parameters.get("epochs")
+    opt.batch_size = parameters.get('batch_size')
+    opt.epochs = parameters.get('epochs')
 
     device = select_device(opt.device, batch_size=opt.batch_size)
     train(hyp_dict, opt, device, callbacks=Callbacks())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = get_args(known=True)
 
     opt.weights = str(opt.weights)
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     opt.data = str(opt.data)
     opt.project = str(opt.project)
 
-    optimizer_id = os.getenv("COMET_OPTIMIZER_ID")
+    optimizer_id = os.getenv('COMET_OPTIMIZER_ID')
     if optimizer_id is None:
         with open(opt.comet_optimizer_config) as f:
             optimizer_config = json.load(f)
@@ -110,9 +110,9 @@ if __name__ == "__main__":
     opt.comet_optimizer_id = optimizer.id
     status = optimizer.status()
 
-    opt.comet_optimizer_objective = status["spec"]["objective"]
-    opt.comet_optimizer_metric = status["spec"]["metric"]
+    opt.comet_optimizer_objective = status['spec']['objective']
+    opt.comet_optimizer_metric = status['spec']['metric']
 
-    logger.info("COMET INFO: Starting Hyperparameter Sweep")
+    logger.info('COMET INFO: Starting Hyperparameter Sweep')
     for parameter in optimizer.get_parameters():
-        run(parameter["parameters"], opt)
+        run(parameter['parameters'], opt)

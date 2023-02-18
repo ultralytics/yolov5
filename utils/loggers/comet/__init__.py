@@ -17,7 +17,7 @@ try:
 
     # Project Configuration
     config = comet_ml.config.get_config()
-    COMET_PROJECT_NAME = config.get_string(os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5")
+    COMET_PROJECT_NAME = config.get_string(os.getenv('COMET_PROJECT_NAME'), 'comet.project_name', default='yolov5')
 except (ModuleNotFoundError, ImportError):
     comet_ml = None
     COMET_PROJECT_NAME = None
@@ -31,32 +31,32 @@ from utils.dataloaders import img2label_paths
 from utils.general import check_dataset, scale_boxes, xywh2xyxy
 from utils.metrics import box_iou
 
-COMET_PREFIX = "comet://"
+COMET_PREFIX = 'comet://'
 
-COMET_MODE = os.getenv("COMET_MODE", "online")
+COMET_MODE = os.getenv('COMET_MODE', 'online')
 
 # Model Saving Settings
-COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
+COMET_MODEL_NAME = os.getenv('COMET_MODEL_NAME', 'yolov5')
 
 # Dataset Artifact Settings
-COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "true"
+COMET_UPLOAD_DATASET = os.getenv('COMET_UPLOAD_DATASET', 'false').lower() == 'true'
 
 # Evaluation Settings
-COMET_LOG_CONFUSION_MATRIX = os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true"
-COMET_LOG_PREDICTIONS = os.getenv("COMET_LOG_PREDICTIONS", "true").lower() == "true"
-COMET_MAX_IMAGE_UPLOADS = int(os.getenv("COMET_MAX_IMAGE_UPLOADS", 100))
+COMET_LOG_CONFUSION_MATRIX = os.getenv('COMET_LOG_CONFUSION_MATRIX', 'true').lower() == 'true'
+COMET_LOG_PREDICTIONS = os.getenv('COMET_LOG_PREDICTIONS', 'true').lower() == 'true'
+COMET_MAX_IMAGE_UPLOADS = int(os.getenv('COMET_MAX_IMAGE_UPLOADS', 100))
 
 # Confusion Matrix Settings
-CONF_THRES = float(os.getenv("CONF_THRES", 0.001))
-IOU_THRES = float(os.getenv("IOU_THRES", 0.6))
+CONF_THRES = float(os.getenv('CONF_THRES', 0.001))
+IOU_THRES = float(os.getenv('IOU_THRES', 0.6))
 
 # Batch Logging Settings
-COMET_LOG_BATCH_METRICS = os.getenv("COMET_LOG_BATCH_METRICS", "false").lower() == "true"
-COMET_BATCH_LOGGING_INTERVAL = os.getenv("COMET_BATCH_LOGGING_INTERVAL", 1)
-COMET_PREDICTION_LOGGING_INTERVAL = os.getenv("COMET_PREDICTION_LOGGING_INTERVAL", 1)
-COMET_LOG_PER_CLASS_METRICS = os.getenv("COMET_LOG_PER_CLASS_METRICS", "false").lower() == "true"
+COMET_LOG_BATCH_METRICS = os.getenv('COMET_LOG_BATCH_METRICS', 'false').lower() == 'true'
+COMET_BATCH_LOGGING_INTERVAL = os.getenv('COMET_BATCH_LOGGING_INTERVAL', 1)
+COMET_PREDICTION_LOGGING_INTERVAL = os.getenv('COMET_PREDICTION_LOGGING_INTERVAL', 1)
+COMET_LOG_PER_CLASS_METRICS = os.getenv('COMET_LOG_PER_CLASS_METRICS', 'false').lower() == 'true'
 
-RANK = int(os.getenv("RANK", -1))
+RANK = int(os.getenv('RANK', -1))
 
 to_pil = T.ToPILImage()
 
@@ -66,7 +66,7 @@ class CometLogger:
     with Comet
     """
 
-    def __init__(self, opt, hyp, run_id=None, job_type="Training", **experiment_kwargs) -> None:
+    def __init__(self, opt, hyp, run_id=None, job_type='Training', **experiment_kwargs) -> None:
         self.job_type = job_type
         self.opt = opt
         self.hyp = hyp
@@ -87,52 +87,52 @@ class CometLogger:
 
         # Default parameters to pass to Experiment objects
         self.default_experiment_kwargs = {
-            "log_code": False,
-            "log_env_gpu": True,
-            "log_env_cpu": True,
-            "project_name": COMET_PROJECT_NAME,}
+            'log_code': False,
+            'log_env_gpu': True,
+            'log_env_cpu': True,
+            'project_name': COMET_PROJECT_NAME,}
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
 
         self.data_dict = self.check_dataset(self.opt.data)
-        self.class_names = self.data_dict["names"]
-        self.num_classes = self.data_dict["nc"]
+        self.class_names = self.data_dict['names']
+        self.num_classes = self.data_dict['nc']
 
         self.logged_images_count = 0
         self.max_images = COMET_MAX_IMAGE_UPLOADS
 
         if run_id is None:
-            self.experiment.log_other("Created from", "YOLOv5")
+            self.experiment.log_other('Created from', 'YOLOv5')
             if not isinstance(self.experiment, comet_ml.OfflineExperiment):
-                workspace, project_name, experiment_id = self.experiment.url.split("/")[-3:]
+                workspace, project_name, experiment_id = self.experiment.url.split('/')[-3:]
                 self.experiment.log_other(
-                    "Run Path",
-                    f"{workspace}/{project_name}/{experiment_id}",
+                    'Run Path',
+                    f'{workspace}/{project_name}/{experiment_id}',
                 )
             self.log_parameters(vars(opt))
             self.log_parameters(self.opt.hyp)
             self.log_asset_data(
                 self.opt.hyp,
-                name="hyperparameters.json",
-                metadata={"type": "hyp-config-file"},
+                name='hyperparameters.json',
+                metadata={'type': 'hyp-config-file'},
             )
             self.log_asset(
-                f"{self.opt.save_dir}/opt.yaml",
-                metadata={"type": "opt-config-file"},
+                f'{self.opt.save_dir}/opt.yaml',
+                metadata={'type': 'opt-config-file'},
             )
 
         self.comet_log_confusion_matrix = COMET_LOG_CONFUSION_MATRIX
 
-        if hasattr(self.opt, "conf_thres"):
+        if hasattr(self.opt, 'conf_thres'):
             self.conf_thres = self.opt.conf_thres
         else:
             self.conf_thres = CONF_THRES
-        if hasattr(self.opt, "iou_thres"):
+        if hasattr(self.opt, 'iou_thres'):
             self.iou_thres = self.opt.iou_thres
         else:
             self.iou_thres = IOU_THRES
 
-        self.log_parameters({"val_iou_threshold": self.iou_thres, "val_conf_threshold": self.conf_thres})
+        self.log_parameters({'val_iou_threshold': self.iou_thres, 'val_conf_threshold': self.conf_thres})
 
         self.comet_log_predictions = COMET_LOG_PREDICTIONS
         if self.opt.bbox_interval == -1:
@@ -147,22 +147,22 @@ class CometLogger:
         self.comet_log_per_class_metrics = COMET_LOG_PER_CLASS_METRICS
 
         self.experiment.log_others({
-            "comet_mode": COMET_MODE,
-            "comet_max_image_uploads": COMET_MAX_IMAGE_UPLOADS,
-            "comet_log_per_class_metrics": COMET_LOG_PER_CLASS_METRICS,
-            "comet_log_batch_metrics": COMET_LOG_BATCH_METRICS,
-            "comet_log_confusion_matrix": COMET_LOG_CONFUSION_MATRIX,
-            "comet_model_name": COMET_MODEL_NAME,})
+            'comet_mode': COMET_MODE,
+            'comet_max_image_uploads': COMET_MAX_IMAGE_UPLOADS,
+            'comet_log_per_class_metrics': COMET_LOG_PER_CLASS_METRICS,
+            'comet_log_batch_metrics': COMET_LOG_BATCH_METRICS,
+            'comet_log_confusion_matrix': COMET_LOG_CONFUSION_MATRIX,
+            'comet_model_name': COMET_MODEL_NAME,})
 
         # Check if running the Experiment with the Comet Optimizer
-        if hasattr(self.opt, "comet_optimizer_id"):
-            self.experiment.log_other("optimizer_id", self.opt.comet_optimizer_id)
-            self.experiment.log_other("optimizer_objective", self.opt.comet_optimizer_objective)
-            self.experiment.log_other("optimizer_metric", self.opt.comet_optimizer_metric)
-            self.experiment.log_other("optimizer_parameters", json.dumps(self.hyp))
+        if hasattr(self.opt, 'comet_optimizer_id'):
+            self.experiment.log_other('optimizer_id', self.opt.comet_optimizer_id)
+            self.experiment.log_other('optimizer_objective', self.opt.comet_optimizer_objective)
+            self.experiment.log_other('optimizer_metric', self.opt.comet_optimizer_metric)
+            self.experiment.log_other('optimizer_parameters', json.dumps(self.hyp))
 
     def _get_experiment(self, mode, experiment_id=None):
-        if mode == "offline":
+        if mode == 'offline':
             if experiment_id is not None:
                 return comet_ml.ExistingOfflineExperiment(
                     previous_experiment=experiment_id,
@@ -182,11 +182,11 @@ class CometLogger:
                 return comet_ml.Experiment(**self.default_experiment_kwargs)
 
             except ValueError:
-                logger.warning("COMET WARNING: "
-                               "Comet credentials have not been set. "
-                               "Comet will default to offline logging. "
-                               "Please set your credentials to enable online logging.")
-                return self._get_experiment("offline", experiment_id)
+                logger.warning('COMET WARNING: '
+                               'Comet credentials have not been set. '
+                               'Comet will default to offline logging. '
+                               'Please set your credentials to enable online logging.')
+                return self._get_experiment('offline', experiment_id)
 
         return
 
@@ -210,12 +210,12 @@ class CometLogger:
             return
 
         model_metadata = {
-            "fitness_score": fitness_score[-1],
-            "epochs_trained": epoch + 1,
-            "save_period": opt.save_period,
-            "total_epochs": opt.epochs,}
+            'fitness_score': fitness_score[-1],
+            'epochs_trained': epoch + 1,
+            'save_period': opt.save_period,
+            'total_epochs': opt.epochs,}
 
-        model_files = glob.glob(f"{path}/*.pt")
+        model_files = glob.glob(f'{path}/*.pt')
         for model_path in model_files:
             name = Path(model_path).name
 
@@ -232,12 +232,12 @@ class CometLogger:
             data_config = yaml.safe_load(f)
 
         if data_config['path'].startswith(COMET_PREFIX):
-            path = data_config['path'].replace(COMET_PREFIX, "")
+            path = data_config['path'].replace(COMET_PREFIX, '')
             data_dict = self.download_dataset_artifact(path)
 
             return data_dict
 
-        self.log_asset(self.opt.data, metadata={"type": "data-config-file"})
+        self.log_asset(self.opt.data, metadata={'type': 'data-config-file'})
 
         return check_dataset(data_file)
 
@@ -253,8 +253,8 @@ class CometLogger:
         filtered_detections = detections[mask]
         filtered_labels = labelsn[mask]
 
-        image_id = path.split("/")[-1].split(".")[0]
-        image_name = f"{image_id}_curr_epoch_{self.experiment.curr_epoch}"
+        image_id = path.split('/')[-1].split('.')[0]
+        image_name = f'{image_id}_curr_epoch_{self.experiment.curr_epoch}'
         if image_name not in self.logged_image_names:
             native_scale_image = PIL.Image.open(path)
             self.log_image(native_scale_image, name=image_name)
@@ -263,22 +263,22 @@ class CometLogger:
         metadata = []
         for cls, *xyxy in filtered_labels.tolist():
             metadata.append({
-                "label": f"{self.class_names[int(cls)]}-gt",
-                "score": 100,
-                "box": {
-                    "x": xyxy[0],
-                    "y": xyxy[1],
-                    "x2": xyxy[2],
-                    "y2": xyxy[3]},})
+                'label': f'{self.class_names[int(cls)]}-gt',
+                'score': 100,
+                'box': {
+                    'x': xyxy[0],
+                    'y': xyxy[1],
+                    'x2': xyxy[2],
+                    'y2': xyxy[3]},})
         for *xyxy, conf, cls in filtered_detections.tolist():
             metadata.append({
-                "label": f"{self.class_names[int(cls)]}",
-                "score": conf * 100,
-                "box": {
-                    "x": xyxy[0],
-                    "y": xyxy[1],
-                    "x2": xyxy[2],
-                    "y2": xyxy[3]},})
+                'label': f'{self.class_names[int(cls)]}',
+                'score': conf * 100,
+                'box': {
+                    'x': xyxy[0],
+                    'y': xyxy[1],
+                    'x2': xyxy[2],
+                    'y2': xyxy[3]},})
 
         self.metadata_dict[image_name] = metadata
         self.logged_images_count += 1
@@ -305,35 +305,35 @@ class CometLogger:
         return predn, labelsn
 
     def add_assets_to_artifact(self, artifact, path, asset_path, split):
-        img_paths = sorted(glob.glob(f"{asset_path}/*"))
+        img_paths = sorted(glob.glob(f'{asset_path}/*'))
         label_paths = img2label_paths(img_paths)
 
         for image_file, label_file in zip(img_paths, label_paths):
             image_logical_path, label_logical_path = map(lambda x: os.path.relpath(x, path), [image_file, label_file])
 
             try:
-                artifact.add(image_file, logical_path=image_logical_path, metadata={"split": split})
-                artifact.add(label_file, logical_path=label_logical_path, metadata={"split": split})
+                artifact.add(image_file, logical_path=image_logical_path, metadata={'split': split})
+                artifact.add(label_file, logical_path=label_logical_path, metadata={'split': split})
             except ValueError as e:
                 logger.error('COMET ERROR: Error adding file to Artifact. Skipping file.')
-                logger.error(f"COMET ERROR: {e}")
+                logger.error(f'COMET ERROR: {e}')
                 continue
 
         return artifact
 
     def upload_dataset_artifact(self):
-        dataset_name = self.data_dict.get("dataset_name", "yolov5-dataset")
-        path = str((ROOT / Path(self.data_dict["path"])).resolve())
+        dataset_name = self.data_dict.get('dataset_name', 'yolov5-dataset')
+        path = str((ROOT / Path(self.data_dict['path'])).resolve())
 
         metadata = self.data_dict.copy()
-        for key in ["train", "val", "test"]:
+        for key in ['train', 'val', 'test']:
             split_path = metadata.get(key)
             if split_path is not None:
-                metadata[key] = split_path.replace(path, "")
+                metadata[key] = split_path.replace(path, '')
 
-        artifact = comet_ml.Artifact(name=dataset_name, artifact_type="dataset", metadata=metadata)
+        artifact = comet_ml.Artifact(name=dataset_name, artifact_type='dataset', metadata=metadata)
         for key in metadata.keys():
-            if key in ["train", "val", "test"]:
+            if key in ['train', 'val', 'test']:
                 if isinstance(self.upload_dataset, str) and (key != self.upload_dataset):
                     continue
 
@@ -352,13 +352,13 @@ class CometLogger:
 
         metadata = logged_artifact.metadata
         data_dict = metadata.copy()
-        data_dict["path"] = artifact_save_dir
+        data_dict['path'] = artifact_save_dir
 
-        metadata_names = metadata.get("names")
+        metadata_names = metadata.get('names')
         if type(metadata_names) == dict:
-            data_dict["names"] = {int(k): v for k, v in metadata.get("names").items()}
+            data_dict['names'] = {int(k): v for k, v in metadata.get('names').items()}
         elif type(metadata_names) == list:
-            data_dict["names"] = {int(k): v for k, v in zip(range(len(metadata_names)), metadata_names)}
+            data_dict['names'] = {int(k): v for k, v in zip(range(len(metadata_names)), metadata_names)}
         else:
             raise "Invalid 'names' field in dataset yaml file. Please use a list or dictionary"
 
@@ -366,13 +366,13 @@ class CometLogger:
         return data_dict
 
     def update_data_paths(self, data_dict):
-        path = data_dict.get("path", "")
+        path = data_dict.get('path', '')
 
-        for split in ["train", "val", "test"]:
+        for split in ['train', 'val', 'test']:
             if data_dict.get(split):
                 split_path = data_dict.get(split)
-                data_dict[split] = (f"{path}/{split_path}" if isinstance(split, str) else [
-                    f"{path}/{x}" for x in split_path])
+                data_dict[split] = (f'{path}/{split_path}' if isinstance(split, str) else [
+                    f'{path}/{x}' for x in split_path])
 
         return data_dict
 
@@ -413,11 +413,11 @@ class CometLogger:
     def on_train_end(self, files, save_dir, last, best, epoch, results):
         if self.comet_log_predictions:
             curr_epoch = self.experiment.curr_epoch
-            self.experiment.log_asset_data(self.metadata_dict, "image-metadata.json", epoch=curr_epoch)
+            self.experiment.log_asset_data(self.metadata_dict, 'image-metadata.json', epoch=curr_epoch)
 
         for f in files:
-            self.log_asset(f, metadata={"epoch": epoch})
-        self.log_asset(f"{save_dir}/results.csv", metadata={"epoch": epoch})
+            self.log_asset(f, metadata={'epoch': epoch})
+        self.log_asset(f'{save_dir}/results.csv', metadata={'epoch': epoch})
 
         if not self.opt.evolve:
             model_path = str(best if best.exists() else last)
@@ -481,7 +481,7 @@ class CometLogger:
         if self.comet_log_confusion_matrix:
             epoch = self.experiment.curr_epoch
             class_names = list(self.class_names.values())
-            class_names.append("background")
+            class_names.append('background')
             num_classes = len(class_names)
 
             self.experiment.log_confusion_matrix(
@@ -491,7 +491,7 @@ class CometLogger:
                 epoch=epoch,
                 column_label='Actual Category',
                 row_label='Predicted Category',
-                file_name=f"confusion-matrix-epoch-{epoch}.json",
+                file_name=f'confusion-matrix-epoch-{epoch}.json',
             )
 
     def on_fit_epoch_end(self, result, epoch):

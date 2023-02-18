@@ -121,8 +121,8 @@ class Loggers():
 
         # Comet
         if comet_ml and 'comet' in self.include:
-            if isinstance(self.opt.resume, str) and self.opt.resume.startswith("comet://"):
-                run_id = self.opt.resume.split("/")[-1]
+            if isinstance(self.opt.resume, str) and self.opt.resume.startswith('comet://'):
+                run_id = self.opt.resume.split('/')[-1]
                 self.comet_logger = CometLogger(self.opt, self.hyp, run_id=run_id)
 
             else:
@@ -158,7 +158,7 @@ class Loggers():
             plot_labels(labels, names, self.save_dir)
             paths = self.save_dir.glob('*labels*.jpg')  # training labels
             if self.wandb:
-                self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
+                self.wandb.log({'Labels': [wandb.Image(str(x), caption=x.name) for x in paths]})
             # if self.clearml:
             #    pass  # ClearML saves these images automatically using hooks
             if self.comet_logger:
@@ -212,7 +212,7 @@ class Loggers():
         if self.wandb or self.clearml:
             files = sorted(self.save_dir.glob('val*.jpg'))
         if self.wandb:
-            self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
+            self.wandb.log({'Validation': [wandb.Image(str(f), caption=f.name) for f in files]})
         if self.clearml:
             self.clearml.log_debug_samples(files, title='Validation')
 
@@ -279,7 +279,7 @@ class Loggers():
 
         if self.wandb:
             self.wandb.log(dict(zip(self.keys[3:10], results)))
-            self.wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
+            self.wandb.log({'Results': [wandb.Image(str(f), caption=f.name) for f in files]})
             # Calling wandb.log. TODO: Refactor this into WandbLogger.log_model
             if not self.opt.evolve:
                 wandb.log_artifact(str(best if best.exists() else last),
@@ -329,7 +329,7 @@ class GenericLogger:
 
         if wandb and 'wandb' in self.include:
             self.wandb = wandb.init(project=web_project_name(str(opt.project)),
-                                    name=None if opt.name == "exp" else opt.name,
+                                    name=None if opt.name == 'exp' else opt.name,
                                     config=opt)
         else:
             self.wandb = None
@@ -370,12 +370,12 @@ class GenericLogger:
     def log_model(self, model_path, epoch=0, metadata={}):
         # Log model to all loggers
         if self.wandb:
-            art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)
+            art = wandb.Artifact(name=f'run_{wandb.run.id}_model', type='model', metadata=metadata)
             art.add_file(str(model_path))
             wandb.log_artifact(art)
 
     def update_params(self, params):
-        # Update the paramters logged
+        # Update the parameters logged
         if self.wandb:
             wandb.run.config.update(params, allow_val_change=True)
 

@@ -77,7 +77,7 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         if not file.exists() or file.stat().st_size < min_bytes:  # check
             if file.exists():
                 file.unlink()  # remove partial downloads
-            LOGGER.info(f"ERROR: {assert_msg}\n{error_msg}")
+            LOGGER.info(f'ERROR: {assert_msg}\n{error_msg}')
         LOGGER.info('')
 
 

@@ -38,7 +38,7 @@ import torchvision
 import yaml
 
 from utils import TryExcept, emojis
-from utils.downloads import gsutil_getsize, curl_download
+from utils.downloads import curl_download, gsutil_getsize
 from utils.metrics import box_iou, fitness
 
 FILE = Path(__file__).resolve()
@@ -90,11 +90,11 @@ def is_kaggle():
 
 def is_docker() -> bool:
     """Check if the process runs inside a docker container."""
-    if Path("/.dockerenv").exists():
+    if Path('/.dockerenv').exists():
         return True
     try:  # check if docker is in control groups
-        with open("/proc/self/cgroup") as file:
-            return any("docker" in line for line in file)
+        with open('/proc/self/cgroup') as file:
+            return any('docker' in line for line in file)
     except OSError:
         return False
 
@@ -113,7 +113,7 @@ def is_writeable(dir, test=False):
         return False
 
 
-LOGGING_NAME = "yolov5"
+LOGGING_NAME = 'yolov5'
 
 
 def set_logging(name=LOGGING_NAME, verbose=True):
@@ -121,21 +121,21 @@ def set_logging(name=LOGGING_NAME, verbose=True):
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
     level = logging.INFO if verbose and rank in {-1, 0} else logging.ERROR
     logging.config.dictConfig({
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
             name: {
-                "format": "%(message)s"}},
-        "handlers": {
+                'format': '%(message)s'}},
+        'handlers': {
             name: {
-                "class": "logging.StreamHandler",
-                "formatter": name,
-                "level": level,}},
-        "loggers": {
+                'class': 'logging.StreamHandler',
+                'formatter': name,
+                'level': level,}},
+        'loggers': {
             name: {
-                "level": level,
-                "handlers": [name],
-                "propagate": False,}}})
+                'level': level,
+                'handlers': [name],
+                'propagate': False,}}})
 
 
 set_logging(LOGGING_NAME)  # run before defining LOGGER
@@ -218,7 +218,7 @@ class WorkingDirectory(contextlib.ContextDecorator):
 
 def methods(instance):
     # Get class/instance methods
-    return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
+    return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith('__')]
 
 
 def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
@@ -299,7 +299,7 @@ def check_online():
     def run_once():
         # Check once
         try:
-            socket.create_connection(("1.1.1.1", 443), 5)  # check host accessibility
+            socket.create_connection(('1.1.1.1', 443), 5)  # check host accessibility
             return True
         except OSError:
             return False
@@ -386,7 +386,7 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
     check_python()  # check python version
     if isinstance(requirements, Path):  # requirements.txt file
         file = requirements.resolve()
-        assert file.exists(), f"{prefix} {file} not found, check failed."
+        assert file.exists(), f'{prefix} {file} not found, check failed.'
         with file.open() as f:
             requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(f) if x.name not in exclude]
     elif isinstance(requirements, str):
@@ -450,7 +450,7 @@ def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
         for f in file if isinstance(file, (list, tuple)) else [file]:
             s = Path(f).suffix.lower()  # file suffix
             if len(s):
-                assert s in suffix, f"{msg}{f} acceptable suffix is {suffix}"
+                assert s in suffix, f'{msg}{f} acceptable suffix is {suffix}'
 
 
 def check_yaml(file, suffix=('.yaml', '.yml')):
@@ -556,8 +556,8 @@ def check_dataset(data, autodownload=True):
             else:  # python script
                 r = exec(s, {'yaml': data})  # return None
             dt = f'({round(time.time() - t, 1)}s)'
-            s = f"success ✅ {dt}, saved to {colorstr('bold', DATASETS_DIR)}" if r in (0, None) else f"failure {dt} ❌"
-            LOGGER.info(f"Dataset download {s}")
+            s = f"success ✅ {dt}, saved to {colorstr('bold', DATASETS_DIR)}" if r in (0, None) else f'failure {dt} ❌'
+            LOGGER.info(f'Dataset download {s}')
     check_font('Arial.ttf' if is_ascii(data['names']) else 'Arial.Unicode.ttf', progress=True)  # download fonts
     return data  # dictionary
 
@@ -673,7 +673,7 @@ def make_divisible(x, divisor):
 
 def clean_str(s):
     # Cleans a string by replacing special characters with underscore _
-    return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
+    return re.sub(pattern='[|@#!¡·$€%&()=?¿^*;:,¨´><+]', repl='_', string=s)
 
 
 def one_cycle(y1=0.0, y2=1.0, steps=100):

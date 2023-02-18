@@ -70,8 +70,8 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
     from pycocotools.mask import encode
 
     def single_encode(x):
-        rle = encode(np.asarray(x[:, :, None], order="F", dtype="uint8"))[0]
-        rle["counts"] = rle["counts"].decode("utf-8")
+        rle = encode(np.asarray(x[:, :, None], order='F', dtype='uint8'))[0]
+        rle['counts'] = rle['counts'].decode('utf-8')
         return rle
 
     image_id = int(path.stem) if path.stem.isnumeric() else path.stem
@@ -105,7 +105,7 @@ def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, over
             gt_masks = gt_masks.repeat(nl, 1, 1)  # shape(1,640,640) -> (n,640,640)
             gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
         if gt_masks.shape[1:] != pred_masks.shape[1:]:
-            gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0]
+            gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode='bilinear', align_corners=False)[0]
             gt_masks = gt_masks.gt_(0.5)
         iou = mask_iou(gt_masks.view(gt_masks.shape[0], -1), pred_masks.view(pred_masks.shape[0], -1))
     else:  # boxes
@@ -231,8 +231,8 @@ def run(
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    s = ('%22s' + '%11s' * 10) % ('Class', 'Images', 'Instances', 'Box(P', "R", "mAP50", "mAP50-95)", "Mask(P", "R",
-                                  "mAP50", "mAP50-95)")
+    s = ('%22s' + '%11s' * 10) % ('Class', 'Images', 'Instances', 'Box(P', 'R', 'mAP50', 'mAP50-95)', 'Mask(P', 'R',
+                                  'mAP50', 'mAP50-95)')
     dt = Profile(), Profile(), Profile()
     metrics = Metrics()
     loss = torch.zeros(4, device=device)
@@ -343,7 +343,7 @@ def run(
 
     # Print results
     pf = '%22s' + '%11i' * 2 + '%11.3g' * 8  # print format
-    LOGGER.info(pf % ("all", seen, nt.sum(), *metrics.mean_results()))
+    LOGGER.info(pf % ('all', seen, nt.sum(), *metrics.mean_results()))
     if nt.sum() == 0:
         LOGGER.warning(f'WARNING ⚠️ no labels found in {task} set, can not compute metrics without labels')
 
@@ -369,7 +369,7 @@ def run(
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
         anno_json = str(Path('../datasets/coco/annotations/instances_val2017.json'))  # annotations
-        pred_json = str(save_dir / f"{w}_predictions.json")  # predictions
+        pred_json = str(save_dir / f'{w}_predictions.json')  # predictions
         LOGGER.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
         with open(pred_json, 'w') as f:
             json.dump(jdict, f)
@@ -468,6 +468,6 @@ def main(opt):
             raise NotImplementedError(f'--task {opt.task} not in ("train", "val", "test", "speed", "study")')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)
