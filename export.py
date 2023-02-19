@@ -210,7 +210,7 @@ def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
 @try_export
 def export_paddle(model, im, file, metadata, prefix=colorstr('PaddlePaddle:')):
     # YOLOv5 Paddle export
-    check_requirements(('paddlepaddle', 'x2paddle'), cmds='--user')
+    check_requirements(('paddlepaddle', 'x2paddle'))
     import x2paddle
     from x2paddle.convert import pytorch2paddle
 
