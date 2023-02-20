@@ -1,6 +1,6 @@
-train: /kaggle/input/maindata/main/images/train
-val:  /kaggle/input/maindata/main/images/validate
-test: /kaggle/input/maindata/main/images/test
+train: /kaggle/input/maindataset/main/images/train
+val:  /kaggle/input/maindataset/main/images/validate
+test: /kaggle/input/maindataset/main/images/test
 # number of classes
 nc: 2
 
