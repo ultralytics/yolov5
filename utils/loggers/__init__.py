@@ -186,7 +186,7 @@ class Loggers():
                         self.tb.add_image(
                             f.stem,
                             cv2.imread(str(f))[..., ::-1],
-                            dataformats="HWC",
+                            dataformats='HWC',
                         )
         if self.comet_logger:
             self.comet_logger.on_train_batch_end(log_dict, step=ni)
@@ -228,7 +228,7 @@ class Loggers():
                 self.tb.add_image(
                     f.stem,
                     cv2.imread(str(f))[..., ::-1],
-                    dataformats="HWC",
+                    dataformats='HWC',
                 )
         if self.comet_logger:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
