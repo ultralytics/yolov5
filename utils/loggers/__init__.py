@@ -219,7 +219,6 @@ class Loggers():
         if self.clearml:
             self.clearml.log_debug_samples(files, title='Validation')
         if self.tb:
-            files = [f for f in files if f.exists()]  # filter by exists
             for f in files:
                 self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], dataformats='HWC')
         if self.comet_logger:
