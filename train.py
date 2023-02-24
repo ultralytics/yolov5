@@ -281,7 +281,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             iw = labels_to_image_weights(dataset.labels, nc=nc, class_weights=cw)  # image weights
             dataset.indices = random.choices(range(dataset.n), weights=iw, k=dataset.n)  # rand weighted idx
         if epoch == (epochs - opt.close_mosaic):
-            LOGGER.info("Closing dataloader mosaic")
+            LOGGER.info('Closing dataloader mosaic')
             dataset.mosaic = False
 
         # Update mosaic border (optional)
@@ -424,19 +424,18 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 strip_optimizer(f)  # strip optimizers
                 if f is best:
                     LOGGER.info(f'\nValidating {f}...')
-                    results, _, _ = validate.run(
-                        data_dict,
-                        batch_size=batch_size // WORLD_SIZE * 2,
-                        imgsz=imgsz,
-                        model=attempt_load(f, device).half(),
-                        single_cls=single_cls,
-                        dataloader=val_loader,
-                        save_dir=save_dir,
-                        save_json=is_coco,
-                        verbose=True,
-                        plots=plots,
-                        callbacks=callbacks,
-                        compute_loss=compute_loss)  # val best model with plots
+                    results, _, _ = validate.run(data_dict,
+                                                 batch_size=batch_size // WORLD_SIZE * 2,
+                                                 imgsz=imgsz,
+                                                 model=attempt_load(f, device).half(),
+                                                 single_cls=single_cls,
+                                                 dataloader=val_loader,
+                                                 save_dir=save_dir,
+                                                 save_json=is_coco,
+                                                 verbose=True,
+                                                 plots=plots,
+                                                 callbacks=callbacks,
+                                                 compute_loss=compute_loss)  # val best model with plots
                     if is_coco:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 

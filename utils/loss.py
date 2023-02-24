@@ -280,9 +280,9 @@ class ComputeLoss_NEW:
 
                 all_loss.append([(1.0 - iou) * self.hyp['box'],
                                  self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],
-                                 self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
-                                 obj_target,
-                                 tbox[i][..., 2] > 0.0])  # valid
+                                 self.BCE_base(pcls,
+                                               F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
+                                 obj_target, tbox[i][..., 2] > 0.0])  # valid
 
         # Lowest 3 losses per label
         n_assign = 4  # top n matches

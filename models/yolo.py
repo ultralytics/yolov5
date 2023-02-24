@@ -26,9 +26,9 @@ from models.common import *
 from models.experimental import *
 from utils.general import LOGGER, check_version, check_yaml, make_divisible, print_args
 from utils.plots import feature_visualization
+from utils.tal.anchor_generator import dist2bbox, make_anchors
 from utils.torch_utils import (fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, select_device,
                                time_sync)
-from utils.tal.anchor_generator import make_anchors, dist2bbox
 
 try:
     import thop  # for FLOPs computation
@@ -56,8 +56,7 @@ class V6Detect(nn.Module):
         c2, c3 = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], self.nc)  # channels
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)
-        self.cv3 = nn.ModuleList(
-            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc, 1)) for x in ch)
+        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc, 1)) for x in ch)
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
     def forward(self, x):
@@ -103,12 +102,15 @@ class Detect(nn.Module):
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
         c2, c3 = 64, max(ch[0], self.no - 4)  # channels
-        self.cv2 = nn.ModuleList(nn.Sequential(
-            # Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
-            # Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 64, 1), DFL(64 // 4)) for x in ch)
-            Conv(x, c2, 3), Conv(c2, c2, 3), DFL(64 // 4)) for x in ch)
-        self.cv3 = nn.ModuleList(nn.Sequential(
-            Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
+        self.cv2 = nn.ModuleList(
+            nn.Sequential(
+                # Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
+                # Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 64, 1), DFL(64 // 4)) for x in ch)
+                Conv(x, c2, 3),
+                Conv(c2, c2, 3),
+                DFL(64 // 4)) for x in ch)
+        self.cv3 = nn.ModuleList(
+            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
@@ -365,9 +367,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in {
-            Conv, ConvTranspose, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus,
-            BottleneckCSP, C1, C2, C2f, C2x, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x,
-            Down}:
+                Conv, ConvTranspose, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus,
+                BottleneckCSP, C1, C2, C2f, C2x, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x,
+                Down}:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)

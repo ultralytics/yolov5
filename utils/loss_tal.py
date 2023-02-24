@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 from utils.general import xywh2xyxy
 from utils.metrics import bbox_iou
-from utils.tal.anchor_generator import dist2bbox, make_anchors, bbox2dist
+from utils.tal.anchor_generator import bbox2dist, dist2bbox, make_anchors
 from utils.tal.assigner import TaskAlignedAssigner
 from utils.torch_utils import de_parallel
 
@@ -29,12 +29,13 @@ class VarifocalLoss(nn.Module):
     def forward(self, pred_score, gt_score, label, alpha=0.75, gamma=2.0):
         weight = alpha * pred_score.sigmoid().pow(gamma) * (1 - label) + gt_score * label
         with torch.cuda.amp.autocast(enabled=False):
-            loss = (F.binary_cross_entropy_with_logits(pred_score.float(), gt_score.float(),
-                                                       reduction="none") * weight).sum()
+            loss = (F.binary_cross_entropy_with_logits(pred_score.float(), gt_score.float(), reduction='none') *
+                    weight).sum()
         return loss
 
 
 class BboxLoss(nn.Module):
+
     def __init__(self, reg_max, use_dfl=False):
         super().__init__()
         self.reg_max = reg_max
@@ -63,8 +64,8 @@ class BboxLoss(nn.Module):
         tr = tl + 1  # target right
         wl = tr - target  # weight left
         wr = 1 - wl  # weight right
-        return (F.cross_entropy(pred_dist, tl.view(-1), reduction="none").view(tl.shape) * wl +
-                F.cross_entropy(pred_dist, tr.view(-1), reduction="none").view(tl.shape) * wr).mean(-1, keepdim=True)
+        return (F.cross_entropy(pred_dist, tl.view(-1), reduction='none').view(tl.shape) * wl +
+                F.cross_entropy(pred_dist, tr.view(-1), reduction='none').view(tl.shape) * wr).mean(-1, keepdim=True)
 
 
 class ComputeLoss:
@@ -74,10 +75,10 @@ class ComputeLoss:
         h = model.hyp  # hyperparameters
 
         # Define criteria
-        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h["cls_pw"]], device=device), reduction='none')
+        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device), reduction='none')
 
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
-        self.cp, self.cn = smooth_BCE(eps=h.get("label_smoothing", 0.0))  # positive, negative BCE targets
+        self.cp, self.cn = smooth_BCE(eps=h.get('label_smoothing', 0.0))  # positive, negative BCE targets
 
         m = de_parallel(model).model[-1]  # Detect() module
         self.BCEcls = BCEcls
@@ -138,12 +139,8 @@ class ComputeLoss:
         pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4)
 
         target_labels, target_bboxes, target_scores, fg_mask = self.assigner(
-            pred_scores.detach().sigmoid(),
-            (pred_bboxes.detach() * stride_tensor).type(gt_bboxes.dtype),
-            anchor_points * stride_tensor,
-            gt_labels,
-            gt_bboxes,
-            mask_gt)
+            pred_scores.detach().sigmoid(), (pred_bboxes.detach() * stride_tensor).type(gt_bboxes.dtype),
+            anchor_points * stride_tensor, gt_labels, gt_bboxes, mask_gt)
 
         target_bboxes /= stride_tensor
         target_scores_sum = target_scores.sum()
@@ -154,13 +151,8 @@ class ComputeLoss:
 
         # bbox loss
         if fg_mask.sum():
-            loss[0], loss[2] = self.bbox_loss(pred_distri,
-                                              pred_bboxes,
-                                              anchor_points,
-                                              target_bboxes,
-                                              target_scores,
-                                              target_scores_sum,
-                                              fg_mask)
+            loss[0], loss[2] = self.bbox_loss(pred_distri, pred_bboxes, anchor_points, target_bboxes, target_scores,
+                                              target_scores_sum, fg_mask)
 
         loss[0] *= 7.5  # box gain
         loss[1] *= 0.5  # cls gain
