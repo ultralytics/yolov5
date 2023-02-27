@@ -29,7 +29,6 @@ from typing import Optional
 from zipfile import ZipFile, is_zipfile
 
 import cv2
-import IPython
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
@@ -77,10 +76,18 @@ def is_colab():
     return 'google.colab' in sys.modules
 
 
-def is_notebook():
-    # Is environment a Jupyter notebook? Verified on Colab, Jupyterlab, Kaggle, Paperspace
-    ipython_type = str(type(IPython.get_ipython()))
-    return 'colab' in ipython_type or 'zmqshell' in ipython_type
+def is_jupyter():
+    """
+    Check if the current script is running inside a Jupyter Notebook.
+    Verified on Colab, Jupyterlab, Kaggle, Paperspace.
+
+    Returns:
+        bool: True if running inside a Jupyter Notebook, False otherwise.
+    """
+    with contextlib.suppress(Exception):
+        from IPython import get_ipython
+        return get_ipython() is not None
+    return False
 
 
 def is_kaggle():
@@ -338,7 +345,7 @@ def check_git_status(repo='ultralytics/yolov5', branch='master'):
     n = int(check_output(f'git rev-list {local_branch}..{remote}/{branch} --count', shell=True))  # commits behind
     if n > 0:
         pull = 'git pull' if remote == 'origin' else f'git pull {remote} {branch}'
-        s += f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `{pull}` or `git clone {url}` to update."
+        s += f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use '{pull}' or 'git clone {url}' to update."
     else:
         s += f'up to date with {url} ✅'
     LOGGER.info(s)
@@ -429,7 +436,7 @@ def check_img_size(imgsz, s=32, floor=0):
 def check_imshow(warn=False):
     # Check if environment supports image displays
     try:
-        assert not is_notebook()
+        assert not is_jupyter()
         assert not is_docker()
         cv2.imshow('test', np.zeros((1, 1, 3)))
         cv2.waitKey(1)

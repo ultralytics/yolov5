@@ -21,14 +21,13 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
-from IPython.display import display
 from PIL import Image
 from torch.cuda import amp
 
 from utils import TryExcept
 from utils.dataloaders import exif_transpose, letterbox
 from utils.general import (LOGGER, ROOT, Profile, check_requirements, check_suffix, check_version, colorstr,
-                           increment_path, is_notebook, make_divisible, non_max_suppression, scale_boxes, xywh2xyxy,
+                           increment_path, is_jupyter, make_divisible, non_max_suppression, scale_boxes, xywh2xyxy,
                            xyxy2xywh, yaml_load)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, smart_inference_mode
@@ -767,7 +766,11 @@ class Detections:
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if show:
-                display(im) if is_notebook() else im.show(self.files[i])
+                if is_jupyter():
+                    from IPython.display import display
+                    display(im)
+                else:
+                    im.show(self.files[i])
             if save:
                 f = self.files[i]
                 im.save(save_dir / f)  # save

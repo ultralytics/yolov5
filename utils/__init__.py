@@ -60,17 +60,19 @@ def notebook_init(verbose=True):
     check_font()
 
     import psutil
-    from IPython import display  # to display images and clear console output
 
     if is_colab():
         shutil.rmtree('/content/sample_data', ignore_errors=True)  # remove colab /sample_data directory
 
     # System info
+    display = None
     if verbose:
         gb = 1 << 30  # bytes to GiB (1024 ** 3)
         ram = psutil.virtual_memory().total
         total, used, free = shutil.disk_usage('/')
-        display.clear_output()
+        with contextlib.suppress(Exception):  # clear display if ipython is installed
+            from IPython import display
+            display.clear_output()
         s = f'({os.cpu_count()} CPUs, {ram / gb:.1f} GB RAM, {(total - free) / gb:.1f}/{total / gb:.1f} GB disk)'
     else:
         s = ''
