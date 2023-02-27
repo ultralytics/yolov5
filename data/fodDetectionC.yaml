@@ -1,0 +1,8 @@
+train: /content/drive/MyDrive/Full Data Set/images/train
+val:  /content/drive/MyDrive/Full Data Set/images/validate
+test: /content/drive/MyDrive/Full Data Set/images/test
+# number of classes
+nc: 2
+
+# class names
+names: ["FOD", "RunwayCrack"]
