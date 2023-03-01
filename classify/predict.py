@@ -85,8 +85,7 @@ class UseModel:
 
         # Run inference
         self.model.warmup(imgsz=(1 if self.pt else bs, 3, *self.imgsz))  # warmup
-        seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-
+        seen, dt = 0, (Profile(), Profile(), Profile())
         result = []
         possibility = []
 
