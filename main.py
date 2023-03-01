@@ -17,9 +17,9 @@ def predict():
         im_bytes = im_file.read()
         im = Image.open(io.BytesIO(im_bytes))
         im = im.save("./to_predict/im.jpg")
-        result = model.predict("to_predict/im.jpg")
+        result, possible = model.predict("to_predict/im.jpg")
 
-    return jsonify({'msg': 'success', 'predicted': result[0]})
+    return jsonify({'msg': 'success', 'predicted': result[0], 'possible': possible[0]})
 
 @app.route("/")
 def hello_world():
