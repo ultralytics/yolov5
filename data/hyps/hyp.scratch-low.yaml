@@ -26,7 +26,7 @@ degrees: 0.1  # image rotation (+/- deg)
 translate: 0.1  # image translation (+/- fraction)
 scale: -0.5  # image scale (+/- gain)
 shear: 0.5  # image shear (+/- deg)
-perspective: 0.001  # image perspective (+/- fraction), range 0-0.001
+perspective: 0.0001  # image perspective (+/- fraction), range 0-0.001
 flipud: 0.5  # image flip up-down (probability)
 fliplr: 0.5  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
