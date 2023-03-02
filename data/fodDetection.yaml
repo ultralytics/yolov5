@@ -1,6 +1,6 @@
-train: /kaggle/input/full-data-setn/Full Data Setn/images/train
-val:  /kaggle/input/full-data-setn/Full Data Setn/images/validate
-test: /kaggle/input/full-data-setn/Full Data Setn/images/test
+train: /kaggle/input/fulldataset/full-data-setn/images/train
+val:  /kaggle/input/fulldataset/full-data-setn/images/validate
+test: /kaggle/input/fulldataset/full-data-setn/images/test
 # number of classes
 nc: 2
 
