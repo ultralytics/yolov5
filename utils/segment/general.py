@@ -1,14 +1,13 @@
+import logging
+import os
+import platform
+import subprocess
+
 import cv2
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn.functional as F
-
-import subprocess
-import os
-import logging
-import platform
-
-import pandas as pd
 import yaml
 
 from utils import emojis
@@ -32,12 +31,12 @@ def set_logging(name=LOGGING_NAME, verbose=True):
             name: {
                 'class': 'logging.StreamHandler',
                 'formatter': name,
-                'level': level, }},
+                'level': level,}},
         'loggers': {
             name: {
                 'level': level,
                 'handlers': [name],
-                'propagate': False, }}})
+                'propagate': False,}}})
 
 
 set_logging(LOGGING_NAME)  # run before defining LOGGER
@@ -255,14 +254,14 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve
         i = np.argmax(fitness(data.values[:, :12]))  #
         generations = len(data)
         f.write('# YOLOv5 Hyperparameter Evolution Results\n' + f'# Best generation: {i}\n' +
-                f'# Last generation: {generations - 1}\n'
-                + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:4]) + '\n'
-                + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :4]) + '\n'
-                + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[4:8]) + '\n'
-                + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, 4:8]) + '\n'
-                + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[8:12]) + '\n'
-                + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, 8:12]) + '\n'
-                + '\n')
+                f'# Last generation: {generations - 1}\n' + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:4]) +
+                '\n' + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :4]) + '\n' + '# ' +
+                ', '.join(f'{x.strip():>20s}'
+                          for x in keys[4:8]) + '\n' + '# ' + ', '.join(f'{x:>20.5g}'
+                                                                        for x in data.values[i, 4:8]) + '\n' + '# ' +
+                ', '.join(f'{x.strip():>20s}'
+                          for x in keys[8:12]) + '\n' + '# ' + ', '.join(f'{x:>20.5g}'
+                                                                         for x in data.values[i, 8:12]) + '\n' + '\n')
         yaml.safe_dump(data.loc[i][12:].to_dict(), f, sort_keys=False)
 
     # Print to screen
