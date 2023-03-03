@@ -642,7 +642,7 @@ def main(opt, callbacks=Callbacks()):
             results = train(hyp.copy(), opt, device, callbacks)
             callbacks = Callbacks()
             # Write mutation results
-            keys = (  # Source: https://github.com/ultralytics/yolov5/pull/9742#issuecomment-1277490480
+            keys = (
                 'metrics/precision(B)',
                 'metrics/recall(B)',
                 'metrics/mAP_0.5(B)',
