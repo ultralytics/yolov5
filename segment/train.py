@@ -50,7 +50,8 @@ from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
                            check_git_status, check_img_size, check_requirements, check_suffix, check_yaml, colorstr,
                            get_latest_run, increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
-                           labels_to_image_weights, one_cycle, print_args, print_mutation, strip_optimizer, yaml_save)
+                           labels_to_image_weights, one_cycle, print_args, strip_optimizer, yaml_save)
+from utils.segment.general import print_mutation
 from utils.loggers import GenericLogger
 from utils.plots import plot_evolve, plot_labels
 from utils.segment.dataloaders import create_dataloader
@@ -629,7 +630,7 @@ def main(opt, callbacks=Callbacks()):
                 while all(v == 1):  # mutate until a change occurs (prevent duplicates)
                     v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
                 for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
-                    hyp[k] = float(x[i + 7] * v[i])  # mutate
+                    hyp[k] = float(x[i + 12] * v[i])  # mutate
 
             # Constrain to limits
             for k, v in meta.items():
@@ -641,7 +642,21 @@ def main(opt, callbacks=Callbacks()):
             results = train(hyp.copy(), opt, device, callbacks)
             callbacks = Callbacks()
             # Write mutation results
-            print_mutation(KEYS, results, hyp.copy(), save_dir, opt.bucket)
+            keys = (  # Source: https://github.com/ultralytics/yolov5/pull/9742#issuecomment-1277490480
+                'metrics/precision(B)',
+                'metrics/recall(B)',
+                'metrics/mAP_0.5(B)',
+                'metrics/mAP_0.5:0.95(B)',  # metrics
+                'metrics/precision(M)',
+                'metrics/recall(M)',
+                'metrics/mAP_0.5(M)',
+                'metrics/mAP_0.5:0.95(M)',  # metrics
+                'val/box_loss',
+                'val/obj_loss',
+                'val/cls_loss',
+                'val/seg_loss'  # val loss
+            )
+            print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
         plot_evolve(evolve_csv)

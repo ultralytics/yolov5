@@ -3,6 +3,49 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+import subprocess
+import os
+import logging
+import platform
+
+import pandas as pd
+import yaml
+
+from utils import emojis
+from utils.downloads import gsutil_getsize
+from utils.segment.metrics import fitness
+
+LOGGING_NAME = 'yolov5'
+
+
+def set_logging(name=LOGGING_NAME, verbose=True):
+    # sets up logging for the given name
+    rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
+    level = logging.INFO if verbose and rank in {-1, 0} else logging.ERROR
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            name: {
+                'format': '%(message)s'}},
+        'handlers': {
+            name: {
+                'class': 'logging.StreamHandler',
+                'formatter': name,
+                'level': level, }},
+        'loggers': {
+            name: {
+                'level': level,
+                'handlers': [name],
+                'propagate': False, }}})
+
+
+set_logging(LOGGING_NAME)  # run before defining LOGGER
+LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
+if platform.system() == 'Windows':
+    for fn in LOGGER.info, LOGGER.warning:
+        setattr(LOGGER, fn.__name__, lambda x: fn(emojis(x)))  # emoji safe logging
+
 
 def crop_mask(masks, boxes):
     """
@@ -158,3 +201,74 @@ def masks2segments(masks, strategy='largest'):
             c = np.zeros((0, 2))  # no segments found
         segments.append(c.astype('float32'))
     return segments
+
+
+def colorstr(*input):
+    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
+    *args, string = input if len(input) > 1 else ('blue', 'bold', input[0])  # color arguments, string
+    colors = {
+        'black': '\033[30m',  # basic colors
+        'red': '\033[31m',
+        'green': '\033[32m',
+        'yellow': '\033[33m',
+        'blue': '\033[34m',
+        'magenta': '\033[35m',
+        'cyan': '\033[36m',
+        'white': '\033[37m',
+        'bright_black': '\033[90m',  # bright colors
+        'bright_red': '\033[91m',
+        'bright_green': '\033[92m',
+        'bright_yellow': '\033[93m',
+        'bright_blue': '\033[94m',
+        'bright_magenta': '\033[95m',
+        'bright_cyan': '\033[96m',
+        'bright_white': '\033[97m',
+        'end': '\033[0m',  # misc
+        'bold': '\033[1m',
+        'underline': '\033[4m'}
+    return ''.join(colors[x] for x in args) + f'{string}' + colors['end']
+
+
+def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr('evolve: ')):
+    evolve_csv = save_dir / 'evolve.csv'
+    evolve_yaml = save_dir / 'hyp_evolve.yaml'
+    keys = tuple(keys) + tuple(hyp.keys())  # [results + hyps]
+    keys = tuple(x.strip() for x in keys)
+    vals = results + tuple(hyp.values())
+    n = len(keys)
+
+    # Download (optional)
+    if bucket:
+        url = f'gs://{bucket}/evolve.csv'
+        if gsutil_getsize(url) > (evolve_csv.stat().st_size if evolve_csv.exists() else 0):
+            subprocess.run(['gsutil', 'cp', f'{url}', f'{save_dir}'])  # download evolve.csv if larger than local
+
+    # Log to evolve.csv
+    s = '' if evolve_csv.exists() else (('%20s,' * n % keys).rstrip(',') + '\n')  # add header
+    with open(evolve_csv, 'a') as f:
+        f.write(s + ('%20.5g,' * n % vals).rstrip(',') + '\n')
+
+    # Save yaml
+    with open(evolve_yaml, 'w') as f:
+        data = pd.read_csv(evolve_csv, skipinitialspace=True)
+        data = data.rename(columns=lambda x: x.strip())  # strip keys
+        i = np.argmax(fitness(data.values[:, :12]))  #
+        generations = len(data)
+        f.write('# YOLOv5 Hyperparameter Evolution Results\n' + f'# Best generation: {i}\n' +
+                f'# Last generation: {generations - 1}\n'
+                + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:4]) + '\n'
+                + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :4]) + '\n'
+                + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[4:8]) + '\n'
+                + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, 4:8]) + '\n'
+                + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[8:12]) + '\n'
+                + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, 8:12]) + '\n'
+                + '\n')
+        yaml.safe_dump(data.loc[i][12:].to_dict(), f, sort_keys=False)
+
+    # Print to screen
+    LOGGER.info(prefix + f'{generations} generations finished, current result:\n' + prefix +
+                ', '.join(f'{x.strip():>20s}' for x in keys) + '\n' + prefix + ', '.join(f'{x:20.5g}'
+                                                                                         for x in vals) + '\n\n')
+
+    if bucket:
+        subprocess.run(['gsutil', 'cp', f'{evolve_csv}', f'{evolve_yaml}', f'gs://{bucket}'])  # upload
