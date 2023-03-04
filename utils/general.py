@@ -517,9 +517,9 @@ def check_dataset(data, autodownload=True):
     if isinstance(data, (str, Path)):
         data = yaml_load(data)  # dictionary
 
-    data['train'] = os.path.join(os.environ['DATASET_DIRECTORY'] + 'image/train/')
-    data['test'] = os.path.join(os.environ['DATASET_DIRECTORY'] + 'image/test/')
-    data['val'] = os.path.join(os.environ['DATASET_DIRECTORY'] + 'image/val/')
+    data['train'] = os.path.join(os.environ['DATASET_DIRECTORY'] + 'images/train/')
+    data['test'] = os.path.join(os.environ['DATASET_DIRECTORY'] + 'images/test/')
+    data['val'] = os.path.join(os.environ['DATASET_DIRECTORY'] + 'images/val/')
 
     # Checks
     for k in 'train', 'val', 'names':
