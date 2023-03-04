@@ -517,6 +517,10 @@ def check_dataset(data, autodownload=True):
     if isinstance(data, (str, Path)):
         data = yaml_load(data)  # dictionary
 
+    data['train'] = str(DATASETS_DIR.joinpath('image/train/'))
+    data['test'] =str(DATASETS_DIR.joinpath('image/test/'))
+    data['val'] =str(DATASETS_DIR.joinpath('image/val/'))
+    
     # Checks
     for k in 'train', 'val', 'names':
         assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
