@@ -21,6 +21,8 @@ LOGGERS = ('csv', 'tb', 'wandb', 'clearml', 'comet')  # *.csv, TensorBoard, Weig
 RANK = int(os.getenv('RANK', -1))
 
 try:
+    wandb = None
+    '''
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
@@ -31,6 +33,7 @@ try:
             wandb_login_success = False
         if not wandb_login_success:
             wandb = None
+    '''
 except (ImportError, AssertionError):
     wandb = None
 
