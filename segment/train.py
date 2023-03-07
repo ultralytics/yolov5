@@ -641,21 +641,7 @@ def main(opt, callbacks=Callbacks()):
             results = train(hyp.copy(), opt, device, callbacks)
             callbacks = Callbacks()
             # Write mutation results
-            keys = (
-                'metrics/precision(B)',
-                'metrics/recall(B)',
-                'metrics/mAP_0.5(B)',
-                'metrics/mAP_0.5:0.95(B)',  # metrics
-                'metrics/precision(M)',
-                'metrics/recall(M)',
-                'metrics/mAP_0.5(M)',
-                'metrics/mAP_0.5:0.95(M)',  # metrics
-                'val/box_loss',
-                'val/obj_loss',
-                'val/cls_loss',
-                'val/seg_loss'  # val loss
-            )
-            print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
+            print_mutation(KEYS[4:16], results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
         plot_evolve(evolve_csv)
