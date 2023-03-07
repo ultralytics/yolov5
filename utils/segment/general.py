@@ -12,11 +12,10 @@ import yaml
 
 from utils import emojis
 from utils.downloads import gsutil_getsize
-from utils.general import set_logging, colorstr
+from utils.general import colorstr, set_logging
 from utils.segment.metrics import fitness
 
 LOGGING_NAME = 'yolov5'
-
 
 set_logging(LOGGING_NAME)  # run before defining LOGGER
 LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
