@@ -629,7 +629,7 @@ def main(opt, callbacks=Callbacks()):
                 while all(v == 1):  # mutate until a change occurs (prevent duplicates)
                     v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
                 for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
-                    hyp[k] = float(x[i + 7] * v[i])  # mutate
+                    hyp[k] = float(x[i + 12] * v[i])  # mutate
 
             # Constrain to limits
             for k, v in meta.items():
@@ -641,7 +641,7 @@ def main(opt, callbacks=Callbacks()):
             results = train(hyp.copy(), opt, device, callbacks)
             callbacks = Callbacks()
             # Write mutation results
-            print_mutation(KEYS, results, hyp.copy(), save_dir, opt.bucket)
+            print_mutation(KEYS[4:16], results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
         plot_evolve(evolve_csv)
