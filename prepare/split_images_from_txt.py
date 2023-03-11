@@ -1,19 +1,20 @@
-import tqdm
 import os
 
-modes = ["train", "val", "test"]
+import tqdm
+
+modes = ['train', 'val', 'test']
 data = []
 for mode in modes:
-    mode_path = f"../dataset/images/{mode}"
+    mode_path = f'../dataset/images/{mode}'
     if not os.path.exists(mode_path):
         os.mkdir(mode_path)
-        print(f"create {mode_path}")
-    path = f"../dataset/{mode}.txt"
-    for line in open(path, "r"):
-        data.append(line.replace("\n", ""))
+        print(f'create {mode_path}')
+    path = f'../dataset/{mode}.txt'
+    for line in open(path):
+        data.append(line.replace('\n', ''))
     for a in tqdm.tqdm(data):
         try:
-            os.system(f"cp ../dataset/preimages/{a}.jpg ../dataset/images/{mode}/{a}.jpg")
+            os.system(f'cp ../dataset/preimages/{a}.jpg ../dataset/images/{mode}/{a}.jpg')
         except:
-            print(f"{a} is not exist")
+            print(f'{a} is not exist')
     data.clear()

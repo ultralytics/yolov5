@@ -17,9 +17,8 @@ val_test_lst = [x for x in lst if x not in train_lst]
 val_lst = random.sample(val_test_lst, nv)
 test_lst = [x for x in val_test_lst if x not in val_lst]
 
-with open('../dataset/test.txt', 'w+') as ftest, open('../dataset/train.txt', 'w+') as ftrain, open(
-        '../dataset/val.txt',
-        'w+') as fval:
+with open('../dataset/test.txt', 'w+') as ftest, open('../dataset/train.txt',
+                                                      'w+') as ftrain, open('../dataset/val.txt', 'w+') as fval:
     for i in lst:
         name = total_img[i][:-4] + '\n'
         if i in train_lst:

@@ -1,7 +1,5 @@
-# coding=gbk
-# encoding: utf-8
-import xml.etree.ElementTree as ET
 import os
+import xml.etree.ElementTree as ET
 
 classes = ['door']
 
@@ -39,12 +37,12 @@ def convert_annotation(image_id):
              float(xmlbox.find('ymax').text))
         print(image_id, cls, b)
         bb = convert((w, h), b)
-        out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
+        out_file.write(str(cls_id) + ' ' + ' '.join([str(a) for a in bb]) + '\n')
 
 
-if not os.path.exists("../dataset/prelabels"):
-    os.mkdir("../dataset/prelabels")
+if not os.path.exists('../dataset/prelabels'):
+    os.mkdir('../dataset/prelabels')
 
-file_ids = os.listdir("../dataset/Annotations/")
+file_ids = os.listdir('../dataset/Annotations/')
 for file_id in file_ids:
     convert_annotation(file_id[:-4])
