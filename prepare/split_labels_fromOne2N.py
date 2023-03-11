@@ -19,5 +19,5 @@ for mode in modes:
                 new_label_path = os.path.join(mode_labels_path, name)
             with open(new_label_path, 'w+') as g:
                 g.write(content)
-        except OSError:
+        except IOError:
             print(f'{pre_label_path} is not exist')
