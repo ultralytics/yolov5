@@ -15,6 +15,6 @@ for mode in modes:
     for a in tqdm.tqdm(data):
         try:
             os.system(f'cp ../dataset/preimages/{a}.jpg ../dataset/images/{mode}/{a}.jpg')
-        except:
+        except OSError:
             print(f'{a} is not exist')
     data.clear()
