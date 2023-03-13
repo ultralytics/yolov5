@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "yolov5"
+version = "0.1.0"
+description = ""
+authors = ["Sebastian Davrieux <s.davrieux@amsterdam.nl>"]
+
+[tool.poetry.dependencies]
+python = "~3.9"
+matplotlib = {version = "^3.7.1", source = "PyPI"}
+numpy = {version = "^1.24.2", source = "PyPI"}
+opencv-python = {version = "^4.7.0", source = "PyPI"}
+Pillow = {version = "^9.4.0", source = "PyPI"}
+psutil = {version = "^5.9.4", source = "PyPI"}
+PyYAML = {version = "^6.0", source = "PyPI"}
+requests = {version = "^2.28.2", source = "PyPI"}
+scipy = {version = "^1.10.1", source = "PyPI"}
+thop = {version = "^0.1.1", source = "PyPI"}
+torch = {version = "^1.13.1", source = "PyPI"}
+torchvision = {version = "^0.14.1", source = "PyPI"}
+tqdm = {version = "^4.65.0", source = "PyPI"}
+tensorboard = {version = "^2.12.0", source = "PyPI"}
+pandas = {version = "^1.5.3", source = "PyPI"}
+seaborn = {version = "^0.12.2", source = "PyPI"}
+GitPython = {version = "^3.1.31", source = "PyPI"}
+ipython = {version = "^8.11.0", source = "PyPI"}
+
+[tool.poetry.dev-dependencies]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
