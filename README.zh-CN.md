@@ -4,7 +4,7 @@
       <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov5/v70/splash.png"></a>
   </p>
 
-[英文](README.md)|[简体中文](README.zh-CN.md)<br>
+[英文](YOLOv5_README.md)|[简体中文](README.zh-CN.md)<br>
 
 <div>
     <a href="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml"><img src="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml/badge.svg" alt="YOLOv5 CI"></a>
