@@ -35,13 +35,8 @@
                 "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
                 "LOG_LEVEL": "DEBUG",
                 "ENV": "production",
-                "TEAM_ID": "277",
-                "WORKSPACE_ID": "403",
                 "DEBUG_WITH_SLY_NET": "1",
                 "SLY_APP_DATA_DIR": "${workspaceFolder}/results",
-                "modal.state.modelWeightsOptions": "pretrained",
-                "modal.state.selectedModel": "YOLOv5s",
-                "modal.state.weightsPath": ""
             }
         }
     ]
