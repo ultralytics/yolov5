@@ -11,6 +11,7 @@
             "env": {
                 "LOG_LEVEL": "DEBUG",
                 "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}",
+                "SLY_APP_DATA_DIR": "${workspaceFolder}/results",
             }
         },
         {
