@@ -249,7 +249,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
-    results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+#     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+    results = (0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls), time
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = torch.cuda.amp.GradScaler(enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
@@ -260,6 +261,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
+        t_start = time.time()
         callbacks.run('on_train_epoch_start')
         model.train()
 
@@ -401,6 +403,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             break  # must break all DDP ranks
 
         # end epoch ----------------------------------------------------------------------------------------------------
+    t_end = time.time()
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in {-1, 0}:
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
@@ -429,6 +432,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         callbacks.run('on_train_end', last, best, epoch, results)
 
     torch.cuda.empty_cache()
+    results[-1] = t_end-t_start
     return results
 
 
@@ -615,8 +619,10 @@ def main(opt, callbacks=Callbacks()):
             results = train(hyp.copy(), opt, device, callbacks)
             callbacks = Callbacks()
             # Write mutation results
+#             keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
+#                     'val/obj_loss', 'val/cls_loss')
             keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-                    'val/obj_loss', 'val/cls_loss')
+                    'val/obj_loss', 'val/cls_loss', 'time')
             print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
