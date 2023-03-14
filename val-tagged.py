@@ -126,7 +126,7 @@ def run(
         single_cls=False,  # treat as single-class dataset
         augment=False,  # augmented inference
         verbose=False,  # verbose output
-        save_txt=False,  # save results to *.txt
+        save_txt_and_json=False,  # save results to *.txt and *.json
         save_hybrid=False,  # save label+prediction hybrid results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_json=False,  # save a COCO-JSON results file
@@ -153,8 +153,8 @@ def run(
 
         # Directories
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-        (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-        (save_dir / 'labels_tagged' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+        (save_dir / 'labels' if save_txt_and_json else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+        (save_dir / 'labels_tagged' if save_txt_and_json else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
@@ -280,12 +280,12 @@ def run(
             stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
 
             # Save/log
-            if save_txt:
+            if save_txt_and_json:
                 Pred_boxes, Pred_classes = save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
                 confusion_matrix.pred_boxes = Pred_boxes
                 confusion_matrix.pred_classes = Pred_classes
-
                 save_tagged_labels_json(confusion_matrix.get_tagged_dict(), file=save_dir / 'labels_tagged' / f'{path.stem}.json')
+
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
@@ -385,7 +385,7 @@ def parse_opt():
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-txt-and-json', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-hybrid', action='store_true', help='save label+prediction hybrid results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-json', action='store_true', help='save a COCO-JSON results file')
@@ -397,7 +397,7 @@ def parse_opt():
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
-    opt.save_txt |= opt.save_hybrid
+    opt.save_txt_and_json |= opt.save_hybrid
     print_args(vars(opt))
     return opt
 
