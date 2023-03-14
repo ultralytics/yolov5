@@ -26,17 +26,21 @@ model_weights_options = os.environ['modal.state.modelWeightsOptions']
 pretrained_weights = os.environ['modal.state.selectedModel'].lower()
 custom_weights = os.environ['modal.state.weightsPath']
 
+pretrained_weights_url = f"https://github.com/ultralytics/yolov5/releases/download/v5.0/{pretrained_weights}.pt"
+
 class YOLOv5Model(sly.nn.inference.ObjectDetection):
     def load_on_device(
         self,
+        model_dir: str = None,
         device: Literal["cpu", "cuda", "cuda:0", "cuda:1", "cuda:2", "cuda:3"] = "cpu",
     ):
         # download weights
         if model_weights_options == "pretrained":
-            self.local_weights_path = self.location
+            self.local_weights_path = self.download(pretrained_weights_url)
         if model_weights_options == "custom":
-            self.local_weights_path = self.location[0]
-            configs_local_path = self.location[1]
+            self.local_weights_path = self.download(custom_weights)
+            cfg_path_in_teamfiles = os.path.join(Path(custom_weights).parents[1], 'opt.yaml')
+            configs_local_path = self.download(cfg_path_in_teamfiles)
 
         self.device = select_device(device)
         self.half = self.device.type != 'cpu'  # half precision only supported on CUDA
@@ -138,7 +142,6 @@ class YOLOv5Model(sly.nn.inference.ObjectDetection):
 
         return predictions
 
-
     def predict_raw(
         self, image_path: str, settings: Dict[str, Any]
     ) -> List[sly.nn.PredictionBBox]:
@@ -188,20 +191,11 @@ sly.logger.info("Script arguments", extra={
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Using device:", device)
 
-if model_weights_options == "pretrained":
-    location = f"https://github.com/ultralytics/yolov5/releases/download/v5.0/{pretrained_weights}.pt"
-elif model_weights_options == "custom":
-    location = [
-        custom_weights, # model weights
-        os.path.join(Path(custom_weights).parents[1], 'opt.yaml') # model config
-    ]
-
 m = YOLOv5Model(
-    location=location, 
     custom_inference_settings=os.path.join(app_source_path, "custom_settings.yaml"),
     sliding_window_mode = "advanced"
 )
-m.load_on_device(device)
+m.load_on_device(device=device)
 
 if sly.is_production():
     # this code block is running on Supervisely platform in production
