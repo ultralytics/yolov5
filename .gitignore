@@ -255,3 +255,9 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# My own
+ReadmeCommandsToExec.txt
+dataset
+Main
+streams.streams
