@@ -1,0 +1,29 @@
+lr0: 0.0971  # initial learning rate (SGD=1E-2, Adam=1E-3)
+lrf: 0.01  # final OneCycleLR learning rate (lr0 * lrf)
+momentum: 0.92517 # SGD momentum/Adam beta1
+weight_decay: 0.00064  # optimizer weight decay 5e-4
+warmup_epochs: 3.0  # warmup epochs (fractions ok)
+warmup_momentum: 0.78749  # warmup initial momentum
+warmup_bias_lr: 0.12068  # warmup initial bias lr
+box: 0.05819  # box loss gain
+cls: 0.31764  # cls loss gain
+cls_pw: 1.27198  # cls BCELoss positive_weight
+obj: 1.25266  # obj loss gain (scale with pixels)
+obj_pw: 1.05422  # obj BCELoss positive_weight
+iou_t: 0.55  # IoU training threshold
+anchor_t: 5.53073  # anchor-multiple threshold
+# anchors: 3  # anchors per output layer (0 to ignore)
+fl_gamma: 0.0  # focal loss gamma (efficientDet default gamma=1.5)
+hsv_h: 0.01517  # image HSV-Hue augmentation (fraction)
+hsv_s: 0.64918  # image HSV-Saturation augmentation (fraction)
+hsv_v: 0.4001  # image HSV-Value augmentation (fraction)
+degrees: 0.08013  # image rotation (+/- deg)
+translate: 0.07684  # image translation (+/- fraction)
+scale: 0.61554  # image scale (+/- gain)
+shear: 0.54117  # image shear (+/- deg)
+perspective: 0  # image perspective (+/- fraction), range 0-0.001
+flipud: 0.48594  # image flip up-down (probability)
+fliplr: 0.5  # image flip left-right (probability)
+mosaic: 0.73232  # image mosaic (probability)
+mixup: 0.09503  # image mixup (probability)
+copy_paste: 0.10979  # segment copy-paste (probability)

@@ -1,0 +1,8 @@
+train: /kaggle/input/fulldataset/full-data-setn/images/train
+val:  /kaggle/input/fulldataset/full-data-setn/images/validate
+test: /kaggle/input/fulldataset/full-data-setn/images/test
+# number of classes
+nc: 2
+
+# class names
+names: ["FOD", "RunwayCrack"]
