@@ -1,11 +1,3 @@
-"""lr0=0.09895, lrf=0.01, momentum=0.92517, weight_decay=0.0006, warmup_epochs=3.07099
-warmup_momentum=0.69069, warmup_bias_lr=0.11673, box=0.05819, cls=0.24722
-cls_pw=1.33239, obj=1.22618, obj_pw=1.0172, iou_t=0.55, anchor_t=5.31326, fl_gamma=0.0
-hsv_h=0.01359, hsv_s=0.69939, hsv_v=0.41227 degrees=0.07325, translate=0.06238
-scale=0.6863, shear=0.52451, perspective=0.0, flipud=0.3669, fliplr=0.5
-mosaic=0.70323, mixup=0.08819, copy_paste=0.11638
-"""
-
 lr0: 0.09895  # initial learning rate (SGD=1E-2, Adam=1E-3)
 lrf: 0.01  # final OneCycleLR learning rate (lr0 * lrf)
 momentum: 0.92517 # SGD momentum/Adam beta1
