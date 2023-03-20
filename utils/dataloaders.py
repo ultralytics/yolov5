@@ -995,8 +995,8 @@ def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), ann
 def verify_image_label(args):
     # Verify one image-label pair
     im_file, lb_file, prefix = args
+    is_dataset_tagged = False
     nm, nf, ne, nc, msg, segments = 0, 0, 0, 0, '', []  # number (missing, found, empty, corrupt), message, segments
-    is_format_tagged = True
     try:
         # verify images
         im = Image.open(im_file)
@@ -1021,17 +1021,16 @@ def verify_image_label(args):
                     segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in lb]  # (cls, xy1...)
                     lb = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
                 lb = np.array(lb, dtype=np.float32)
+            is_file_format_tagged = lb.shape[1] == 6
+            if is_file_format_tagged:
+                is_dataset_tagged = True
             nl = len(lb)
             if nl:
                 if lb.shape[1] == 5:
                     LOGGER.info(f'Loading labels with format [cls x_c y_c width height]')
-                    is_format_tagged = False
                 if lb.shape[1] == 6:
                     LOGGER.info(f'Loading labels with format [cls x_c y_c width height tagged_cls]')
-                    is_format_tagged = True
                 assert (lb >= 0).all(), f'negative label values {lb[lb < 0]}'
-
-                #assert (lb[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
                 _, i = np.unique(lb, axis=0, return_index=True)
                 if len(i) < nl:  # duplicate row check
                     lb = lb[i]  # remove duplicates
@@ -1040,10 +1039,10 @@ def verify_image_label(args):
                     msg = f'{prefix}WARNING ⚠️ {im_file}: {nl - len(i)} duplicate labels removed'
             else:
                 ne = 1  # label empty
-                lb = np.zeros((0, 6), dtype=np.float32) if is_format_tagged else np.zeros((0, 5), dtype=np.float32)
+                lb = np.zeros((0, 6), dtype=np.float32) if is_file_format_tagged else np.zeros((0, 5), dtype=np.float32)
         else:
             nm = 1  # label missing
-            lb =  np.zeros((0, 6), dtype=np.float32) if is_format_tagged else np.zeros((0, 5), dtype=np.float32)
+            lb = np.zeros((0, 6), dtype=np.float32) if is_dataset_tagged else np.zeros((0, 5), dtype=np.float32)
         return im_file, lb, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1

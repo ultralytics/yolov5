@@ -45,7 +45,8 @@ from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset,
                            coco80_to_coco91_class, colorstr, increment_path,
                            non_max_suppression, print_args, scale_boxes,
                            xywh2xyxy, xyxy2xywh)
-from utils.metrics_tagged import TaggedConfusionMatrix, ap_per_class, box_iou
+from utils.metrics_tagged import TaggedConfusionMatrix
+from utils.metrics import ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
 
