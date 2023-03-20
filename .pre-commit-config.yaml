@@ -39,6 +39,7 @@ repos:
     hooks:
       - id: yapf
         name: YAPF formatting
+        additional_dependencies: [toml]
 
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.16
@@ -57,7 +58,7 @@ repos:
         name: PEP8
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.2
+    rev: v2.2.4
     hooks:
       - id: codespell
         args:

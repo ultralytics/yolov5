@@ -24,6 +24,8 @@ seaborn = {version = "^0.12.2", source = "PyPI"}
 GitPython = {version = "^3.1.31", source = "PyPI"}
 ipython = {version = "^8.11.0", source = "PyPI"}
 pre-commit = "^3.2.0"
+toml = "^0.10.2"
+yapf = "^0.32.0"
 
 [tool.poetry.dev-dependencies]
 

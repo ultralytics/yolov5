@@ -2,6 +2,7 @@
 """
 Validate a trained YOLOv5 detection model on a detection dataset
 
+
 Usage:
     $ python val.py --weights yolov5s.pt --data coco128.yaml --img 640
 
@@ -36,17 +37,28 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset,
-                           check_img_size, check_requirements, check_yaml,
-                           coco80_to_coco91_class, colorstr, increment_path,
-                           non_max_suppression, print_args, scale_boxes,
-                           xywh2xyxy, xyxy2xywh)
-from utils.metrics_tagged import TaggedConfusionMatrix
+from utils.general import (
+    LOGGER,
+    TQDM_BAR_FORMAT,
+    Profile,
+    check_dataset,
+    check_img_size,
+    check_requirements,
+    check_yaml,
+    coco80_to_coco91_class,
+    colorstr,
+    increment_path,
+    non_max_suppression,
+    print_args,
+    scale_boxes,
+    xywh2xyxy,
+    xyxy2xywh,
+)
 from utils.metrics import ap_per_class, box_iou
+from utils.metrics_tagged import TaggedConfusionMatrix
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
 
@@ -69,7 +81,7 @@ def save_one_txt(predn, save_conf, shape, file):
 
 def save_tagged_labels_json(img_info, file):
 
-    print(f"saved json at {file}")
+    print(f'saved json at {file}')
     with open(file, 'w') as fp:
         json.dump(img_info, fp)
 
@@ -282,20 +294,20 @@ def run(
 
             # Save/log
             if save_txt_and_json:
-                Pred_boxes, Pred_classes = save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
+                Pred_boxes, Pred_classes = save_one_txt(predn,
+                                                        save_conf,
+                                                        shape,
+                                                        file=save_dir / 'labels' / f'{path.stem}.txt')
                 confusion_matrix.pred_boxes = Pred_boxes
                 confusion_matrix.pred_classes = Pred_classes
-                save_tagged_labels_json(confusion_matrix.get_tagged_dict(), file=save_dir / 'labels_tagged' / f'{path.stem}.json')
+                save_tagged_labels_json(confusion_matrix.get_tagged_dict(),
+                                        file=save_dir / 'labels_tagged' / f'{path.stem}.json')
 
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
-        # Plot images
-        # Edit Diana removed this condition to plot all batches
-        #if plots and batch_i < 3:
         if plots:
-            #plot_images(im, targets, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)  # labels
             plot_images(im, output_to_target(preds), paths, save_dir / f'{path.stem}.jpg', names)  # pred
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
@@ -324,7 +336,6 @@ def run(
     if not training:
         shape = (batch_size, 3, imgsz, imgsz)
         LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
-
     """
     # Plots
     if plots:
@@ -335,9 +346,7 @@ def run(
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
         anno_json = str(Path('datasets/coco/annotations/custom_coco_categories01.json'))  # annotations
-        # TODO Edit Diana
-        #anno_json = str(Path('datasets/coco/annotations/custom-val-first-split-category01.json'))  # annotations
-        pred_json = str(save_dir / f"{w}_predictions.json")  # predictions
+        pred_json = str(save_dir / f'{w}_predictions.json')  # predictions
         LOGGER.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
         with open(pred_json, 'w') as f:
             json.dump(jdict, f)
@@ -362,7 +371,8 @@ def run(
     # Return results
     model.float()  # for training
     if not training:
-        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
+        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" \
+            if save_txt_and_json else ''
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
@@ -372,7 +382,7 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mount-point", type=str, default="", help="mounting point for azure dataset")
+    parser.add_argument('--mount-point', type=str, default='', help='mounting point for azure dataset')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
@@ -440,6 +450,6 @@ def main(opt):
             raise NotImplementedError(f'--task {opt.task} not in ("train", "val", "test", "speed", "study")')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)
