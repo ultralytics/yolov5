@@ -66,6 +66,8 @@ def save_one_txt_and_one_json(predn, save_conf, shape, file, json_file, confusio
     Save format for running tagged validation
 
     Args:
+        confusion_matrix: tagged confusion matrix instance
+        json_file: path to save json dict
         predn: predictions tensor
         save_conf: whether to store the confidence of the predictions
         shape: image shape
