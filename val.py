@@ -39,12 +39,58 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size, check_requirements,
-                           check_yaml, coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
-                           print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
-from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
+from utils.general import (
+    LOGGER,
+    TQDM_BAR_FORMAT,
+    Profile,
+    check_dataset,
+    check_img_size,
+    check_requirements,
+    check_yaml,
+    coco80_to_coco91_class,
+    colorstr,
+    increment_path,
+    non_max_suppression,
+    print_args,
+    scale_boxes,
+    xywh2xyxy,
+    xyxy2xywh,
+)
+from utils.metrics import ConfusionMatrix, TaggedConfusionMatrix, ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
+
+
+def save_one_txt_and_one_json(predn, save_conf, shape, file, json_file, confusion_matrix):
+    """
+    Save format for running tagged validation
+
+    Args:
+        predn: predictions tensor
+        save_conf: whether to store the confidence of the predictions
+        shape: image shape
+        file: path of txt file
+
+    Returns:
+
+    """
+    pred_boxes = []
+    pred_classes = []
+    gn = torch.tensor(shape)[[1, 0, 1, 0]]  # normalization gain whwh
+    for *xyxy, conf, cls in predn.tolist():
+        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+        line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+        pred_boxes.append(xywh)
+        pred_classes.append(int(cls))
+        with open(file, 'a') as f:
+            f.write(('%g ' * len(line)).rstrip() % line + '\n')
+
+    confusion_matrix.pred_boxes = pred_boxes
+    confusion_matrix.pred_classes = pred_classes
+
+    with open(json_file, 'w') as fp:
+        json.dump(confusion_matrix.get_tagged_dict(), fp)
+    print(f'saved json at {json_file}')
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -125,7 +171,7 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-):
+        tagged_data=False):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -138,8 +184,9 @@ def run(
         # Directories
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
-        # Load model
+        if tagged_data:
+            (save_dir / 'labels_tagged' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)
+            # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
@@ -183,7 +230,8 @@ def run(
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
-    confusion_matrix = ConfusionMatrix(nc=nc)
+    if not tagged_data:
+        confusion_matrix = ConfusionMatrix(nc=nc)
     names = model.names if hasattr(model, 'names') else model.module.names  # get class names
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
@@ -197,6 +245,8 @@ def run(
     pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         callbacks.run('on_val_batch_start')
+        if tagged_data:
+            confusion_matrix = TaggedConfusionMatrix(nc=nc)
         with dt[0]:
             if cuda:
                 im = im.to(device, non_blocking=True)
@@ -214,7 +264,10 @@ def run(
             loss += compute_loss(train_out, targets)[1]  # box, obj, cls
 
         # NMS
-        targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
+        if tagged_data:
+            targets[:, 2:-1] *= torch.tensor((width, height, width, height), device=device)  # to pixels
+        else:
+            targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         with dt[2]:
             preds = non_max_suppression(preds,
@@ -228,6 +281,9 @@ def run(
         # Metrics
         for si, pred in enumerate(preds):
             labels = targets[targets[:, 0] == si, 1:]
+            if tagged_data:
+                tagged_labels = targets[:, -1]
+                gt_boxes = targets[:, 2:-1] / torch.tensor((width, height, width, height), device=device)
             nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
             path, shape = Path(paths[si]), shapes[si][0]
             correct = torch.zeros(npr, niou, dtype=torch.bool, device=device)  # init
@@ -253,20 +309,31 @@ def run(
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
                 if plots:
-                    confusion_matrix.process_batch(predn, labelsn)
+                    if tagged_data:
+                        confusion_matrix.process_batch(predn, labelsn, gt_boxes, tagged_labels)
+                    else:
+                        confusion_matrix.process_batch(predn, labelsn)
             stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
 
             # Save/log
             if save_txt:
-                save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
+                if tagged_data:
+                    save_one_txt_and_one_json(predn,
+                                              save_conf,
+                                              shape,
+                                              file=save_dir / 'labels' / f'{path.stem}.txt',
+                                              json_file=save_dir / 'labels_tagged' / f'{path.stem}.json',
+                                              confusion_matrix=confusion_matrix)
+                else:
+                    save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
-        if plots and batch_i < 3:
-            plot_images(im, targets, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)  # labels
-            plot_images(im, output_to_target(preds), paths, save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
+        if plots:
+            plot_images(im, targets, paths, save_dir / f'{path.stem}.jpg', names)  # labels
+            plot_images(im, output_to_target(preds), paths, save_dir / f'{path.stem}_pred.jpg', names)  # pred
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
@@ -361,6 +428,7 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--tagged-data', action='store_true', help='use tagged validation')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
