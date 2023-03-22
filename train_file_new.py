@@ -479,8 +479,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             'mean_forward_time': mean_forward_time,
             'mean_backward_time': mean_backward_time
         }, f)
-
-     return results
+    return results
 
 
 def parse_opt(known=False):
