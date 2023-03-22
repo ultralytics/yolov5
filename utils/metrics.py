@@ -269,8 +269,8 @@ class TaggedConfusionMatrix:
                 index_targets_where_match_exists = matches[:, 0]  # first column
                 index_detections_where_match_exists = matches[:, 1]  # second column
 
-                A = detection_classes[index_detections_where_match_exists]
-                B = gt_classes[index_targets_where_match_exists]
+                A = detection_classes[index_detections_where_match_exists].cpu()
+                B = gt_classes[index_targets_where_match_exists].cpu()
 
                 AB_equality = np.where(A == B)
 
