@@ -719,7 +719,7 @@ class LoadImagesAndLabels(Dataset):
             # labels = cutout(img, labels, p=0.5)
             # nl = len(labels)  # update after cutout
 
-        labels_out = torch.zeros((nl, 7))
+        labels_out = torch.zeros((nl, np.shape(labels)[1] + 1))
         if nl:
             labels_out[:, 1:] = torch.from_numpy(labels)
 
