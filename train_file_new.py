@@ -272,6 +272,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
 
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
+        printf(f"Epoch {epoch} started")
         callbacks.run('on_train_epoch_start')
         epoch_start_time = time.time()
         model.train()
