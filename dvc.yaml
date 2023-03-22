@@ -1,0 +1,15 @@
+stages:
+  train:
+    cmd: python train.py --img 640 --batch 64 --epochs 2 --data coco128.yaml --weights
+      yolov5s.pt
+    deps:
+    - train.py
+    outs:
+    - timing_info.json
+  train_file_new:
+    cmd: python train_file_new.py --img 640 --batch 64 --epochs 2 --data coco128.yaml
+      --weights yolov5s.pt
+    deps:
+    - train_file_new.py
+    outs:
+    - new_timing_info.json

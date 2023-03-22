@@ -33,7 +33,7 @@ import torch.nn as nn
 import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
-
+import json
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -61,8 +61,6 @@ from utils.plots import plot_evolve
 from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
                                smart_resume, torch_distributed_zero_first)
 
-import json
-
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
@@ -70,16 +68,12 @@ GIT_INFO = check_git_info()
 
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
-    epoch_times = []
-    batch_times = []
-    picture_times = []
-    forward_times = []
-    backward_times = []
-
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
     callbacks.run('on_pretrain_routine_start')
+
+    
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -250,7 +244,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
 
-
     # Start training
     t0 = time.time()
     nb = len(train_loader)  # number of batches
@@ -268,13 +261,14 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...')
-
-
-
+    epoch_times = []
+    batch_times = []
+    picture_times = []
+    forward_times = []
+    backward_times = []
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
-        printf(f"Epoch {epoch} started")
-        callbacks.run('on_train_epoch_start')
         epoch_start_time = time.time()
+        callbacks.run('on_train_epoch_start')
         model.train()
 
         # Update image weights (optional, single-GPU only)
@@ -295,11 +289,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         if RANK in {-1, 0}:
             pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
         optimizer.zero_grad()
-
         # Initialize batch timer
         batch_timer = time.time()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
-
             callbacks.run('on_train_batch_start')
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device, non_blocking=True).float() / 255  # uint8 to float32, 0-255 to 0.0-1.0
@@ -324,15 +316,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     imgs = nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
             # Forward
-
             with torch.cuda.amp.autocast(amp):
                 pred = model(imgs)  # forward
-
                 # Measure forward pass time
                 forward_timer = time.time()
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
-                forward_time.append(time.time() - forward_timer)
-
+                forward_times.append(time.time() - forward_timer)
                 if RANK != -1:
                     loss *= WORLD_SIZE  # gradient averaged between devices in DDP mode
                 if opt.quad:
@@ -342,6 +331,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             backward_timer = time.time()
 
             scaler.scale(loss).backward()
+
             # Optimize - https://pytorch.org/docs/master/notes/amp_examples.html
             if ni - last_opt_step >= accumulate:
                 scaler.unscale_(optimizer)  # unscale gradients
@@ -352,8 +342,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 if ema:
                     ema.update(model)
                 last_opt_step = ni
-
-            backward_time.append(time.time() - backward_timer)
+            backward_times.append(time.time() - backward_timer)
 
             # Log
             if RANK in {-1, 0}:
@@ -364,11 +353,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 callbacks.run('on_train_batch_end', model, ni, imgs, targets, paths, list(mloss))
                 if callbacks.stop_training:
                     return
-            # Measure batch time
-            batch_time.append(time.time() - batch_timer)
-            picture_time = batch_time / len(dataloader)
-            picture_times.append(picture_time)
 
+            # Measure batch time
+            batch_times.append(time.time() - batch_timer)
+            picture_time = (time.time() - batch_timer) / len(train_loader)
+            picture_times.append(picture_time)
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -432,10 +421,13 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         if stop:
             break  # must break all DDP ranks
 
+
         epoch_time = time.time() - epoch_start_time
         epoch_times.append(epoch_time)
 
         # end epoch ----------------------------------------------------------------------------------------------------
+
+
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in {-1, 0}:
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
@@ -462,8 +454,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
         callbacks.run('on_train_end', last, best, epoch, results)
-    torch.cuda.empty_cache()
 
+    torch.cuda.empty_cache()
+    # Write mean average timings to JSON file
     # Compute mean average timings
     mean_epoch_time = sum(epoch_times) / len(epoch_times)
     mean_batch_time = sum(batch_times) / len(batch_times)
@@ -472,7 +465,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     mean_backward_time = sum(backward_times) / len(backward_times)
 
     # Write mean average timings to JSON file
-    with open('timing_info.json', 'w') as f:
+    with open('new_timing_info.json', 'w') as f:
         json.dump({
             'mean_epoch_time': mean_epoch_time,
             'mean_batch_time': mean_batch_time,
@@ -480,6 +473,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             'mean_forward_time': mean_forward_time,
             'mean_backward_time': mean_backward_time
         }, f)
+
     return results
 
 
@@ -666,8 +660,10 @@ def main(opt, callbacks=Callbacks()):
             results = train(hyp.copy(), opt, device, callbacks)
             callbacks = Callbacks()
             # Write mutation results
+#             keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
+#                     'val/obj_loss', 'val/cls_loss')
             keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-                    'val/obj_loss', 'val/cls_loss')
+                    'val/obj_loss', 'val/cls_loss', 'time')
             print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
@@ -688,3 +684,4 @@ def run(**kwargs):
 
 if __name__ == '__main__':
     opt = parse_opt()
+    main(opt)
