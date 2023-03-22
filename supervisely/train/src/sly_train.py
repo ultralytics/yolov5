@@ -52,7 +52,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
             for image_info in images_info:
                 ann_json = api.annotation.download(image_info.id).annotation
                 for object in ann_json["objects"]:
-                    if "points" not in object or object["geometryType"] == "polygon":
+                    if "points" not in object:
                         sly.logger.info(f"Ignoring image with id {image_info.id} since its annotation is not deserializable")
                         dataset_info = api.dataset.get_info_by_id(image_info.dataset_id)
                         dataset_dir = os.path.join(project_dir, dataset_info.name)
