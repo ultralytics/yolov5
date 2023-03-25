@@ -3,11 +3,7 @@ stages:
   train_file_new:
     cmd: python train_file_new.py --img 640 --batch 64 --epochs 2 --data coco128.yaml
       --weights yolov5n.pt
-    deps:
-    - path: train_file_new.py
-      md5: 9dc0785066ac6e0bbb92883062837a3e
-      size: 35462
     outs:
     - path: new_timing_info.json
-      md5: eb1999874b28b933cfd1b5728e0388ea
-      size: 202
+      md5: fec6139908011baf8b2853ffce295cb4
+      size: 203
