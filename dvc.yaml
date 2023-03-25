@@ -1,6 +1,6 @@
 stages:
   train_file_new:
-    cmd: python train_file_new.py --img 640 --batch 64 --epochs 2 --data coco128.yaml
+    cmd: python train_file_new.py --img 640 --batch 32 --epochs 2 --data coco128.yaml
       --weights yolov5n.pt
     metrics:
     - new_timing_info.json
