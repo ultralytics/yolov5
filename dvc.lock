@@ -15,5 +15,10 @@ stages:
       size: 200
     outs:
     - path: detect_timing_info.json
+<<<<<<< HEAD
       md5: f669f4c05b9be7f6344c5df93b0f22e9
       size: 47
+=======
+      md5: d629701c36ce19e047129f444f77edf4
+      size: 46
+>>>>>>> 14792e6e41cc21b264a356cc434d6fd86de2fba0
