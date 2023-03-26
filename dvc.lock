@@ -8,12 +8,12 @@ stages:
       md5: d8379da626d2f30292cac96930308fb2
       size: 201
   detect_file_new:
-    cmd: python detect_file_new.py --weights best.pt --source /content/drive/MyDrive/DVC/test
+    cmd: python detect_file_new.py --weights best.onnx --source /content/drive/MyDrive/DVC/test
     deps:
     - path: new_timing_info.json
       md5: d8379da626d2f30292cac96930308fb2
       size: 201
     outs:
     - path: detect_timing_info.json
-      md5: 6d893eb9c29a56456c3e6e9d3d9078fb
-      size: 47
+      md5: d629701c36ce19e047129f444f77edf4
+      size: 46
