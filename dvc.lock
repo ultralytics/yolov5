@@ -5,15 +5,15 @@ stages:
       --weights yolov5n.pt
     outs:
     - path: new_timing_info.json
-      md5: d8379da626d2f30292cac96930308fb2
-      size: 201
+      md5: 4047e757406ffc7cfd3a6382820e95f6
+      size: 200
   detect_file_new:
     cmd: python detect_file_new.py --weights best.pt --source /content/drive/MyDrive/DVC/test
     deps:
     - path: new_timing_info.json
-      md5: d8379da626d2f30292cac96930308fb2
-      size: 201
+      md5: 4047e757406ffc7cfd3a6382820e95f6
+      size: 200
     outs:
     - path: detect_timing_info.json
-      md5: 6d893eb9c29a56456c3e6e9d3d9078fb
-      size: 47
+      md5: 3fc231d2fdcd3d9d79d088f98850b308
+      size: 45
