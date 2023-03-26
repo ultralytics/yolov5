@@ -80,7 +80,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     w = save_dir / 'weights'  # weights dir
     (w.parent if evolve else w).mkdir(parents=True, exist_ok=True)  # make dir
     last, best = w / 'last.pt', w / 'best.pt'
-    best = root_yolo / 'best2.pt'
+    best = root_yolo / 'best.pt'
 
     # Hyperparameters
     if isinstance(hyp, str):
