@@ -29,11 +29,12 @@ Usage - formats:
 """
 
 import argparse
+import json
 import os
 import platform
 import sys
 from pathlib import Path
-import json
+
 import torch
 
 FILE = Path(__file__).resolve()
@@ -218,8 +219,7 @@ def run(
     # Write mean average timings to JSON file
     with open('detect_timing_info.json', 'w') as f:
         json.dump({
-            'inference_time_seconds': t[1]/1000,
-        }, f)
+            'inference_time_seconds': t[1] / 1000,}, f)
 
 
 def parse_opt():

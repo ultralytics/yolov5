@@ -16,6 +16,7 @@ Tutorial:   https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data
 """
 
 import argparse
+import json
 import math
 import os
 import random
@@ -33,10 +34,10 @@ import torch.nn as nn
 import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
-import json
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
-root_yolo = ROOT # YOLOv5 root directory saved
+root_yolo = ROOT  # YOLOv5 root directory saved
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
@@ -73,8 +74,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
     callbacks.run('on_pretrain_routine_start')
-
-    
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -422,12 +421,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         if stop:
             break  # must break all DDP ranks
 
-
         epoch_time = time.time() - epoch_start_time
         epoch_times.append(epoch_time)
 
         # end epoch ----------------------------------------------------------------------------------------------------
-
 
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in {-1, 0}:
@@ -467,13 +464,13 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Write mean average timings to JSON file
     with open('new_timing_info.json', 'w') as f:
-        json.dump({
-            'mean_epoch_time': mean_epoch_time,
-            'mean_batch_time': mean_batch_time,
-            'mean_picture_time': mean_picture_time,
-            'mean_forward_time': mean_forward_time,
-            'mean_backward_time': mean_backward_time
-        }, f)
+        json.dump(
+            {
+                'mean_epoch_time': mean_epoch_time,
+                'mean_batch_time': mean_batch_time,
+                'mean_picture_time': mean_picture_time,
+                'mean_forward_time': mean_forward_time,
+                'mean_backward_time': mean_backward_time}, f)
 
     return results
 
@@ -661,8 +658,8 @@ def main(opt, callbacks=Callbacks()):
             results = train(hyp.copy(), opt, device, callbacks)
             callbacks = Callbacks()
             # Write mutation results
-#             keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-#                     'val/obj_loss', 'val/cls_loss')
+            #             keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
+            #                     'val/obj_loss', 'val/cls_loss')
             keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
                     'val/obj_loss', 'val/cls_loss', 'time')
             print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
