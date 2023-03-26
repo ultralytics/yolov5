@@ -1,5 +1,0 @@
-[core]
-    remote = myremote
-    autostage = true
-['remote "myremote"']
-    url = /content/drive/MyDrive/DVC/Data/
