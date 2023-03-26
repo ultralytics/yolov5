@@ -5,7 +5,7 @@ stages:
     metrics:
     - new_timing_info.json
   detect_file_new:
-    cmd: python detect_file_new.py --weights yolov5n.pt --source /content/yolov5/data/images/
+    cmd: python detect_file_new.py --weights best.pt --source /content/drive/MyDrive/DVC/test
     deps:
     - new_timing_info.json
     metrics:
