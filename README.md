@@ -65,7 +65,7 @@ pip install ultralytics
 
 ## <div align="center">Documentation</div>
 
-See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on training, testing and deployment. See below for quickstart examples.
+See the [YOLOv5 Docs](https://docs.ultralytics.com/yolov5) for full documentation on training, testing and deployment. See below for quickstart examples.
 
 <details open>
 <summary>Install</summary>
