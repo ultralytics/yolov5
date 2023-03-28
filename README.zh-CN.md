@@ -147,23 +147,22 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 <details open>
 <summary>教程</summary>
 
-* [训练自定义数据](https://docs.ultralytics.com/yolov5/train_custom_data) 🚀 推荐
-* [获得最佳训练结果的技巧](https://docs.ultralytics.com/yolov5/tips_for_best_training_results) ☘️ 推荐
-* [多 GPU 训练](https://docs.ultralytics.com/yolov5/multi_gpu_training)
-* [PyTorch Hub](https://docs.ultralytics.com/yolov5/pytorch_hub) 🌟 新
-* [TFLite, ONNX, CoreML, TensorRT 导出](https://docs.ultralytics.com/yolov5/export) 🚀
-* [NVIDIA Jetson 平台部署](https://docs.ultralytics.com/yolov5/jetson_nano) 🌟 新
-* [测试时增强（TTA）](https://docs.ultralytics.com/yolov5/tta)
-* [模型集成](https://docs.ultralytics.com/yolov5/ensemble)
-* [模型剪枝/稀疏性](https://docs.ultralytics.com/yolov5/pruning_sparsity)
-* [超参数进化](https://docs.ultralytics.com/yolov5/hyp_evolution)
-* [冻结层的迁移学习](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
-* [架构概述](https://docs.ultralytics.com/yolov5/architecture) 🌟 新
-* [Roboflow 用于数据集、标签和主动学习](https://docs.ultralytics.com/yolov5/roboflow)
-* [ClearML 日志记录](https://docs.ultralytics.com/yolov5/clearml) 🌟 新
-* [YOLOv5 与 Neural Magic 的 Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 新
-* [Comet 日志记录](https://docs.ultralytics.com/yolov5/comet) 🌟 新
-
+- [训练自定义数据](https://docs.ultralytics.com/yolov5/train_custom_data) 🚀 推荐
+- [获得最佳训练结果的技巧](https://docs.ultralytics.com/yolov5/tips_for_best_training_results) ☘️ 推荐
+- [多 GPU 训练](https://docs.ultralytics.com/yolov5/multi_gpu_training)
+- [PyTorch Hub](https://docs.ultralytics.com/yolov5/pytorch_hub) 🌟 新
+- [TFLite, ONNX, CoreML, TensorRT 导出](https://docs.ultralytics.com/yolov5/export) 🚀
+- [NVIDIA Jetson 平台部署](https://docs.ultralytics.com/yolov5/jetson_nano) 🌟 新
+- [测试时增强（TTA）](https://docs.ultralytics.com/yolov5/tta)
+- [模型集成](https://docs.ultralytics.com/yolov5/ensemble)
+- [模型剪枝/稀疏性](https://docs.ultralytics.com/yolov5/pruning_sparsity)
+- [超参数进化](https://docs.ultralytics.com/yolov5/hyp_evolution)
+- [冻结层的迁移学习](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
+- [架构概述](https://docs.ultralytics.com/yolov5/architecture) 🌟 新
+- [Roboflow 用于数据集、标签和主动学习](https://docs.ultralytics.com/yolov5/roboflow)
+- [ClearML 日志记录](https://docs.ultralytics.com/yolov5/clearml) 🌟 新
+- [YOLOv5 与 Neural Magic 的 Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 新
+- [Comet 日志记录](https://docs.ultralytics.com/yolov5/comet) 🌟 新
 
 </details>
 
