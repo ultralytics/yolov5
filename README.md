@@ -153,22 +153,22 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 <details open>
 <summary>Tutorials</summary>
 
-* [Train Custom Data](https://docs.ultralytics.com/yolov5/train_custom_data) 🚀 RECOMMENDED
-* [Tips for Best Training Results](https://docs.ultralytics.com/yolov5/tips_for_best_training_results) ☘️ RECOMMENDED
-* [Multi-GPU Training](https://docs.ultralytics.com/yolov5/multi_gpu_training)
-* [PyTorch Hub](https://docs.ultralytics.com/yolov5/pytorch_hub) 🌟 NEW
-* [TFLite, ONNX, CoreML, TensorRT Export](https://docs.ultralytics.com/yolov5/export) 🚀
-* [NVIDIA Jetson platform Deployment](https://docs.ultralytics.com/yolov5/jetson_nano) 🌟 NEW
-* [Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tta)
-* [Model Ensembling](https://docs.ultralytics.com/yolov5/ensemble)
-* [Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/pruning_sparsity)
-* [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/hyp_evolution)
-* [Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
-* [Architecture Summary](https://docs.ultralytics.com/yolov5/architecture) 🌟 NEW
-* [Roboflow for Datasets, Labeling, and Active Learning](https://docs.ultralytics.com/yolov5/roboflow)
-* [ClearML Logging](https://docs.ultralytics.com/yolov5/clearml) 🌟 NEW
-* [YOLOv5 with Neural Magic's Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 NEW
-* [Comet Logging](https://docs.ultralytics.com/yolov5/comet) 🌟 NEW
+- [Train Custom Data](https://docs.ultralytics.com/yolov5/train_custom_data) 🚀 RECOMMENDED
+- [Tips for Best Training Results](https://docs.ultralytics.com/yolov5/tips_for_best_training_results) ☘️ RECOMMENDED
+- [Multi-GPU Training](https://docs.ultralytics.com/yolov5/multi_gpu_training)
+- [PyTorch Hub](https://docs.ultralytics.com/yolov5/pytorch_hub) 🌟 NEW
+- [TFLite, ONNX, CoreML, TensorRT Export](https://docs.ultralytics.com/yolov5/export) 🚀
+- [NVIDIA Jetson platform Deployment](https://docs.ultralytics.com/yolov5/jetson_nano) 🌟 NEW
+- [Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tta)
+- [Model Ensembling](https://docs.ultralytics.com/yolov5/ensemble)
+- [Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/pruning_sparsity)
+- [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/hyp_evolution)
+- [Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
+- [Architecture Summary](https://docs.ultralytics.com/yolov5/architecture) 🌟 NEW
+- [Roboflow for Datasets, Labeling, and Active Learning](https://docs.ultralytics.com/yolov5/roboflow)
+- [ClearML Logging](https://docs.ultralytics.com/yolov5/clearml) 🌟 NEW
+- [YOLOv5 with Neural Magic's Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 NEW
+- [Comet Logging](https://docs.ultralytics.com/yolov5/comet) 🌟 NEW
 
 </details>
 
