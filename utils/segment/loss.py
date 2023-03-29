@@ -16,7 +16,6 @@ class ComputeLoss:
         self.overlap = overlap
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
-        self.device = device
 
         # Define criteria
         BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device))

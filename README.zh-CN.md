@@ -22,27 +22,24 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 如果要申请企业许可证，请填写表格<a href="https://ultralytics.com/license">Ultralytics 许可</a>.
 
 <div align="center">
-    <a href="https://github.com/ultralytics" style="text-decoration:none;">
-      <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-github.png" width="2%" alt="" /></a>
-    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-    <a href="https://www.linkedin.com/company/ultralytics" style="text-decoration:none;">
-      <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-linkedin.png" width="2%" alt="" /></a>
-    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-    <a href="https://twitter.com/ultralytics" style="text-decoration:none;">
-      <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-twitter.png" width="2%" alt="" /></a>
-    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-    <a href="https://www.producthunt.com/@glenn_jocher" style="text-decoration:none;">
-      <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-producthunt.png" width="2%" alt="" /></a>
-    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-    <a href="https://youtube.com/ultralytics" style="text-decoration:none;">
-      <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-youtube.png" width="2%" alt="" /></a>
-    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-    <a href="https://www.facebook.com/ultralytics" style="text-decoration:none;">
-      <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-facebook.png" width="2%" alt="" /></a>
-    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-    <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
-      <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
-  </div>
+  <a href="https://github.com/ultralytics" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-github.png" width="2%" alt="" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
+  <a href="https://www.linkedin.com/company/ultralytics" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-linkedin.png" width="2%" alt="" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
+  <a href="https://twitter.com/ultralytics" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-twitter.png" width="2%" alt="" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
+  <a href="https://youtube.com/ultralytics" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-youtube.png" width="2%" alt="" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
+  <a href="https://www.tiktok.com/@ultralytics" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-tiktok.png" width="2%" alt="" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
+  <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
+</div>
 </div>
 
 ## <div align="center">YOLOv8 🚀 NEW</div>
@@ -150,22 +147,22 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 <details open>
 <summary>教程</summary>
 
-- [训练自定义数据](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)🚀 推荐
-- [获得最佳训练结果的技巧](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)☘️ 推荐
-- [多 GPU 训练](https://github.com/ultralytics/yolov5/issues/475)
-- [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)🌟 新
-- [TFLite、ONNX、CoreML、TensorRT 导出](https://github.com/ultralytics/yolov5/issues/251)🚀
-- [NVIDIA Jetson Nano 部署](https://github.com/ultralytics/yolov5/issues/9627)🌟 新
-- [测试时数据增强 (TTA)](https://github.com/ultralytics/yolov5/issues/303)
-- [模型集成](https://github.com/ultralytics/yolov5/issues/318)
-- [模型修剪/稀疏度](https://github.com/ultralytics/yolov5/issues/304)
-- [超参数进化](https://github.com/ultralytics/yolov5/issues/607)
-- [使用冻结层进行迁移学习](https://github.com/ultralytics/yolov5/issues/1314)
-- [架构总结](https://github.com/ultralytics/yolov5/issues/6998)🌟 新
-- [用于数据集、标签和主动学习的 Roboflow](https://github.com/ultralytics/yolov5/issues/4975)🌟 新
-- [ClearML 记录](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml)🌟 新
-- [Deci 平台](https://github.com/ultralytics/yolov5/wiki/Deci-Platform)🌟 新
-- [Comet Logging](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/comet)🌟 新
+- [训练自定义数据](https://docs.ultralytics.com/yolov5/train_custom_data) 🚀 推荐
+- [获得最佳训练结果的技巧](https://docs.ultralytics.com/yolov5/tips_for_best_training_results) ☘️ 推荐
+- [多 GPU 训练](https://docs.ultralytics.com/yolov5/multi_gpu_training)
+- [PyTorch Hub](https://docs.ultralytics.com/yolov5/pytorch_hub) 🌟 新
+- [TFLite, ONNX, CoreML, TensorRT 导出](https://docs.ultralytics.com/yolov5/export) 🚀
+- [NVIDIA Jetson 平台部署](https://docs.ultralytics.com/yolov5/jetson_nano) 🌟 新
+- [测试时增强（TTA）](https://docs.ultralytics.com/yolov5/tta)
+- [模型集成](https://docs.ultralytics.com/yolov5/ensemble)
+- [模型剪枝/稀疏性](https://docs.ultralytics.com/yolov5/pruning_sparsity)
+- [超参数进化](https://docs.ultralytics.com/yolov5/hyp_evolution)
+- [冻结层的迁移学习](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
+- [架构概述](https://docs.ultralytics.com/yolov5/architecture) 🌟 新
+- [Roboflow 用于数据集、标签和主动学习](https://docs.ultralytics.com/yolov5/roboflow)
+- [ClearML 日志记录](https://docs.ultralytics.com/yolov5/clearml) 🌟 新
+- [YOLOv5 与 Neural Magic 的 Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 新
+- [Comet 日志记录](https://docs.ultralytics.com/yolov5/comet) 🌟 新
 
 </details>
 
@@ -472,14 +469,11 @@ YOLOv5 在两种不同的 License 下可用：
   <a href="https://twitter.com/ultralytics" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-twitter.png" width="3%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
-  <a href="https://www.producthunt.com/@glenn_jocher" style="text-decoration:none;">
-    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-producthunt.png" width="3%" alt="" /></a>
-  <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
   <a href="https://youtube.com/ultralytics" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-youtube.png" width="3%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
-  <a href="https://www.facebook.com/ultralytics" style="text-decoration:none;">
-    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-facebook.png" width="3%" alt="" /></a>
+  <a href="https://www.tiktok.com/@ultralytics" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-tiktok.png" width="3%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="3%" alt="" /></a>
