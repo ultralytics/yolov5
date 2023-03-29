@@ -54,7 +54,7 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
         if paths:
-            annotator.text((x + 5, y + 5 + h), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
+            annotator.text((x + 5, y + 5), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
         if len(targets) > 0:
             idx = targets[:, 0] == i
             ti = targets[idx]  # image targets
@@ -108,13 +108,13 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
     annotator.im.save(fname)  # save
 
 
-def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
+def plot_results_with_masks(file='path/to/results.csv', dir='', best=True):
     # Plot training results.csv. Usage: from utils.plots import *; plot_results('path/to/results.csv')
     save_dir = Path(file).parent if file else Path(dir)
     fig, ax = plt.subplots(2, 8, figsize=(18, 6), tight_layout=True)
     ax = ax.ravel()
-    files = list(save_dir.glob("results*.csv"))
-    assert len(files), f"No results.csv files found in {save_dir.resolve()}, nothing to plot."
+    files = list(save_dir.glob('results*.csv'))
+    assert len(files), f'No results.csv files found in {save_dir.resolve()}, nothing to plot.'
     for f in files:
         try:
             data = pd.read_csv(f)
@@ -125,19 +125,19 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
             for i, j in enumerate([1, 2, 3, 4, 5, 6, 9, 10, 13, 14, 15, 16, 7, 8, 11, 12]):
                 y = data.values[:, j]
                 # y[y == 0] = np.nan  # don't show zero values
-                ax[i].plot(x, y, marker=".", label=f.stem, linewidth=2, markersize=2)
+                ax[i].plot(x, y, marker='.', label=f.stem, linewidth=2, markersize=2)
                 if best:
                     # best
-                    ax[i].scatter(index, y[index], color="r", label=f"best:{index}", marker="*", linewidth=3)
-                    ax[i].set_title(s[j] + f"\n{round(y[index], 5)}")
+                    ax[i].scatter(index, y[index], color='r', label=f'best:{index}', marker='*', linewidth=3)
+                    ax[i].set_title(s[j] + f'\n{round(y[index], 5)}')
                 else:
                     # last
-                    ax[i].scatter(x[-1], y[-1], color="r", label="last", marker="*", linewidth=3)
-                    ax[i].set_title(s[j] + f"\n{round(y[-1], 5)}")
+                    ax[i].scatter(x[-1], y[-1], color='r', label='last', marker='*', linewidth=3)
+                    ax[i].set_title(s[j] + f'\n{round(y[-1], 5)}')
                 # if j in [8, 9, 10]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
         except Exception as e:
-            print(f"Warning: Plotting error for {f}: {e}")
+            print(f'Warning: Plotting error for {f}: {e}')
     ax[1].legend()
-    fig.savefig(save_dir / "results.png", dpi=200)
+    fig.savefig(save_dir / 'results.png', dpi=200)
     plt.close()
