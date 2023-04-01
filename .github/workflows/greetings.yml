@@ -23,7 +23,7 @@ jobs:
             - ✅ Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_  — Bruce Lee
 
           issue-message: |
-            👋 Hello @${{ github.actor }}, thank you for your interest in YOLOv5 🚀! Please visit our ⭐️ [Tutorials](https://github.com/ultralytics/yolov5/wiki#tutorials) to get started, where you can find quickstart guides for simple tasks like [Custom Data Training](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) all the way to advanced concepts like [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607).
+            👋 Hello @${{ github.actor }}, thank you for your interest in YOLOv5 🚀! Please visit our ⭐️ [Tutorials](https://docs.ultralytics.com/yolov5/#tutorials) to get started, where you can find quickstart guides for simple tasks like [Custom Data Training](https://docs.ultralytics.com/yolov5/train_custom_data/) all the way to advanced concepts like [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/hyp_evolution/).
 
             If this is a 🐛 Bug Report, please provide a **minimum reproducible example** to help us debug it.
 
