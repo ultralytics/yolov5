@@ -159,7 +159,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 - [超参数进化](https://docs.ultralytics.com/yolov5/hyp_evolution)
 - [冻结层的迁移学习](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
 - [架构概述](https://docs.ultralytics.com/yolov5/architecture) 🌟 新
-- [Roboflow 用于数据集、标签和主动学习](https://docs.ultralytics.com/yolov5/roboflow)
+- [Roboflow](https://docs.ultralytics.com/yolov5/roboflow)
 - [ClearML 日志记录](https://docs.ultralytics.com/yolov5/clearml) 🌟 新
 - [YOLOv5 与 Neural Magic 的 Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 新
 - [Comet 日志记录](https://docs.ultralytics.com/yolov5/comet) 🌟 新
