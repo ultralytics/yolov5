@@ -17,6 +17,14 @@ def mixup(im, labels, segments, im2, labels2, segments2):
     # Applies MixUp augmentation https://arxiv.org/pdf/1710.09412.pdf
     r = np.random.beta(32.0, 32.0)  # mixup ratio, alpha=beta=32.0
     im = (im * r + im2 * (1 - r)).astype(np.uint8)
+
+    # on background images, one of the two segments might be empty and be an empty list
+    # which will lead to an incorrectly list casted to (0,) that cannot be concatenated
+    if len(labels) == 0:
+        return im, labels2, segments2
+    elif len(labels2) == 0:
+        return im, labels, segments
+
     labels = np.concatenate((labels, labels2), 0)
     segments = np.concatenate((segments, segments2), 0)
     return im, labels, segments
