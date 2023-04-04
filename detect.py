@@ -145,6 +145,7 @@ def run(
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
+            # Removes the absolute mounted path part that changes at every run.
             relative_path_in_azure_mounted_folder = Path("/".join(p.parts[p.parts.index("wd")+2:]))
             save_path = str(save_dir / relative_path_in_azure_mounted_folder)  # im.jpg
             txt_path = str(save_dir / 'labels' / relative_path_in_azure_mounted_folder.parent / relative_path_in_azure_mounted_folder.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
