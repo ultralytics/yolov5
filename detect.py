@@ -64,6 +64,7 @@ def run(
         save_txt=False,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
+        save_blurred_image=False,
         nosave=False,  # do not save images/videos
         classes=None,  # filter by class: --class 0, or --class 0 2 3
         agnostic_nms=False,  # class-agnostic NMS
@@ -144,8 +145,11 @@ def run(
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+            # Removes the absolute mounted path part that changes at every run.
+            relative_path_in_azure_mounted_folder = Path("/".join(p.parts[p.parts.index("wd")+2:]))
+            save_path = str(save_dir / relative_path_in_azure_mounted_folder)  # im.jpg
+            txt_path = str(save_dir / 'labels' / relative_path_in_azure_mounted_folder.parent / relative_path_in_azure_mounted_folder.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
@@ -164,15 +168,39 @@ def run(
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+
+                        folder_path = os.path.dirname(f'{txt_path}.txt')
+                        if not os.path.exists(folder_path):
+                            os.makedirs(folder_path)
                         with open(f'{txt_path}.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
+
+                    if save_blurred_image:
+                        x1, y1 = int(xyxy[0].item()), int(xyxy[1].item())
+                        x2, y2 = int(xyxy[2].item()), int(xyxy[3].item())
+                        area_to_blur = im0[y1:y2, x1:x2]
+                        blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
+                        im0[y1:y2, x1:x2] = blurred
 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
+
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+
+            # Save results (image with blurred detections)
+            if save_blurred_image:
+                folder_path = os.path.dirname(save_path)
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+
+                if not cv2.imwrite(
+                        save_path,
+                        im0,
+                ):
+                    raise Exception(f"Could not write image {os.path.basename(save_path)}")
 
             # Stream results
             im0 = annotator.result()
@@ -230,6 +258,7 @@ def parse_opt():
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
+    parser.add_argument('--save-blurred-image', action='store_true', help='save image with boxes content blurred')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --classes 0, or --classes 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
