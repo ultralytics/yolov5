@@ -530,7 +530,7 @@ def main(opt, callbacks=Callbacks()):
 
     # Evolve hyperparameters (optional)
     else:
-      # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
+        # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
         meta = {
             'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
             'lrf': (1, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
@@ -547,7 +547,7 @@ def main(opt, callbacks=Callbacks()):
             'iou_t': (0, 0.1, 0.7),  # IoU training threshold
             'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
             'anchors': (2, 2.0, 10.0),  # anchors per output grid (0 to ignore)
-            'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)  
+            'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
             'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
             'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
             'hsv_v': (1, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
@@ -616,10 +616,11 @@ def main(opt, callbacks=Callbacks()):
                 results = train(hyp.copy(), opt, device, callbacks)
                 callbacks = Callbacks()
                 # Write mutation results
-                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-                        'val/obj_loss', 'val/cls_loss')
+                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                        'val/box_loss', 'val/obj_loss', 'val/cls_loss')
                 print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
-                fitness = 0.9*results[2]+0.1*results[3] # (0.9 * 'metrics/mAP_0.5') + (0.1 * 'metrics/mAP_0.5:0.95')
+                fitness = 0.9 * results[2] + 0.1 * results[
+                    3]  # (0.9 * 'metrics/mAP_0.5') + (0.1 * 'metrics/mAP_0.5:0.95')
                 # Save fitness in solution object
                 solution.append(fitness)
 
@@ -627,7 +628,7 @@ def main(opt, callbacks=Callbacks()):
             solutions.sort(key=lambda x: x[-1], reverse=True)
 
             # Print the best solution in the current generation
-            print("Generation:", generation + 1, "Best Fitness:", solutions[0][-1], "Best Solution:", solutions[0][:-1])
+            print('Generation:', generation + 1, 'Best Fitness:', solutions[0][-1], 'Best Solution:', solutions[0][:-1])
 
             # Update the best solution
             if best_solution is None or solutions[0][-1] > best_solution[-1]:
@@ -661,9 +662,8 @@ def main(opt, callbacks=Callbacks()):
             solutions = children
 
         # Print the best solution found by the genetic algorithm
-        print("Best Solution Found:", best_solution[:-1])
+        print('Best Solution Found:', best_solution[:-1])
 
-  
         # Plot results
         plot_evolve(evolve_csv)
         LOGGER.info(f'Hyperparameter evolution finished {opt.evolve} generations\n'
