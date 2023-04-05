@@ -530,7 +530,7 @@ def main(opt, callbacks=Callbacks()):
 
     # Evolve hyperparameters (optional)
     else:
-        # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
+      # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
         meta = {
             'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
             'lrf': (1, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
@@ -547,7 +547,7 @@ def main(opt, callbacks=Callbacks()):
             'iou_t': (0, 0.1, 0.7),  # IoU training threshold
             'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
             'anchors': (2, 2.0, 10.0),  # anchors per output grid (0 to ignore)
-            'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
+            'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)  
             'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
             'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
             'hsv_v': (1, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
@@ -579,46 +579,92 @@ def main(opt, callbacks=Callbacks()):
                 f'gs://{opt.bucket}/evolve.csv',
                 str(evolve_csv),])
 
-        for _ in range(opt.evolve):  # generations to evolve
-            if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
-                # Select parent(s)
-                parent = 'single'  # parent selection method: 'single' or 'weighted'
-                x = np.loadtxt(evolve_csv, ndmin=2, delimiter=',', skiprows=1)
-                n = min(5, len(x))  # number of previous results to consider
-                x = x[np.argsort(-fitness(x))][:n]  # top n mutations
-                w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
-                if parent == 'single' or len(x) == 1:
-                    # x = x[random.randint(0, n - 1)]  # random selection
-                    x = x[random.choices(range(n), weights=w)[0]]  # weighted selection
-                elif parent == 'weighted':
-                    x = (x * w.reshape(n, 1)).sum(0) / w.sum()  # weighted combination
+        # Extract mutation rates, lower limits, and upper limits for each hyperparameter from meta dictionary
+        mutation_rates = [meta[k][0] for k in hyp.keys()]
+        lower_limits = [meta[k][1] for k in hyp.keys()]
+        upper_limits = [meta[k][2] for k in hyp.keys()]
 
-                # Mutate
-                mp, s = 0.8, 0.2  # mutation probability, sigma
-                npr = np.random
-                npr.seed(int(time.time()))
-                g = np.array([meta[k][0] for k in hyp.keys()])  # gains 0-1
-                ng = len(meta)
-                v = np.ones(ng)
-                while all(v == 1):  # mutate until a change occurs (prevent duplicates)
-                    v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
-                for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
-                    hyp[k] = float(x[i + 7] * v[i])  # mutate
+        # Create initial solution and solution range
+        initial_solution = list(hyp.values())
+        sol_range = [(lower_limits[i], upper_limits[i]) for i in range(len(upper_limits))]
 
-            # Constrain to limits
-            for k, v in meta.items():
-                hyp[k] = max(hyp[k], v[1])  # lower limit
-                hyp[k] = min(hyp[k], v[2])  # upper limit
-                hyp[k] = round(hyp[k], 5)  # significant digits
+        # Set genetic algorithm parameters
+        num_parents = 10
+        num_generations = opt.evolve
+        sol_per_pop = 20
+        num_genes = len(sol_range)
 
-            # Train mutation
-            results = train(hyp.copy(), opt, device, callbacks)
-            callbacks = Callbacks()
-            # Write mutation results
-            keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-                    'val/obj_loss', 'val/cls_loss')
-            print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
+        # Define initial solutions
 
+        solutions = []
+        for i in range(sol_per_pop):
+            sol = []
+            for j in range(num_genes):
+                sol.append(random.uniform(sol_range[j][0], sol_range[j][1]))
+            solutions.append(sol)
+
+        # Define genetic algorithm
+        best_solution = None
+        for generation in range(num_generations):
+            # Calculate fitness of each solution
+            for solution in solutions:
+                # Update hyperparameters
+                keys = list(hyp.keys())
+                for i in range(len(solution)):
+                    hyp[keys[i]] = solution[i]
+                print(hyp)
+                # Train and get fitness
+                results = train(hyp.copy(), opt, device, callbacks)
+                callbacks = Callbacks()
+                # Write mutation results
+                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
+                        'val/obj_loss', 'val/cls_loss')
+                print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
+                fitness = 0.9*results[2]+0.1*results[3] # (0.9 * 'metrics/mAP_0.5') + (0.1 * 'metrics/mAP_0.5:0.95')
+                # Save fitness in solution object
+                solution.append(fitness)
+
+            # Sort solutions by fitness
+            solutions.sort(key=lambda x: x[-1], reverse=True)
+
+            # Print the best solution in the current generation
+            print("Generation:", generation + 1, "Best Fitness:", solutions[0][-1], "Best Solution:", solutions[0][:-1])
+
+            # Update the best solution
+            if best_solution is None or solutions[0][-1] > best_solution[-1]:
+                best_solution = solutions[0]
+
+            # Create a list to store new generation children
+            children = []
+
+            # Create new generation
+            for i in range(sol_per_pop):
+                # Select parents
+                parents = random.sample(solutions[:num_parents], 2)
+
+                # Create child from parents
+                child = []
+                for j in range(num_genes):
+                    if random.random() < 0.5:
+                        child.append(parents[0][j])
+                    else:
+                        child.append(parents[1][j])
+
+                # Mutate child
+                for j in range(num_genes):
+                    if random.random() < mutation_rates[j]:
+                        child[j] = random.uniform(sol_range[j][0], sol_range[j][1])
+
+                # Add child to new generation
+                children.append(child)
+
+            # Set current solutions to new generation
+            solutions = children
+
+        # Print the best solution found by the genetic algorithm
+        print("Best Solution Found:", best_solution[:-1])
+
+  
         # Plot results
         plot_evolve(evolve_csv)
         LOGGER.info(f'Hyperparameter evolution finished {opt.evolve} generations\n'
