@@ -1,9 +1,10 @@
-import os.path as osp
 import glob
+import os.path as osp
+
 import cv2
 import numpy as np
-import torch
 import RRDBNet_arch as arch
+import torch
 from cv2 import dnn_superres
 
 model_path = '/home/gabriel/projeto/yolov5/modelsResolution/ESPCN_x4.pb'  # models/RRDB_ESRGAN_x4.pth OR models/RRDB_PSNR_x4.pth
@@ -14,14 +15,14 @@ test_img_folder = '/home/gabriel/projeto/yolov5/runs/detect/crops/*'
 
 sr = dnn_superres.DnnSuperResImpl_create()
 sr.readModel(model_path)
-sr.setModel("espcn", 4)
+sr.setModel('espcn', 4)
 
 model = arch.RRDBNet(3, 3, 64, 23, gc=32)
 model.load_state_dict(torch.load(model_path), strict=True)
 model.eval()
 model = model.to(device)
 
-print('Model path {:s}. \nTesting...'.format(model_path))
+print(f'Model path {model_path:s}. \nTesting...')
 
 idx = 0
 for path in glob.glob(test_img_folder):
@@ -39,4 +40,4 @@ for path in glob.glob(test_img_folder):
         output = model(img_LR).data.squeeze().float().cpu().clamp_(0, 1).numpy()
     output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))
     output = (output * 255.0).round()
-    cv2.imwrite('results/{:s}_rlt.png'.format(base), output)
+    cv2.imwrite(f'results/{base:s}_rlt.png', output)
