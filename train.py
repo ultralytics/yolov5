@@ -637,4 +637,10 @@ def run(**kwargs):
 
 if __name__ == '__main__':
     opt = parse_opt()
+
+    # model = Model(cfg='models/yolov5s.yaml', ch=3, nc=80)
+    # model.to(torch.device('cpu'))
+    # print("model: \n")
+    # print(model)
+
     main(opt)

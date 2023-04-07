@@ -868,3 +868,60 @@ class Classify(nn.Module):
         if isinstance(x, list):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
+
+
+class SE_Block(nn.Module):
+    def __init__(self, c1, c2, ratio=16):
+        super(SE_Block, self).__init__()
+        # c*1*1
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.l1 = nn.Linear(c1, c1 // ratio, bias=False)
+        self.relu = nn.ReLU(inplace=True)
+        self.l2 = nn.Linear(c1 // ratio, c1, bias=False)
+        self.sig = nn.Sigmoid()
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        y = self.avgpool(x).view(b, c)
+        y = self.l1(y)
+        y = self.relu(y)
+        y = self.l2(y)
+        y = self.sig(y)
+        y = y.view(b, c, 1, 1)
+        return x * y.expand_as(x)
+
+# class SE_Block(nn.Module):
+#     def __init__(self, c1, c2):
+#         super().__init__()
+#         self.avg_pool = nn.AdaptiveAvgPool2d(1)  # 平均池化
+#         self.fc = nn.Sequential(
+#             nn.Linear(c1, c2 // 16, bias=False),
+#             nn.ReLU(inplace=True),
+#             nn.Linear(c2 // 16, c2, bias=False),
+#             nn.Sigmoid()
+#         )
+#
+#     def forward(self, x):
+#         # 添加注意力模块
+#         b, c, _, _ = x.size()  # 分别获取batch_size,channel
+#         y = self.avg_pool(x).view(b, c)  # y的shape为【batch_size, channels】
+#         y = self.fc(y).view(b, c, 1, 1)  # shape为【batch_size, channels, 1, 1】
+#         out = x * y.expand_as(x)  # shape 为【batch, channels,feature_w, feature_h】
+#         return out
+
+# class SE_Block(nn.Module):
+#     def __init__(self, in_channels, reduction=16):
+#         super(SE_Block, self).__init__()
+#         self.avg_pool = nn.AdaptiveAvgPool2d(1)
+#         self.fc = nn.Sequential(
+#             nn.Linear(in_channels, in_channels // reduction),
+#             nn.ReLU(inplace=True),
+#             nn.Linear(in_channels // reduction, in_channels),
+#             nn.Sigmoid()
+#         )
+#
+#     def forward(self, x):
+#         b, c, _, _ = x.size()
+#         y = self.avg_pool(x).view(b, c)
+#         y = self.fc(y).view(b, c, 1, 1)
+#         return x * y
