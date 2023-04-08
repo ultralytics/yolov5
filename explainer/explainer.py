@@ -144,7 +144,11 @@ class YOLOBoxScoreTarget2():
         bboxes_processed[:,:,2] = output[:,:,0] + output[:,:,2] # x + h
         bboxes_processed[:,:,3] = output[:,:,1] + output[:,:,3] # y + w
         
-        ious=torchvision.ops.box_iou(self.predicted_bbox[:,:4],bboxes_processed[0])
+        for bbox in self.bboxes_processed:
+            breakpoint()
+            ious=torchvision.ops.box_iou(bbox[:4],bboxes_processed[0])
+            values,indices = ious.max(axis=1)
+            
         
         
         return 0
