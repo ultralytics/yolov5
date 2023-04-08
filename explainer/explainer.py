@@ -155,6 +155,7 @@ class YOLOBoxScoreTarget2():
             if value > iou_threshold and predicted_class==class_idx:
                 score = score + output[0,index,4] + output[0,index, 5+predicted_class]
                 print(bbox)
+                print(output[0,index,4],output[5+predicted_class])
 
         return score.sum()
 
