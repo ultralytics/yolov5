@@ -108,8 +108,7 @@ class YOLOBoxScoreTarget2():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self,classes,objectness_threshold,predicted_bbox):
-        self.classes = set(classes)
+    def __init__(self,objectness_threshold,predicted_bbox):
         self.objectness_threshold = objectness_threshold
         self.predicted_bbox = predicted_bbox
 
@@ -163,10 +162,11 @@ def extract_CAM(method, model: torch.nn.Module,model_output,image,layer:int,clas
     **kwargs):
     target_layers =[model.model.model.model[layer]]
     #targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
+    
     bbox = model_output.pandas().xyxy[0]
     bbox_torch = torch.tensor(bbox.drop('name',axis=1).values)
 
-    targets = [YOLOBoxScoreTarget2(classes=classes, objectness_threshold=objectness_score,
+    targets = [YOLOBoxScoreTarget2(objectness_threshold=objectness_score,
                                     predicted_bbox=bbox_torch)]
     
     cam = method(model, target_layers, use_cuda=use_cuda, 
