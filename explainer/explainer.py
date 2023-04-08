@@ -244,7 +244,8 @@ def run(
     device = select_device(device)
     
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
-    return model
+    autoshaped_model = AutoShape(model)
+
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     model.requires_grad_(True)
@@ -262,14 +263,18 @@ def run(
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
         
+        structured_output = autoshaped_model(im)
         model = YoloOutputWrapper(model)
         _ = model(im) 
+
+        
+
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
                     classes=class_idx, objectness_thres=objectness_thres,use_cuda=use_cuda)
 
         # for now, we only support one image at a time
         # then we should save the image in a file
-        return cam_image
+        return cam_image, structured_output
     
 
 
