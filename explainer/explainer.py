@@ -243,14 +243,14 @@ def run(
     use_cuda = len(device) > 0 # for now we can not choose GPU device
     device = select_device(device)
     
-    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
     #autoshaped_model = AutoShape(model)
 
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     model.requires_grad_(True)
     # model.eval() # not sure about this! 
-    dataset =LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
+    dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
     # reverse key,values pairs since we to index with reverse 
     model_classes =dict((v,k) for k,v in model.names.items())
@@ -265,10 +265,10 @@ def run(
             im = im[None]  # expand for batch dim
 
         #structured_output = autoshaped_model(im)
-
+        output = model(im)
+        return output
         model = YoloOutputWrapper(model)
         _ = model(im) 
-
 
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
                     classes=class_idx, objectness_thres=objectness_thres,use_cuda=use_cuda)
