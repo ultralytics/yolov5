@@ -56,6 +56,9 @@ class YOLOBoxScoreTarget():
     This is not a standard approach. This is somewhat similar to what 
     https://github.com/pooya-mohammadi/yolov5-gradcam
     has done. 
+
+    Here the problem is that we are taking a lot of attention to overlapping boxes.
+    This should not be the case. 
     """
 
     def __init__(self,classes,objectness_threshold):
@@ -105,9 +108,10 @@ class YOLOBoxScoreTarget2():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self,classes,objectness_threshold):
+    def __init__(self,classes,objectness_threshold,predicted_bbox):
         self.classes = set(classes)
         self.objectness_threshold = objectness_threshold
+        self.predicted_bbox = predicted_bbox
 
     def __call__(self, output):
         """
@@ -131,22 +135,31 @@ class YOLOBoxScoreTarget2():
          # first dimension would be image index, number of images
          # second: number of predictions 
          # third:  predicited bboxes 
-        objectness = output[:,:, 4] 
-        classes = output[:,:, 5:] 
-        mask = torch.zeros_like(classes, dtype=torch.bool)
-        for class_idx in self.classes:
-            mask[:,:, class_idx] = True
- 
-        mask[objectness<self.objectness_threshold] = False
-        score = classes[mask] # + objectness[mask]
-        return score.sum()
+        bboxes = output[:,:,:4] # this is formatted differently as we need. 
+        bboxes_processed = torch.zeros_like(bboxes)
+        bboxes_processed[:,:,0] = output[:,:,0] - output[:,:,2] # x - h
+        bboxes_processed[:,:,1] = output[:,:,1] - output[:,:,3] # y - w
+        bboxes_processed[:,:,2] = output[:,:,0] + output[:,:,2] # x + h
+        bboxes_processed[:,:,3] = output[:,:,1] + output[:,:,3] # y + w
+        bboxes_processed[:,:,4:] = output[:,:,4:] # others 
+        
+        breakpoint()
+        a=torchvision.ops.box_iou(self.predicted_bbox[0],bboxes_processed[0])
+        
+        return 0
 
 
 
-def extract_CAM(method, model: torch.nn.Module,image,layer:int,classes, objectness_score:float, use_cuda:bool,
+def extract_CAM(method, model: torch.nn.Module,model_output,image,layer:int,classes, objectness_score:float, use_cuda:bool,
     **kwargs):
     target_layers =[model.model.model.model[layer]]
-    targets = [YOLOBoxScoreTarget2(classes=classes, objectness_threshold=objectness_score)]
+    #targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
+    bbox = model_output.pandas().xyxy[0]
+    bbox_torch = torch.tensor(bbox.drop('name',axis=1).values)
+
+    targets = [YOLOBoxScoreTarget2(classes=classes, objectness_threshold=objectness_score,
+                                    predicted_bbox=bbox_torch)]
+    
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
     grayscale_cam= cam(image,targets=targets)
@@ -157,7 +170,7 @@ def extract_CAM(method, model: torch.nn.Module,image,layer:int,classes, objectne
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     return cam_image
 
-def explain(method:str, model,image,layer:int,classes, objectness_thres:float,use_cuda:bool):
+def explain(method:str, model,model_output,image,layer:int,classes, objectness_thres:float,use_cuda:bool):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -194,7 +207,7 @@ def explain(method:str, model,image,layer:int,classes, objectness_thres:float,us
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image=extract_CAM(method_obj,model,image,layer,classes,
+    cam_image=extract_CAM(method_obj,model,model_output,image,layer,classes,
             objectness_thres,use_cuda, **extra_arguments)
     return cam_image
 
@@ -268,8 +281,9 @@ def run(
         
         model = YoloOutputWrapper(model)
         _ = model(im) 
+        # here we use the output from autoshaped model since we need to know bbox information
 
-        cam_image = explain(method=method,model= model, image=im, layer=layer, 
+        cam_image = explain(method=method,model= model,model_output=output, image=im, layer=layer, 
                     classes=class_idx, objectness_thres=objectness_thres,use_cuda=use_cuda)
 
         # for now, we only support one image at a time
