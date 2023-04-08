@@ -257,13 +257,15 @@ def run(
     class_idx = [model_classes[item] for item in class_names]
 
     for _, im, _,_,_ in dataset:
+        structured_output = autoshaped_model(im)
+
+        
         im = torch.from_numpy(im).to(model.device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
         
-        structured_output = autoshaped_model(im)
         model = YoloOutputWrapper(model)
         _ = model(im) 
 
