@@ -157,7 +157,7 @@ class YOLOBoxScoreTarget2():
                 print(bbox)
                 print(output[0,index,4],output[5+predicted_class])
 
-        return score.sum()
+        return score
 
 
 
