@@ -244,8 +244,9 @@ def run(
     device = select_device(device)
     
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
-    autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
-    return model, autoshaped_model
+    import copy
+    autoshaped_model = AutoShape(copy.deepcopy(model))
+
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     model.requires_grad_(True)
