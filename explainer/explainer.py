@@ -137,10 +137,11 @@ class YOLOBoxScoreTarget2():
         
         bboxes = output[:,:,:4] # this is formatted differently as we need. 
         bboxes_processed = torch.zeros_like(bboxes)
-        bboxes_processed[:,:,0] = output[:,:,0] - output[:,:,2] # x - h
-        bboxes_processed[:,:,1] = output[:,:,1] - output[:,:,3] # y - w
-        bboxes_processed[:,:,2] = output[:,:,0] + output[:,:,2] # x + h
-        bboxes_processed[:,:,3] = output[:,:,1] + output[:,:,3] # y + w
+        x,y,h,w = output[:,:,0],output[:,:,1],output[:,:,2],output[:,:,3]
+        bboxes_processed[:,:,0] = (x-h/2)*h
+        bboxes_processed[:,:,1] = (y-w/2)*w
+        bboxes_processed[:,:,2] = (x+h/2)*h
+        bboxes_processed[:,:,3] = (y+w/2)*w
         
         score = torch.tensor([0.0])
         for bbox in self.predicted_bbox:
