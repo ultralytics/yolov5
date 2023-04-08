@@ -143,14 +143,16 @@ class YOLOBoxScoreTarget2():
         bboxes_processed[:,:,2] = output[:,:,0] + output[:,:,2] # x + h
         bboxes_processed[:,:,3] = output[:,:,1] + output[:,:,3] # y + w
         
+        score = 0
         for bbox in self.predicted_bbox:
             breakpoint()
-            ious=torchvision.ops.box_iou(bbox[:4],bboxes_processed[0])
-            values,indices = ious.max(axis=1)
-            
-        
-        
-        return 0
+            ious=torchvision.ops.box_iou(bbox[None,:4],bboxes_processed[0])
+            value,index = ious.max(axis=1)
+            class_idx = bbox[5]
+            if value > 0.001 and output[0,index,class_idx+5]:
+                score = score + value 
+
+        return score
 
 
 
