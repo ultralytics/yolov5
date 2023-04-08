@@ -212,7 +212,6 @@ class YoloOutputWrapper(torch.nn.Module):
         first one is a 3 dim array which contains predictions
         second one is a list of heads with their corresponding predictions
         """
-        breakpoint()
         total_prediction, _ = self.model(x)
         return total_prediction
 
