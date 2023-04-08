@@ -244,7 +244,7 @@ def run(
     device = select_device(device)
     
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
-    autoshaped_model = AutoShape(model)
+    autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
 
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
@@ -258,13 +258,13 @@ def run(
 
     for _, im, _,_,_ in dataset:
         breakpoint()
-        structured_output = autoshaped_model(im)
         im = torch.from_numpy(im).to(model.device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
         
+        structured_output = autoshaped_model(im)
         model = YoloOutputWrapper(model)
         _ = model(im) 
 
