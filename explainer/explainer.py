@@ -248,7 +248,7 @@ def run(
 
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    model.requires_grad_(True)
+    #model.requires_grad_(True)
     # model.eval() # not sure about this! 
     dataset =LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
@@ -263,7 +263,9 @@ def run(
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
         
-        structured_output = autoshaped_model(im.clone())
+        autoshaped_model.model.requires_grad_(False)
+        structured_output = autoshaped_model(im)
+        model.requires_grad_(True)
         model = YoloOutputWrapper(model)
         _ = model(im) 
 
