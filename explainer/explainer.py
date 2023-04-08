@@ -138,7 +138,7 @@ class YOLOBoxScoreTarget2():
         bboxes = output[:,:,:4] # this is formatted differently as we need. 
         bboxes_processed = torch.zeros_like(bboxes)
         x,y,w,h = output[:,:,0],output[:,:,1],output[:,:,2],output[:,:,3]
-        bboxes_processed[:,:,0] = (x-w/2)*640
+        bboxes_processed[:,:,0] = (x-w/2)*640 # image witdth and height
         bboxes_processed[:,:,1] = (y-h/2)*640
         bboxes_processed[:,:,2] = (x+w/2)*640
         bboxes_processed[:,:,3] = (y+h/2)*640
@@ -153,6 +153,7 @@ class YOLOBoxScoreTarget2():
 
             predicted_class = output[0,index, 5:].argmax(axis=1)
             if value > iou_threshold and predicted_class==class_idx:
+                breakpoint()
                 print(bbox)
                 print(output[0,index,4],output[5+predicted_class])
                 score = score + output[0,index,4] #+ output[0,index, 5+predicted_class]
