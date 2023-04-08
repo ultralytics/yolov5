@@ -142,7 +142,7 @@ class YOLOBoxScoreTarget2():
         bboxes_processed[:,:,2] = output[:,:,0] + output[:,:,2] # x + h
         bboxes_processed[:,:,3] = output[:,:,1] + output[:,:,3] # y + w
         
-        score = torch.tensor([0],requires_grad=True)
+        score = torch.tensor([0.0])
         for bbox in self.predicted_bbox:
             # bbox format: x1, y1, x2, y2, confidence, class_idx
             ious=torchvision.ops.box_iou(bbox[None,:4],bboxes_processed[0])
