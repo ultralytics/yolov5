@@ -153,7 +153,7 @@ class YOLOBoxScoreTarget2():
             # bbox format: x1, y1, x2, y2, confidence, class_idx
             breakpoint()
             ious=torchvision.ops.box_iou(bbox[None,:4],bboxes_processed[0])
-            value,index = ious.argmax(axis=1)
+            value,index = ious.max(axis=1)
             confidence, class_idx=bbox[4], bbox[5]
             iou_threshold = 0.001
 
