@@ -266,7 +266,7 @@ def run(
             im = im[None]  # expand for batch dim
         
         
-        model = YoloOutputWrapper(model.model)
+        model = YoloOutputWrapper(model)
         _ = model(im) 
 
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
