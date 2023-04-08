@@ -29,9 +29,10 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from utils.general import print_args,check_file
 from utils.torch_utils import select_device
 
-from models.common import DetectMultiBackend
+from models.common import DetectMultiBackend, AutoShape
 from utils.dataloaders import LoadImages,IMG_FORMATS, VID_FORMATS
 from utils.general import check_img_size
+
 
 def yolo_reshape_transform(x):
     """
@@ -47,14 +48,14 @@ def yolo_reshape_transform(x):
 
 
 class YOLOBoxScoreTarget():
-    """ For every original detected bounding box specified in "bounding boxes",
-        assign a score on how the current bounding boxes match it,
-            1. In IOU
-            2. In the classification score.
-        If there is not a large enough overlap, or the category changed,
-        assign a score of 0.
+    """ This way we see all boxes. then we select boxes that have a good objectness score
+    then we filter out classes and select the classes that we want to attend to. 
 
-        The total score is the sum of all the box scores.
+    At the end, we sum out of all these. 
+
+    This is not a standard approach. This is somewhat similar to what 
+    https://github.com/pooya-mohammadi/yolov5-gradcam
+    has done. 
     """
 
     def __init__(self,classes,objectness_threshold):
@@ -93,11 +94,59 @@ class YOLOBoxScoreTarget():
         score = classes[mask] # + objectness[mask]
         return score.sum()
 
+class YOLOBoxScoreTarget2():
+    """ For every original detected bounding box specified in "bounding boxes",
+        assign a score on how the current bounding boxes match it,
+            1. In IOU
+            2. In the classification score.
+        If there is not a large enough overlap, or the category changed,
+        assign a score of 0.
+
+        The total score is the sum of all the box scores.
+    """
+
+    def __init__(self,classes,objectness_threshold):
+        self.classes = set(classes)
+        self.objectness_threshold = objectness_threshold
+
+    def __call__(self, output):
+        """
+        here we need something which we can call backward
+        https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
+        output structure is taken from this tutorial, it is as follows:
+
+        first item is important, second item contains three arrays which contain prediction from three heads
+        we would use the first array as it is the final prediction.
+        pred = output[0] 
+        Here, we take the first item as the second item contains predictions from three heads. Also, each head dimension would be different 
+        as we have different dimensions per head. 
+
+        "xc,yc,height, width,objectness, classes"
+        so, the forth item would be objectness and items after fifth element are class indexes
+        """
+        if len(output.shape)==2:
+            output = torch.unsqueeze(output,dim=0)
+
+        assert len(output.shape) == 3
+         # first dimension would be image index, number of images
+         # second: number of predictions 
+         # third:  predicited bboxes 
+        objectness = output[:,:, 4] 
+        classes = output[:,:, 5:] 
+        mask = torch.zeros_like(classes, dtype=torch.bool)
+        for class_idx in self.classes:
+            mask[:,:, class_idx] = True
+ 
+        mask[objectness<self.objectness_threshold] = False
+        score = classes[mask] # + objectness[mask]
+        return score.sum()
+
+
 
 def extract_CAM(method, model: torch.nn.Module,image,layer:int,classes, objectness_score:float, use_cuda:bool,
     **kwargs):
     target_layers =[model.model.model.model[layer]]
-    targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
+    targets = [YOLOBoxScoreTarget2(classes=classes, objectness_threshold=objectness_score)]
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
     grayscale_cam= cam(image,targets=targets)
@@ -151,6 +200,9 @@ def explain(method:str, model,image,layer:int,classes, objectness_thres:float,us
 
 
 class YoloOutputWrapper(torch.nn.Module):
+    """
+    Main purpose of using this method is to eliminate the second argument in YOLO output. 
+    """
     def __init__(self, model):
         super(YoloOutputWrapper, self).__init__()
         self.model = model
@@ -192,6 +244,7 @@ def run(
     device = select_device(device)
     
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    return model
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     model.requires_grad_(True)
