@@ -274,7 +274,7 @@ def run(
 
         # for now, we only support one image at a time
         # then we should save the image in a file
-        return cam_image
+        return cam_image, output
     
 
 
