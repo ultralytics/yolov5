@@ -244,7 +244,7 @@ def run(
     device = select_device(device)
     
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
-    autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
+    autoshaped_model = AutoShape(model)
 
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
@@ -266,8 +266,8 @@ def run(
         
         model = YoloOutputWrapper(model)
         _ = model(im) 
-        
-        structured_output = autoshaped_model(im)
+
+        structured_output = autoshaped_model(im.copy())
 
 
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
