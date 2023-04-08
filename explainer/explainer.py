@@ -268,7 +268,7 @@ def run(
         structured_output = autoshaped_model(im.detach().clone())
 
         model = YoloOutputWrapper(model)
-        _ = model(im) 
+        #_ = model(im) 
 
 
         cam_image = explain(method=method,model= model, image=im, layer=layer, 
