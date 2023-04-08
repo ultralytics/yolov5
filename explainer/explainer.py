@@ -266,6 +266,7 @@ def run(
         
         model = YoloOutputWrapper(model)
         _ = model(im) 
+        
         structured_output = autoshaped_model(im)
 
 
