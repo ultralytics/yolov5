@@ -136,14 +136,13 @@ class YOLOBoxScoreTarget2():
          # second: number of predictions 
          # third:  predicited bboxes 
         breakpoint()
-        
+
         bboxes = output[:,:,:4] # this is formatted differently as we need. 
         bboxes_processed = torch.zeros_like(bboxes)
         bboxes_processed[:,:,0] = output[:,:,0] - output[:,:,2] # x - h
         bboxes_processed[:,:,1] = output[:,:,1] - output[:,:,3] # y - w
         bboxes_processed[:,:,2] = output[:,:,0] + output[:,:,2] # x + h
         bboxes_processed[:,:,3] = output[:,:,1] + output[:,:,3] # y + w
-        bboxes_processed[:,:,4:] = output[:,:,4:] # others 
         
         a=torchvision.ops.box_iou(self.predicted_bbox[0],bboxes_processed[0])
         
