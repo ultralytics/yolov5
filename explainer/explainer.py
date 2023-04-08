@@ -173,6 +173,7 @@ def extract_CAM(method, model: torch.nn.Module,model_output,image,layer:int,clas
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
     grayscale_cam= cam(image,targets=targets)
+    print(grayscale_cam)
     grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
