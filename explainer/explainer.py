@@ -135,12 +135,7 @@ class YOLOBoxScoreTarget2():
          # first dimension would be image index, number of images
          # second: number of predictions 
          # third:  predicited bboxes 
-        objectness = output[:,:, 4] 
-        classes = output[:,:, 5:] 
-        mask = torch.zeros_like(classes, dtype=torch.bool)
-        for class_idx in self.classes:
-            mask[:,:, class_idx] = True
-
+        
         bboxes = output[:,:,:4] # this is formatted differently as we need. 
         bboxes_processed = torch.zeros_like(bboxes)
         bboxes_processed[:,:,0] = output[:,:,0] - output[:,:,2] # x - h
@@ -151,7 +146,6 @@ class YOLOBoxScoreTarget2():
         score = torch.tensor([0])
         for bbox in self.predicted_bbox:
             # bbox format: x1, y1, x2, y2, confidence, class_idx
-            breakpoint()
             ious=torchvision.ops.box_iou(bbox[None,:4],bboxes_processed[0])
             value,index = ious.max(axis=1)
             confidence, class_idx=bbox[4], bbox[5]
