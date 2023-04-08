@@ -263,7 +263,7 @@ def run(
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
         
-        structured_output = autoshaped_model(im)
+        structured_output = autoshaped_model(im.clone())
         model = YoloOutputWrapper(model)
         _ = model(im) 
 
