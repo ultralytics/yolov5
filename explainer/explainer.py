@@ -143,7 +143,6 @@ class YOLOBoxScoreTarget2():
         bboxes_processed[:,:,3] = output[:,:,1] + output[:,:,3] # y + w
         
         score = torch.tensor([0])
-        breakpoint()
         for bbox in self.predicted_bbox:
             # bbox format: x1, y1, x2, y2, confidence, class_idx
             ious=torchvision.ops.box_iou(bbox[None,:4],bboxes_processed[0])
@@ -152,6 +151,7 @@ class YOLOBoxScoreTarget2():
             iou_threshold = 0.001
 
             predicted_class = output[0,index, 5:].argmax(axis=1)
+            breakpoint()
             if value > iou_threshold and predicted_class==class_idx:
                 score = score + output[0,index,4] + output[0,index, 5+predicted_class]
 
