@@ -152,8 +152,7 @@ class YOLOBoxScoreTarget2():
             iou_threshold = 0.001
 
             predicted_class = output[0,index, 5:].argmax(axis=1)
-            if value > iou_threshold and predicted_class==class_idx:
-                breakpoint()
+            if value > iou_threshold #and predicted_class > 0.1:
                 print(bbox)
                 print(output[0,index,4],output[5+predicted_class])
                 score = score + output[0,index,4] #+ output[0,index, 5+predicted_class]
