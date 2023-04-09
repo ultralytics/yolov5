@@ -151,11 +151,11 @@ class YOLOBoxScoreTarget2():
             confidence, class_idx=bbox[4], bbox[5]
             iou_threshold = 0.001
 
-            predicted_class = output[0,index, 5:].argmax(axis=1)
+            #predicted_class = output[0,index, 5:].argmax(axis=1)
             if value > iou_threshold: #and predicted_class > 0.1:
                 print(bbox)
-                print(output[0,index,4],output[0,index,5+predicted_class])
-                score = score + output[0,index,4]+output[0,index,5+predicted_class] #+ output[0,index, 5+predicted_class]
+                print(output[0,index,4],output[0,index,5+class_idx])
+                score = score + output[0,index,4]+output[0,index,5+class_idx] #+ output[0,index, 5+predicted_class]
                 
         return score
 
