@@ -157,7 +157,6 @@ class YOLOBoxScoreTarget2():
                 print(output[0,index,4],output[5+predicted_class])
                 score = score + output[0,index,4] #+ output[0,index, 5+predicted_class]
                 
-
         return score
 
 
