@@ -11,7 +11,9 @@ The PR Summary and PR Details section will be filled in automatically after your
 -->
 
 ### PR Summary
+
 copilot:summary
 
 ### PR Details
+
 copilot:walkthrough
