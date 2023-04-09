@@ -7,13 +7,7 @@ Thank you for submitting a YOLOv5 🚀 Pull Request! We want to make contributin
 
 Please see our ✅ [Contributing Guide](https://github.com/ultralytics/yolov5/blob/master/CONTRIBUTING.md) for more details.
 
-The PR Summary and PR Details section will be filled in automatically after your PR is submitted, please do not modify.
+Note that Copilot will summarize this PR below, do not modify the 'copilot:all' line.
 -->
 
-### PR Summary
-
-copilot:summary
-
-### PR Details
-
-copilot:walkthrough
+copilot:all
