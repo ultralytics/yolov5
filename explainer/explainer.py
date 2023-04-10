@@ -136,7 +136,7 @@ class YOLOBoxScoreTarget2():
         bboxes_processed = xywh2xyxy(output[...,:4])
         
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:,:4],bboxes_processed[0])
-        topk_iou_values, topk_iou_indices=iou_scores.topk(k=50,dim=-1) # get top 10 similar boxes for each of them 
+        _, topk_iou_indices=iou_scores.topk(k=50,dim=-1) # get top 10 similar boxes for each of them 
 
         score = torch.tensor([0.0],requires_grad=True)
         
@@ -151,6 +151,7 @@ class YOLOBoxScoreTarget2():
             
             class_score = output[0,indices, 5+class_idx].sum()
             confidence = output[0,indices, 4].sum()
+
             if self.backprop == 'class':
                 score = score + class_score 
             elif self.backprop == 'confidence':
@@ -183,6 +184,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, u
         cam = method(model, target_layers, use_cuda=use_cuda, 
                 reshape_transform=yolo_reshape_transform, **kwargs)
         grayscale_cam= cam(image,targets=targets)
+        breakpoint()
         grayscale_cam = grayscale_cam[0, :]
         if final_cam is not None:
             final_cam = (final_cam + grayscale_cam) / 2
