@@ -156,6 +156,7 @@ class YOLOBoxScoreTarget2():
             x2 = output[0,indices,2].sum()
             y2 = output[0,indices,3].sum()
             
+            #score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
                 score = score + class_score
             elif self.backprop == 'confidence':
@@ -182,17 +183,16 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, u
     bbox_torch = torch.tensor(predicted_bbox.drop('name',axis=1).values)
 
     backprop_array = ['class','confidence']
-    final_cam = None
+    cam_array = []
     for item in backprop_array:
         targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item)]
         cam = method(model, target_layers, use_cuda=use_cuda, 
                 reshape_transform=yolo_reshape_transform, **kwargs)
         grayscale_cam= cam(image,targets=targets)
         grayscale_cam = grayscale_cam[0, :]
-        if final_cam is not None:
-            final_cam = (final_cam + grayscale_cam) / 2
-        else:
-            final_cam = grayscale_cam 
+        cam_array.append(grayscale_cam)
+
+    final_cam = sum(cam_array) / len(cam_array)
     
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
