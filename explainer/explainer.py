@@ -143,6 +143,8 @@ class YOLOBoxScoreTarget2():
         score = torch.tensor([0.0],requires_grad=True)
         for i,(x1,y1,x2,y2,confidence,class_idx) in enumerate(self.predicted_bbox):
             # bbox format: x1, y1, x2, y2, confidence, class_idx
+            class_idx = int(class_idx)
+            
             indices = topk_iou_indices[i]
             
             
