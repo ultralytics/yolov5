@@ -170,6 +170,7 @@ def extract_CAM(method, model: torch.nn.Module,model_output,image,layer:int,clas
     #targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
 
     bbox = model_output.pandas().xyxy[0]
+    print(bbox)
     bbox_torch = torch.tensor(bbox.drop('name',axis=1).values)
 
     targets = [YOLOBoxScoreTarget2(objectness_threshold=objectness_score,
