@@ -162,14 +162,14 @@ class YOLOBoxScoreTarget2():
 def extract_CAM(method, model: torch.nn.Module,model_output,image,layer:int,classes, objectness_score:float, use_cuda:bool,
     **kwargs):
     target_layers =[model.model.model.model[layer]]
-    #targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
+    targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
 
     bbox = model_output.pandas().xyxy[0]
     print(image.shape)
     bbox_torch = torch.tensor(bbox.drop('name',axis=1).values)
 
-    targets = [YOLOBoxScoreTarget2(objectness_threshold=objectness_score,
-                                    predicted_bbox=bbox_torch)]
+    #targets = [YOLOBoxScoreTarget2(objectness_threshold=objectness_score,
+    #                                predicted_bbox=bbox_torch)]
     
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
