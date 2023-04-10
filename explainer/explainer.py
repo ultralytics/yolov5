@@ -152,6 +152,8 @@ class YOLOBoxScoreTarget2():
             confidence = output[0,indices, 4].sum()
             score = score + class_score + confidence
             print(f"class_score: {class_score}, confidence: {confidence}")
+            print(output[0,indices, 5+class_idx])
+            print(output[0,indices, 4])
 
         return score
 
