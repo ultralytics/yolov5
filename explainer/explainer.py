@@ -61,9 +61,8 @@ class YOLOBoxScoreTarget():
     This should not be the case. 
     """
 
-    def __init__(self,classes,objectness_threshold):
+    def __init__(self,classes):
         self.classes = set(classes)
-        self.objectness_threshold = objectness_threshold
 
     def __call__(self, output):
         """
@@ -93,7 +92,6 @@ class YOLOBoxScoreTarget():
         for class_idx in self.classes:
             mask[:,:, class_idx] = True
  
-        mask[objectness<self.objectness_threshold] = False
         score = classes[mask] # + objectness[mask]
         return score.sum()
 
@@ -108,8 +106,7 @@ class YOLOBoxScoreTarget2():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self,objectness_threshold,predicted_bbox):
-        self.objectness_threshold = objectness_threshold
+    def __init__(self,predicted_bbox):
         self.predicted_bbox = predicted_bbox
 
     def __call__(self, output):
@@ -158,16 +155,16 @@ class YOLOBoxScoreTarget2():
 
 
 
-def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, objectness_score:float, use_cuda:bool,
+def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, use_cuda:bool,
     **kwargs):
     target_layers =[model.model.model.model[layer]]
 
     
-    targets = [YOLOBoxScoreTarget(classes=predicted_bbox[...,5], objectness_threshold=objectness_score)]
+    targets = [YOLOBoxScoreTarget(classes=predicted_bbox[...,5])]
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name',axis=1).values)
 
-    #targets = [YOLOBoxScoreTarget2(objectness_threshold=objectness_score,predicted_bbox=bbox_torch)]
+    #targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch)]
     
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
@@ -179,7 +176,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, o
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     return cam_image
 
-def explain(method:str, raw_model,predicted_bbox,image,layer:int, objectness_thres:float,use_cuda:bool):
+def explain(method:str, raw_model,predicted_bbox,image,layer:int,use_cuda:bool):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -216,8 +213,7 @@ def explain(method:str, raw_model,predicted_bbox,image,layer:int, objectness_thr
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,image,layer,
-            objectness_thres,use_cuda, **extra_arguments)
+    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,image,layer,use_cuda, **extra_arguments)
     return cam_image
 
 
@@ -243,7 +239,6 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         method='EigenCAM', # the method for interpreting the results
         layer=-2 ,
-        objectness_thres=0.1, # threshold for objectness
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         nosave=False,  # do not save images/videos
@@ -290,7 +285,7 @@ def run(
         # here we use the output from autoshaped model since we need to know bbox information
 
         cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox, image=im, layer=layer, 
-                    objectness_thres=objectness_thres,use_cuda=use_cuda)
+                    use_cuda=use_cuda)
 
         # for now, we only support one image at a time
         # then we should save the image in a file
