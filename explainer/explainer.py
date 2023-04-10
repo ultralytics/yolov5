@@ -179,7 +179,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, o
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     return cam_image
 
-def explain(method:str, raw_model,predicted_bbox,image,layer:int,classes, objectness_thres:float,use_cuda:bool):
+def explain(method:str, raw_model,predicted_bbox,image,layer:int, objectness_thres:float,use_cuda:bool):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -216,7 +216,7 @@ def explain(method:str, raw_model,predicted_bbox,image,layer:int,classes, object
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,image,layer,classes,
+    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,image,layer,
             objectness_thres,use_cuda, **extra_arguments)
     return cam_image
 
