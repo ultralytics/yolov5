@@ -48,9 +48,8 @@ def yolo_reshape_transform(x):
 
 
 class YOLOBoxScoreTarget():
-    """ This way we see all boxes. then we select boxes that have a good objectness score
+    """ This way we see all boxes.
     then we filter out classes and select the classes that we want to attend to. 
-
     At the end, we sum out of all these. 
 
     This is not a standard approach. This is somewhat similar to what 
