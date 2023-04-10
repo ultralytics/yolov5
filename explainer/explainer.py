@@ -157,9 +157,9 @@ class YOLOBoxScoreTarget2():
             y2 = output[0,indices,3].sum()
             
             if self.backprop == 'class':
-                score = score + class_score/class_score
+                score = score + class_score
             elif self.backprop == 'confidence':
-                score = score + confidence/confidence
+                score = score + confidence
             elif self.backprop == 'x1':
                 score = score + x1
             elif self.backprop == 'y1':
