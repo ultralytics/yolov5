@@ -138,12 +138,11 @@ class YOLOBoxScoreTarget2():
         bboxes_processed = xywh2xyxy(output[...,:4])
         
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:,:4],bboxes_processed[0])
-        topk_iou_values, topk_iou_indices=iou_scores.topk(k=10,dim=-1) # get top 10 similar boxes for each of them 
+        topk_iou_values, topk_iou_indices=iou_scores.topk(k=50,dim=-1) # get top 10 similar boxes for each of them 
 
         score = torch.tensor([0.0],requires_grad=True)
         for i,(x1,y1,x2,y2,confidence,class_idx) in enumerate(self.predicted_bbox):
             # bbox format: x1, y1, x2, y2, confidence, class_idx
-            print(class_idx)
             class_idx = int(class_idx)
 
             indices = topk_iou_indices[i]
@@ -151,8 +150,8 @@ class YOLOBoxScoreTarget2():
             filtered_indices = output[0,indices,5:].max(dim=1)[1]==class_idx
             indices = indices[filtered_indices]
 
-            class_score = output[0,indices, 5+class_idx].max()
-            confidence = output[0,indices, 4].max()
+            class_score = output[0,indices, 5+class_idx].sum()
+            confidence = output[0,indices, 4].sum()
             score = score + class_score + confidence
         
         return score
