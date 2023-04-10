@@ -151,7 +151,11 @@ class YOLOBoxScoreTarget2():
             
             class_score = output[0,indices, 5+class_idx].sum()
             confidence = output[0,indices, 4].sum()
-            breakpoint()
+            x1 = output[0,indices,0].sum()
+            y1 = output[0,indices,1].sum()
+            x2 = output[0,indices,2].sum()
+            y2 = output[0,indices,3].sum()
+            
             if self.backprop == 'class':
                 score = score + class_score 
             elif self.backprop == 'confidence':
