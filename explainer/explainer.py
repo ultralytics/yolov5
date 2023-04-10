@@ -135,7 +135,7 @@ class YOLOBoxScoreTarget2():
          # second: number of predictions 
          # third:  predicited bboxes 
         
-        bboxes_processed = xywhn2xyxy(output[:,:,:4],w=640,h=640)
+        bboxes_processed = xywhn2xyxy(output[...,:4],w=640,h=640)
         
         score = torch.tensor([0.0],requires_grad=True)
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:,:4],bboxes_processed[0])
@@ -164,7 +164,7 @@ def extract_CAM(method, model: torch.nn.Module,model_output,image,layer:int,clas
     #targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
 
     bbox = model_output.pandas().xyxy[0]
-    print(bbox)
+    print(image.shape)
     bbox_torch = torch.tensor(bbox.drop('name',axis=1).values)
 
     targets = [YOLOBoxScoreTarget2(objectness_threshold=objectness_score,
