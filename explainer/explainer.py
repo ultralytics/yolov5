@@ -181,7 +181,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, u
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name',axis=1).values)
 
-    backprop_array = ['x1','y1','x2','y2']
+    backprop_array = ['class','confidence']
     final_cam = None
     for item in backprop_array:
         targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item)]
