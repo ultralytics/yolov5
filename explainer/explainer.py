@@ -149,8 +149,8 @@ class YOLOBoxScoreTarget2():
             indices = topk_iou_indices[i]
             
             class_score = output[0,indices, 5+class_idx]
-            print(class_score)
-            score = score + class_score.topk(k=5)[0].sum()
+            confidence = output[0,indices, 4]
+            score = score + (class_score+confidence).topk(k=5)[0].sum()
         
         return score
 
