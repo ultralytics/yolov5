@@ -148,9 +148,10 @@ class YOLOBoxScoreTarget2():
 
             indices = topk_iou_indices[i]
             
-            class_score = output[0,indices, 5+class_idx]
+            class_score = output[0,:, 5:]
+            breakpoint()
             confidence = output[0,indices, 4]
-            score = score + confidence.max()*class_score.max()
+            score = score + 1
         
         return score
 
