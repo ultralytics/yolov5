@@ -147,11 +147,13 @@ class YOLOBoxScoreTarget2():
             class_idx = int(class_idx)
 
             indices = topk_iou_indices[i]
-            
-            class_score = output[0,:, 5:]
-            breakpoint()
-            confidence = output[0,indices, 4]
-            score = score + 1
+            # I want to select only the relevant classes
+            filtered_indices = output[0,indices,5:].max(dim=1)[1]==class_idx
+            indices = indices[filtered_indices]
+
+            class_score = output[0,indices, 5+class_idx].sum()
+            confidence = output[0,indices, 4].sum()
+            score = score + class_score + confidence
         
         return score
 
