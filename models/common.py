@@ -871,8 +871,9 @@ class Classify(nn.Module):
 
 
 class SE_Block(nn.Module):
+
     def __init__(self, c1, c2, ratio=16):
-        super(SE_Block, self).__init__()
+        super().__init__()
         # c*1*1
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.l1 = nn.Linear(c1, c1 // ratio, bias=False)
@@ -889,6 +890,7 @@ class SE_Block(nn.Module):
         y = self.sig(y)
         y = y.view(b, c, 1, 1)
         return x * y.expand_as(x)
+
 
 # class SE_Block(nn.Module):
 #     def __init__(self, c1, c2):
