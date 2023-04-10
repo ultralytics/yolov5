@@ -184,7 +184,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, u
                 reshape_transform=yolo_reshape_transform, **kwargs)
         grayscale_cam= cam(image,targets=targets)
         grayscale_cam = grayscale_cam[0, :]
-        if final_cam:
+        if final_cam is not None:
             final_cam = (final_cam + grayscale_cam) / 2
         else:
             final_cam = grayscale_cam 
