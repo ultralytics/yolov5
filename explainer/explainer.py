@@ -34,6 +34,7 @@ from utils.dataloaders import LoadImages,IMG_FORMATS, VID_FORMATS
 from utils.general import check_img_size,xywh2xyxy
 
 
+
 def yolo_reshape_transform(x):
     """
     The backbone outputs different tensors with different spatial sizes, from the FPN.
@@ -137,6 +138,7 @@ class YOLOBoxScoreTarget2():
         topk_iou_values, topk_iou_indices=iou_scores.topk(k=50,dim=-1) # get top 10 similar boxes for each of them 
 
         score = torch.tensor([0.0],requires_grad=True)
+        
         for i,(x1,y1,x2,y2,confidence,class_idx) in enumerate(self.predicted_bbox):
             # bbox format: x1, y1, x2, y2, confidence, class_idx
             class_idx = int(class_idx)
@@ -149,7 +151,8 @@ class YOLOBoxScoreTarget2():
             class_score = output[0,indices, 5+class_idx].sum()
             confidence = 0#output[0,indices, 4].sum()
             score = score + class_score + confidence
-        
+            print(f"class_score: {class_score}, confidence: {confidence}")
+
         return score
 
 
@@ -161,8 +164,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, u
     targets = [YOLOBoxScoreTarget(classes=predicted_bbox['class'].values)]
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name',axis=1).values)
-
-    #targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch)]
+    targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch)]
     
     cam = method(model, target_layers, use_cuda=use_cuda, 
             reshape_transform=yolo_reshape_transform, **kwargs)
