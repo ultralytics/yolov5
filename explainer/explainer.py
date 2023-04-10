@@ -31,7 +31,7 @@ from utils.torch_utils import select_device
 
 from models.common import DetectMultiBackend, AutoShape
 from utils.dataloaders import LoadImages,IMG_FORMATS, VID_FORMATS
-from utils.general import check_img_size,xywhn2xyxy
+from utils.general import check_img_size,xywh2xyxy
 
 
 def yolo_reshape_transform(x):
@@ -135,11 +135,13 @@ class YOLOBoxScoreTarget2():
          # second: number of predictions 
          # third:  predicited bboxes 
         
-        bboxes_processed = xywhn2xyxy(output[...,:4],w=640,h=640)
+        bboxes_processed = xywh2xyxy(output[...,:4])
         
-        score = torch.tensor([0.0],requires_grad=True)
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:,:4],bboxes_processed[0])
         topk_iou=iou_scores.topk(k=10,dim=-1)
+
+        score = torch.tensor([0.0],requires_grad=True)
+
         breakpoint()
         for bbox in self.predicted_bbox:
             # bbox format: x1, y1, x2, y2, confidence, class_idx
