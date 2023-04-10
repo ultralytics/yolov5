@@ -106,8 +106,9 @@ class YOLOBoxScoreTarget2():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self,predicted_bbox):
+    def __init__(self,predicted_bbox,backprop):
         self.predicted_bbox = predicted_bbox
+        self.backprop = backprop
 
     def __call__(self, output):
         """
@@ -147,13 +148,21 @@ class YOLOBoxScoreTarget2():
             # I want to select only the relevant classes
             filtered_indices = output[0,indices,5:].max(dim=1)[1]==class_idx
             indices = indices[filtered_indices]
-
+            
             class_score = output[0,indices, 5+class_idx].sum()
             confidence = output[0,indices, 4].sum()
-            score = score + class_score + confidence
-            print(f"class_score: {class_score}, confidence: {confidence}")
-            print(output[0,indices, 5+class_idx])
-            print(output[0,indices, 4])
+            if self.backprop == 'class':
+                score = score + class_score 
+            elif self.backprop == 'confidence':
+                score = score + confidence
+            elif self.backprop == 'x1':
+                score = score + x1
+            elif self.backprop == 'y1':
+                score = score + y1
+            elif self.backprop == 'x2':
+                score = score + x2
+            elif self.backprop == 'y2':
+                score = score + y2
 
         return score
 
@@ -163,17 +172,22 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, u
     **kwargs):
     target_layers =[model.model.model.model[layer]]
 
-    targets = [YOLOBoxScoreTarget(classes=predicted_bbox['class'].values)]
+    #targets = [YOLOBoxScoreTarget(classes=predicted_bbox['class'].values)]
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name',axis=1).values)
-    targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch)]
+
+    backprop_array = ['class','confidence']
+    final_cam = None
+    for item in backprop_array:
+        targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item)]
+        cam = method(model, target_layers, use_cuda=use_cuda, 
+                reshape_transform=yolo_reshape_transform, **kwargs)
+        grayscale_cam= cam(image,targets=targets)
+        grayscale_cam = grayscale_cam[0, :]
+        final_cam = (final_cam + grayscale_cam) / 2
     
-    cam = method(model, target_layers, use_cuda=use_cuda, 
-            reshape_transform=yolo_reshape_transform, **kwargs)
-    grayscale_cam= cam(image,targets=targets)
-    grayscale_cam = grayscale_cam[0, :]
     fixed_image = np.array(image[0]).transpose(1,2,0)
-    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
+    cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     return cam_image
