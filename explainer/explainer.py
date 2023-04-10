@@ -143,14 +143,15 @@ class YOLOBoxScoreTarget2():
         score = torch.tensor([0.0],requires_grad=True)
         for i,(x1,y1,x2,y2,confidence,class_idx) in enumerate(self.predicted_bbox):
             # bbox format: x1, y1, x2, y2, confidence, class_idx
+            print(class_idx)
             class_idx = int(class_idx)
 
             indices = topk_iou_indices[i]
             
             class_score = output[0,indices, 5+class_idx]
-            score = score + class_score.topk(k=2)[0].sum()
+            print(class_score)
+            score = score + class_score.topk(k=5)[0].sum()
         
-        print(score)
         return score
 
 
@@ -171,7 +172,6 @@ def extract_CAM(method, model: torch.nn.Module,model_output,image,layer:int,clas
             reshape_transform=yolo_reshape_transform, **kwargs)
     grayscale_cam= cam(image,targets=targets)
     grayscale_cam = grayscale_cam[0, :]
-    print(grayscale_cam.max())
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
