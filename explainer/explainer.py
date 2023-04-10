@@ -150,7 +150,7 @@ class YOLOBoxScoreTarget2():
             
             class_score = output[0,indices, 5+class_idx]
             confidence = output[0,indices, 4]
-            score = score + (confidence).topk(k=5)[0].sum()
+            score = score + confidence.max()
         
         return score
 
