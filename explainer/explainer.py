@@ -31,7 +31,7 @@ from utils.torch_utils import select_device
 
 from models.common import DetectMultiBackend, AutoShape
 from utils.dataloaders import LoadImages,IMG_FORMATS, VID_FORMATS
-from utils.general import check_img_size
+from utils.general import check_img_size,xywhn2xyxy
 
 
 def yolo_reshape_transform(x):
@@ -124,8 +124,8 @@ class YOLOBoxScoreTarget2():
         Here, we take the first item as the second item contains predictions from three heads. Also, each head dimension would be different 
         as we have different dimensions per head. 
 
-        "xc,yc,height, width,objectness, classes"
-        so, the forth item would be objectness and items after fifth element are class indexes
+        "center_x, center_y, width, height,confidence, classes"
+        so, the forth item would be confidence and items after fifth element are class indexes
         """
         if len(output.shape)==2:
             output = torch.unsqueeze(output,dim=0)
@@ -135,13 +135,7 @@ class YOLOBoxScoreTarget2():
          # second: number of predictions 
          # third:  predicited bboxes 
         
-        bboxes = output[:,:,:4] # this is formatted differently as we need. 
-        bboxes_processed = torch.zeros_like(bboxes)
-        x,y,w,h = output[:,:,0],output[:,:,1],output[:,:,2],output[:,:,3]
-        bboxes_processed[:,:,0] = (x-w/2)*640 # image witdth and height
-        bboxes_processed[:,:,1] = (y-h/2)*640
-        bboxes_processed[:,:,2] = (x+w/2)*640
-        bboxes_processed[:,:,3] = (y+h/2)*640
+        bboxes_processed = xywhn2xyxy(output[:,:,:4],w=640,h=640)
         
         score = torch.tensor([0.0],requires_grad=True)
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:,:4],bboxes_processed[0])
