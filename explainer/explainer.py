@@ -348,7 +348,8 @@ def run(
         _ = model(im) 
         # here we use the output from autoshaped model since we need to know bbox information
 
-        cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox,classes=class_idx,backward_per_class, image=im, layer=layer, 
+        cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox,classes=class_idx,
+                            backward_per_class=backward_per_class, image=im, layer=layer, 
                     use_cuda=use_cuda, backprop_array=backprop_array)
 
         # for now, we only support one image at a time
