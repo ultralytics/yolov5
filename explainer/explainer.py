@@ -107,9 +107,10 @@ class YOLOBoxScoreTarget2():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self,predicted_bbox,backprop):
+    def __init__(self,predicted_bbox,backprop,classes):
         self.predicted_bbox = predicted_bbox
         self.backprop = backprop
+        self.classes = classes
 
     def __call__(self, output):
         """
@@ -145,6 +146,9 @@ class YOLOBoxScoreTarget2():
             # bbox format: x1, y1, x2, y2, confidence, class_idx
             class_idx = int(class_idx)
 
+            if class_idx not in self.classes:
+                continue
+
             indices = topk_iou_indices[i]
             # I want to select only the relevant classes
             filtered_indices = output[0,indices,5:].max(dim=1)[1]==class_idx
@@ -161,7 +165,7 @@ class YOLOBoxScoreTarget2():
             if self.backprop == 'class':
                 score = score + class_score
             elif self.backprop == 'confidence':
-                score = score + torch.log(confidence)
+                score = score + confidence
             elif self.backprop == 'x_c':
                 score = score + torch.log(x_c)
             elif self.backprop == 'y_c':
@@ -175,18 +179,22 @@ class YOLOBoxScoreTarget2():
 
 
 
-def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, use_cuda:bool,
+def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,image,layer:int, use_cuda:bool,
     **kwargs):
+    # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
+    if classes is None or len(classes) == 0:
+        classes = predicted_bbox['class'].values
+
     target_layers =[model.model.model.model[layer]]
 
-    #targets = [YOLOBoxScoreTarget(classes=predicted_bbox['class'].values)]
+    #targets = [YOLOBoxScoreTarget(classes=classes)]
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name',axis=1).values)
 
     backprop_array = ['class']
     cam_array = []
     for item in backprop_array:
-        targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item)]
+        targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item,classes=classes)]
         cam = method(model, target_layers, use_cuda=use_cuda, 
                 reshape_transform=yolo_reshape_transform, **kwargs)
         grayscale_cam= cam(image,targets=targets)
@@ -201,7 +209,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, u
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     return cam_image
 
-def explain(method:str, raw_model,predicted_bbox,image,layer:int,use_cuda:bool):
+def explain(method:str, raw_model,predicted_bbox,classes,image,layer:int,use_cuda:bool):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -238,7 +246,7 @@ def explain(method:str, raw_model,predicted_bbox,image,layer:int,use_cuda:bool):
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,image,layer,use_cuda, **extra_arguments)
+    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,classes,image,layer,use_cuda, **extra_arguments)
     return cam_image
 
 
@@ -264,6 +272,7 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         method='EigenCAM', # the method for interpreting the results
         layer=-2 ,
+        class_names= None, # list of class names to use for CAM methods
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         nosave=False,  # do not save images/videos
@@ -293,6 +302,11 @@ def run(
     # model.eval() # not sure about this! 
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
+     # reverse key,values pairs since we to index with reverse 
+    model_classes =dict((v,k) for k,v in model.names.items())
+    class_idx = [model_classes[item] for item in class_names]
+
+
     for _, im, _,_,_ in dataset:
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
@@ -309,7 +323,7 @@ def run(
         _ = model(im) 
         # here we use the output from autoshaped model since we need to know bbox information
 
-        cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox, image=im, layer=layer, 
+        cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox,classes=class_idx, image=im, layer=layer, 
                     use_cuda=use_cuda)
 
         # for now, we only support one image at a time
