@@ -221,6 +221,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,backward_p
                 cam_array.append(grayscale_cam)
 
     final_cam = sum(cam_array)
+    final_cam = final_cam / final_cam.max()
     
     fixed_image = np.array(image[0]).transpose(1,2,0)
     cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
