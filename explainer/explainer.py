@@ -10,13 +10,10 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import torch
 import torchvision
-import torchvision.transforms as transforms
-from PIL import Image
 from pytorch_grad_cam import (AblationCAM, EigenCAM, EigenGradCAM, FullGrad, GradCAM, GradCAMElementWise,
                               GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
