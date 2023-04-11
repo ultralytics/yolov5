@@ -152,8 +152,8 @@ class YOLOBoxScoreTarget2():
             if len(indices.size()) == 0:
                 continue
 
-            class_score = output[0, indices, 5 + class_idx].sum()
-            confidence = output[0, indices, 4].sum()
+            class_score = output[0, indices, 5 + class_idx].mean()
+            confidence = output[0, indices, 4].mean() 
             x_c = output[0, indices, 0].mean()
             y_c = output[0, indices, 1].mean()
             h = output[0, indices, 2].mean()
