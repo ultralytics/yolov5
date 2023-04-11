@@ -9,7 +9,7 @@ or:         from explainer import run; run(source='data/images/zidane.jpg') --ve
 import argparse
 import os
 import sys
-from pathlib import WindowsPath
+from pathlib import Path
 
 import numpy as np
 import torch
