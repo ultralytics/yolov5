@@ -356,7 +356,7 @@ class TFUpsample(keras.layers.Layer):
     # TF version of torch.nn.Upsample()
     def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
         super().__init__()
-        assert scale_factor % 2 == 0, "scale_factor must be multiple of 2"
+        assert scale_factor % 2 == 0, 'scale_factor must be multiple of 2'
         self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * scale_factor, x.shape[2] * scale_factor), mode)
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
         # with default arguments: align_corners=False, half_pixel_centers=False
@@ -371,7 +371,7 @@ class TFConcat(keras.layers.Layer):
     # TF version of torch.concat()
     def __init__(self, dimension=1, w=None):
         super().__init__()
-        assert dimension == 1, "convert only NCHW to NHWC concat"
+        assert dimension == 1, 'convert only NCHW to NHWC concat'
         self.d = 3
 
     def call(self, inputs):
@@ -523,17 +523,17 @@ class AgnosticNMS(keras.layers.Layer):
         selected_boxes = tf.gather(boxes, selected_inds)
         padded_boxes = tf.pad(selected_boxes,
                               paddings=[[0, topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
-                              mode="CONSTANT",
+                              mode='CONSTANT',
                               constant_values=0.0)
         selected_scores = tf.gather(scores_inp, selected_inds)
         padded_scores = tf.pad(selected_scores,
                                paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
-                               mode="CONSTANT",
+                               mode='CONSTANT',
                                constant_values=-1.0)
         selected_classes = tf.gather(class_inds, selected_inds)
         padded_classes = tf.pad(selected_classes,
                                 paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
-                                mode="CONSTANT",
+                                mode='CONSTANT',
                                 constant_values=-1.0)
         valid_detections = tf.shape(selected_inds)[0]
         return padded_boxes, padded_scores, padded_classes, valid_detections
@@ -603,6 +603,6 @@ def main(opt):
     run(**vars(opt))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)

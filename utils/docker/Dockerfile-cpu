@@ -3,7 +3,7 @@
 # Image is CPU-optimized for ONNX, OpenVINO and PyTorch YOLOv5 deployments
 
 # Start FROM Ubuntu image https://hub.docker.com/_/ubuntu
-FROM ubuntu:20.04
+FROM ubuntu:rolling
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
@@ -18,9 +18,9 @@ RUN apt install --no-install-recommends -y python3-pip git zip curl htop libgl1-
 # Install pip packages
 COPY requirements.txt .
 RUN python3 -m pip install --upgrade pip wheel
-RUN pip install --no-cache -r requirements.txt ultralytics albumentations gsutil notebook \
-    coremltools onnx onnx-simplifier onnxruntime tensorflow-cpu tensorflowjs \
-    # openvino-dev \
+RUN pip install --no-cache -r requirements.txt albumentations gsutil notebook \
+    coremltools onnx onnx-simplifier onnxruntime 'openvino-dev>=2022.3' \
+    # tensorflow tensorflowjs \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Create working directory

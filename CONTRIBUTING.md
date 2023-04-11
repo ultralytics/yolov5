@@ -23,13 +23,13 @@ Select `requirements.txt` to update by clicking on it in GitHub.
 
 ### 2. Click 'Edit this file'
 
-Button is in top-right corner.
+The button is in the top-right corner.
 
 <p align="center"><img width="800" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122260844-06f46280-ced4-11eb-9eec-b8a24be519ca.png"></p>
 
 ### 3. Make Changes
 
-Change `matplotlib` version from `3.2.2` to `3.3`.
+Change the `matplotlib` version from `3.2.2` to `3.3`.
 
 <p align="center"><img width="800" alt="PR_step3" src="https://user-images.githubusercontent.com/26833433/122260853-0a87e980-ced4-11eb-9fd2-3650fb6e0842.png"></p>
 
@@ -62,7 +62,7 @@ To allow your work to be integrated as seamlessly as possible, we advise you to:
 If you spot a problem with YOLOv5 please submit a Bug Report!
 
 For us to start investigating a possible problem we need to be able to reproduce it ourselves first. We've created a few
-short guidelines below to help users provide what we need in order to get started.
+short guidelines below to help users provide what we need to get started.
 
 When asking a question, people will be better able to provide help if you provide **code** that they can easily
 understand and use to **reproduce** the problem. This is referred to by community members as creating
@@ -76,14 +76,14 @@ the problem should be:
 In addition to the above requirements, for [Ultralytics](https://ultralytics.com/) to provide assistance your code
 should be:
 
-- ✅ **Current** – Verify that your code is up-to-date with current
+- ✅ **Current** – Verify that your code is up-to-date with the current
   GitHub [master](https://github.com/ultralytics/yolov5/tree/master), and if necessary `git pull` or `git clone` a new
   copy to ensure your problem has not already been resolved by previous commits.
 - ✅ **Unmodified** – Your problem must be reproducible without any modifications to the codebase in this
   repository. [Ultralytics](https://ultralytics.com/) does not provide support for custom code ⚠️.
 
 If you believe your problem meets all of the above criteria, please close this issue and raise a new one using the 🐛
-**Bug Report** [template](https://github.com/ultralytics/yolov5/issues/new/choose) and providing
+**Bug Report** [template](https://github.com/ultralytics/yolov5/issues/new/choose) and provide
 a [minimum reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) to help us better
 understand and diagnose your problem.
 

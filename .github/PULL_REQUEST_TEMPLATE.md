@@ -6,4 +6,8 @@ Thank you for submitting a YOLOv5 🚀 Pull Request! We want to make contributin
 - Provide before and after profiling/inference/training results to help us quantify the improvement your PR provides (if applicable).
 
 Please see our ✅ [Contributing Guide](https://github.com/ultralytics/yolov5/blob/master/CONTRIBUTING.md) for more details.
+
+Note that Copilot will summarize this PR below, do not modify the 'copilot:all' line.
 -->
+
+copilot:all
