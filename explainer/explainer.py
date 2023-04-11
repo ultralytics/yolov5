@@ -181,7 +181,7 @@ class YOLOBoxScoreTarget2():
 
 
 
-def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,image,layer:int, use_cuda:bool,backprop_array
+def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,image,layer:int, use_cuda:bool,backprop_array,
     **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
@@ -217,7 +217,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,image,laye
  
     return cam_image
 
-def explain(method:str, raw_model,predicted_bbox,classes,image,layer:int,use_cuda:bool):
+def explain(method:str, raw_model,predicted_bbox,classes,image,layer:int,use_cuda:bool,backprop_array):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -254,7 +254,7 @@ def explain(method:str, raw_model,predicted_bbox,classes,image,layer:int,use_cud
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,classes,image,layer,use_cuda, **extra_arguments)
+    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,classes,image,layer,use_cuda,backprop_array=backprop_array, **extra_arguments)
     return cam_image
 
 
@@ -281,6 +281,7 @@ def run(
         method='EigenCAM', # the method for interpreting the results
         layer=-2 ,
         class_names= [], # list of class names to use for CAM methods
+        backprop_array = [], # list of items to do backprop! It can be class, confidence, 
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         nosave=False,  # do not save images/videos
@@ -332,7 +333,7 @@ def run(
         # here we use the output from autoshaped model since we need to know bbox information
 
         cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox,classes=class_idx, image=im, layer=layer, 
-                    use_cuda=use_cuda)
+                    use_cuda=use_cuda, backprop_array=backprop_array)
 
         # for now, we only support one image at a time
         # then we should save the image in a file
