@@ -10,6 +10,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import torch
@@ -174,15 +175,15 @@ class YOLOBoxScoreTarget2():
 
 
 
-def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, use_cuda:bool,
+def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:List[int], use_cuda:bool,
     **kwargs):
-    target_layers =[model.model.model.model[layer]]
+    target_layers =[model.model.model.model[layer],model.model.model.model[layer-1]]
 
     #targets = [YOLOBoxScoreTarget(classes=predicted_bbox['class'].values)]
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name',axis=1).values)
 
-    backprop_array = ['x2','y2']
+    backprop_array = ['class']
     cam_array = []
     for item in backprop_array:
         targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item)]
