@@ -156,6 +156,7 @@ class YOLOBoxScoreTarget2():
             
             class_score = output[0,indices, 5+class_idx].sum()
             confidence = output[0,indices, 4].sum()
+            print(output[0,indices, 0])
             x_c = output[0,indices,0].max()
             y_c = output[0,indices,1].max()
             h = output[0,indices,2].max()
