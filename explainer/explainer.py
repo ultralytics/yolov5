@@ -150,12 +150,12 @@ class YOLOBoxScoreTarget2():
             filtered_indices = output[0,indices,5:].max(dim=1)[1]==class_idx
             indices = indices[filtered_indices]
             
-            class_score = output[0,indices, 5+class_idx].sum()
-            confidence = output[0,indices, 4].sum()
-            x_c = output[0,indices,0].max()
-            y_c = output[0,indices,1].max()
-            h = output[0,indices,2].max()
-            w = output[0,indices,3].max()
+            class_score = output[0,indices, 5+class_idx].sum(dim=-1)
+            confidence = output[0,indices, 4].sum(dim=-1)
+            x_c = output[0,indices,0].max(dim=-1)
+            y_c = output[0,indices,1].max(dim=-1)
+            h = output[0,indices,2].max(dim=-1)
+            w = output[0,indices,3].max(dim=-1)
             
             #score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
@@ -177,8 +177,7 @@ class YOLOBoxScoreTarget2():
 
 def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:int, use_cuda:bool,
     **kwargs):
-    target_layers =[model.model.model.model[layer].m,model.model.model.model[layer].cv1,
-                    model.model.model.model[layer].cv2,model.model.model.model[layer].cv3]
+    target_layers =[model.model.model.model[layer]]
 
     #targets = [YOLOBoxScoreTarget(classes=predicted_bbox['class'].values)]
 
