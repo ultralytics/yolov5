@@ -10,6 +10,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import torch
@@ -29,9 +30,11 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from utils.general import print_args, check_file
 from utils.torch_utils import select_device
 
-from models.common import DetectMultiBackend
-from utils.dataloaders import LoadImages, IMG_FORMATS, VID_FORMATS
-from utils.general import check_img_size
+from models.common import DetectMultiBackend, AutoShape
+from utils.dataloaders import LoadImages,IMG_FORMATS, VID_FORMATS
+from utils.general import check_img_size,xywh2xyxy
+from utils.plots import Annotator, colors
+
 
 
 def yolo_reshape_transform(x):
@@ -48,19 +51,20 @@ def yolo_reshape_transform(x):
 
 
 class YOLOBoxScoreTarget():
-    """ For every original detected bounding box specified in "bounding boxes",
-        assign a score on how the current bounding boxes match it,
-            1. In IOU
-            2. In the classification score.
-        If there is not a large enough overlap, or the category changed,
-        assign a score of 0.
+    """ This way we see all boxes.
+    then we filter out classes and select the classes that we want to attend to. 
+    At the end, we sum out of all these. 
 
-        The total score is the sum of all the box scores.
+    This is not a standard approach. This is somewhat similar to what 
+    https://github.com/pooya-mohammadi/yolov5-gradcam
+    has done. 
+
+    Here the problem is that we are taking a lot of attention to overlapping boxes.
+    This should not be the case. 
     """
 
-    def __init__(self, classes, objectness_threshold):
+    def __init__(self,classes):
         self.classes = set(classes)
-        self.objectness_threshold = objectness_threshold
 
     def __call__(self, output):
         """
@@ -88,28 +92,149 @@ class YOLOBoxScoreTarget():
         classes = output[:, :, 5:]
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
-            mask[:, :, class_idx] = True
-
-        mask[objectness < self.objectness_threshold] = False
-        score = classes[mask]  # + objectness[mask]
+            mask[:,:, class_idx] = True
+ 
+        score = classes[mask] # + objectness[mask]
         return score.sum()
 
+class YOLOBoxScoreTarget2():
+    """ For every original detected bounding box specified in "bounding boxes",
+        assign a score on how the current bounding boxes match it,
+            1. In IOU
+            2. In the classification score.
+        If there is not a large enough overlap, or the category changed,
+        assign a score of 0.
 
-def extract_CAM(method, model: torch.nn.Module, image, layer: int, classes, objectness_score: float, use_cuda: bool,
-                **kwargs):
-    target_layers = [model.model.model.model[layer]]
-    targets = [YOLOBoxScoreTarget(classes=classes, objectness_threshold=objectness_score)]
-    cam = method(model, target_layers, use_cuda=use_cuda, reshape_transform=yolo_reshape_transform, **kwargs)
-    grayscale_cam = cam(image, targets=targets)
-    grayscale_cam = grayscale_cam[0, :]
-    fixed_image = np.array(image[0]).transpose(1, 2, 0)
-    cam_image = show_cam_on_image(fixed_image, grayscale_cam, use_rgb=True)
+        The total score is the sum of all the box scores.
+    """
+
+    def __init__(self,predicted_bbox,backprop,classes):
+        self.predicted_bbox = predicted_bbox
+        self.backprop = backprop
+        self.classes = classes
+
+    def __call__(self, output):
+        """
+        here we need something which we can call backward
+        https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
+        output structure is taken from this tutorial, it is as follows:
+
+        first item is important, second item contains three arrays which contain prediction from three heads
+        we would use the first array as it is the final prediction.
+        pred = output[0] 
+        Here, we take the first item as the second item contains predictions from three heads. Also, each head dimension would be different 
+        as we have different dimensions per head. 
+
+        "center_x, center_y, width, height,confidence, classes"
+        so, the forth item would be confidence and items after fifth element are class indexes
+        """
+        if len(output.shape)==2:
+            output = torch.unsqueeze(output,dim=0)
+
+        assert len(output.shape) == 3
+         # first dimension would be image index, number of images
+         # second: number of predictions 
+         # third:  predicited bboxes 
+        
+        bboxes_processed = xywh2xyxy(output[...,:4])
+        
+        iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:,:4],bboxes_processed[0])
+        _, topk_iou_indices=iou_scores.topk(k=10,dim=-1) # get top 10 similar boxes for each of them 
+
+        score = torch.tensor([0.0],requires_grad=True)
+        
+        for i,(x1,y1,x2,y2,confidence,class_idx) in enumerate(self.predicted_bbox):
+            # bbox format: x1, y1, x2, y2, confidence, class_idx
+            class_idx = int(class_idx)
+
+            if class_idx not in self.classes:
+                continue
+
+            indices = topk_iou_indices[i]
+            # I want to select only the relevant classes
+            filtered_indices = output[0,indices,5:].max(dim=1)[1]==class_idx
+            indices = indices[filtered_indices]
+            
+            if len(indices.size()) == 0:
+                continue
+
+            class_score = output[0,indices, 5+class_idx].sum()
+            confidence = output[0,indices, 4].sum()
+            x_c = output[0,indices,0].mean()
+            y_c = output[0,indices,1].mean()
+            h = output[0,indices,2].mean()
+            w = output[0,indices,3].mean()
+            
+            #score = score + torch.log(class_score) + torch.log(confidence)
+            if self.backprop == 'class':
+                score = score + torch.log(class_score)
+            elif self.backprop == 'confidence':
+                score = score + torch.log(confidence)
+            elif self.backprop == 'class_confidence':
+                score = score + torch.log(confidence*class_score)
+            elif self.backprop == 'x_c':
+                score = score + torch.log(x_c)
+            elif self.backprop == 'y_c':
+                score = score + torch.log(y_c)
+            elif self.backprop == 'h':
+                score = score + torch.log(h)
+            elif self.backprop == 'w':
+                score = score + torch.log(w)
+            else:
+                raise NotImplementedError("Not implemented")
+
+        return score
+
+
+
+def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,backward_per_class:bool,image,layer:int, use_cuda:bool,backprop_array,
+    **kwargs):
+    # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
+    if not classes:
+        classes = predicted_bbox['class'].values
+
+    target_layers =[model.model.model.model[layer]]
+
+    #targets = [YOLOBoxScoreTarget(classes=classes)]
+
+    bbox_torch = torch.tensor(predicted_bbox.drop('name',axis=1).values)
+
+    if not backprop_array:
+        backprop_array = ['class']
+
+    cam_array = []
+    if not backward_per_class:
+        for item in backprop_array:
+            targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item,classes=classes)]
+            cam = method(model, target_layers, use_cuda=use_cuda, 
+                    reshape_transform=yolo_reshape_transform, **kwargs)
+            grayscale_cam= cam(image,targets=targets)
+            grayscale_cam = grayscale_cam[0, :]
+            cam_array.append(grayscale_cam)
+    else:
+        for class_ in classes:
+            for item in backprop_array:
+                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item,classes=[class_])]
+                cam = method(model, target_layers, use_cuda=use_cuda, 
+                        reshape_transform=yolo_reshape_transform, **kwargs)
+                grayscale_cam= cam(image,targets=targets)
+                grayscale_cam = grayscale_cam[0, :]
+                cam_array.append(grayscale_cam)
+
+    final_cam = sum(cam_array)
+    final_cam = final_cam / final_cam.max()
+    
+    fixed_image = np.array(image[0]).transpose(1,2,0)
+    cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
+    # annotator = Annotator(cam_image)
+    # for *box, conf, cls in bbox_torch:
+    #     annotator.box_label(box,label=, color=colors(cls))
+ 
     return cam_image
 
-
-def explain(method: str, model, image, layer: int, classes, objectness_thres: float, use_cuda: bool):
+def explain(method:str, raw_model,predicted_bbox,classes,backward_per_class,image,layer:int,use_cuda:bool,backprop_array):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -128,8 +253,8 @@ def explain(method: str, model, image, layer: int, classes, objectness_thres: fl
         method_obj = HiResCAM
     # elif method.lower()=='FullGrad'.lower():
     #     method_obj= FullGrad
-    # elif method.lower()=='ScoreCAM'.lower():
-    #     method_obj= ScoreCAM
+    elif method.lower()=='ScoreCAM'.lower():
+        method_obj= ScoreCAM
     # elif method.lower()=='AblationCAM'.lower():
     #     extra_arguments = {
     #         'ablation_layer': None,
@@ -146,12 +271,14 @@ def explain(method: str, model, image, layer: int, classes, objectness_thres: fl
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image = extract_CAM(method_obj, model, image, layer, classes, objectness_thres, use_cuda, **extra_arguments)
+    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,classes,backward_per_class,image,layer,use_cuda,backprop_array=backprop_array, **extra_arguments)
     return cam_image
 
 
 class YoloOutputWrapper(torch.nn.Module):
-
+    """
+    Main purpose of using this method is to eliminate the second argument in YOLO output. 
+    """
     def __init__(self, model):
         super().__init__()
         self.model = model
@@ -169,10 +296,11 @@ def run(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
         source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
-        method='EigenCAM',  # the method for interpreting the results
-        layer=-2,
-        class_names=None,  # list of class names to use for CAM methods
-        objectness_thres=0.1,  # threshold for objectness
+        method='EigenCAM', # the method for interpreting the results
+        layer=-2 ,
+        class_names= [], # list of class names to use for CAM methods
+        backprop_array = [], # list of items to do backprop! It can be class, confidence, 
+        backward_per_class=False, # whether the method should backprop per each class or do it all at one backward
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         nosave=False,  # do not save images/videos
@@ -194,32 +322,38 @@ def run(
     device = select_device(device)
 
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
+
     stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     model.requires_grad_(True)
-    # model.eval() # not sure about this!
+    # model.eval() # not sure about this! 
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
-    # reverse key,values pairs since we to index with reverse
-    model_classes = {v: k for k, v in model.names.items()}
+     # reverse key,values pairs since we to index with reverse 
+    model_classes =dict((v,k) for k,v in model.names.items())
     class_idx = [model_classes[item] for item in class_names]
 
-    for path, im, im0s, vid_cap, s in dataset:
+
+    for _, im, _,_,_ in dataset:
+        processed_output = autoshaped_model(im)
+        predicted_bbox = processed_output.pandas().xyxy[0]
+        #  list of detections, on (n,6) tensor per image [xyxy, conf, cls]
+
         im = torch.from_numpy(im).to(model.device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
-
+        
+        
         model = YoloOutputWrapper(model)
-        _ = model(im)
-        cam_image = explain(method=method,
-                            model=model,
-                            image=im,
-                            layer=layer,
-                            classes=class_idx,
-                            objectness_thres=objectness_thres,
-                            use_cuda=use_cuda)
+        _ = model(im) 
+        # here we use the output from autoshaped model since we need to know bbox information
+
+        cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox,classes=class_idx,
+                            backward_per_class=backward_per_class, image=im, layer=layer, 
+                    use_cuda=use_cuda, backprop_array=backprop_array)
 
         # for now, we only support one image at a time
         # then we should save the image in a file
