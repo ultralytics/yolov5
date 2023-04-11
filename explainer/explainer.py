@@ -138,7 +138,7 @@ class YOLOBoxScoreTarget2():
         bboxes_processed = xywh2xyxy(output[...,:4])
         
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:,:4],bboxes_processed[0])
-        _, topk_iou_indices=iou_scores.topk(k=50,dim=-1) # get top 10 similar boxes for each of them 
+        _, topk_iou_indices=iou_scores.topk(k=10,dim=-1) # get top 10 similar boxes for each of them 
 
         score = torch.tensor([0.0],requires_grad=True)
         
