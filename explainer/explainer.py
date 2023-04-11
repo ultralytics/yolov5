@@ -176,6 +176,8 @@ class YOLOBoxScoreTarget2():
                 score = score + torch.log(h)
             elif self.backprop == 'w':
                 score = score + torch.log(w)
+            else:
+                raise NotImplementedError("Not implemented")
 
         return score
 
