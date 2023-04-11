@@ -33,7 +33,7 @@ from utils.torch_utils import select_device
 from models.common import DetectMultiBackend, AutoShape
 from utils.dataloaders import LoadImages,IMG_FORMATS, VID_FORMATS
 from utils.general import check_img_size,xywh2xyxy
-
+from utils.plots import Annotator, colors
 
 
 def yolo_reshape_transform(x):
@@ -207,6 +207,10 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,image,laye
     cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
     # And lets draw the boxes again:
     #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
+    # annotator = Annotator(cam_image)
+    # for *box, conf, cls in bbox_torch:
+    #     annotator.box_label(box,label=, color=colors(cls))
+ 
     return cam_image
 
 def explain(method:str, raw_model,predicted_bbox,classes,image,layer:int,use_cuda:bool):
