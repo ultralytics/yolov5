@@ -190,9 +190,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,backward_p
     **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
-        classes = list(predicted_bbox['class'].values)
-    if not isinstance(classes, list):
-        classes = [classes]
+        classes = predicted_bbox['class'].values
 
     target_layers =[model.model.model.model[layer]]
 
@@ -215,7 +213,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,backward_p
     else:
         for class_ in classes:
             for item in backprop_array:
-                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item,classes=class_)]
+                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item,classes=[class_])]
                 cam = method(model, target_layers, use_cuda=use_cuda, 
                         reshape_transform=yolo_reshape_transform, **kwargs)
                 grayscale_cam= cam(image,targets=targets)
