@@ -17,8 +17,8 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from PIL import Image
-from pytorch_grad_cam import (AblationCAM, EigenCAM, FullGrad, GradCAM, GradCAMPlusPlus, HiResCAM, ScoreCAM, XGradCAM,
-                              EigenGradCAM, GradCAMElementWise, LayerCAM, RandomCAM)
+from pytorch_grad_cam import (AblationCAM, EigenCAM, EigenGradCAM, FullGrad, GradCAM, GradCAMElementWise,
+                              GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
 FILE = Path(__file__).resolve()
@@ -27,14 +27,10 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from utils.general import print_args, check_file
+from models.common import DetectMultiBackend
+from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
+from utils.general import check_file, check_img_size, print_args
 from utils.torch_utils import select_device
-
-from models.common import DetectMultiBackend, AutoShape
-from utils.dataloaders import LoadImages,IMG_FORMATS, VID_FORMATS
-from utils.general import check_img_size,xywh2xyxy
-from utils.plots import Annotator, colors
-
 
 
 def yolo_reshape_transform(x):
@@ -370,7 +366,7 @@ def parseopt():
     parser.add_argument('--method',
                         type=str,
                         default='EigenCAM',
-                        help="the method to use for interpreting the feature maps")
+                        help='the method to use for interpreting the feature maps')
     parser.add_argument('--verbose', action='store_true', help='verbose log')
 
     opt = parser.parse_args()
