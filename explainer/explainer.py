@@ -154,13 +154,15 @@ class YOLOBoxScoreTarget2():
             filtered_indices = output[0,indices,5:].max(dim=1)[1]==class_idx
             indices = indices[filtered_indices]
             
+            if len(indices.size()) == 0:
+                continue
+
             class_score = output[0,indices, 5+class_idx].sum()
             confidence = output[0,indices, 4].sum()
-            breakpoint()
-            x_c = output[0,indices,0][0]
-            y_c = output[0,indices,1][0]
-            h = output[0,indices,2][0]
-            w = output[0,indices,3][0]
+            x_c = output[0,indices,0].mean()
+            y_c = output[0,indices,1].mean()
+            h = output[0,indices,2].mean()
+            w = output[0,indices,3].mean()
             
             #score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
