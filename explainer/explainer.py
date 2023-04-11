@@ -186,7 +186,7 @@ class YOLOBoxScoreTarget2():
 
 
 
-def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,image,layer:int, use_cuda:bool,backprop_array,
+def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,backward_per_class:bool,image,layer:int, use_cuda:bool,backprop_array,
     **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
@@ -202,13 +202,23 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,image,laye
         backprop_array = ['class']
 
     cam_array = []
-    for item in backprop_array:
-        targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item,classes=classes)]
-        cam = method(model, target_layers, use_cuda=use_cuda, 
-                reshape_transform=yolo_reshape_transform, **kwargs)
-        grayscale_cam= cam(image,targets=targets)
-        grayscale_cam = grayscale_cam[0, :]
-        cam_array.append(grayscale_cam)
+    if not backward_per_class:
+        for item in backprop_array:
+            targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item,classes=classes)]
+            cam = method(model, target_layers, use_cuda=use_cuda, 
+                    reshape_transform=yolo_reshape_transform, **kwargs)
+            grayscale_cam= cam(image,targets=targets)
+            grayscale_cam = grayscale_cam[0, :]
+            cam_array.append(grayscale_cam)
+    else:
+        for class_ in classes:
+            for item in backprop_array:
+                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch,backprop=item,classes=class_)]
+                cam = method(model, target_layers, use_cuda=use_cuda, 
+                        reshape_transform=yolo_reshape_transform, **kwargs)
+                grayscale_cam= cam(image,targets=targets)
+                grayscale_cam = grayscale_cam[0, :]
+                cam_array.append(grayscale_cam)
 
     final_cam = sum(cam_array) / len(cam_array)
     
@@ -222,7 +232,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,image,laye
  
     return cam_image
 
-def explain(method:str, raw_model,predicted_bbox,classes,image,layer:int,use_cuda:bool,backprop_array):
+def explain(method:str, raw_model,predicted_bbox,classes,backward_per_class,image,layer:int,use_cuda:bool,backprop_array):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -259,7 +269,7 @@ def explain(method:str, raw_model,predicted_bbox,classes,image,layer:int,use_cud
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,classes,image,layer,use_cuda,backprop_array=backprop_array, **extra_arguments)
+    cam_image=extract_CAM(method_obj,raw_model,predicted_bbox,classes,backward_per_class,image,layer,use_cuda,backprop_array=backprop_array, **extra_arguments)
     return cam_image
 
 
@@ -287,6 +297,7 @@ def run(
         layer=-2 ,
         class_names= [], # list of class names to use for CAM methods
         backprop_array = [], # list of items to do backprop! It can be class, confidence, 
+        backward_per_class=False, # whether the method should backprop per each class or do it all at one backward
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         nosave=False,  # do not save images/videos
@@ -337,7 +348,7 @@ def run(
         _ = model(im) 
         # here we use the output from autoshaped model since we need to know bbox information
 
-        cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox,classes=class_idx, image=im, layer=layer, 
+        cam_image = explain(method=method,raw_model= model,predicted_bbox=predicted_bbox,classes=class_idx,backward_per_class, image=im, layer=layer, 
                     use_cuda=use_cuda, backprop_array=backprop_array)
 
         # for now, we only support one image at a time
