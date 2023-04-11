@@ -276,7 +276,7 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         method='EigenCAM', # the method for interpreting the results
         layer=-2 ,
-        class_names= None, # list of class names to use for CAM methods
+        class_names= [], # list of class names to use for CAM methods
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         nosave=False,  # do not save images/videos
