@@ -154,8 +154,6 @@ class YOLOBoxScoreTarget2():
             filtered_indices = output[0,indices,5:].max(dim=1)[1]==class_idx
             indices = indices[filtered_indices]
             
-            output[...,5:] = output[...,5:]*output[...,4]
-
             class_score = output[0,indices, 5+class_idx].sum()
             confidence = output[0,indices, 4].sum()
             x_c = output[0,indices,0].max()
@@ -165,7 +163,7 @@ class YOLOBoxScoreTarget2():
             
             #score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
-                score = score + class_score
+                score = score + torch.log(class_score)
             elif self.backprop == 'confidence':
                 score = score + confidence
             elif self.backprop == 'x_c':
