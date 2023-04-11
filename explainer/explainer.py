@@ -26,7 +26,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import AutoShape, DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
-from utils.general import check_file, check_img_size, print_args,xywhn2xyxy
+from utils.general import check_file, check_img_size, print_args,xywh2xyxy
 from utils.torch_utils import select_device
 
 
