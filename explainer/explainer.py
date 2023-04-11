@@ -190,7 +190,7 @@ def extract_CAM(method, model: torch.nn.Module,predicted_bbox,classes,backward_p
     **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
-        classes = predicted_bbox['class'].values
+        classes = list(predicted_bbox['class'].values)
     if not isinstance(classes, list):
         classes = [classes]
 
