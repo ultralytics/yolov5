@@ -23,6 +23,7 @@ Usage - formats:
 import argparse
 import json
 import os
+import subprocess
 import sys
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -42,13 +43,13 @@ import torch.nn.functional as F
 from models.common import DetectMultiBackend
 from models.yolo import SegmentationModel
 from utils.callbacks import Callbacks
-from utils.general import (LOGGER, NUM_THREADS, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
-                           coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
-                           scale_boxes, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size,
+                           check_requirements, check_yaml, coco80_to_coco91_class, colorstr, increment_path,
+                           non_max_suppression, print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
 from utils.segment.dataloaders import create_dataloader
-from utils.segment.general import mask_iou, process_mask, process_mask_upsample, scale_image
+from utils.segment.general import mask_iou, process_mask, process_mask_native, scale_image
 from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
 from utils.segment.plots import plot_images_and_masks
 from utils.torch_utils import de_parallel, select_device, smart_inference_mode
@@ -69,8 +70,8 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
     from pycocotools.mask import encode
 
     def single_encode(x):
-        rle = encode(np.asarray(x[:, :, None], order="F", dtype="uint8"))[0]
-        rle["counts"] = rle["counts"].decode("utf-8")
+        rle = encode(np.asarray(x[:, :, None], order='F', dtype='uint8'))[0]
+        rle['counts'] = rle['counts'].decode('utf-8')
         return rle
 
     image_id = int(path.stem) if path.stem.isnumeric() else path.stem
@@ -104,7 +105,7 @@ def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, over
             gt_masks = gt_masks.repeat(nl, 1, 1)  # shape(1,640,640) -> (n,640,640)
             gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
         if gt_masks.shape[1:] != pred_masks.shape[1:]:
-            gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0]
+            gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode='bilinear', align_corners=False)[0]
             gt_masks = gt_masks.gt_(0.5)
         iou = mask_iou(gt_masks.view(gt_masks.shape[0], -1), pred_masks.view(pred_masks.shape[0], -1))
     else:  # boxes
@@ -159,8 +160,8 @@ def run(
         callbacks=Callbacks(),
 ):
     if save_json:
-        check_requirements(['pycocotools'])
-        process = process_mask_upsample  # more accurate
+        check_requirements('pycocotools>=2.0.6')
+        process = process_mask_native  # more accurate
     else:
         process = process_mask  # faster
 
@@ -230,14 +231,14 @@ def run(
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    s = ('%22s' + '%11s' * 10) % ('Class', 'Images', 'Instances', 'Box(P', "R", "mAP50", "mAP50-95)", "Mask(P", "R",
-                                  "mAP50", "mAP50-95)")
+    s = ('%22s' + '%11s' * 10) % ('Class', 'Images', 'Instances', 'Box(P', 'R', 'mAP50', 'mAP50-95)', 'Mask(P', 'R',
+                                  'mAP50', 'mAP50-95)')
     dt = Profile(), Profile(), Profile()
     metrics = Metrics()
     loss = torch.zeros(4, device=device)
     jdict, stats = [], []
     # callbacks.run('on_val_start')
-    pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+    pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
     for batch_i, (im, targets, paths, shapes, masks) in enumerate(pbar):
         # callbacks.run('on_val_batch_start')
         with dt[0]:
@@ -312,7 +313,7 @@ def run(
 
             pred_masks = torch.as_tensor(pred_masks, dtype=torch.uint8)
             if plots and batch_i < 3:
-                plot_masks.append(pred_masks[:15].cpu())  # filter top 15 to plot
+                plot_masks.append(pred_masks[:15])  # filter top 15 to plot
 
             # Save/log
             if save_txt:
@@ -342,7 +343,7 @@ def run(
 
     # Print results
     pf = '%22s' + '%11i' * 2 + '%11.3g' * 8  # print format
-    LOGGER.info(pf % ("all", seen, nt.sum(), *metrics.mean_results()))
+    LOGGER.info(pf % ('all', seen, nt.sum(), *metrics.mean_results()))
     if nt.sum() == 0:
         LOGGER.warning(f'WARNING ⚠️ no labels found in {task} set, can not compute metrics without labels')
 
@@ -367,8 +368,8 @@ def run(
     # Save JSON
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
-        anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
-        pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
+        anno_json = str(Path('../datasets/coco/annotations/instances_val2017.json'))  # annotations
+        pred_json = str(save_dir / f'{w}_predictions.json')  # predictions
         LOGGER.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
         with open(pred_json, 'w') as f:
             json.dump(jdict, f)
@@ -444,7 +445,7 @@ def main(opt):
 
     else:
         weights = opt.weights if isinstance(opt.weights, list) else [opt.weights]
-        opt.half = True  # FP16 for fastest results
+        opt.half = torch.cuda.is_available() and opt.device != 'cpu'  # FP16 for fastest results
         if opt.task == 'speed':  # speed benchmarks
             # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
             opt.conf_thres, opt.iou_thres, opt.save_json = 0.25, 0.45, False
@@ -461,10 +462,12 @@ def main(opt):
                     r, _, t = run(**vars(opt), plots=False)
                     y.append(r + t)  # results and times
                 np.savetxt(f, y, fmt='%10.4g')  # save
-            os.system('zip -r study.zip study_*.txt')
+            subprocess.run(['zip', '-r', 'study.zip', 'study_*.txt'])
             plot_val_study(x=x)  # plot
+        else:
+            raise NotImplementedError(f'--task {opt.task} not in ("train", "val", "test", "speed", "study")')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)
