@@ -177,7 +177,8 @@ class YOLOBoxScoreTarget2():
 
 def extract_CAM(method, model: torch.nn.Module,predicted_bbox,image,layer:List[int], use_cuda:bool,
     **kwargs):
-    target_layers =[model.model.model.model[layer],model.model.model.model[layer-1]]
+    target_layers =[model.model.model.model[layer],model.model.model.model[layer-1],
+                    model.model.model.model[layer-2],model.model.model.model[layer-3]]
 
     #targets = [YOLOBoxScoreTarget(classes=predicted_bbox['class'].values)]
 
