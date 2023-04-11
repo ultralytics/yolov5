@@ -163,9 +163,11 @@ class YOLOBoxScoreTarget2():
             
             #score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
-                score = score + torch.log(class_score*confidence)
+                score = score + torch.log(class_score)
             elif self.backprop == 'confidence':
-                score = score + confidence
+                score = score + torch.log(confidence)
+            elif self.backprop == 'class_confidence':
+                score = score + torch.log(confidence*class_score)
             elif self.backprop == 'x_c':
                 score = score + torch.log(x_c)
             elif self.backprop == 'y_c':
