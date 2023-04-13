@@ -605,7 +605,7 @@ def main(opt, callbacks=Callbacks()):
 
         # Initialize the population with random values within the search space
 
-        if (initial_values == None):
+        if (initial_values is None):
             population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size - 1)]
         else:
             if (pop_size > 1):
