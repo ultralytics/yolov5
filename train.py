@@ -664,7 +664,7 @@ def main(opt, callbacks=Callbacks()):
                 for j in range(num_bits):
                     if random.uniform(0, 1) < mutation_rate:
                         child[j] += random.uniform(-0.1, 0.1)
-                        child[j] = min(max(child[j], min_range[j]), max_range[j])
+                        child[j] = min(max(child[j], gene_ranges[j]), gene_ranges[j])
                 next_generation.append(child)
             # Replace the old population with the new generation
             population = next_generation
