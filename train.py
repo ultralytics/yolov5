@@ -529,38 +529,38 @@ def main(opt, callbacks=Callbacks()):
         train(opt.hyp, opt, device, callbacks)
 
     # Evolve hyperparameters (optional)
-    else:
-        # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
+        else:
+        # Hyperparameter evolution metadata (including this hyperparameter True-False, lower_limit, upper_limit)
         meta = {
-            'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
-            'lrf': (1, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
-            'momentum': (0.3, 0.6, 0.98),  # SGD momentum/Adam beta1
-            'weight_decay': (1, 0.0, 0.001),  # optimizer weight decay
-            'warmup_epochs': (1, 0.0, 5.0),  # warmup epochs (fractions ok)
-            'warmup_momentum': (1, 0.0, 0.95),  # warmup initial momentum
-            'warmup_bias_lr': (1, 0.0, 0.2),  # warmup initial bias lr
-            'box': (1, 0.02, 0.2),  # box loss gain
-            'cls': (1, 0.2, 4.0),  # cls loss gain
-            'cls_pw': (1, 0.5, 2.0),  # cls BCELoss positive_weight
-            'obj': (1, 0.2, 4.0),  # obj loss gain (scale with pixels)
-            'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
-            'iou_t': (0, 0.1, 0.7),  # IoU training threshold
-            'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
-            'anchors': (2, 2.0, 10.0),  # anchors per output grid (0 to ignore)
-            'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
-            'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
-            'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
-            'hsv_v': (1, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
-            'degrees': (1, 0.0, 45.0),  # image rotation (+/- deg)
-            'translate': (1, 0.0, 0.9),  # image translation (+/- fraction)
-            'scale': (1, 0.0, 0.9),  # image scale (+/- gain)
-            'shear': (1, 0.0, 10.0),  # image shear (+/- deg)
-            'perspective': (0, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
-            'flipud': (1, 0.0, 1.0),  # image flip up-down (probability)
-            'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
-            'mosaic': (1, 0.0, 1.0),  # image mixup (probability)
-            'mixup': (1, 0.0, 1.0),  # image mixup (probability)
-            'copy_paste': (1, 0.0, 1.0)}  # segment copy-paste (probability)
+            'lr0': (False, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
+            'lrf': (False, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
+            'momentum': (False, 0.6, 0.98),  # SGD momentum/Adam beta1
+            'weight_decay': (False, 0.0, 0.001),  # optimizer weight decay
+            'warmup_epochs': (False, 0.0, 5.0),  # warmup epochs (fractions ok)
+            'warmup_momentum': (False, 0.0, 0.95),  # warmup initial momentum
+            'warmup_bias_lr': (False, 0.0, 0.2),  # warmup initial bias lr
+            'box': (False, 0.02, 0.2),  # box loss gain
+            'cls': (False, 0.2, 4.0),  # cls loss gain
+            'cls_pw': (False, 0.5, 2.0),  # cls BCELoss positive_weight
+            'obj': (False, 0.2, 4.0),  # obj loss gain (scale with pixels)
+            'obj_pw': (False, 0.5, 2.0),  # obj BCELoss positive_weight
+            'iou_t': (False, 0.1, 0.7),  # IoU training threshold
+            'anchor_t': (False, 2.0, 8.0),  # anchor-multiple threshold
+            'anchors': (False, 2.0, 10.0),  # anchors per output grid (0 to ignore)
+            'fl_gamma': (False, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
+            'hsv_h': (True, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
+            'hsv_s': (True, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
+            'hsv_v': (True, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
+            'degrees': (True, 0.0, 45.0),  # image rotation (+/- deg)
+            'translate': (True, 0.0, 0.9),  # image translation (+/- fraction)
+            'scale': (True, 0.0, 0.9),  # image scale (+/- gain)
+            'shear': (True, 0.0, 10.0),  # image shear (+/- deg)
+            'perspective': (True, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
+            'flipud': (True, 0.0, 1.0),  # image flip up-down (probability)
+            'fliplr': (True, 0.0, 1.0),  # image flip left-right (probability)
+            'mosaic': (True, 0.0, 1.0),  # image mixup (probability)
+            'mixup': (True, 0.0, 1.0),  # image mixup (probability)
+            'copy_paste': (True, 0.0, 1.0)}  # segment copy-paste (probability)
 
         with open(opt.hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
@@ -578,54 +578,114 @@ def main(opt, callbacks=Callbacks()):
                 'cp',
                 f'gs://{opt.bucket}/evolve.csv',
                 str(evolve_csv),])
+            
+        del_ = []
+        for item in meta.keys():
+            if meta[item][0] == False:
+                del_.append(item)
+        hyp_GA = hyp.copy()
+        for item in del_:
+            del meta[item]
+            del hyp_GA[item]
+            
+        lower_limit = np.array([meta[k][1] for k in hyp_GA.keys()])
+        upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
+        initial_values = list(hyp_GA.values())
+        gene_ranges = []
+        for i in range(len(upper_limit)):
+            gene_ranges.append((lower_limit[i],upper_limit[i]))
+            
 
-        for _ in range(opt.evolve):  # generations to evolve
-            if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
-                # Select parent(s)
-                parent = 'single'  # parent selection method: 'single' or 'weighted'
-                x = np.loadtxt(evolve_csv, ndmin=2, delimiter=',', skiprows=1)
-                n = min(5, len(x))  # number of previous results to consider
-                x = x[np.argsort(-fitness(x))][:n]  # top n mutations
-                w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
-                if parent == 'single' or len(x) == 1:
-                    # x = x[random.randint(0, n - 1)]  # random selection
-                    x = x[random.choices(range(n), weights=w)[0]]  # weighted selection
-                elif parent == 'weighted':
-                    x = (x * w.reshape(n, 1)).sum(0) / w.sum()  # weighted combination
+        # GA config
+        num_bits = len(hyp_GA)
+        pop_size = 75
+        mutation_rate_min = 0.01
+        mutation_rate_max = 0.3
+        min_elite_size = 2
+        max_elite_size = 5
 
-                # Mutate
-                mp, s = 0.8, 0.2  # mutation probability, sigma
-                npr = np.random
-                npr.seed(int(time.time()))
-                g = np.array([meta[k][0] for k in hyp.keys()])  # gains 0-1
-                ng = len(meta)
-                v = np.ones(ng)
-                while all(v == 1):  # mutate until a change occurs (prevent duplicates)
-                    v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
-                for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
-                    hyp[k] = float(x[i + 7] * v[i])  # mutate
+        # Initialize the population with random values within the search space
+        
+        if (initial_values == None):
+            population = [generate_individual(gene_ranges,num_bits) for i in range(pop_size-1)]
+        else:
+            if (pop_size > 1):  
+                population = [generate_individual(gene_ranges,num_bits) for i in range(pop_size-1)]
+                population.append(initial_values)
+            else:
+                population = initial_values
 
-            # Constrain to limits
-            for k, v in meta.items():
-                hyp[k] = max(hyp[k], v[1])  # lower limit
-                hyp[k] = min(hyp[k], v[2])  # upper limit
-                hyp[k] = round(hyp[k], 5)  # significant digits
-
-            # Train mutation
-            results = train(hyp.copy(), opt, device, callbacks)
-            callbacks = Callbacks()
-            # Write mutation results
-            keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
+        # Run the genetic algorithm for a fixed number of generations
+        for generation in range(opt.evolve):
+            # Adaptive elite size
+            elite_size = min_elite_size + int((max_elite_size - min_elite_size) * (generation / opt.evolve))
+            # Evaluate the fitness of each individual in the population
+            fitness_scores = []
+            for individual in population:
+                for key, value in zip(hyp_GA.keys(), individual):
+                    hyp_GA[key] = value
+                hyp.update(hyp_GA)
+                results = train(hyp.copy(), opt, device, callbacks)
+                callbacks = Callbacks()
+                # Write mutation results
+                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
                     'val/obj_loss', 'val/cls_loss')
-            print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
+                print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
+                fitness_scores.append(results[2])
+                
+            # Select the fittest individuals for reproduction using adaptive tournament selection
+            selected_indices = []
+            for i in range(pop_size - elite_size):
+                # Adaptive tournament size
+                tournament_size = max(2, int(10 - (generation / (opt.evolve / 10))))
+                # Perform tournament selection to choose the best individual
+                tournament_indices = random.sample(range(pop_size), tournament_size)
+                tournament_fitness = [fitness_scores[j] for j in tournament_indices]
+                winner_index = tournament_indices[tournament_fitness.index(max(tournament_fitness))]
+                selected_indices.append(winner_index)
 
+            # Add the elite individuals to the selected indices
+            elite_indices = [i for i in range(pop_size) if fitness_scores[i] in sorted(fitness_scores)[-elite_size:]]
+            selected_indices.extend(elite_indices)
+            # Create the next generation through crossover and mutation
+            next_generation = []
+            for i in range(pop_size):
+                parent1_index = selected_indices[random.randint(0, pop_size - 1)]
+                parent2_index = selected_indices[random.randint(0, pop_size - 1)]
+                # Adaptive crossover rate
+                crossover_rate = max(0.5, min(1.0, 1.0 - (generation / opt.evolve)))
+                if random.uniform(0, 1) < crossover_rate:
+                    crossover_point = random.randint(1, num_bits - 1)
+                    child = population[parent1_index][:crossover_point] + population[parent2_index][crossover_point:]
+                else:
+                    child = population[parent1_index]
+                # Adaptive mutation rate
+                mutation_rate = max(mutation_rate_min, min(mutation_rate_max , 0.1 - (generation / opt.evolve)))
+                for j in range(num_bits):
+                    if random.uniform(0, 1) < mutation_rate:
+                        child[j] += random.uniform(-0.1, 0.1)
+                        child[j] = min(max(child[j], min_range[j]), max_range[j])
+                next_generation.append(child)
+            # Replace the old population with the new generation
+            population = next_generation
+        # Print the best solution found
+        best_index = fitness_scores.index(max(fitness_scores))
+        best_individual = population[best_index]
+        print("Best solution found:", best_individual)
         # Plot results
         plot_evolve(evolve_csv)
         LOGGER.info(f'Hyperparameter evolution finished {opt.evolve} generations\n'
                     f"Results saved to {colorstr('bold', save_dir)}\n"
                     f'Usage example: $ python train.py --hyp {evolve_yaml}')
 
+def generate_individual(input_ranges,individual_length):
+    individual = []
+    for i in range(individual_length):
+        lower_bound, upper_bound = input_ranges[i]
+        individual.append(random.uniform(lower_bound, upper_bound))
+    return individual
 
+        
 def run(**kwargs):
     # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
     opt = parse_opt(True)
