@@ -581,7 +581,7 @@ def main(opt, callbacks=Callbacks()):
 
         del_ = []
         for item in meta.keys():
-            if meta[item][0] == False:
+            if meta[item][0] is False:
                 del_.append(item)
         hyp_GA = hyp.copy()
         for item in del_:
