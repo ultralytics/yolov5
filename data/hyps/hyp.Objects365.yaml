@@ -1,4 +1,7 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# Hyperparameters for Objects365 training
+# python train.py --weights yolov5m.pt --data Objects365.yaml --evolve
+# See Hyperparameter Evolution tutorial for details https://github.com/ultralytics/yolov5#tutorials
 
 lr0: 0.00258
 lrf: 0.17

@@ -4,7 +4,7 @@
 # parent
 # ├── yolov5
 # └── datasets
-#     └── VOC  ← downloads here
+#     └── VOC  ← downloads here (2.8 GB)
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
@@ -20,9 +20,27 @@ test: # test images (optional)
   - images/test2007
 
 # Classes
-nc: 20  # number of classes
-names: ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
-        'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']  # class names
+names:
+  0: aeroplane
+  1: bicycle
+  2: bird
+  3: boat
+  4: bottle
+  5: bus
+  6: car
+  7: cat
+  8: chair
+  9: cow
+  10: diningtable
+  11: dog
+  12: horse
+  13: motorbike
+  14: person
+  15: pottedplant
+  16: sheep
+  17: sofa
+  18: train
+  19: tvmonitor
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
@@ -47,32 +65,34 @@ download: |
       w = int(size.find('width').text)
       h = int(size.find('height').text)
 
+      names = list(yaml['names'].values())  # names list
       for obj in root.iter('object'):
           cls = obj.find('name').text
-          if cls in yaml['names'] and not int(obj.find('difficult').text) == 1:
+          if cls in names and int(obj.find('difficult').text) != 1:
               xmlbox = obj.find('bndbox')
               bb = convert_box((w, h), [float(xmlbox.find(x).text) for x in ('xmin', 'xmax', 'ymin', 'ymax')])
-              cls_id = yaml['names'].index(cls)  # class id
+              cls_id = names.index(cls)  # class id
               out_file.write(" ".join([str(a) for a in (cls_id, *bb)]) + '\n')
 
 
   # Download
   dir = Path(yaml['path'])  # dataset root dir
   url = 'https://github.com/ultralytics/yolov5/releases/download/v1.0/'
-  urls = [url + 'VOCtrainval_06-Nov-2007.zip',  # 446MB, 5012 images
-          url + 'VOCtest_06-Nov-2007.zip',  # 438MB, 4953 images
-          url + 'VOCtrainval_11-May-2012.zip']  # 1.95GB, 17126 images
-  download(urls, dir=dir / 'images', delete=False)
+  urls = [f'{url}VOCtrainval_06-Nov-2007.zip',  # 446MB, 5012 images
+          f'{url}VOCtest_06-Nov-2007.zip',  # 438MB, 4953 images
+          f'{url}VOCtrainval_11-May-2012.zip']  # 1.95GB, 17126 images
+  download(urls, dir=dir / 'images', delete=False, curl=True, threads=3)
 
   # Convert
-  path = dir / f'images/VOCdevkit'
+  path = dir / 'images/VOCdevkit'
   for year, image_set in ('2012', 'train'), ('2012', 'val'), ('2007', 'train'), ('2007', 'val'), ('2007', 'test'):
       imgs_path = dir / 'images' / f'{image_set}{year}'
       lbs_path = dir / 'labels' / f'{image_set}{year}'
       imgs_path.mkdir(exist_ok=True, parents=True)
       lbs_path.mkdir(exist_ok=True, parents=True)
 
-      image_ids = open(path / f'VOC{year}/ImageSets/Main/{image_set}.txt').read().strip().split()
+      with open(path / f'VOC{year}/ImageSets/Main/{image_set}.txt') as f:
+          image_ids = f.read().strip().split()
       for id in tqdm(image_ids, desc=f'{image_set}{year}'):
           f = path / f'VOC{year}/JPEGImages/{id}.jpg'  # old img path
           lb_path = (lbs_path / f.name).with_suffix('.txt')  # new label path

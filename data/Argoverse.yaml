@@ -4,7 +4,7 @@
 # parent
 # ├── yolov5
 # └── datasets
-#     └── Argoverse  ← downloads here
+#     └── Argoverse  ← downloads here (31.3 GB)
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
@@ -14,8 +14,15 @@ val: Argoverse-1.1/images/val/  # val images (relative to 'path') 15062 images
 test: Argoverse-1.1/images/test/  # test images (optional) https://eval.ai/web/challenges/challenge-page/800/overview
 
 # Classes
-nc: 8  # number of classes
-names: ['person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic_light',  'stop_sign']  # class names
+names:
+  0: person
+  1: bicycle
+  2: car
+  3: motorcycle
+  4: bus
+  5: truck
+  6: traffic_light
+  7: stop_sign
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
@@ -32,7 +39,7 @@ download: |
       for annot in tqdm(a['annotations'], desc=f"Converting {set} to YOLOv5 format..."):
           img_id = annot['image_id']
           img_name = a['images'][img_id]['name']
-          img_label_name = img_name[:-3] + "txt"
+          img_label_name = f'{img_name[:-3]}txt'
 
           cls = annot['category_id']  # instance class id
           x_center, y_center, width, height = annot['bbox']
@@ -56,7 +63,7 @@ download: |
 
 
   # Download
-  dir = Path('../datasets/Argoverse')  # dataset root dir
+  dir = Path(yaml['path'])  # dataset root dir
   urls = ['https://argoverse-hd.s3.us-east-2.amazonaws.com/Argoverse-HD-Full.zip']
   download(urls, dir=dir, delete=False)
 
