@@ -593,8 +593,7 @@ def main(opt, callbacks=Callbacks()):
         initial_values = list(hyp_GA.values())
         gene_ranges = []
         for i in range(len(upper_limit)):
-            gene_ranges.append((lower_limit[i],upper_limit[i]))
-
+            gene_ranges.append((lower_limit[i], upper_limit[i]))
 
         # GA config
         num_bits = len(hyp_GA)
@@ -607,10 +606,10 @@ def main(opt, callbacks=Callbacks()):
         # Initialize the population with random values within the search space
 
         if (initial_values == None):
-            population = [generate_individual(gene_ranges,num_bits) for i in range(pop_size-1)]
+            population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size - 1)]
         else:
             if (pop_size > 1):
-                population = [generate_individual(gene_ranges,num_bits) for i in range(pop_size-1)]
+                population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size - 1)]
                 population.append(initial_values)
             else:
                 population = initial_values
@@ -628,8 +627,8 @@ def main(opt, callbacks=Callbacks()):
                 results = train(hyp.copy(), opt, device, callbacks)
                 callbacks = Callbacks()
                 # Write mutation results
-                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-                    'val/obj_loss', 'val/cls_loss')
+                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                        'val/box_loss', 'val/obj_loss', 'val/cls_loss')
                 print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
                 fitness_scores.append(results[2])
 
@@ -660,7 +659,7 @@ def main(opt, callbacks=Callbacks()):
                 else:
                     child = population[parent1_index]
                 # Adaptive mutation rate
-                mutation_rate = max(mutation_rate_min, min(mutation_rate_max , 0.1 - (generation / opt.evolve)))
+                mutation_rate = max(mutation_rate_min, min(mutation_rate_max, 0.1 - (generation / opt.evolve)))
                 for j in range(num_bits):
                     if random.uniform(0, 1) < mutation_rate:
                         child[j] += random.uniform(-0.1, 0.1)
@@ -678,7 +677,8 @@ def main(opt, callbacks=Callbacks()):
                     f"Results saved to {colorstr('bold', save_dir)}\n"
                     f'Usage example: $ python train.py --hyp {evolve_yaml}')
 
-def generate_individual(input_ranges,individual_length):
+
+def generate_individual(input_ranges, individual_length):
     individual = []
     for i in range(individual_length):
         lower_bound, upper_bound = input_ranges[i]
