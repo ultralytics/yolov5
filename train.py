@@ -529,7 +529,7 @@ def main(opt, callbacks=Callbacks()):
         train(opt.hyp, opt, device, callbacks)
 
     # Evolve hyperparameters (optional)
-        else:
+    else:
         # Hyperparameter evolution metadata (including this hyperparameter True-False, lower_limit, upper_limit)
         meta = {
             'lr0': (False, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
