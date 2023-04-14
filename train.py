@@ -590,9 +590,9 @@ def main(opt, callbacks=Callbacks()):
 
         lower_limit = np.array([meta[k][1] for k in hyp_GA.keys()])
         upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
-        
+
         # You can add multiply initial_value here
-        initial_values = list(hyp_GA.values())  
+        initial_values = list(hyp_GA.values())
 
         gene_ranges = []
         for i in range(len(upper_limit)):
