@@ -590,7 +590,9 @@ def main(opt, callbacks=Callbacks()):
 
         lower_limit = np.array([meta[k][1] for k in hyp_GA.keys()])
         upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
-        initial_values = list(hyp_GA.values())
+        
+        initial_values = list(hyp_GA.values()) #You can add multiply initial_value in here
+        
         gene_ranges = []
         for i in range(len(upper_limit)):
             gene_ranges.append((lower_limit[i], upper_limit[i]))
@@ -598,18 +600,22 @@ def main(opt, callbacks=Callbacks()):
         # GA config
         num_bits = len(hyp_GA)
         pop_size = 75
+        
         mutation_rate_min = 0.01
-        mutation_rate_max = 0.3
+        mutation_rate_max = 0.5
+        crossover_rate_min = 0.5
+        crossover_rate_max = 1.0
+        
         min_elite_size = 2
         max_elite_size = 5
 
         # Initialize the population with random values within the search space
 
         if (initial_values is None):
-            population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size - 1)]
+            population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size)]
         else:
             if (pop_size > 1):
-                population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size - 1)]
+                population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size - len(initial_values))]
                 population.append(initial_values)
             else:
                 population = initial_values
@@ -652,7 +658,7 @@ def main(opt, callbacks=Callbacks()):
                 parent1_index = selected_indices[random.randint(0, pop_size - 1)]
                 parent2_index = selected_indices[random.randint(0, pop_size - 1)]
                 # Adaptive crossover rate
-                crossover_rate = max(0.5, min(1.0, 1.0 - (generation / opt.evolve)))
+                crossover_rate = max(crossover_rate_min, min(crossover_rate_max, 1.0 - (generation / opt.evolve)))
                 if random.uniform(0, 1) < crossover_rate:
                     crossover_point = random.randint(1, num_bits - 1)
                     child = population[parent1_index][:crossover_point] + population[parent2_index][crossover_point:]
