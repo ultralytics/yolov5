@@ -62,6 +62,7 @@ from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_devi
                                smart_resume, torch_distributed_zero_first)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
+# 获取一个环境变量，如果不存在，则返回None。可选的第二个参数可以指定备用默认值。键，默认值和结果为str
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 GIT_INFO = check_git_info()

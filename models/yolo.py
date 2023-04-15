@@ -164,6 +164,10 @@ class BaseModel(nn.Module):
 
 class DetectionModel(BaseModel):
     # YOLOv5 detection model
+    # cfg: 可以是字典，也可以是yaml文件路径
+    # ch：输入通道数
+    # nc：类的个数
+    # anchors：所有的anchor列表
     def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
         super().__init__()
         if isinstance(cfg, dict):
@@ -175,6 +179,7 @@ class DetectionModel(BaseModel):
                 self.yaml = yaml.safe_load(f)  # model dict
 
         # Define model
+        # ch: 输入通道数。 假如self.yaml有键‘ch’，则将该键对应的值赋给内部变量ch。假如没有‘ch’，则将形参ch赋给内部变量ch
         ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
         if nc and nc != self.yaml['nc']:
             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
