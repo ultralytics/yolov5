@@ -60,14 +60,14 @@ def run(
         imgsz=(640, 640),  # inference size (height, width)
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
-        max_det=1000,  # maximum detections per image
+        max_det=1000,  # maximum detections per image# 一张图片上检测的最大目标数量
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        view_img=False,  # show results
+        view_img=False,  # show results# 是否在推理时预览图片
         save_txt=False,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
         nosave=False,  # do not save images/videos
-        classes=None,  # filter by class: --class 0, or --class 0 2 3
+        classes=None,  # filter by class: --class 0, or --class 0 2 3# 过滤指定类的预测结果
         agnostic_nms=False,  # class-agnostic NMS
         augment=False,  # augmented inference
         visualize=False,  # visualize features
@@ -75,86 +75,126 @@ def run(
         project=ROOT / 'runs/detect',  # save results to project/name
         name='exp',  # save results to project/name
         exist_ok=False,  # existing project/name ok, do not increment
-        line_thickness=3,  # bounding box thickness (pixels)
-        hide_labels=False,  # hide labels
-        hide_conf=False,  # hide confidences
+        line_thickness=3,  # bounding box thickness (pixels)# 绘制Bounding_box的线宽度
+        hide_labels=False,  # hide labels# True: 隐藏置信度
+        hide_conf=False,  # hide confidences# True: 隐藏置信度
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
 ):
-    source = str(source)
+    source = str(source) # 是否需要保存图片,如果nosave(传入的参数)为false且source的结尾不是txt则保存图片
+    # 后面这个source.endswith('.txt')也就是source以.txt结尾，不过我不清楚这是什么用法
     save_img = not nosave and not source.endswith('.txt')  # save inference images
-    is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
-    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
-    webcam = source.isnumeric() or source.endswith('.streams') or (is_url and not is_file)
+    is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)  # 而IMG_FORMATS 和 VID_FORMATS两个变量保存的是所有的视频和图片的格式后缀
+    # 判断source是不是视频/图像文件路径
+    # 假如source是"D://YOLOv5/data/1.jpg"，则Path(source).suffix是".jpg",Path(source).suffix[1:]是"jpg"
+
+    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))  # 判断source是否是链接
+    webcam = source.isnumeric() or source.endswith('.streams') or (is_url and not is_file)  # 判断是source是否是摄像头
     screenshot = source.lower().startswith('screen')
     if is_url and is_file:
-        source = check_file(source)  # download
+        source = check_file(source)  # download  # 如果source是一个指向图片/视频的链接,则下载输入数据
 
     # Directories
-    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-    (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run  # save_dir是保存运行结果的文件夹名，是通过递增的方式来命名的。
+    # 第一次运行时路径是“runs\detect\exp”，第二次运行时路径是“runs\detect\exp1”
+    (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir  # 根据前面生成的路径创建文件夹
 
     # Load model
-    device = select_device(device)
+    device = select_device(device)# select_device方法定义在utils.torch_utils模块中，返回值是torch.device对象，
+    # 也就是推理时所使用的硬件资源。输入值如果是数字，表示GPU序号。也可是输入‘cpu’，表示使用CPU训练，默认是cpu
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    # DetectMultiBackend定义在models.common模块中，是我们要加载的网络，其中weights参数就是输入时指定的权重文件（比如yolov5s.pt）
     stride, names, pt = model.stride, model.names, model.pt
+    # stride：推理时所用到的步长，默认为32， 大步长适合于大目标，小步长适合于小目标
+    # names：保存推理结果名的列表，比如默认模型的值是['person', 'bicycle', 'car', ...]
+    # pt: 加载的是否是pytorch模型（也就是pt格式的文件），
+
     imgsz = check_img_size(imgsz, s=stride)  # check image size
+    # 将图片大小调整为步长的整数倍
+    # 比如假如步长是10，imagesz是[100,101],则返回值是[100,100]
 
     # Dataloader
     bs = 1  # batch_size
-    if webcam:
-        view_img = check_imshow(warn=True)
+    if webcam:  # 使用摄像头作为输入
+        view_img = check_imshow(warn=True)  # 检测cv2.imshow()方法是否可以执行，不能执行则抛出异常
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
-        bs = len(dataset)
+        # 加载输入数据流
+        # source：输入数据源 image_size 图片识别前被放缩的大小， stride：识别时的步长，
+        # auto的作用可以看utils.augmentations.letterbox方法，它决定了是否需要将图片填充为正方形，如果auto=True则不需要
+
+        bs = len(dataset)  # batch_size 批大小
     elif screenshot:
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
-    vid_path, vid_writer = [None] * bs, [None] * bs
+    vid_path, vid_writer = [None] * bs, [None] * bs  # 用于保存视频,前者是视频路径,后者是一个cv2.VideoWriter对象
 
-    # Run inference
-    model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
+    # Run inference开始预测
+    model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup  # 使用空白图片（零矩阵）预先用GPU跑一遍预测流程，可以加速预测
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    # seen: 已经处理完了多少帧图片
+    # windows: 如果需要预览图片,windows列表会给每个输入文件存储一个路径.
+    # dt: 存储每一步骤的耗时
+
     for path, im, im0s, vid_cap, s in dataset:
-        with dt[0]:
-            im = torch.from_numpy(im).to(model.device)
-            im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
-            im /= 255  # 0 - 255 to 0.0 - 1.0
+        # 在dataset中，每次迭代的返回值是self.sources, img, img0, None, ''
+        # path：文件路径（即source）
+        # im: 处理后的输入图片列表（经过了放缩操作）
+        # im0s: 源输入图片列表
+        # vid_cap
+        # s： 图片的基本信息，比如路径，大小
+
+        with dt[0]:  # 获取当前时间
+            im = torch.from_numpy(im).to(model.device)  #将图片放到指定设备(如GPU)上识别
+            im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32  # 把输入从整型转化为半精度/全精度浮点数。
+            im /= 255  # 0 - 255 to 0.0 - 1.0 #将图片归一化处理（这是图像表示方法的的规范，使用浮点数就要归一化）
             if len(im.shape) == 3:
-                im = im[None]  # expand for batch dim
+                im = im[None]  # expand for batch dim 添加一个第0维。在pytorch的nn.Module的输入中，第0维是batch的大小，这里添加一个1。
 
         # Inference
         with dt[1]:
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
-            pred = model(im, augment=augment, visualize=visualize)
+            # 如果为True则保留推理过程中的特征图，保存在runs文件夹中
+            pred = model(im, augment=augment, visualize=visualize) # 推理结果，pred保存的是所有的bound_box的信息，
 
-        # NMS
+
+        #  NMS
         with dt[2]:
             pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+            # 执行非极大值抑制，返回值为过滤后的预测框
+            # conf_thres： 置信度阈值
+            # iou_thres： iou阈值
+            # classes: 需要过滤的类（数字列表）
+            # agnostic_nms： 标记class-agnostic或者使用class-specific方式。默认为class-agnostic
+            # max_det: 检测框结果的最大数量
 
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
-        for i, det in enumerate(pred):  # per image
+        for i, det in enumerate(pred):  # per image  # 每次迭代处理一张图片，
             seen += 1
             if webcam:  # batch_size >= 1
-                p, im0, frame = path[i], im0s[i].copy(), dataset.count
-                s += f'{i}: '
+                p, im0, frame = path[i], im0s[i].copy(), dataset.count  # frame：此次取的是第几张图片
+                s += f'{i}: '  # s后面拼接一个字符串i
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
+            save_path = str(save_dir / p.name)  # im.jpg  # 推理结果图片保存的路径
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
-            s += '%gx%g ' % im.shape[2:]  # print string
-            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            s += '%gx%g ' % im.shape[2:]  # print string  # 显示推理前裁剪后的图像尺寸
+            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh#得到原图的宽和高
             imc = im0.copy() if save_crop else im0  # for save_crop
+            # 如果save_crop的值为true， 则将检测到的bounding_box单独保存成一张图片。
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+            # 得到一个绘图的类，类中预先存储了原图、线条宽度、类名
+
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
+                # 将标注的bounding_box大小调整为和原图一致（因为训练时原图经过了放缩）
 
                 # Print results
                 for c in det[:, 5].unique():
