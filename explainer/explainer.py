@@ -26,7 +26,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import AutoShape, DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
-from utils.general import check_file, check_img_size, print_args,xywh2xyxy
+from utils.general import check_file, check_img_size, print_args, xywh2xyxy
 from utils.torch_utils import select_device
 
 
@@ -153,7 +153,7 @@ class YOLOBoxScoreTarget2():
                 continue
 
             class_score = output[0, indices, 5 + class_idx].mean()
-            confidence = output[0, indices, 4].mean() 
+            confidence = output[0, indices, 4].mean()
             x_c = output[0, indices, 0].mean()
             y_c = output[0, indices, 1].mean()
             h = output[0, indices, 2].mean()
