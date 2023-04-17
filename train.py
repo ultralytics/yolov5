@@ -598,7 +598,7 @@ def main(opt, callbacks=Callbacks()):
         for i in range(len(upper_limit)):
             gene_ranges.append((lower_limit[i], upper_limit[i]))
 
-        if os.path.isfile(ROOT / opt.evolve_population): 
+        if os.path.isfile(ROOT / opt.evolve_population):
             initial_values = []
             with open(ROOT / opt.evolve_population, errors='ignore') as f:
                 evolve_population = yaml.safe_load(f)
