@@ -5,7 +5,7 @@ YOLO-specific modules
 Usage:
     $ python models/yolo.py --cfg yolov5s.yaml
 """
-
+import timm
 import argparse
 import contextlib
 import os
@@ -21,6 +21,8 @@ if str(ROOT) not in sys.path:
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from models.ODConv.od_resnet import *
+from models.ODConv.od_mobilenetv2 import *
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
@@ -111,6 +113,18 @@ class BaseModel(nn.Module):
     def forward(self, x, profile=False, visualize=False):
         return self._forward_once(x, profile, visualize)  # single-scale inference, train
 
+    # def _forward_once(self, x, profile=False, visualize=False):
+    #     y, dt = [], []  # outputs
+    #     for m in self.model:
+    #         if m.f != -1:  # if not from previous layer
+    #             x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
+    #         if profile:
+    #             self._profile_one_layer(m, x, dt)
+    #         x = m(x)  # run
+    #         y.append(x if m.i in self.save else None)  # save output
+    #         if visualize:
+    #             feature_visualization(x, m.type, m.i, save_dir=visualize)
+    #     return x
     def _forward_once(self, x, profile=False, visualize=False):
         y, dt = [], []  # outputs
         for m in self.model:
@@ -118,12 +132,22 @@ class BaseModel(nn.Module):
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
             if profile:
                 self._profile_one_layer(m, x, dt)
-            x = m(x)  # run
-            y.append(x if m.i in self.save else None)  # save output
+            if hasattr(m, 'backbone'):
+                x = m(x)
+                if len(x) == 4:
+                    x.insert(0, None)
+                for i_idx, i in enumerate(x):
+                    if i_idx in self.save:
+                        y.append(i)
+                    else:
+                        y.append(None)
+                x = x[-1]
+            else:
+                x = m(x)  # run
+                y.append(x if m.i in self.save else None)  # save output
             if visualize:
                 feature_visualization(x, m.type, m.i, save_dir=visualize)
         return x
-
     def _profile_one_layer(self, m, x, dt):
         c = m == self.model[-1]  # is final layer, copy input as inplace fix
         o = thop.profile(m, inputs=(x.copy() if c else x,), verbose=False)[0] / 1E9 * 2 if thop else 0  # FLOPs
@@ -182,24 +206,31 @@ class DetectionModel(BaseModel):
         # ch: 输入通道数。 假如self.yaml有键‘ch’，则将该键对应的值赋给内部变量ch。假如没有‘ch’，则将形参ch赋给内部变量ch
         ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
         if nc and nc != self.yaml['nc']:
+            # 假如yaml中的nc和方法形参中的nc不一致，则覆盖yaml中的nc。
             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
             self.yaml['nc'] = nc  # override yaml value
         if anchors:
             LOGGER.info(f'Overriding model.yaml anchors with anchors={anchors}')
             self.yaml['anchors'] = round(anchors)  # override yaml value
-        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist
+        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist得到模型，以及对应的特征图保存标签。
+        # 所谓的特征图保存标签是一个列表，它的内容可能是[1,5],表示第1、5层前向传播后的特征图需要保存下来，以便跳跃连接使用
+        # 详细解读见2.2
         self.names = [str(i) for i in range(self.yaml['nc'])]  # default names
         self.inplace = self.yaml.get('inplace', True)
 
-        # Build strides, anchors
+        # Build strides, anchors确定步长、步长对应的锚框
         m = self.model[-1]  # Detect()
-        if isinstance(m, (Detect, Segment)):
+        if isinstance(m, (Detect, Segment)):# 如果模型的最后一层是detect模块
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, Segment) else self.forward(x)
             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
-            check_anchor_order(m)
+            check_anchor_order(m)  # anchor的顺序应该是从小到大，这里排一下序
             m.anchors /= m.stride.view(-1, 1, 1)
+            # 得到anchor在实际的特征图中的位置
+            # 因为加载的原始anchor大小是相对于原图的像素，但是经过卷积池化之后，图片也就缩放了
+            # 对于的anchor也需要缩放操作
+
             self.stride = m.stride
             self._initialize_biases()  # only run once
 
@@ -301,6 +332,70 @@ class ClassificationModel(BaseModel):
         self.model = None
 
 
+# def parse_model(d, ch):  # model_dict, input_channels(3)
+#     # Parse a YOLOv5 model.yaml dictionary
+#     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")  # 打印信息，
+#     anchors, nc, gd, gw, act = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('activation')
+#     # 加载字典中的anchors、nc、depth_multiple、width_multiple。
+#     if act:
+#         Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
+#         LOGGER.info(f"{colorstr('activation:')} {act}")  # print
+#     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
+#     # na：anchor的数量number of anchor
+#
+#     # anchors的形式见“1.1 yaml文件解读”，以yolov5s.yaml中定义的为例，
+#     # anchors[0]是第一行的一个anchors，它的长度是6，表示3个w-h对，即3个anchor，这里的na也应当为3
+#
+#     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
+#
+#     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
+#     for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
+#         m = eval(m) if isinstance(m, str) else m  # eval strings
+#         for j, a in enumerate(args):
+#             with contextlib.suppress(NameError):
+#                 args[j] = eval(a) if isinstance(a, str) else a  # eval strings
+#
+#         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
+#         if m in {
+#                 Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
+#                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x}:
+#             c1, c2 = ch[f], args[0]
+#             if c2 != no:  # if not output
+#                 c2 = make_divisible(c2 * gw, 8)
+#
+#             args = [c1, c2, *args[1:]]
+#             if m in {BottleneckCSP, C3, C3TR, C3Ghost, C3x}:
+#                 args.insert(2, n)  # number of repeats
+#                 n = 1
+#         elif m is nn.BatchNorm2d:
+#             args = [ch[f]]
+#         elif m is Concat:
+#             c2 = sum(ch[x] for x in f)
+#         # TODO: channel, gw, gd
+#         elif m in {Detect, Segment}:
+#             args.append([ch[x] for x in f])
+#             if isinstance(args[1], int):  # number of anchors
+#                 args[1] = [list(range(args[1] * 2))] * len(f)
+#             if m is Segment:
+#                 args[3] = make_divisible(args[3] * gw, 8)
+#         elif m is Contract:
+#             c2 = ch[f] * args[0] ** 2
+#         elif m is Expand:
+#             c2 = ch[f] // args[0] ** 2
+#         else:
+#             c2 = ch[f]
+#
+#         m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
+#         t = str(m)[8:-2].replace('__main__.', '')  # module type
+#         np = sum(x.numel() for x in m_.parameters())  # number params
+#         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
+#         LOGGER.info(f'{i:>3}{str(f):>18}{n_:>3}{np:10.0f}  {t:<40}{str(args):<30}')  # print
+#         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
+#         layers.append(m_)
+#         if i == 0:
+#             ch = []
+#         ch.append(c2)
+#     return nn.Sequential(*layers), sorted(save)
 def parse_model(d, ch):  # model_dict, input_channels(3)
     # Parse a YOLOv5 model.yaml dictionary
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
@@ -311,12 +406,20 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
 
+    is_backbone = False
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
     for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
-        m = eval(m) if isinstance(m, str) else m  # eval strings
+        try:
+            t = m
+            m = eval(m) if isinstance(m, str) else m  # eval strings
+        except:
+            pass
         for j, a in enumerate(args):
             with contextlib.suppress(NameError):
-                args[j] = eval(a) if isinstance(a, str) else a  # eval strings
+                try:
+                    args[j] = eval(a) if isinstance(a, str) else a  # eval strings
+                except:
+                    args[j] = a
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in {
@@ -345,19 +448,35 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+        elif isinstance(m, str):
+            t = m
+            m = timm.create_model(m, pretrained=args[0], features_only=True)
+            c2 = m.feature_info.channels()
+        # elif m in {}:
+        #     m = m(*args)
+        #     c2 = m.channel
         else:
             c2 = ch[f]
-
-        m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
-        t = str(m)[8:-2].replace('__main__.', '')  # module type
+        if isinstance(c2, list):
+            is_backbone = True
+            m_ = m
+            m_.backbone = True
+        else:
+            m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
+            t = str(m)[8:-2].replace('__main__.', '')  # module type
         np = sum(x.numel() for x in m_.parameters())  # number params
-        m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
+        m_.i, m_.f, m_.type, m_.np = i + 4 if is_backbone else i, f, t, np  # attach index, 'from' index, type, number params
         LOGGER.info(f'{i:>3}{str(f):>18}{n_:>3}{np:10.0f}  {t:<40}{str(args):<30}')  # print
-        save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
+        save.extend(x % (i + 4 if is_backbone else i) for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
         if i == 0:
             ch = []
-        ch.append(c2)
+        if isinstance(c2, list):
+            ch.extend(c2)
+            if len(c2) == 4:
+                ch.insert(0, 0)
+        else:
+            ch.append(c2)
     return nn.Sequential(*layers), sorted(save)
 
 

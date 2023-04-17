@@ -176,7 +176,8 @@ def run(
         for i, det in enumerate(pred):  # per image  # 每次迭代处理一张图片，
             seen += 1
             if webcam:  # batch_size >= 1
-                p, im0, frame = path[i], im0s[i].copy(), dataset.count  # frame：此次取的是第几张图片
+                p, im0, frame = path[i], im0s[i].copy(), dataset.count
+                # frame：此次取的是第几张图片
                 s += f'{i}: '  # s后面拼接一个字符串i
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
@@ -200,38 +201,46 @@ def run(
                 for c in det[:, 5].unique():
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                    # 打印出所有的预测结果  比如1 person（检测出一个人）
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        # 将坐标转变成x y w h 的形式，并归一化
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+                        # line的形式是： ”类别 x y w h“，假如save_conf为true，则line的形式是：”类别 x y w h 置信度“
                         with open(f'{txt_path}.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                            # 写入对应的文件夹里，路径默认为“runs\detect\exp*\labels”
 
-                    if save_img or save_crop or view_img:  # Add bbox to image
-                        c = int(cls)  # integer class
+                    if save_img or save_crop or view_img:  # Add bbox to image# 给图片添加推理后的bounding_box边框
+                        c = int(cls)  # integer class# 类别标号
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
-                    if save_crop:
+                        # 绘制边框
+                    if save_crop:  # 将预测框内的图片单独保存
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # Stream results
             im0 = annotator.result()
-            if view_img:
+            # im0是绘制好的图片
+            if view_img:  # 如果view_img为true,则显示该图片
                 if platform.system() == 'Linux' and p not in windows:
-                    windows.append(p)
+                    # 如果当前图片/视频的路径不在windows列表里,则说明需要重新为该图片/视频创建一个预览窗口
+                    windows.append(p)  # 标记当前图片/视频已经创建好预览窗口了
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0)
-                cv2.waitKey(1)  # 1 millisecond
+                cv2.imshow(str(p), im0) # 预览图片
+                cv2.waitKey(1)  # 1 millisecond  # 暂停 1 millisecond
 
             # Save results (image with detections)
-            if save_img:
-                if dataset.mode == 'image':
+            if save_img:  # 如果save_img为true,则保存绘制完的图片
+                if dataset.mode == 'image':# 如果是图片,则保存
                     cv2.imwrite(save_path, im0)
-                else:  # 'video' or 'stream'
+                else:  # 'video' or 'stream'# 如果是视频或者"流"
                     if vid_path[i] != save_path:  # new video
+                        # vid_path[i] != save_path,说明这张图片属于一段新的视频,需要重新创建视频文件
                         vid_path[i] = save_path
                         if isinstance(vid_writer[i], cv2.VideoWriter):
                             vid_writer[i].release()  # release previous video writer
@@ -246,13 +255,13 @@ def run(
                     vid_writer[i].write(im0)
 
         # Print time (inference-only)
-        LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
+        LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")  # 打印耗时
 
     # Print results
-    t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
+    t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image平均每张图片所耗费时间
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
     if save_txt or save_img:
-        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
+        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''# 标签保存的路径
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
