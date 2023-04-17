@@ -448,7 +448,10 @@ def parse_opt(known=False):
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')
     parser.add_argument('--noplots', action='store_true', help='save no plot files')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
-    parser.add_argument('--evolve_population', type=str, default=ROOT / 'data/hyps/evolve_population.yaml', help='location for loading population')
+    parser.add_argument('--evolve_population',
+                        type=str,
+                        default=ROOT / 'data/hyps/evolve_population.yaml',
+                        help='location for loading population')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='image --cache ram/disk')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
@@ -580,7 +583,6 @@ def main(opt, callbacks=Callbacks()):
                 f'gs://{opt.bucket}/evolve.csv',
                 str(evolve_csv),])
 
-
         del_ = []
         for item in meta.keys():
             if meta[item][0] is False:
@@ -594,8 +596,7 @@ def main(opt, callbacks=Callbacks()):
         upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
         gene_ranges = []
         for i in range(len(upper_limit)):
-            gene_ranges.append((lower_limit[i],upper_limit[i]))
-
+            gene_ranges.append((lower_limit[i], upper_limit[i]))
 
         try:
             initial_values = []
@@ -616,16 +617,15 @@ def main(opt, callbacks=Callbacks()):
         crossover_rate_max = 1
         min_elite_size = 2
         max_elite_size = 5
-        tournament_size_min=2
-        tournament_size_max=10
-
+        tournament_size_min = 2
+        tournament_size_max = 10
 
         # Initialize the population with random values within the search space
         if (initial_values is None):
-            population = [generate_individual(gene_ranges,num_bits) for i in range(pop_size)]
+            population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size)]
         else:
             if (pop_size > 1):
-                population = [generate_individual(gene_ranges,num_bits) for i in range(pop_size-len(initial_values))]
+                population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size - len(initial_values))]
                 for initial_value in initial_values:
                     population = [initial_value] + population
             else:
@@ -636,9 +636,9 @@ def main(opt, callbacks=Callbacks()):
             save_dict = {}
             for i in range(len(population)):
                 little_dict = {}
-                for j in range(len(population[i])) :
+                for j in range(len(population[i])):
                     little_dict[list_keys[j]] = float(population[i][j])
-                save_dict['gen'+str(generation)+'number'+str(i)] = little_dict
+                save_dict['gen' + str(generation) + 'number' + str(i)] = little_dict
 
             with open(ROOT / 'data/hyps/evolve_population.yaml', 'w') as outfile:
                 yaml.dump(save_dict, outfile, default_flow_style=False)
@@ -653,8 +653,8 @@ def main(opt, callbacks=Callbacks()):
                 results = train(hyp.copy(), opt, device, callbacks)
                 callbacks = Callbacks()
                 # Write mutation results
-                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
-                    'val/obj_loss', 'val/cls_loss')
+                keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                        'val/box_loss', 'val/obj_loss', 'val/cls_loss')
                 print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
                 fitness_scores.append(results[2])
 
@@ -662,7 +662,8 @@ def main(opt, callbacks=Callbacks()):
             selected_indices = []
             for i in range(pop_size - elite_size):
                 # Adaptive tournament size
-                tournament_size = max(max(2,tournament_size_min), int(min(tournament_size_max,pop_size) - (generation / (opt.evolve / 10))))
+                tournament_size = max(max(2, tournament_size_min),
+                                      int(min(tournament_size_max, pop_size) - (generation / (opt.evolve / 10))))
                 # Perform tournament selection to choose the best individual
                 tournament_indices = random.sample(range(pop_size), tournament_size)
                 tournament_fitness = [fitness_scores[j] for j in tournament_indices]
@@ -678,14 +679,16 @@ def main(opt, callbacks=Callbacks()):
                 parent1_index = selected_indices[random.randint(0, pop_size - 1)]
                 parent2_index = selected_indices[random.randint(0, pop_size - 1)]
                 # Adaptive crossover rate
-                crossover_rate = max(crossover_rate_min, min(crossover_rate_max, crossover_rate_max - (generation / opt.evolve)))
+                crossover_rate = max(crossover_rate_min,
+                                     min(crossover_rate_max, crossover_rate_max - (generation / opt.evolve)))
                 if random.uniform(0, 1) < crossover_rate:
                     crossover_point = random.randint(1, num_bits - 1)
                     child = population[parent1_index][:crossover_point] + population[parent2_index][crossover_point:]
                 else:
                     child = population[parent1_index]
                 # Adaptive mutation rate
-                mutation_rate = max(mutation_rate_min, min(mutation_rate_max , mutation_rate_max - (generation / opt.evolve)))
+                mutation_rate = max(mutation_rate_min,
+                                    min(mutation_rate_max, mutation_rate_max - (generation / opt.evolve)))
                 for j in range(num_bits):
                     if random.uniform(0, 1) < mutation_rate:
                         child[j] += random.uniform(-0.1, 0.1)
@@ -703,7 +706,8 @@ def main(opt, callbacks=Callbacks()):
                     f"Results saved to {colorstr('bold', save_dir)}\n"
                     f'Usage example: $ python train.py --hyp {evolve_yaml}')
 
-def generate_individual(input_ranges,individual_length):
+
+def generate_individual(input_ranges, individual_length):
     individual = []
     for i in range(individual_length):
         lower_bound, upper_bound = input_ranges[i]
