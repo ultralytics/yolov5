@@ -598,14 +598,14 @@ def main(opt, callbacks=Callbacks()):
         for i in range(len(upper_limit)):
             gene_ranges.append((lower_limit[i], upper_limit[i]))
 
-        try:
+        if os.path.isfile(ROOT / opt.evolve_population): 
             initial_values = []
             with open(ROOT / opt.evolve_population, errors='ignore') as f:
                 evolve_population = yaml.safe_load(f)
                 for value in evolve_population.values():
                     value = np.array([value[k] for k in hyp_GA.keys()])
                     initial_values.append(list(value))
-        except:
+        else:
             initial_values = [list(hyp_GA.values())]
 
         # GA config
