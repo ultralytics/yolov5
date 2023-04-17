@@ -579,8 +579,8 @@ def main(opt, callbacks=Callbacks()):
                 'cp',
                 f'gs://{opt.bucket}/evolve.csv',
                 str(evolve_csv),])
-            
-            
+
+
         del_ = []
         for item in meta.keys():
             if meta[item][0] is False:
@@ -589,15 +589,15 @@ def main(opt, callbacks=Callbacks()):
         for item in del_:
             del meta[item]
             del hyp_GA[item]
-            
+
         lower_limit = np.array([meta[k][1] for k in hyp_GA.keys()])
         upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
         gene_ranges = []
         for i in range(len(upper_limit)):
             gene_ranges.append((lower_limit[i],upper_limit[i]))
-            
-            
-        try:   
+
+
+        try:
             initial_values = []
             with open(ROOT / opt.evolve_population, errors='ignore') as f:
                 evolve_population = yaml.safe_load(f)
@@ -618,13 +618,13 @@ def main(opt, callbacks=Callbacks()):
         max_elite_size = 5
         tournament_size_min=2
         tournament_size_max=10
-        
+
 
         # Initialize the population with random values within the search space
         if (initial_values is None):
             population = [generate_individual(gene_ranges,num_bits) for i in range(pop_size)]
         else:
-            if (pop_size > 1):  
+            if (pop_size > 1):
                 population = [generate_individual(gene_ranges,num_bits) for i in range(pop_size-len(initial_values))]
                 for initial_value in initial_values:
                     population = [initial_value] + population
@@ -635,10 +635,10 @@ def main(opt, callbacks=Callbacks()):
         for generation in range(opt.evolve):
             save_dict = {}
             for i in range(len(population)):
-                little_dict = {}    
+                little_dict = {}
                 for j in range(len(population[i])) :
                     little_dict[list_keys[j]] = float(population[i][j])
-                save_dict["gen"+str(generation)+"number"+str(i)] = little_dict               
+                save_dict['gen'+str(generation)+'number'+str(i)] = little_dict
 
             with open(ROOT / 'data/hyps/evolve_population.yaml', 'w') as outfile:
                 yaml.dump(save_dict, outfile, default_flow_style=False)
@@ -657,7 +657,7 @@ def main(opt, callbacks=Callbacks()):
                     'val/obj_loss', 'val/cls_loss')
                 print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
                 fitness_scores.append(results[2])
-                
+
             # Select the fittest individuals for reproduction using adaptive tournament selection
             selected_indices = []
             for i in range(pop_size - elite_size):
@@ -696,7 +696,7 @@ def main(opt, callbacks=Callbacks()):
         # Print the best solution found
         best_index = fitness_scores.index(max(fitness_scores))
         best_individual = population[best_index]
-        print("Best solution found:", best_individual)
+        print('Best solution found:', best_individual)
         # Plot results
         plot_evolve(evolve_csv)
         LOGGER.info(f'Hyperparameter evolution finished {opt.evolve} generations\n'
@@ -710,7 +710,7 @@ def generate_individual(input_ranges,individual_length):
         individual.append(random.uniform(lower_bound, upper_bound))
     return individual
 
-        
+
 def run(**kwargs):
     # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
     opt = parse_opt(True)
