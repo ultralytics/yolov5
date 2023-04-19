@@ -224,7 +224,7 @@ class DetectionModel(BaseModel):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, Segment) else self.forward(x)
-            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
+            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(2, ch, s, s))])  # forward之前是 forward(torch.zeros(2, ch, s, s)
             check_anchor_order(m)  # anchor的顺序应该是从小到大，这里排一下序
             m.anchors /= m.stride.view(-1, 1, 1)
             # 得到anchor在实际的特征图中的位置
@@ -452,9 +452,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             t = m
             m = timm.create_model(m, pretrained=args[0], features_only=True)
             c2 = m.feature_info.channels()
-        # elif m in {}:
-        #     m = m(*args)
-        #     c2 = m.channel
+        elif m in {od_resnet18, od_resnet50, od_resnet34, od_resnet101, od_mobilenetv2_050, od_mobilenetv2_075, od_mobilenetv2_100}:
+            m = m(*args)
+            c2 = m.channel
         else:
             c2 = ch[f]
         if isinstance(c2, list):
@@ -482,11 +482,11 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='yolov5s.yaml', help='model.yaml')
-    parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
+    parser.add_argument('--cfg', type=str, default='yolov5-custom.yaml', help='model.yaml')
+    parser.add_argument('--batch-size', type=int, default=2, help='total batch size for all GPUs')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--profile', action='store_true', help='profile model speed')
-    parser.add_argument('--line-profile', action='store_true', help='profile model speed layer by layer')
+    parser.add_argument('--profile', action='store_true', default=True, help='profile model speed')
+    parser.add_argument('--line-profile', action='store_true', default=True, help='profile model speed layer by layer')
     parser.add_argument('--test', action='store_true', help='test all yolo*.yaml')
     opt = parser.parse_args()
     opt.cfg = check_yaml(opt.cfg)  # check YAML
