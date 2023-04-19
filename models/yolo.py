@@ -5,7 +5,6 @@ YOLO-specific modules
 Usage:
     $ python models/yolo.py --cfg yolov5s.yaml
 """
-import timm
 import argparse
 import contextlib
 import os
@@ -14,6 +13,8 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
+import timm
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -21,10 +22,10 @@ if str(ROOT) not in sys.path:
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.ODConv.od_resnet import *
-from models.ODConv.od_mobilenetv2 import *
 from models.common import *
 from models.experimental import *
+from models.ODConv.od_mobilenetv2 import *
+from models.ODConv.od_resnet import *
 from utils.autoanchor import check_anchor_order
 from utils.general import LOGGER, check_version, check_yaml, make_divisible, print_args
 from utils.plots import feature_visualization
@@ -148,6 +149,7 @@ class BaseModel(nn.Module):
             if visualize:
                 feature_visualization(x, m.type, m.i, save_dir=visualize)
         return x
+
     def _profile_one_layer(self, m, x, dt):
         c = m == self.model[-1]  # is final layer, copy input as inplace fix
         o = thop.profile(m, inputs=(x.copy() if c else x,), verbose=False)[0] / 1E9 * 2 if thop else 0  # FLOPs
@@ -220,11 +222,12 @@ class DetectionModel(BaseModel):
 
         # Build strides, anchors确定步长、步长对应的锚框
         m = self.model[-1]  # Detect()
-        if isinstance(m, (Detect, Segment)):# 如果模型的最后一层是detect模块
+        if isinstance(m, (Detect, Segment)):  # 如果模型的最后一层是detect模块
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, Segment) else self.forward(x)
-            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(2, ch, s, s))])  # forward之前是 forward(torch.zeros(2, ch, s, s)
+            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(2, ch, s, s))
+                                     ])  # forward之前是 forward(torch.zeros(2, ch, s, s)
             check_anchor_order(m)  # anchor的顺序应该是从小到大，这里排一下序
             m.anchors /= m.stride.view(-1, 1, 1)
             # 得到anchor在实际的特征图中的位置
@@ -452,7 +455,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             t = m
             m = timm.create_model(m, pretrained=args[0], features_only=True)
             c2 = m.feature_info.channels()
-        elif m in {od_resnet18, od_resnet50, od_resnet34, od_resnet101, od_mobilenetv2_050, od_mobilenetv2_075, od_mobilenetv2_100}:
+        elif m in {
+                od_resnet18, od_resnet50, od_resnet34, od_resnet101, od_mobilenetv2_050, od_mobilenetv2_075,
+                od_mobilenetv2_100}:
             m = m(*args)
             c2 = m.channel
         else:
@@ -467,7 +472,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         np = sum(x.numel() for x in m_.parameters())  # number params
         m_.i, m_.f, m_.type, m_.np = i + 4 if is_backbone else i, f, t, np  # attach index, 'from' index, type, number params
         LOGGER.info(f'{i:>3}{str(f):>18}{n_:>3}{np:10.0f}  {t:<40}{str(args):<30}')  # print
-        save.extend(x % (i + 4 if is_backbone else i) for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
+        save.extend(x % (i + 4 if is_backbone else i) for x in ([f] if isinstance(f, int) else f)
+                    if x != -1)  # append to savelist
         layers.append(m_)
         if i == 0:
             ch = []
