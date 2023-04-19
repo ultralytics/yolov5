@@ -40,6 +40,9 @@ To request an Enterprise License please complete the form at <a href="https://ul
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
+  <a href="https://discord.gg/c9p47D9G" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/ultralytics/blob/fb1a250500e517bf9ec5bfee9dd82e2149754df4/logo-social-discord.png" width="2%" alt="" /></a>
 </div>
 
 </div>
@@ -461,7 +464,7 @@ YOLOv5 is available under two different licenses:
 
 ## <div align="center">Contact</div>
 
-For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues) or the [Ultralytics Community Forum](https://community.ultralytics.com/).
+For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues) or the [Ultralytics Discord Forum](https://discord.gg/c9p47D9G).
 
 <br>
 <div align="center">
@@ -482,6 +485,9 @@ For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https:/
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="3%" alt="" /></a>
+    <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
+  <a href="https://discord.gg/c9p47D9G" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/ultralytics/blob/fb1a250500e517bf9ec5bfee9dd82e2149754df4/logo-social-discord.png" width="3%" alt="" /></a>
 </div>
 
 [tta]: https://github.com/ultralytics/yolov5/issues/303
