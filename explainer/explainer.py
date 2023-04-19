@@ -17,6 +17,7 @@ import torchvision
 from pytorch_grad_cam import (AblationCAM, EigenCAM, EigenGradCAM, FullGrad, GradCAM, GradCAMElementWise,
                               GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
+import torch.nn.functional as F
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -148,21 +149,23 @@ class YOLOBoxScoreTarget2():
                 continue
 
             indices,values = topk_iou_indices[i],topk_iou_values[i]
-            breakpoint()
+
             # I want to select only the relevant classes
             filtered_indices = output[0, indices, 5:].max(dim=1)[1] == class_idx
             indices = indices[filtered_indices]
-
+            values = values[filtered_indices]
 
             if len(indices.size()) == 0:
                 continue
 
-            class_score = output[0, indices, 5 + class_idx].mean()
-            confidence = output[0, indices, 4].mean() 
-            x_c = output[0, indices, 0].mean()
-            y_c = output[0, indices, 1].mean()
-            h = output[0, indices, 2].mean()
-            w = output[0, indices, 3].mean()
+            softmax_result = F.softmax(values)
+
+            class_score = (output[0, indices, 5 + class_idx] * softmax_result).sum()
+            confidence = (output[0, indices, 4] * softmax_result).sum()
+            x_c = (output[0, indices, 0] * softmax_result).sum()
+            y_c = (output[0, indices, 1]* softmax_result).sum()
+            h = (output[0, indices, 2] * softmax_result).sum()
+            w = (output[0, indices, 3] * softmax_result).sum()
 
             #score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
