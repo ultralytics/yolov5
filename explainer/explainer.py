@@ -13,11 +13,11 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import torchvision
 from pytorch_grad_cam import (AblationCAM, EigenCAM, EigenGradCAM, FullGrad, GradCAM, GradCAMElementWise,
                               GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
-import torch.nn.functional as F
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -121,7 +121,7 @@ class YOLOBoxScoreTarget2():
         """
         here we need something which we can call backward
         https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
-        output structure is taken from this tutorial. 
+        output structure is taken from this tutorial.
 
         "center_x, center_y, width, height,confidence, classes"
         so, the forth item would be confidence and items after fifth element are class indexes
@@ -148,7 +148,7 @@ class YOLOBoxScoreTarget2():
             if class_idx not in self.classes:
                 continue
 
-            indices,values = topk_iou_indices[i],topk_iou_values[i]
+            indices, values = topk_iou_indices[i], topk_iou_values[i]
 
             # I want to select only the relevant classes
             filtered_indices = output[0, indices, 5:].max(dim=1)[1] == class_idx
@@ -163,7 +163,7 @@ class YOLOBoxScoreTarget2():
             class_score = (output[0, indices, 5 + class_idx] * softmax_result).sum()
             confidence = (output[0, indices, 4] * softmax_result).sum()
             x_c = (output[0, indices, 0] * softmax_result).sum()
-            y_c = (output[0, indices, 1]* softmax_result).sum()
+            y_c = (output[0, indices, 1] * softmax_result).sum()
             h = (output[0, indices, 2] * softmax_result).sum()
             w = (output[0, indices, 3] * softmax_result).sum()
 
