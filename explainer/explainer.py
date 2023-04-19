@@ -17,6 +17,7 @@ import torchvision
 from pytorch_grad_cam import (AblationCAM, EigenCAM, EigenGradCAM, FullGrad, GradCAM, GradCAMElementWise,
                               GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
+import torch.nn.functional as F
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -103,6 +104,15 @@ class YOLOBoxScoreTarget2():
     """
 
     def __init__(self, predicted_bbox, backprop, classes):
+        """
+        Initializes the YOLOBoxScoreTarget2 module.
+
+        Args:
+            predicted_bbox: A tensor containing the predicted bounding box coordinates,
+                confidence scores, and class indices.
+            backprop: A string indicating which parameter to backpropagate through.
+            classes: A list of class indices to consider.
+        """
         self.predicted_bbox = predicted_bbox
         self.backprop = backprop
         self.classes = classes
@@ -111,13 +121,7 @@ class YOLOBoxScoreTarget2():
         """
         here we need something which we can call backward
         https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
-        output structure is taken from this tutorial, it is as follows:
-
-        first item is important, second item contains three arrays which contain prediction from three heads
-        we would use the first array as it is the final prediction.
-        pred = output[0]
-        Here, we take the first item as the second item contains predictions from three heads. Also, each head dimension would be different
-        as we have different dimensions per head.
+        output structure is taken from this tutorial. 
 
         "center_x, center_y, width, height,confidence, classes"
         so, the forth item would be confidence and items after fifth element are class indexes
@@ -133,7 +137,7 @@ class YOLOBoxScoreTarget2():
         bboxes_processed = xywh2xyxy(output[..., :4])
 
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:, :4], bboxes_processed[0])
-        _, topk_iou_indices = iou_scores.topk(k=10, dim=-1)  # get top 10 similar boxes for each of them
+        topk_iou_values, topk_iou_indices = iou_scores.topk(k=10, dim=-1)  # get top 10 similar boxes for each of them
 
         score = torch.tensor([0.0], requires_grad=True)
 
@@ -144,20 +148,24 @@ class YOLOBoxScoreTarget2():
             if class_idx not in self.classes:
                 continue
 
-            indices = topk_iou_indices[i]
+            indices,values = topk_iou_indices[i],topk_iou_values[i]
+
             # I want to select only the relevant classes
             filtered_indices = output[0, indices, 5:].max(dim=1)[1] == class_idx
             indices = indices[filtered_indices]
+            values = values[filtered_indices]
 
             if len(indices.size()) == 0:
                 continue
 
-            class_score = output[0, indices, 5 + class_idx].mean()
-            confidence = output[0, indices, 4].mean()
-            x_c = output[0, indices, 0].mean()
-            y_c = output[0, indices, 1].mean()
-            h = output[0, indices, 2].mean()
-            w = output[0, indices, 3].mean()
+            softmax_result = F.softmax(values)
+
+            class_score = (output[0, indices, 5 + class_idx] * softmax_result).sum()
+            confidence = (output[0, indices, 4] * softmax_result).sum()
+            x_c = (output[0, indices, 0] * softmax_result).sum()
+            y_c = (output[0, indices, 1]* softmax_result).sum()
+            h = (output[0, indices, 2] * softmax_result).sum()
+            w = (output[0, indices, 3] * softmax_result).sum()
 
             #score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
