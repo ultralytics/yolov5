@@ -1,26 +1,37 @@
+import numpy as np
 import torch
 import torch.nn as nn
+
 from models.ODConv.odconv import ODConv2d
-import numpy as np
 
 __all__ = ['od_resnet18', 'od_resnet34', 'od_resnet50', 'od_resnet101']
 
 
 def odconv3x3(in_planes, out_planes, stride=1, reduction=0.0625, kernel_num=1):
-    return ODConv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1,
-                    reduction=reduction, kernel_num=kernel_num)
+    return ODConv2d(in_planes,
+                    out_planes,
+                    kernel_size=3,
+                    stride=stride,
+                    padding=1,
+                    reduction=reduction,
+                    kernel_num=kernel_num)
 
 
 def odconv1x1(in_planes, out_planes, stride=1, reduction=0.0625, kernel_num=1):
-    return ODConv2d(in_planes, out_planes, kernel_size=1, stride=stride, padding=0,
-                    reduction=reduction, kernel_num=kernel_num)
+    return ODConv2d(in_planes,
+                    out_planes,
+                    kernel_size=1,
+                    stride=stride,
+                    padding=0,
+                    reduction=reduction,
+                    kernel_num=kernel_num)
 
 
 class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, reduction=0.0625, kernel_num=1):
-        super(BasicBlock, self).__init__()
+        super().__init__()
         self.conv1 = odconv3x3(inplanes, planes, stride, reduction=reduction, kernel_num=kernel_num)
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -51,7 +62,7 @@ class Bottleneck(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, reduction=0.0625, kernel_num=1):
-        super(Bottleneck, self).__init__()
+        super().__init__()
         self.conv1 = odconv1x1(inplanes, planes, reduction=reduction, kernel_num=kernel_num)
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = odconv3x3(planes, planes, stride, reduction=reduction, kernel_num=kernel_num)
@@ -85,11 +96,11 @@ class Bottleneck(nn.Module):
 
 
 class OD_ResNet(nn.Module):
+
     def __init__(self, block, layers, num_classes=1000, dropout=0.1, reduction=0.0625, kernel_num=1):
-        super(OD_ResNet, self).__init__()
+        super().__init__()
         self.inplanes = 64
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -109,10 +120,10 @@ class OD_ResNet(nn.Module):
                 nn.init.zeros_(m.bias)
 
         self.channel = [i.size(1) for i in self.forward(torch.randn(2, 3, 640, 640))]
-        
+
     def net_update_temperature(self, temperature):
         for m in self.modules():
-            if hasattr(m, "update_temperature"):
+            if hasattr(m, 'update_temperature'):
                 m.update_temperature(temperature)
 
     def _make_layer(self, block, planes, blocks, stride=1, reduction=0.625, kernel_num=1):
@@ -129,7 +140,7 @@ class OD_ResNet(nn.Module):
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, reduction=reduction, kernel_num=kernel_num))
 
-        return nn.Sequential(*layers) 
+        return nn.Sequential(*layers)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -141,18 +152,21 @@ class OD_ResNet(nn.Module):
         x3 = self.layer2(x2)
         x4 = self.layer3(x3)
         x5 = self.layer4(x4)
-        
+
         return [x1, x2, x3, x4, x5]
+
 
 def update_weight(model_dict, weight_dict):
     idx, temp_dict = 0, {}
     for k, v in weight_dict.items():
-        if k.replace('module.', '') in model_dict.keys() and np.shape(model_dict[k.replace('module.', '')]) == np.shape(v):
+        if k.replace('module.', '') in model_dict.keys() and np.shape(model_dict[k.replace('module.',
+                                                                                           '')]) == np.shape(v):
             temp_dict[k.replace('module.', '')] = v
             idx += 1
     model_dict.update(temp_dict)
     print(f'loading weights... {idx}/{len(model_dict)} items')
     return model_dict
+
 
 def od_resnet18(weights=None, kernel_num=1):
     model = OD_ResNet(BasicBlock, [2, 2, 2, 2], kernel_num=kernel_num)
@@ -161,6 +175,7 @@ def od_resnet18(weights=None, kernel_num=1):
         model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
     return model
 
+
 def od_resnet34(weights=None, kernel_num=1):
     model = OD_ResNet(BasicBlock, [3, 4, 6, 3], kernel_num=kernel_num)
     if weights is not None:
@@ -168,12 +183,14 @@ def od_resnet34(weights=None, kernel_num=1):
         model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
     return model
 
+
 def od_resnet50(weights=None, kernel_num=1):
     model = OD_ResNet(Bottleneck, [3, 4, 6, 3], kernel_num=kernel_num)
     if weights is not None:
         pretrain_weight = torch.load(weights, map_location='cpu')['state_dict']
         model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
     return model
+
 
 def od_resnet101(weights=None, kernel_num=1):
     model = OD_ResNet(Bottleneck, [3, 4, 23, 3], kernel_num=kernel_num)

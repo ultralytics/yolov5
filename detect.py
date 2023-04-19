@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Run YOLOv5 detection inference on images, videos, directories, globs, YouTube, webcam, streams, etc.
 
@@ -48,6 +48,8 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
                            increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
+
+
 # 这些都是用户自定义的库，由于上一步已经把路径加载上了，所以现在可以导入，这个顺序不可以调换。
 #
 # 用的时候再解释这些库/方法的作用
@@ -82,7 +84,7 @@ def run(
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
 ):
-    source = str(source) # 是否需要保存图片,如果nosave(传入的参数)为false且source的结尾不是txt则保存图片
+    source = str(source)  # 是否需要保存图片,如果nosave(传入的参数)为false且source的结尾不是txt则保存图片
     # 后面这个source.endswith('.txt')也就是source以.txt结尾，不过我不清楚这是什么用法
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)  # 而IMG_FORMATS 和 VID_FORMATS两个变量保存的是所有的视频和图片的格式后缀
@@ -96,12 +98,13 @@ def run(
         source = check_file(source)  # download  # 如果source是一个指向图片/视频的链接,则下载输入数据
 
     # Directories
-    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run  # save_dir是保存运行结果的文件夹名，是通过递增的方式来命名的。
+    save_dir = increment_path(Path(project) / name,
+                              exist_ok=exist_ok)  # increment run  # save_dir是保存运行结果的文件夹名，是通过递增的方式来命名的。
     # 第一次运行时路径是“runs\detect\exp”，第二次运行时路径是“runs\detect\exp1”
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir  # 根据前面生成的路径创建文件夹
 
     # Load model
-    device = select_device(device)# select_device方法定义在utils.torch_utils模块中，返回值是torch.device对象，
+    device = select_device(device)  # select_device方法定义在utils.torch_utils模块中，返回值是torch.device对象，
     # 也就是推理时所使用的硬件资源。输入值如果是数字，表示GPU序号。也可是输入‘cpu’，表示使用CPU训练，默认是cpu
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
     # DetectMultiBackend定义在models.common模块中，是我们要加载的网络，其中weights参数就是输入时指定的权重文件（比如yolov5s.pt）
@@ -156,8 +159,7 @@ def run(
         with dt[1]:
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
             # 如果为True则保留推理过程中的特征图，保存在runs文件夹中
-            pred = model(im, augment=augment, visualize=visualize) # 推理结果，pred保存的是所有的bound_box的信息，
-
+            pred = model(im, augment=augment, visualize=visualize)  # 推理结果，pred保存的是所有的bound_box的信息，
 
         #  NMS
         with dt[2]:
@@ -231,12 +233,12 @@ def run(
                     windows.append(p)  # 标记当前图片/视频已经创建好预览窗口了
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0) # 预览图片
+                cv2.imshow(str(p), im0)  # 预览图片
                 cv2.waitKey(1)  # 1 millisecond  # 暂停 1 millisecond
 
             # Save results (image with detections)
             if save_img:  # 如果save_img为true,则保存绘制完的图片
-                if dataset.mode == 'image':# 如果是图片,则保存
+                if dataset.mode == 'image':  # 如果是图片,则保存
                     cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'# 如果是视频或者"流"
                     if vid_path[i] != save_path:  # new video
@@ -261,7 +263,7 @@ def run(
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image平均每张图片所耗费时间
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
     if save_txt or save_img:
-        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''# 标签保存的路径
+        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''  # 标签保存的路径
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)

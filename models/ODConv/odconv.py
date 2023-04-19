@@ -1,12 +1,13 @@
 import torch
+import torch.autograd
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.autograd
 
 
 class Attention(nn.Module):
+
     def __init__(self, in_planes, out_planes, kernel_size, groups=1, reduction=0.0625, kernel_num=4, min_channel=16):
-        super(Attention, self).__init__()
+        super().__init__()
         attention_channel = max(int(in_planes * reduction), min_channel)
         self.kernel_size = kernel_size
         self.kernel_num = kernel_num
@@ -84,9 +85,18 @@ class Attention(nn.Module):
 
 
 class ODConv2d(nn.Module):
-    def __init__(self, in_planes, out_planes, kernel_size, stride=1, padding=0, dilation=1, groups=1,
-                 reduction=0.0625, kernel_num=4):
-        super(ODConv2d, self).__init__()
+
+    def __init__(self,
+                 in_planes,
+                 out_planes,
+                 kernel_size,
+                 stride=1,
+                 padding=0,
+                 dilation=1,
+                 groups=1,
+                 reduction=0.0625,
+                 kernel_num=4):
+        super().__init__()
         self.in_planes = in_planes
         self.out_planes = out_planes
         self.kernel_size = kernel_size
@@ -95,9 +105,13 @@ class ODConv2d(nn.Module):
         self.dilation = dilation
         self.groups = groups
         self.kernel_num = kernel_num
-        self.attention = Attention(in_planes, out_planes, kernel_size, groups=groups,
-                                   reduction=reduction, kernel_num=kernel_num)
-        self.weight = nn.Parameter(torch.randn(kernel_num, out_planes, in_planes//groups, kernel_size, kernel_size),
+        self.attention = Attention(in_planes,
+                                   out_planes,
+                                   kernel_size,
+                                   groups=groups,
+                                   reduction=reduction,
+                                   kernel_num=kernel_num)
+        self.weight = nn.Parameter(torch.randn(kernel_num, out_planes, in_planes // groups, kernel_size, kernel_size),
                                    requires_grad=True)
         self._initialize_weights()
 
@@ -121,10 +135,15 @@ class ODConv2d(nn.Module):
         x = x * channel_attention
         x = x.reshape(1, -1, height, width)
         aggregate_weight = spatial_attention * kernel_attention * self.weight.unsqueeze(dim=0)
-        aggregate_weight = torch.sum(aggregate_weight, dim=1).view(
-            [-1, self.in_planes // self.groups, self.kernel_size, self.kernel_size])
-        output = F.conv2d(x, weight=aggregate_weight, bias=None, stride=self.stride, padding=self.padding,
-                          dilation=self.dilation, groups=self.groups * batch_size)
+        aggregate_weight = torch.sum(aggregate_weight, dim=1).view([
+            -1, self.in_planes // self.groups, self.kernel_size, self.kernel_size])
+        output = F.conv2d(x,
+                          weight=aggregate_weight,
+                          bias=None,
+                          stride=self.stride,
+                          padding=self.padding,
+                          dilation=self.dilation,
+                          groups=self.groups * batch_size)
         output = output.view(batch_size, self.out_planes, output.size(-2), output.size(-1))
         output = output * filter_attention
         return output
@@ -132,8 +151,13 @@ class ODConv2d(nn.Module):
     def _forward_impl_pw1x(self, x):
         channel_attention, filter_attention, spatial_attention, kernel_attention = self.attention(x)
         x = x * channel_attention
-        output = F.conv2d(x, weight=self.weight.squeeze(dim=0), bias=None, stride=self.stride, padding=self.padding,
-                          dilation=self.dilation, groups=self.groups)
+        output = F.conv2d(x,
+                          weight=self.weight.squeeze(dim=0),
+                          bias=None,
+                          stride=self.stride,
+                          padding=self.padding,
+                          dilation=self.dilation,
+                          groups=self.groups)
         output = output * filter_attention
         return output
 
