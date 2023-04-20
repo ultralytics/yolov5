@@ -49,6 +49,7 @@ from utils.general import (
     check_yaml,
     coco80_to_coco91_class,
     colorstr,
+    cv2,
     increment_path,
     non_max_suppression,
     print_args,
@@ -173,7 +174,9 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-        tagged_data=False):
+        tagged_data=False,
+        skip_evaluation=False,
+        save_blurred_image=False):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -245,7 +248,8 @@ def run(
     jdict, stats, ap, ap_class = [], [], [], []
     callbacks.run('on_val_start')
     pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
-    for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
+    for batch_i, (im0, im, targets, paths, shapes) in enumerate(pbar):
+
         callbacks.run('on_val_batch_start')
         if tagged_data:
             confusion_matrix = TaggedConfusionMatrix(nc=nc)
@@ -291,8 +295,14 @@ def run(
             correct = torch.zeros(npr, niou, dtype=torch.bool, device=device)  # init
             seen += 1
 
+            p = Path(path)  # to Path
+            is_wd_path = 'wd' in p.parts
+            relative_path_in_azure_mounted_folder = Path('/'.join(p.parts[p.parts.index('wd') +
+                                                                          2:])) if is_wd_path else None
+            save_path = str(save_dir / (relative_path_in_azure_mounted_folder if is_wd_path else p.name))
+
             if npr == 0:
-                if nl:
+                if nl and not skip_evaluation:
                     stats.append((correct, *torch.zeros((2, 0), device=device), labels[:, 0]))
                     if plots:
                         confusion_matrix.process_batch(detections=None, labels=labels[:, 0])
@@ -302,10 +312,11 @@ def run(
             if single_cls:
                 pred[:, 5] = 0
             predn = pred.clone()
+            pred_clone = pred.clone()
             scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
 
             # Evaluate
-            if nl:
+            if nl and not skip_evaluation:
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                 scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
@@ -332,31 +343,54 @@ def run(
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
+            # ======== SAVE BLURRED ======== #
+            if save_blurred_image:
+                pred_clone[:, :4] = scale_boxes(im.shape[2:], pred_clone[:, :4],
+                                                im0[si].shape).round()  # TODO why not im[si].shape[2:]
+
+                for *xyxy, conf, cls in pred_clone.tolist():
+                    x1, y1 = int(xyxy[0]), int(xyxy[1])
+                    x2, y2 = int(xyxy[2]), int(xyxy[3])
+                    area_to_blur = im0[si][y1:y2, x1:x2]
+
+                    blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
+                    im0[si][y1:y2, x1:x2] = blurred
+
+                folder_path = os.path.dirname(save_path)
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+                if not cv2.imwrite(
+                        save_path,
+                        im0[si],
+                ):
+                    raise Exception(f'Could not write image {os.path.basename(save_path)}')
+                # ======== END SAVE BLURRED ======== #
         # Plot images
-        if plots:
+        if plots and not skip_evaluation:
             plot_images(im, targets, paths, save_dir / f'{path.stem}.jpg', names)  # labels
             plot_images(im, output_to_target(preds), paths, save_dir / f'{path.stem}_pred.jpg', names)  # pred
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
     # Compute metrics
-    stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
-    if len(stats) and stats[0].any():
-        tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
-        ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
-        mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
-    nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
+    if not skip_evaluation:
+        stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
+        if len(stats) and stats[0].any():
+            tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
+            ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
+            mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
+        nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
 
-    # Print results
-    pf = '%22s' + '%11i' * 2 + '%11.3g' * 4  # print format
-    LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
-    if nt.sum() == 0:
-        LOGGER.warning(f'WARNING ⚠️ no labels found in {task} set, can not compute metrics without labels')
+        # Print results
+        pf = '%22s' + '%11i' * 2 + '%11.3g' * 4  # print format
+        LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+        if nt.sum() == 0:
+            LOGGER.warning(f'WARNING ⚠️ no labels found in {task} set, can not compute metrics without labels')
 
-    # Print results per class
-    if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
-        for i, c in enumerate(ap_class):
-            LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+        # Print results per class
+        if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
+            for i, c in enumerate(ap_class):
+                LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
 
     # Print speeds
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
@@ -365,7 +399,7 @@ def run(
         LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
 
     # Plots
-    if plots:
+    if plots and not skip_evaluation:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
         callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
@@ -403,6 +437,8 @@ def run(
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
+    if skip_evaluation:
+        return (mp, mr, map50, map, []), maps, t
     return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
 
@@ -431,6 +467,8 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--tagged-data', action='store_true', help='use tagged validation')
+    parser.add_argument('--skip-evaluation', action='store_true', help='ignore code parts for production')
+    parser.add_argument('--save_blurred_image', action='store_true', help='save blurred images')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
@@ -443,6 +481,8 @@ def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
+        if opt.skip_evaluation:
+            opt.conf_thres, opt.iou_thres = 0.25, 0.45
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
             LOGGER.info(f'WARNING ⚠️ confidence threshold {opt.conf_thres} > 0.001 produces invalid results')
         if opt.save_hybrid:
