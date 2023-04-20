@@ -27,15 +27,36 @@ import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
 from tqdm import tqdm
-from utils.augmentations import (Albumentations, augment_hsv,
-                                 classify_albumentations, classify_transforms,
-                                 copy_paste, letterbox, mixup,
-                                 random_perspective)
-from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, TQDM_BAR_FORMAT,
-                           check_dataset, check_requirements, check_yaml,
-                           clean_str, cv2, is_colab, is_kaggle, segments2boxes,
-                           unzip_file, xyn2xy, xywh2xyxy, xywhn2xyxy,
-                           xyxy2xywhn)
+
+from utils.augmentations import (
+    Albumentations,
+    augment_hsv,
+    classify_albumentations,
+    classify_transforms,
+    copy_paste,
+    letterbox,
+    mixup,
+    random_perspective,
+)
+from utils.general import (
+    DATASETS_DIR,
+    LOGGER,
+    NUM_THREADS,
+    TQDM_BAR_FORMAT,
+    check_dataset,
+    check_requirements,
+    check_yaml,
+    clean_str,
+    cv2,
+    is_colab,
+    is_kaggle,
+    segments2boxes,
+    unzip_file,
+    xyn2xy,
+    xywh2xyxy,
+    xywhn2xyxy,
+    xyxy2xywhn,
+)
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -672,7 +693,7 @@ class LoadImagesAndLabels(Dataset):
         else:
             # Load image
             img, (h0, w0), (h, w) = self.load_image(index)
-
+            im0 = img.copy()
             # Letterbox
             shape = self.batch_shapes[self.batch[index]] if self.rect else self.img_size  # final letterboxed shape
             img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
@@ -727,7 +748,7 @@ class LoadImagesAndLabels(Dataset):
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
-        return torch.from_numpy(img), labels_out, self.im_files[index], shapes
+        return im0, torch.from_numpy(img), labels_out, self.im_files[index], shapes
 
     def load_image(self, i):
         # Loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
@@ -889,14 +910,14 @@ class LoadImagesAndLabels(Dataset):
 
     @staticmethod
     def collate_fn(batch):
-        im, label, path, shapes = zip(*batch)  # transposed
+        im0, im, label, path, shapes = zip(*batch)  # transposed
         for i, lb in enumerate(label):
             lb[:, 0] = i  # add target image index for build_targets()
-        return torch.stack(im, 0), torch.cat(label, 0), path, shapes
+        return im0, torch.stack(im, 0), torch.cat(label, 0), path, shapes
 
     @staticmethod
     def collate_fn4(batch):
-        im, label, path, shapes = zip(*batch)  # transposed
+        im0, im, label, path, shapes = zip(*batch)  # transposed
         n = len(shapes) // 4
         im4, label4, path4, shapes4 = [], [], path[:n], shapes[:n]
 
@@ -918,7 +939,7 @@ class LoadImagesAndLabels(Dataset):
         for i, lb in enumerate(label4):
             lb[:, 0] = i  # add target image index for build_targets()
 
-        return torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4
+        return im0, torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
@@ -1027,9 +1048,9 @@ def verify_image_label(args):
             nl = len(lb)
             if nl:
                 if lb.shape[1] == 5:
-                    LOGGER.info(f'Loading labels with format [cls x_c y_c width height]')
+                    LOGGER.info('Loading labels with format [cls x_c y_c width height]')
                 if lb.shape[1] == 6:
-                    LOGGER.info(f'Loading labels with format [cls x_c y_c width height tagged_cls]')
+                    LOGGER.info('Loading labels with format [cls x_c y_c width height tagged_cls]')
                 assert (lb >= 0).all(), f'negative label values {lb[lb < 0]}'
                 _, i = np.unique(lb, axis=0, return_index=True)
                 if len(i) < nl:  # duplicate row check
