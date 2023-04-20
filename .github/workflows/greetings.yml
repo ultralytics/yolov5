@@ -23,11 +23,11 @@ jobs:
             - ✅ Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_  — Bruce Lee
 
           issue-message: |
-            👋 Hello @${{ github.actor }}, thank you for your interest in YOLOv5 🚀! Please visit our ⭐️ [Tutorials](https://docs.ultralytics.com/yolov5/#tutorials) to get started, where you can find quickstart guides for simple tasks like [Custom Data Training](https://docs.ultralytics.com/yolov5/train_custom_data/) all the way to advanced concepts like [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/hyp_evolution/).
+            👋 Hello @${{ github.actor }}, thank you for your interest in YOLOv5 🚀! Please visit our ⭐️ [Tutorials](https://docs.ultralytics.com/yolov5/) to get started, where you can find quickstart guides for simple tasks like [Custom Data Training](https://docs.ultralytics.com/yolov5/tutorials/yolov5_train_custom_data/) all the way to advanced concepts like [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/tutorials/yolov5_hyperparameter_evolution_tutorial/).
 
             If this is a 🐛 Bug Report, please provide a **minimum reproducible example** to help us debug it.
 
-            If this is a custom training ❓ Question, please provide as much information as possible, including dataset image examples and training logs, and verify you are following our [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results).
+            If this is a custom training ❓ Question, please provide as much information as possible, including dataset image examples and training logs, and verify you are following our [Tips for Best Training Results](https://docs.ultralytics.com/yolov5/tutorials/yolov5_tips_for_best_training_results/).
 
             ## Requirements
 
