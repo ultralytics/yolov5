@@ -3,7 +3,7 @@
 Validate a trained YOLOv5 detection model on a detection dataset
 
 Usage:
-    $ python val.py --weights yolov5s.pt --data coco128.yaml --img 640
+    $ python val.py weights/best.pt --data data/pano.yaml --skip_evaluation --save_blurred_image
 
 Usage - formats:
     $ python val.py --weights yolov5s.pt                 # PyTorch
@@ -316,17 +316,18 @@ def run(
             scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
 
             # Evaluate
-            if nl and not skip_evaluation:
-                tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
-                scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
-                labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-                correct = process_batch(predn, labelsn, iouv)
-                if plots:
-                    if tagged_data:
-                        confusion_matrix.process_batch(predn, labelsn, gt_boxes, tagged_labels)
-                    else:
-                        confusion_matrix.process_batch(predn, labelsn)
-            stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
+            if not skip_evaluation:
+                if nl:
+                    tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
+                    scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
+                    labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
+                    correct = process_batch(predn, labelsn, iouv)
+                    if plots:
+                        if tagged_data:
+                            confusion_matrix.process_batch(predn, labelsn, gt_boxes, tagged_labels)
+                        else:
+                            confusion_matrix.process_batch(predn, labelsn)
+                stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
 
             # Save/log
             if save_txt:
