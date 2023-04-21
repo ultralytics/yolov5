@@ -147,22 +147,22 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 <details open>
 <summary>教程</summary>
 
-* [训练自定义数据](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data) 🚀 推荐
-* [获得最佳训练结果的技巧](https://docs.ultralytics.com/yolov5/tutorials/tips_for_best_training_results) ☘️
-* [多GPU训练](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training)
-* [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) 🌟 新
-* [TFLite，ONNX，CoreML，TensorRT导出](https://docs.ultralytics.com/yolov5/tutorials/model_export) 🚀
-* [NVIDIA Jetson平台部署](https://docs.ultralytics.com/yolov5/tutorials/running_on_jetson_nano) 🌟 新
-* [测试时增强 (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation)
-* [模型集成](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling)
-* [模型剪枝/稀疏](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity)
-* [超参数进化](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter_evolution)
-* [冻结层的迁移学习](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers)
-* [架构概述](https://docs.ultralytics.com/yolov5/tutorials/architecture_description) 🌟 新
-* [Roboflow用于数据集、标注和主动学习](https://docs.ultralytics.com/yolov5/tutorials/roboflow_datasets_integration)
-* [ClearML日志记录](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration) 🌟 新
-* [使用Neural Magic的Deepsparse的YOLOv5](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization) 🌟 新
-* [Comet日志记录](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration) 🌟 新
+- [训练自定义数据](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data) 🚀 推荐
+- [获得最佳训练结果的技巧](https://docs.ultralytics.com/yolov5/tutorials/tips_for_best_training_results) ☘️
+- [多GPU训练](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training)
+- [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) 🌟 新
+- [TFLite，ONNX，CoreML，TensorRT导出](https://docs.ultralytics.com/yolov5/tutorials/model_export) 🚀
+- [NVIDIA Jetson平台部署](https://docs.ultralytics.com/yolov5/tutorials/running_on_jetson_nano) 🌟 新
+- [测试时增强 (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation)
+- [模型集成](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling)
+- [模型剪枝/稀疏](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity)
+- [超参数进化](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter_evolution)
+- [冻结层的迁移学习](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers)
+- [架构概述](https://docs.ultralytics.com/yolov5/tutorials/architecture_description) 🌟 新
+- [Roboflow用于数据集、标注和主动学习](https://docs.ultralytics.com/yolov5/tutorials/roboflow_datasets_integration)
+- [ClearML日志记录](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration) 🌟 新
+- [使用Neural Magic的Deepsparse的YOLOv5](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization) 🌟 新
+- [Comet日志记录](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration) 🌟 新
 
 </details>
 
@@ -399,7 +399,9 @@ python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
 ```
 
 ```python
-model = torch.hub.load("ultralytics/yolov5", "custom", "yolov5s-cls.pt")  # load from PyTorch Hub
+model = torch.hub.load(
+    "ultralytics/yolov5", "custom", "yolov5s-cls.pt"
+)  # load from PyTorch Hub
 ```
 
 ### 模型导出
