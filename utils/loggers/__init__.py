@@ -118,7 +118,7 @@ class Loggers():
                 self.clearml = None
                 prefix = colorstr('ClearML: ')
                 LOGGER.warning(f'{prefix}WARNING ⚠️ ClearML is installed but not configured, skipping ClearML logging.'
-                               f' See https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml#readme')
+                               f' See https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration#readme')
 
         else:
             self.clearml = None

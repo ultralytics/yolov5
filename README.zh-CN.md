@@ -80,7 +80,7 @@ pip install -r requirements.txt  # install
 <details>
 <summary>推理</summary>
 
-使用 YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 推理。最新 [模型](https://github.com/ultralytics/yolov5/tree/master/models) 将自动的从
+使用 YOLOv5 [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) 推理。最新 [模型](https://github.com/ultralytics/yolov5/tree/master/models) 将自动的从
 YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载。
 
 ```python
@@ -128,7 +128,7 @@ python detect.py --weights yolov5s.pt --source 0                               #
 下面的命令重现 YOLOv5 在 [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh) 数据集上的结果。
 最新的 [模型](https://github.com/ultralytics/yolov5/tree/master/models) 和 [数据集](https://github.com/ultralytics/yolov5/tree/master/data)
 将自动的从 YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载。
-YOLOv5n/s/m/l/x 在 V100 GPU 的训练时间为 1/2/4/6/8 天（ [多GPU](https://github.com/ultralytics/yolov5/issues/475) 训练速度更快）。
+YOLOv5n/s/m/l/x 在 V100 GPU 的训练时间为 1/2/4/6/8 天（ [多GPU](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training) 训练速度更快）。
 尽可能使用更大的 `--batch-size` ，或通过 `--batch-size -1` 实现
 YOLOv5 [自动批处理](https://github.com/ultralytics/yolov5/pull/5092) 。下方显示的 batchsize 适用于 V100-16GB。
 
@@ -241,7 +241,7 @@ YOLOv5 超级容易上手，简单易学。我们优先考虑现实世界的结�
 - 所有模型都使用默认配置，训练 300 epochs。n和s模型使用 [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) ，其他模型都使用 [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml) 。
 - \*\*mAP<sup>val</sup>\*\*在单模型单尺度上计算，数据集使用 [COCO val2017](http://cocodataset.org) 。<br>复现命令 `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
 - **推理速度**在 COCO val 图像总体时间上进行平均得到，测试环境使用[AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/)实例。 NMS 时间 (大约 1 ms/img) 不包括在内。<br>复现命令 `python val.py --data coco.yaml --img 640 --task speed --batch 1`
-- **TTA** [测试时数据增强](https://github.com/ultralytics/yolov5/issues/303) 包括反射和尺度变换。<br>复现命令 `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+- **TTA** [测试时数据增强](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation) 包括反射和尺度变换。<br>复现命令 `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
@@ -479,4 +479,4 @@ YOLOv5 在两种不同的 License 下可用：
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="3%" alt="" /></a>
 </div>
 
-[tta]: https://github.com/ultralytics/yolov5/issues/303
+[tta]: https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation
