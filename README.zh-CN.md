@@ -147,22 +147,22 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 <details open>
 <summary>教程</summary>
 
-- [训练自定义数据](https://docs.ultralytics.com/yolov5/train_custom_data) 🚀 推荐
-- [获得最佳训练结果的技巧](https://docs.ultralytics.com/yolov5/tips_for_best_training_results) ☘️ 推荐
-- [多 GPU 训练](https://docs.ultralytics.com/yolov5/multi_gpu_training)
-- [PyTorch Hub](https://docs.ultralytics.com/yolov5/pytorch_hub) 🌟 新
-- [TFLite, ONNX, CoreML, TensorRT 导出](https://docs.ultralytics.com/yolov5/export) 🚀
-- [NVIDIA Jetson 平台部署](https://docs.ultralytics.com/yolov5/jetson_nano) 🌟 新
-- [测试时增强（TTA）](https://docs.ultralytics.com/yolov5/tta)
-- [模型集成](https://docs.ultralytics.com/yolov5/ensemble)
-- [模型剪枝/稀疏性](https://docs.ultralytics.com/yolov5/pruning_sparsity)
-- [超参数进化](https://docs.ultralytics.com/yolov5/hyp_evolution)
-- [冻结层的迁移学习](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
-- [架构概述](https://docs.ultralytics.com/yolov5/architecture) 🌟 新
-- [Roboflow](https://docs.ultralytics.com/yolov5/roboflow)
-- [ClearML 日志记录](https://docs.ultralytics.com/yolov5/clearml) 🌟 新
-- [YOLOv5 与 Neural Magic 的 Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 新
-- [Comet 日志记录](https://docs.ultralytics.com/yolov5/comet) 🌟 新
+- [训练自定义数据](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data) 🚀 推荐
+- [获得最佳训练结果的技巧](https://docs.ultralytics.com/yolov5/tutorials/tips_for_best_training_results) ☘️
+- [多GPU训练](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training)
+- [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) 🌟 新
+- [TFLite，ONNX，CoreML，TensorRT导出](https://docs.ultralytics.com/yolov5/tutorials/model_export) 🚀
+- [NVIDIA Jetson平台部署](https://docs.ultralytics.com/yolov5/tutorials/running_on_jetson_nano) 🌟 新
+- [测试时增强 (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation)
+- [模型集成](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling)
+- [模型剪枝/稀疏](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity)
+- [超参数进化](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter_evolution)
+- [冻结层的迁移学习](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers)
+- [架构概述](https://docs.ultralytics.com/yolov5/tutorials/architecture_description) 🌟 新
+- [Roboflow用于数据集、标注和主动学习](https://docs.ultralytics.com/yolov5/tutorials/roboflow_datasets_integration)
+- [ClearML日志记录](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration) 🌟 新
+- [使用Neural Magic的Deepsparse的YOLOv5](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization) 🌟 新
+- [Comet日志记录](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration) 🌟 新
 
 </details>
 
@@ -431,10 +431,10 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
   <a href="https://hub.docker.com/r/ultralytics/yolov5">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-docker-small.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
-  <a href="https://github.com/ultralytics/yolov5/wiki/AWS-Quickstart">
+  <a href="https://docs.ultralytics.com/yolov5/environments/aws_quickstart_tutorial/">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-aws-small.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
-  <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
+  <a href="https://docs.ultralytics.com/yolov5/environments/google_cloud_quickstart_tutorial/">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="10%" /></a>
 </div>
 
@@ -456,7 +456,7 @@ YOLOv5 在两种不同的 License 下可用：
 
 ## <div align="center">联系我们</div>
 
-请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues) 或 [Ultralytics Community Forum](https://community.ultralytis.com) 以报告 YOLOv5 错误和请求功能。
+请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues) 或 [Ultralytics Community Forum](https://community.ultralytics.com) 以报告 YOLOv5 错误和请求功能。
 
 <br>
 <div align="center">

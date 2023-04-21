@@ -153,22 +153,22 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 <details open>
 <summary>Tutorials</summary>
 
-- [Train Custom Data](https://docs.ultralytics.com/yolov5/train_custom_data) 🚀 RECOMMENDED
-- [Tips for Best Training Results](https://docs.ultralytics.com/yolov5/tips_for_best_training_results) ☘️ RECOMMENDED
-- [Multi-GPU Training](https://docs.ultralytics.com/yolov5/multi_gpu_training)
-- [PyTorch Hub](https://docs.ultralytics.com/yolov5/pytorch_hub) 🌟 NEW
-- [TFLite, ONNX, CoreML, TensorRT Export](https://docs.ultralytics.com/yolov5/export) 🚀
-- [NVIDIA Jetson platform Deployment](https://docs.ultralytics.com/yolov5/jetson_nano) 🌟 NEW
-- [Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tta)
-- [Model Ensembling](https://docs.ultralytics.com/yolov5/ensemble)
-- [Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/pruning_sparsity)
-- [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/hyp_evolution)
-- [Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
-- [Architecture Summary](https://docs.ultralytics.com/yolov5/architecture) 🌟 NEW
-- [Roboflow for Datasets](https://docs.ultralytics.com/yolov5/roboflow)
-- [ClearML Logging](https://docs.ultralytics.com/yolov5/clearml) 🌟 NEW
-- [YOLOv5 with Neural Magic's Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 NEW
-- [Comet Logging](https://docs.ultralytics.com/yolov5/comet) 🌟 NEW
+- [Train Custom Data](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data) 🚀 RECOMMENDED
+- [Tips for Best Training Results](https://docs.ultralytics.com/yolov5/tutorials/tips_for_best_training_results) ☘️
+- [Multi-GPU Training](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training)
+- [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) 🌟 NEW
+- [TFLite, ONNX, CoreML, TensorRT Export](https://docs.ultralytics.com/yolov5/tutorials/model_export) 🚀
+- [NVIDIA Jetson platform Deployment](https://docs.ultralytics.com/yolov5/tutorials/running_on_jetson_nano) 🌟 NEW
+- [Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation)
+- [Model Ensembling](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling)
+- [Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity)
+- [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter_evolution)
+- [Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers)
+- [Architecture Summary](https://docs.ultralytics.com/yolov5/tutorials/architecture_description) 🌟 NEW
+- [Roboflow for Datasets, Labeling, and Active Learning](https://docs.ultralytics.com/yolov5/tutorials/roboflow_datasets_integration)
+- [ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration) 🌟 NEW
+- [YOLOv5 with Neural Magic's Deepsparse](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization) 🌟 NEW
+- [Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration) 🌟 NEW
 
 </details>
 
@@ -436,10 +436,10 @@ Get started in seconds with our verified environments. Click each icon below for
   <a href="https://hub.docker.com/r/ultralytics/yolov5">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-docker-small.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
-  <a href="https://github.com/ultralytics/yolov5/wiki/AWS-Quickstart">
+  <a href="https://docs.ultralytics.com/yolov5/environments/aws_quickstart_tutorial/">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-aws-small.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
-  <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
+  <a href="https://docs.ultralytics.com/yolov5/environments/google_cloud_quickstart_tutorial/">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="10%" /></a>
 </div>
 
