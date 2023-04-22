@@ -543,6 +543,8 @@ def activations(act=nn.SiLU):
     # Returns TF activation from input PyTorch activation
     if isinstance(act, nn.LeakyReLU):
         return lambda x: keras.activations.relu(x, alpha=0.1)
+    elif isinstance(act, nn.ReLU):
+        return lambda x: x * tf.nn.relu(x)
     elif isinstance(act, nn.Hardswish):
         return lambda x: x * tf.nn.relu6(x + 3) * 0.166666667
     elif isinstance(act, (nn.SiLU, SiLU)):
