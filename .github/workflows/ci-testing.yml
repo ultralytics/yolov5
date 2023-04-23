@@ -151,3 +151,11 @@ jobs:
           for path in '$m', '$b':
               model = torch.hub.load('.', 'custom', path=path, source='local')
           EOF
+      - name: Notify on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {"text": "<!channel> GitHub Actions error for ${{ github.workflow }} ❌\n\n\n*Repository:* https://github.com/${{ github.repository }}\n*Action:* https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\n*Author:* ${{ github.actor }}\n*Event:* ${{ github.event_name }}\n*Job Status:* ${{ job.status }}\n"}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_YOLO }}
