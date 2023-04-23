@@ -565,6 +565,21 @@ def main(opt, callbacks=Callbacks()):
             'mosaic': (True, 0.0, 1.0),  # image mixup (probability)
             'mixup': (True, 0.0, 1.0),  # image mixup (probability)
             'copy_paste': (True, 0.0, 1.0)}  # segment copy-paste (probability)
+        
+    
+        
+
+        #GA config
+        pop_size = 2
+        mutation_rate_min = 0.01
+        mutation_rate_max = 0.5
+        crossover_rate_min = 0.5
+        crossover_rate_max = 1
+        min_elite_size = 2
+        max_elite_size = 5
+        tournament_size_min = 2
+        tournament_size_max = 10
+        
 
         with open(opt.hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
@@ -582,66 +597,75 @@ def main(opt, callbacks=Callbacks()):
                 'cp',
                 f'gs://{opt.bucket}/evolve.csv',
                 str(evolve_csv),])
-
+            
+            
+        # Delete the items in meta dictionary whose first value is False
         del_ = []
         for item in meta.keys():
             if meta[item][0] is False:
                 del_.append(item)
-        hyp_GA = hyp.copy()
+        hyp_GA = hyp.copy()   # Make a copy of hyp dictionary
         for item in del_:
-            del meta[item]
-            del hyp_GA[item]
+            del meta[item]    # Remove the item from meta dictionary
+            del hyp_GA[item]  # Remove the item from hyp_GA dictionary
 
+        # Set lower_limit and upper_limit arrays to hold the search space boundaries
         lower_limit = np.array([meta[k][1] for k in hyp_GA.keys()])
         upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
+
+        # Create gene_ranges list to hold the range of values for each gene in the population
         gene_ranges = []
         for i in range(len(upper_limit)):
             gene_ranges.append((lower_limit[i], upper_limit[i]))
 
-        if os.path.isfile(ROOT / opt.evolve_population):
-            initial_values = []
-            with open(ROOT / opt.evolve_population, errors='ignore') as f:
+        # Initialize the population with initial_values or random values
+        initial_values = []
+
+        # If resuming evolution from a previous checkpoint
+        if opt.resume_evolve is not None:
+            assert os.path.isfile(ROOT / opt.resume_evolve), "evolve population path is wrong!"
+            with open(ROOT / opt.resume_evolve, errors='ignore') as f:
                 evolve_population = yaml.safe_load(f)
                 for value in evolve_population.values():
                     value = np.array([value[k] for k in hyp_GA.keys()])
                     initial_values.append(list(value))
-        else:
-            initial_values = [list(hyp_GA.values())]
 
-        # GA config
-        num_bits = len(hyp_GA)
-        pop_size = 2
-        mutation_rate_min = 0.01
-        mutation_rate_max = 0.5
-        crossover_rate_min = 0.5
-        crossover_rate_max = 1
-        min_elite_size = 2
-        max_elite_size = 5
-        tournament_size_min = 2
-        tournament_size_max = 10
-
-        # Initialize the population with random values within the search space
-        if (initial_values is None):
-            population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size)]
+        # If not resuming from a previous checkpoint, generate initial values from .yaml files in opt.evolve_population
         else:
-            if (pop_size > 1):
-                population = [generate_individual(gene_ranges, num_bits) for i in range(pop_size - len(initial_values))]
-                for initial_value in initial_values:
-                    population = [initial_value] + population
+            yaml_files = [f for f in os.listdir(opt.evolve_population) if f.endswith('.yaml')]
+            for file_name in yaml_files:
+                with open(os.path.join(opt.evolve_population, file_name), 'r') as yaml_file:
+                    value = yaml.safe_load(yaml_file)
+                    value = np.array([value[k] for k in hyp_GA.keys()])
+                    initial_values.append(list(value))
+
+            # Generate random values within the search space for the rest of the population
+            if (initial_values is None):
+                population = [generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size)]
             else:
-                population = initial_values
+                if (pop_size > 1):
+                    population = [generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size - len(initial_values))]
+                    for initial_value in initial_values:
+                        population = [initial_value] + population
+
+        # Set population to initial_values
+        population = initial_values  
+        
+        
         # Run the genetic algorithm for a fixed number of generations
         list_keys = list(hyp_GA.keys())
         for generation in range(opt.evolve):
-            save_dict = {}
-            for i in range(len(population)):
-                little_dict = {}
-                for j in range(len(population[i])):
-                    little_dict[list_keys[j]] = float(population[i][j])
-                save_dict['gen' + str(generation) + 'number' + str(i)] = little_dict
+            if (generation >= 1):
+                save_dict = {}
+                for i in range(len(population)):
+                    little_dict = {}
+                    for j in range(len(population[i])):
+                        little_dict[list_keys[j]] = float(population[i][j])
+                    save_dict['gen' + str(generation) + 'number' + str(i)] = little_dict
 
-            with open(ROOT / 'data/hyps/evolve_population.yaml', 'w') as outfile:
-                yaml.dump(save_dict, outfile, default_flow_style=False)
+                with open(save_dir / 'evolve_population.yaml', 'w') as outfile:
+                    yaml.dump(save_dict, outfile, default_flow_style=False)
+
             # Adaptive elite size
             elite_size = min_elite_size + int((max_elite_size - min_elite_size) * (generation / opt.evolve))
             # Evaluate the fitness of each individual in the population
@@ -656,7 +680,7 @@ def main(opt, callbacks=Callbacks()):
                 keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
                         'val/box_loss', 'val/obj_loss', 'val/cls_loss')
                 print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
-                fitness_scores.append(results[2])
+                fitness_scores.append(1)
 
             # Select the fittest individuals for reproduction using adaptive tournament selection
             selected_indices = []
@@ -682,14 +706,14 @@ def main(opt, callbacks=Callbacks()):
                 crossover_rate = max(crossover_rate_min,
                                      min(crossover_rate_max, crossover_rate_max - (generation / opt.evolve)))
                 if random.uniform(0, 1) < crossover_rate:
-                    crossover_point = random.randint(1, num_bits - 1)
+                    crossover_point = random.randint(1, len(hyp_GA) - 1)
                     child = population[parent1_index][:crossover_point] + population[parent2_index][crossover_point:]
                 else:
                     child = population[parent1_index]
                 # Adaptive mutation rate
                 mutation_rate = max(mutation_rate_min,
                                     min(mutation_rate_max, mutation_rate_max - (generation / opt.evolve)))
-                for j in range(num_bits):
+                for j in range(len(hyp_GA)):
                     if random.uniform(0, 1) < mutation_rate:
                         child[j] += random.uniform(-0.1, 0.1)
                         child[j] = min(max(child[j], gene_ranges[j][0]), gene_ranges[j][1])
