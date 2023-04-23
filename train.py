@@ -568,7 +568,7 @@ def main(opt, callbacks=Callbacks()):
             'mixup': (True, 0.0, 1.0),  # image mixup (probability)
             'copy_paste': (True, 0.0, 1.0)}  # segment copy-paste (probability)
 
-        #GA config
+        # GA configs
         pop_size = 2
         mutation_rate_min = 0.01
         mutation_rate_max = 0.5
