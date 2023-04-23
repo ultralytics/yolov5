@@ -565,9 +565,6 @@ def main(opt, callbacks=Callbacks()):
             'mosaic': (True, 0.0, 1.0),  # image mixup (probability)
             'mixup': (True, 0.0, 1.0),  # image mixup (probability)
             'copy_paste': (True, 0.0, 1.0)}  # segment copy-paste (probability)
-        
-    
-        
 
         #GA config
         pop_size = 2
@@ -579,7 +576,6 @@ def main(opt, callbacks=Callbacks()):
         max_elite_size = 5
         tournament_size_min = 2
         tournament_size_max = 10
-        
 
         with open(opt.hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
@@ -597,16 +593,15 @@ def main(opt, callbacks=Callbacks()):
                 'cp',
                 f'gs://{opt.bucket}/evolve.csv',
                 str(evolve_csv),])
-            
-            
+
         # Delete the items in meta dictionary whose first value is False
         del_ = []
         for item in meta.keys():
             if meta[item][0] is False:
                 del_.append(item)
-        hyp_GA = hyp.copy()   # Make a copy of hyp dictionary
+        hyp_GA = hyp.copy()  # Make a copy of hyp dictionary
         for item in del_:
-            del meta[item]    # Remove the item from meta dictionary
+            del meta[item]  # Remove the item from meta dictionary
             del hyp_GA[item]  # Remove the item from hyp_GA dictionary
 
         # Set lower_limit and upper_limit arrays to hold the search space boundaries
@@ -623,7 +618,7 @@ def main(opt, callbacks=Callbacks()):
 
         # If resuming evolution from a previous checkpoint
         if opt.resume_evolve is not None:
-            assert os.path.isfile(ROOT / opt.resume_evolve), "evolve population path is wrong!"
+            assert os.path.isfile(ROOT / opt.resume_evolve), 'evolve population path is wrong!'
             with open(ROOT / opt.resume_evolve, errors='ignore') as f:
                 evolve_population = yaml.safe_load(f)
                 for value in evolve_population.values():
@@ -634,7 +629,7 @@ def main(opt, callbacks=Callbacks()):
         else:
             yaml_files = [f for f in os.listdir(opt.evolve_population) if f.endswith('.yaml')]
             for file_name in yaml_files:
-                with open(os.path.join(opt.evolve_population, file_name), 'r') as yaml_file:
+                with open(os.path.join(opt.evolve_population, file_name)) as yaml_file:
                     value = yaml.safe_load(yaml_file)
                     value = np.array([value[k] for k in hyp_GA.keys()])
                     initial_values.append(list(value))
@@ -644,14 +639,14 @@ def main(opt, callbacks=Callbacks()):
                 population = [generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size)]
             else:
                 if (pop_size > 1):
-                    population = [generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size - len(initial_values))]
+                    population = [
+                        generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size - len(initial_values))]
                     for initial_value in initial_values:
                         population = [initial_value] + population
 
         # Set population to initial_values
-        population = initial_values  
-        
-        
+        population = initial_values
+
         # Run the genetic algorithm for a fixed number of generations
         list_keys = list(hyp_GA.keys())
         for generation in range(opt.evolve):
