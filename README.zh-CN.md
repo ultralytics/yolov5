@@ -305,7 +305,7 @@ python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # 验
 使用预训练的 YOLOv5m-seg.pt 来预测 bus.jpg：
 
 ```bash
-python segment/predict.py --weights yolov5m-seg.pt --data data/images/bus.jpg
+python segment/predict.py --weights yolov5m-seg.pt --source data/images/bus.jpg
 ```
 
 ```python
@@ -395,7 +395,7 @@ python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --im
 使用预训练的 YOLOv5s-cls.pt 来预测 bus.jpg：
 
 ```bash
-python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
+python classify/predict.py --weights yolov5s-cls.pt --source data/images/bus.jpg
 ```
 
 ```python
