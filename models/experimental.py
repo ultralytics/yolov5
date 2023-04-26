@@ -85,7 +85,11 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
         if hasattr(ckpt, 'names') and isinstance(ckpt.names, (list, tuple)):
             ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
 
-        model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # model in eval mode
+        #model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # model in eval mode
+        # Modified by maggie.
+        # 1. Since we benchmark the speed using TensorRT backend, so it is not necesary to fuse.
+        # 2. If fuse, the fuse_conv_and_bn function will be called, then the quant_nn.QuantConv2d will be replace by noraml Conv2d wjx
+        model.append(ckpt.eval())
 
     # Module compatibility updates
     for m in model.modules():
