@@ -152,7 +152,7 @@ jobs:
               model = torch.hub.load('.', 'custom', path=path, source='local')
           EOF
 
-  NotifyFailure:
+  Summary:
     runs-on: ubuntu-latest
     needs: [Benchmarks, Tests] # Add job names that you want to check for failure
     if: always() # This ensures the job runs even if previous jobs fail
