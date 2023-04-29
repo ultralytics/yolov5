@@ -445,7 +445,7 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 
 ## <div align="center">贡献</div>
 
-我们喜欢您的意见或建议！我们希望尽可能简单和透明地为 YOLOv5 做出贡献。请看我们的 [投稿指南](CONTRIBUTING.md)，并填写 [YOLOv5调查](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) 向我们发送您的体验反馈。感谢我们所有的贡献者！
+我们喜欢您的意见或建议！我们希望尽可能简单和透明地为 YOLOv5 做出贡献。请看我们的 [投稿指南](https://docs.ultralytics.com/help/contributing/)，并填写 [YOLOv5调查](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) 向我们发送您的体验反馈。感谢我们所有的贡献者！
 
 <!-- SVG image from https://opencollective.com/ultralytics/contributors.svg?width=990 -->
 
