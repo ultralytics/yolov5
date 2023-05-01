@@ -379,7 +379,7 @@ def run(
         # for now, we only support one image at a time
         # then we should save the image in a file
         if save_img:
-            cv2.save(save_img, cam_image)
+            cv2.imwrite(save_img, cam_image)
 
         return cam_image
 
