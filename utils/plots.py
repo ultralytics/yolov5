@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Plotting utils
 """
@@ -88,7 +88,8 @@ class Annotator:
         if self.pil or not is_ascii(label):
             self.draw.rectangle(box, width=self.lw, outline=color)  # box
             if label:
-                w, h = self.font.getsize(label)  # text width, height
+                w, h = self.font.getsize(label)  # text width, height (WARNING: deprecated) in 9.2.0
+                # _, _, w, h = self.font.getbbox(label)  # text width, height (New)
                 outside = box[1] - h >= 0  # label fits outside box
                 self.draw.rectangle(
                     (box[0], box[1] - h if outside else box[1], box[0] + w + 1,
@@ -449,7 +450,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     plt.savefig(f, dpi=300, bbox_inches='tight')
     plt.close()
     if verbose:
-        LOGGER.info(f"Saving {f}")
+        LOGGER.info(f'Saving {f}')
         if labels is not None:
             LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:nmax]))
         if pred is not None:

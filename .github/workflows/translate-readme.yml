@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 # README translation action to translate README.md to Chinese as README.zh-CN.md on any change to README.md
 
 name: Translate README
@@ -6,8 +6,7 @@ name: Translate README
 on:
   push:
     branches:
-      - main
-      - master
+      - translate_readme  # replace with 'master' to enable action
     paths:
       - README.md
 
@@ -20,7 +19,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-      # ISO Langusge Codes: https://cloud.google.com/translate/docs/languages
+      # ISO Language Codes: https://cloud.google.com/translate/docs/languages
       - name: Adding README - Chinese Simplified
         uses: dephraiim/translate-readme@main
         with:

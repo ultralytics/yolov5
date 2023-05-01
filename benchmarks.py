@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Run YOLOv5 benchmarks on all supported export formats
 
@@ -164,6 +164,6 @@ def main(opt):
     test(**vars(opt)) if opt.test else run(**vars(opt))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)
