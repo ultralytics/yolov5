@@ -1,5 +1,5 @@
 """
-This module implements GradCAM module for YOLOv5 in order to see where the model is attenting to.
+# This module implements GradCAM module for YOLOv5 in order to see where the model is attenting to.
 Requirements: pip install grad-cam==1.4.6
 
 Testing:    !python explainer.py --source data/images/zidane.jpg --verbose
@@ -15,6 +15,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
+import cv2
 from pytorch_grad_cam import (AblationCAM, EigenCAM, EigenGradCAM, FullGrad, GradCAM, GradCAMElementWise,
                               GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
@@ -33,19 +34,19 @@ from utils.torch_utils import select_device
 
 def yolo_reshape_transform(x):
     """
-    The backbone outputs different tensors with different spatial sizes, from the FPN.
+    # The backbone outputs different tensors with different spatial sizes, from the FPN.
     Our goal here is to aggregate these image tensors, assign them weights, and then aggregate everything.
     To do that, we are going to need to write a custom function that takes these tensors with different sizes,
     resizes them to a common shape, and concatenates them
     https://jacobgil.github.io/pytorch-gradcam-book/Class%20Activation%20Maps%20for%20Object%20Detection%20With%20Faster%20RCNN.html
-
     it seems that output is always the same shape in yolo. So, this is not needed.
     """
     return x
 
 
 class YOLOBoxScoreTarget():
-    """ This way we see all boxes.
+    """
+    This way we see all boxes.
     then we filter out classes and select the classes that we want to attend to.
     At the end, we sum out of all these.
 
@@ -62,7 +63,7 @@ class YOLOBoxScoreTarget():
 
     def __call__(self, output):
         """
-        here we need something which we can call backward
+        # here we need something which we can call backward
         https://pub.towardsai.net/yolov5-m-implementation-from-scratch-with-pytorch-c8f84a66c98b
         output structure is taken from this tutorial, it is as follows:
 
@@ -82,7 +83,8 @@ class YOLOBoxScoreTarget():
         # first item would be image index, number of images
         # second: number of predictions
         # third:  predicited bboxes
-        objectness = output[:, :, 4]
+
+        # objectness = output[:, :, 4] this can also be used later if needed
         classes = output[:, :, 5:]
         mask = torch.zeros_like(classes, dtype=torch.bool)
         for class_idx in self.classes:
@@ -93,7 +95,7 @@ class YOLOBoxScoreTarget():
 
 
 class YOLOBoxScoreTarget2():
-    """ For every original detected bounding box specified in "bounding boxes",
+    """ # For every original detected bounding box specified in "bounding boxes",
         assign a score on how the current bounding boxes match it,
             1. In IOU
             2. In the classification score.
@@ -105,7 +107,7 @@ class YOLOBoxScoreTarget2():
 
     def __init__(self, predicted_bbox, backprop, classes):
         """
-        Initializes the YOLOBoxScoreTarget2 module.
+        # Initializes the YOLOBoxScoreTarget2 module.
 
         Args:
             predicted_bbox: A tensor containing the predicted bounding box coordinates,
@@ -167,7 +169,7 @@ class YOLOBoxScoreTarget2():
             h = (output[0, indices, 2] * softmax_result).sum()
             w = (output[0, indices, 3] * softmax_result).sum()
 
-            #score = score + torch.log(class_score) + torch.log(confidence)
+            # score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
                 score = score + torch.log(class_score)
             elif self.backprop == 'confidence':
@@ -196,7 +198,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
     target_layers = [model.model.model.model[layer]]
 
-    #targets = [YOLOBoxScoreTarget(classes=classes)]
+    # targets = [YOLOBoxScoreTarget(classes=classes)]
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name', axis=1).values)
 
@@ -230,7 +232,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     fixed_image = np.array(image[0]).transpose(1, 2, 0)
     cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
     # And lets draw the boxes again:
-    #image_with_bounding_boxes = draw_boxes(prediction, cam_image)
+    # image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     # annotator = Annotator(cam_image)
     # for *box, conf, cls in bbox_torch:
     #     annotator.box_label(box,label=, color=colors(cls))
@@ -352,7 +354,7 @@ def run(
     for _, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
-        #  list of detections, on (n,6) tensor per image [xyxy, conf, cls]
+        # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
 
         im = torch.from_numpy(im).to(model.device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -376,6 +378,9 @@ def run(
 
         # for now, we only support one image at a time
         # then we should save the image in a file
+        if save_img:
+            cv2.save(save_img, cam_image)
+
         return cam_image
 
 
