@@ -203,7 +203,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               prefix=colorstr('train: '),
                                               shuffle=True,
                                               validation=False,
-                                              weighted_sampler=opt.weighted_sampler
+                                              weighted_sampler=opt.weighted_sampler,
                                               seed=opt.seed)
     labels = np.concatenate(dataset.labels, 0)
     mlc = int(labels[:, 0].max())  # max label class
