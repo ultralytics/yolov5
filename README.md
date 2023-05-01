@@ -20,7 +20,9 @@
 
 YOLOv5 🚀 is the world's most loved vision AI, representing <a href="https://ultralytics.com">Ultralytics</a> open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 
-To request an Enterprise License please complete the form at <a href="https://ultralytics.com/license">Ultralytics Licensing</a>.
+We hope that the resources here will help you get the most out of YOLOv5. Please browse the YOLOv5 <a href="https://docs.ultralytics.com/yolov5">Docs</a> for details, raise an issue on <a href="https://github.com/ultralytics/yolov5/issues/new/choose">GitHub</a> for support, and join our <a href="https://discord.gg/n6cFeSPZdD">Discord</a> community for questions and discussions!
+
+To request an Enterprise License please complete the form at [Ultralytics Licensing](https://ultralytics.com/license).
 
 <div align="center">
   <a href="https://github.com/ultralytics" style="text-decoration:none;">
@@ -40,6 +42,9 @@ To request an Enterprise License please complete the form at <a href="https://ul
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
+  <a href="https://discord.gg/n6cFeSPZdD" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="2%" alt="" /></a>
 </div>
 
 </div>
@@ -85,7 +90,7 @@ pip install -r requirements.txt  # install
 <details>
 <summary>Inference</summary>
 
-YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) inference. [Models](https://github.com/ultralytics/yolov5/tree/master/models) download automatically from the latest
+YOLOv5 [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) inference. [Models](https://github.com/ultralytics/yolov5/tree/master/models) download automatically from the latest
 YOLOv5 [release](https://github.com/ultralytics/yolov5/releases).
 
 ```python
@@ -134,7 +139,7 @@ The commands below reproduce YOLOv5 [COCO](https://github.com/ultralytics/yolov5
 results. [Models](https://github.com/ultralytics/yolov5/tree/master/models)
 and [datasets](https://github.com/ultralytics/yolov5/tree/master/data) download automatically from the latest
 YOLOv5 [release](https://github.com/ultralytics/yolov5/releases). Training times for YOLOv5n/s/m/l/x are
-1/2/4/6/8 days on a V100 GPU ([Multi-GPU](https://github.com/ultralytics/yolov5/issues/475) times faster). Use the
+1/2/4/6/8 days on a V100 GPU ([Multi-GPU](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training) times faster). Use the
 largest `--batch-size` possible, or pass `--batch-size -1` for
 YOLOv5 [AutoBatch](https://github.com/ultralytics/yolov5/pull/5092). Batch sizes shown for V100-16GB.
 
@@ -153,22 +158,22 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 <details open>
 <summary>Tutorials</summary>
 
-- [Train Custom Data](https://docs.ultralytics.com/yolov5/train_custom_data) 🚀 RECOMMENDED
-- [Tips for Best Training Results](https://docs.ultralytics.com/yolov5/tips_for_best_training_results) ☘️ RECOMMENDED
-- [Multi-GPU Training](https://docs.ultralytics.com/yolov5/multi_gpu_training)
-- [PyTorch Hub](https://docs.ultralytics.com/yolov5/pytorch_hub) 🌟 NEW
-- [TFLite, ONNX, CoreML, TensorRT Export](https://docs.ultralytics.com/yolov5/export) 🚀
-- [NVIDIA Jetson platform Deployment](https://docs.ultralytics.com/yolov5/jetson_nano) 🌟 NEW
-- [Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tta)
-- [Model Ensembling](https://docs.ultralytics.com/yolov5/ensemble)
-- [Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/pruning_sparsity)
-- [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/hyp_evolution)
-- [Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/transfer_learn_frozen)
-- [Architecture Summary](https://docs.ultralytics.com/yolov5/architecture) 🌟 NEW
-- [Roboflow for Datasets](https://docs.ultralytics.com/yolov5/roboflow)
-- [ClearML Logging](https://docs.ultralytics.com/yolov5/clearml) 🌟 NEW
-- [YOLOv5 with Neural Magic's Deepsparse](https://docs.ultralytics.com/yolov5/neural_magic) 🌟 NEW
-- [Comet Logging](https://docs.ultralytics.com/yolov5/comet) 🌟 NEW
+- [Train Custom Data](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data) 🚀 RECOMMENDED
+- [Tips for Best Training Results](https://docs.ultralytics.com/yolov5/tutorials/tips_for_best_training_results) ☘️
+- [Multi-GPU Training](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training)
+- [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) 🌟 NEW
+- [TFLite, ONNX, CoreML, TensorRT Export](https://docs.ultralytics.com/yolov5/tutorials/model_export) 🚀
+- [NVIDIA Jetson platform Deployment](https://docs.ultralytics.com/yolov5/tutorials/running_on_jetson_nano) 🌟 NEW
+- [Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation)
+- [Model Ensembling](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling)
+- [Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity)
+- [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter_evolution)
+- [Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers)
+- [Architecture Summary](https://docs.ultralytics.com/yolov5/tutorials/architecture_description) 🌟 NEW
+- [Roboflow for Datasets, Labeling, and Active Learning](https://docs.ultralytics.com/yolov5/tutorials/roboflow_datasets_integration)
+- [ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration) 🌟 NEW
+- [YOLOv5 with Neural Magic's Deepsparse](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization) 🌟 NEW
+- [Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration) 🌟 NEW
 
 </details>
 
@@ -247,7 +252,7 @@ YOLOv5 has been designed to be super easy to get started and simple to learn. We
 - All checkpoints are trained to 300 epochs with default settings. Nano and Small models use [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyps, all others use [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
 - **mAP<sup>val</sup>** values are for single-model single-scale on [COCO val2017](http://cocodataset.org) dataset.<br>Reproduce by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
 - **Speed** averaged over COCO val images using a [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) instance. NMS times (~1 ms/img) not included.<br>Reproduce by `python val.py --data coco.yaml --img 640 --task speed --batch 1`
-- **TTA** [Test Time Augmentation](https://github.com/ultralytics/yolov5/issues/303) includes reflection and scale augmentations.<br>Reproduce by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+- **TTA** [Test Time Augmentation](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation) includes reflection and scale augmentations.<br>Reproduce by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
@@ -309,7 +314,7 @@ python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # val
 Use pretrained YOLOv5m-seg.pt to predict bus.jpg:
 
 ```bash
-python segment/predict.py --weights yolov5m-seg.pt --data data/images/bus.jpg
+python segment/predict.py --weights yolov5m-seg.pt --source data/images/bus.jpg
 ```
 
 ```python
@@ -400,7 +405,7 @@ python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --im
 Use pretrained YOLOv5s-cls.pt to predict bus.jpg:
 
 ```bash
-python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
+python classify/predict.py --weights yolov5s-cls.pt --source data/images/bus.jpg
 ```
 
 ```python
@@ -436,16 +441,16 @@ Get started in seconds with our verified environments. Click each icon below for
   <a href="https://hub.docker.com/r/ultralytics/yolov5">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-docker-small.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
-  <a href="https://github.com/ultralytics/yolov5/wiki/AWS-Quickstart">
+  <a href="https://docs.ultralytics.com/yolov5/environments/aws_quickstart_tutorial/">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-aws-small.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
-  <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
+  <a href="https://docs.ultralytics.com/yolov5/environments/google_cloud_quickstart_tutorial/">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="10%" /></a>
 </div>
 
 ## <div align="center">Contribute</div>
 
-We love your input! We want to make contributing to YOLOv5 as easy and transparent as possible. Please see our [Contributing Guide](CONTRIBUTING.md) to get started, and fill out the [YOLOv5 Survey](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) to send us feedback on your experiences. Thank you to all our contributors!
+We love your input! We want to make contributing to YOLOv5 as easy and transparent as possible. Please see our [Contributing Guide](https://docs.ultralytics.com/help/contributing/) to get started, and fill out the [YOLOv5 Survey](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) to send us feedback on your experiences. Thank you to all our contributors!
 
 <!-- SVG image from https://opencollective.com/ultralytics/contributors.svg?width=990 -->
 
@@ -461,7 +466,7 @@ YOLOv5 is available under two different licenses:
 
 ## <div align="center">Contact</div>
 
-For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues) or the [Ultralytics Community Forum](https://community.ultralytics.com/).
+For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues), and join our [Discord](https://discord.gg/n6cFeSPZdD) community for questions and discussions!
 
 <br>
 <div align="center">
@@ -482,6 +487,9 @@ For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https:/
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="3%" alt="" /></a>
+  <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
+  <a href="https://discord.gg/n6cFeSPZdD" style="text-decoration:none;">
+    <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="3%" alt="" /></a>
 </div>
 
-[tta]: https://github.com/ultralytics/yolov5/issues/303
+[tta]: https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation

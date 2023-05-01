@@ -6,6 +6,7 @@ name: Publish Docker Images
 on:
   push:
     branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   docker:
