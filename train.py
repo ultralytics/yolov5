@@ -476,7 +476,7 @@ def parse_opt(known=False):
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
     parser.add_argument('--weighted_sampler',
                         action='store_true',
-                        help="Use Weighted Sampler (for highly imbalanced data)")
+                        help='Use Weighted Sampler (for highly imbalanced data)')
 
     # Logger arguments
     parser.add_argument('--entity', default=None, help='Entity')

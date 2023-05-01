@@ -187,7 +187,7 @@ def create_dataloader(path,
 
     if not validation and weighted_sampler:
         # weighted sampler should not be called on validation as this will report wrong results
-        assert rank == -1, "Currently multi-GPU Support is not enabled when using weighted sampler"
+        assert rank == -1, 'Currently multi-GPU Support is not enabled when using weighted sampler'
         sampler = create_weighted_sampler(dataset)
 
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
