@@ -182,7 +182,8 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
     onnx.checker.check_model(model_onnx)  # check onnx model
 
     # Metadata
-    d = {'stride': int(max(model.stride)), 'names': model.names}
+    # d = {'stride': int(max(model.stride)), 'names': model.names}
+    d = {'stride': int(max(model.stride)), 'names': dict(model.names), 'anchors':model.model[-1].anchors.numpy().tolist()}
     for k, v in d.items():
         meta = model_onnx.metadata_props.add()
         meta.key, meta.value = k, str(v)
@@ -674,6 +675,7 @@ def run(
         topk_all=100,  # TF.js NMS: topk for all classes to keep
         iou_thres=0.45,  # TF.js NMS: IoU threshold
         conf_thres=0.25,  # TF.js NMS: confidence threshold
+        exclude_postprocess_detect=False,  # onnx export excludes postprocessing for detection models
 ):
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
@@ -707,6 +709,8 @@ def run(
             m.inplace = inplace
             m.dynamic = dynamic
             m.export = True
+            m.exclude_postprocess_detect = exclude_postprocess_detect
+
 
     for _ in range(2):
         y = model(im)  # dry runs
@@ -798,6 +802,7 @@ def parse_opt(known=False):
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
+    parser.add_argument('--exclude-postprocess-detect', action='store_true', help='onnx export excludes postprocessing for detection models')
     parser.add_argument(
         '--include',
         nargs='+',

@@ -34,12 +34,12 @@ try:
 except ImportError:
     thop = None
 
-
 class Detect(nn.Module):
     # YOLOv5 Detect head for detection models
     stride = None  # strides computed during build
     dynamic = False  # force grid reconstruction
     export = False  # export mode
+    exclude_postprocess_detect = False  # onnx export excludes postprocess
 
     def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
         super().__init__()
@@ -58,23 +58,29 @@ class Detect(nn.Module):
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
-            x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
                 if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
 
                 if isinstance(self, Segment):  # (boxes + masks)
+                    x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
                     xy, wh, conf, mask = x[i].split((2, 2, self.nc + 1, self.no - self.nc - 5), 4)
                     xy = (xy.sigmoid() * 2 + self.grid[i]) * self.stride[i]  # xy
                     wh = (wh.sigmoid() * 2) ** 2 * self.anchor_grid[i]  # wh
                     y = torch.cat((xy, wh, conf.sigmoid(), mask), 4)
+                    z.append(y.view(bs, self.na * nx * ny, self.no))
                 else:  # Detect (boxes only)
-                    xy, wh, conf = x[i].sigmoid().split((2, 2, self.nc + 1), 4)
-                    xy = (xy * 2 + self.grid[i]) * self.stride[i]  # xy
-                    wh = (wh * 2) ** 2 * self.anchor_grid[i]  # wh
-                    y = torch.cat((xy, wh, conf), 4)
-                z.append(y.view(bs, self.na * nx * ny, self.no))
+                    if self.exclude_postprocess_detect and self.export:
+                        x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 3, 4, 1, 2).contiguous()  # Mehrdad: Onnx 
+                        z.append(x[i].view(bs, self.na * nx * ny, self.no))       
+                    else:
+                        x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
+                        xy, wh, conf = x[i].sigmoid().split((2, 2, self.nc + 1), 4)
+                        xy = (xy * 2 + self.grid[i]) * self.stride[i]  # xy
+                        wh = (wh * 2) ** 2 * self.anchor_grid[i]  # wh
+                        y = torch.cat((xy, wh, conf), 4)
+                        z.append(y.view(bs, self.na * nx * ny, self.no))
 
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
