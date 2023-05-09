@@ -1,0 +1,17 @@
+names:
+- cccd_back
+- cccd_front
+- cccdc_back
+- cccdc_front
+- cmt9_back
+- cmt9_front
+nc: 6
+roboflow:
+  license: CC BY 4.0
+  project: phxgt-xuorj
+  url: https://universe.roboflow.com/phxgt/phxgt-xuorj/dataset/1
+  version: 1
+  workspace: phxgt
+test: ../test/images
+train: PHXGT-1/train/images
+val: PHXGT-1/valid/images

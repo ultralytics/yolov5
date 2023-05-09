@@ -255,3 +255,9 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+PHXGT-1/train
+debug.bin
+debug.param
+debug2.bin
+debug2.param
