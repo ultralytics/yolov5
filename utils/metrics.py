@@ -228,7 +228,6 @@ def bbox_iou(box1,
              NGIoU=False,
              eps=1e-7):  # box1=pred, box2=truth
     # Returns Intersection over Union (IoU) of box1(1,4) to box2(n,4)
-    import math
 
     # Get the coordinates of bounding boxes
     if xywh:  # transform from xywh to xyxy
