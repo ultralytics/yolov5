@@ -281,7 +281,7 @@ def bbox_iou(box1,
             C1_w = D_x2.maximum(b1_x2) - D_x1.minimum(b1_x1).clamp(0)  # C2 width
             C1_h = D_y2.maximum(b1_y2) - D_y1.minimum(b1_y1).clamp(0)  # C2 height
 
-            d_p1 = torch.sqrt(C1_h ** 2 + C1_w ** 2)  #d'2
+            d_p1 = torch.sqrt(C1_h ** 2 + C1_w ** 2)  # d'2
 
             beta_1 = d_p1 / d1
 
@@ -300,7 +300,7 @@ def bbox_iou(box1,
             C2_w = D_x2.maximum(b2_x2) - D_x1.minimum(b2_x1).clamp(0)  # convex shape C2 width
             C2_h = D_y2.maximum(b2_y2) - D_y1.minimum(b2_y1).clamp(0)  # convex shape C2 height
 
-            d_p2 = torch.sqrt(C2_h ** 2 + C2_w ** 2)  #d'2
+            d_p2 = torch.sqrt(C2_h ** 2 + C2_w ** 2)  # d'2
 
             beta_2 = d_p2 / d2
 
