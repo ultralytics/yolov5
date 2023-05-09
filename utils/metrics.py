@@ -219,8 +219,14 @@ class ConfusionMatrix:
             print(' '.join(map(str, self.matrix[i])))
 
 
-
-def bbox_iou(box1, box2, xywh=False, GIoU=False, DIoU=False, CIoU=False, NGIoU=False, eps=1e-7): # box1=pred, box2=truth
+def bbox_iou(box1,
+             box2,
+             xywh=False,
+             GIoU=False,
+             DIoU=False,
+             CIoU=False,
+             NGIoU=False,
+             eps=1e-7):  # box1=pred, box2=truth
     # Returns Intersection over Union (IoU) of box1(1,4) to box2(n,4)
     import math
 
@@ -248,7 +254,7 @@ def bbox_iou(box1, box2, xywh=False, GIoU=False, DIoU=False, CIoU=False, NGIoU=F
     if CIoU or DIoU or GIoU or NGIoU:
         cw = b1_x2.maximum(b2_x2) - b1_x1.minimum(b2_x1)  # convex (smallest enclosing box) width
         ch = b1_y2.maximum(b2_y2) - b1_y1.minimum(b2_y1)  # convex height
-        
+
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
             rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center dist ** 2
@@ -258,61 +264,61 @@ def bbox_iou(box1, box2, xywh=False, GIoU=False, DIoU=False, CIoU=False, NGIoU=F
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
             return iou - rho2 / c2  # DIoU
-        
+
         c_area = cw * ch + eps  # convex area
-        
+
         if NGIoU:
-            
-            d2 = torch.sqrt(h1**2 + w1**2)
-            d1 = torch.sqrt(h2**2 + w2**2)
-            
+
+            d2 = torch.sqrt(h1 ** 2 + w1 ** 2)
+            d1 = torch.sqrt(h2 ** 2 + w2 ** 2)
+
             b1_in_b2 = torch.logical_and(b1_x1 > b2_x1, b1_x2 < b2_x2)  # b1 (pred) in b2 (truth)
-            
+
             # D has same center as b2 and congruent to b1
-            D_x1, D_y1, D_x2, D_y2 = w1/2 - w2/2, h1/2 -h2/2 ,w1/2 +w2/2, h1/2 + h2/2
+            D_x1, D_y1, D_x2, D_y2 = w1 / 2 - w2 / 2, h1 / 2 - h2 / 2, w1 / 2 + w2 / 2, h1 / 2 + h2 / 2
             D_w, D_h = w1, h1
 
             # convex shape C1 enclosing b1 and D
             C1_w = D_x2.maximum(b1_x2) - D_x1.minimum(b1_x1).clamp(0)  # C2 width
             C1_h = D_y2.maximum(b1_y2) - D_y1.minimum(b1_y1).clamp(0)  # C2 height
 
-            d_p1 =  torch.sqrt(C1_h**2 + C1_w**2) #d'2
+            d_p1 = torch.sqrt(C1_h ** 2 + C1_w ** 2)  #d'2
 
-            beta_1 = d_p1/d1
+            beta_1 = d_p1 / d1
 
-            inter_D_b1 = (D_x2.minimum(b1_x2) - D_x1.maximum(b1_x1)).clamp(0) * (D_y2.minimum(b1_y2) - D_y1.maximum(b1_y1)).clamp(0)
+            inter_D_b1 = (D_x2.minimum(b1_x2) - D_x1.maximum(b1_x1)).clamp(0) * (D_y2.minimum(b1_y2) -
+                                                                                 D_y1.maximum(b1_y1)).clamp(0)
             union_D_b1 = D_w * D_h + w1 * h1 - inter_D_b1 + eps
-            ngiou_b1_in_b2 = iou - (beta_1 * (C1_h*C1_w - union_D_b1)/(C1_h*C1_w))
+            ngiou_b1_in_b2 = iou - (beta_1 * (C1_h * C1_w - union_D_b1) / (C1_h * C1_w))
 
+            b2_in_b1 = torch.logical_and(b1_x1 < b2_x1, b1_x2 > b2_x2)  # b2 (truth) in b1 (pred)
 
-            b2_in_b1 =  torch.logical_and(b1_x1 < b2_x1, b1_x2 > b2_x2) # b2 (truth) in b1 (pred)
-            
             # D has same center as b1 and congruent to b2
-            D_x1, D_y1, D_x2, D_y2 = w1_-w2_, h1_-h2_ ,w1_+w2_ ,h1_+h2_
+            D_x1, D_y1, D_x2, D_y2 = w1_ - w2_, h1_ - h2_, w1_ + w2_, h1_ + h2_
             D_w, D_h = w2, h2
 
             # convex shape C1 enclosing b2 and D
             C2_w = D_x2.maximum(b2_x2) - D_x1.minimum(b2_x1).clamp(0)  # convex shape C2 width
             C2_h = D_y2.maximum(b2_y2) - D_y1.minimum(b2_y1).clamp(0)  # convex shape C2 height
 
-            d_p2 =  torch.sqrt(C2_h**2 + C2_w**2) #d'2
+            d_p2 = torch.sqrt(C2_h ** 2 + C2_w ** 2)  #d'2
 
-            beta_2 = d_p2/d2
+            beta_2 = d_p2 / d2
 
-            inter_D_b2 = (D_x2.minimum(b2_x2) - D_x1.maximum(b2_x1)).clamp(0) * (D_y2.minimum(b2_y2) - D_y1.maximum(b2_y1)).clamp(0)
+            inter_D_b2 = (D_x2.minimum(b2_x2) - D_x1.maximum(b2_x1)).clamp(0) * (D_y2.minimum(b2_y2) -
+                                                                                 D_y1.maximum(b2_y1)).clamp(0)
             union_D_b2 = D_w * D_h + w2 * h2 - inter_D_b2 + eps
-            ngiou_b2_in_b1 = iou - (beta_2 * (C2_h*C2_w - union_D_b2)/(C2_h*C2_w))
+            ngiou_b2_in_b1 = iou - (beta_2 * (C2_h * C2_w - union_D_b2) / (C2_h * C2_w))
 
-            neither = torch.logical_not(torch.logical_or(b1_in_b2,b2_in_b1))
-            ngiou_neither = iou - ((c_area - union)/(c_area))
-            
-            ngiou = ngiou_b1_in_b2*b1_in_b2 + ngiou_b2_in_b1*b2_in_b1 + ngiou_neither*neither
-            
+            neither = torch.logical_not(torch.logical_or(b1_in_b2, b2_in_b1))
+            ngiou_neither = iou - ((c_area - union) / (c_area))
+
+            ngiou = ngiou_b1_in_b2 * b1_in_b2 + ngiou_b2_in_b1 * b2_in_b1 + ngiou_neither * neither
+
             return ngiou
 
         return iou - (c_area - union) / c_area  # GIoU https://arxiv.org/pdf/1902.09630.pdf
     return iou  # IoU
-
 
 
 def box_iou(box1, box2, eps=1e-7):
