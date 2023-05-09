@@ -1,0 +1,9 @@
+path: fasddfull  # dataset root dir (bucket name currently)
+train: images/train  # train images (relative to 'path') 
+val: images/val  # val images (relative to 'path')
+test:  image/test # test images
+
+# Classes 
+names:
+  0: fire
+  1: smoke
