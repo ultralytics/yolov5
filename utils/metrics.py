@@ -288,7 +288,7 @@ def bbox_iou(box1, box2, xywh=False, GIoU=False, DIoU=False, CIoU=False, NGIoU=F
             b2_in_b1 =  torch.logical_and(b1_x1 < b2_x1, b1_x2 > b2_x2) # b2 (truth) in b1 (pred)
             
             # D has same center as b1 and congruent to b2
-            D_x1, D_y1, D_x2, D_y2 = w1_-w2_, h1_-h2_ ,w1_+w2_ ,h1_+h2_
+            D_x1, D_y1, D_x2, D_y2 = w1/2 - w2/2, h1/2 -h2/2 ,w1/2 +w2/2, h1/2 + h2/2
             D_w, D_h = w2, h2
 
             # convex shape C1 enclosing b2 and D
