@@ -637,18 +637,15 @@ def main(opt, callbacks=Callbacks()):
                     value = np.array([value[k] for k in hyp_GA.keys()])
                     initial_values.append(list(value))
 
-            # Generate random values within the search space for the rest of the population
-            if (initial_values is None):
-                population = [generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size)]
-            else:
-                if (pop_size > 1):
-                    population = [
-                        generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size - len(initial_values))]
-                    for initial_value in initial_values:
-                        population = [initial_value] + population
-
-        # Set population to initial_values
-        population = initial_values
+        # Generate random values within the search space for the rest of the population
+        if (initial_values is None):
+            population = [generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size)]
+        else:
+            if (pop_size > 1):
+                population = [
+                    generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size - len(initial_values))]
+                for initial_value in initial_values:
+                    population = [initial_value] + population
 
         # Run the genetic algorithm for a fixed number of generations
         list_keys = list(hyp_GA.keys())
