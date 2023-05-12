@@ -388,7 +388,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 
 @TryExcept()
-def check_requirements(requirements=ROOT.parent / 'requirements.txt', exclude=(), install=True, cmds=''):
+def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=''):
     """
     Check if installed dependencies meet YOLOv5 requirements and attempt to auto-update if needed.
 
