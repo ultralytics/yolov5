@@ -221,7 +221,7 @@ class ConfusionMatrix:
 
 def bbox_iou(box1,
              box2,
-             xywh=False,
+             xywh=True,
              GIoU=False,
              DIoU=False,
              CIoU=False,
