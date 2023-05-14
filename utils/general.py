@@ -27,7 +27,6 @@ from subprocess import check_output
 from tarfile import is_tarfile
 from typing import Optional
 from zipfile import ZipFile, is_zipfile
-from ultralytics.yolo.utils.checks import check_requirements
 
 import cv2
 import numpy as np
@@ -36,6 +35,7 @@ import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
+from ultralytics.yolo.utils.checks import check_requirements
 
 from utils import TryExcept, emojis
 from utils.downloads import curl_download, gsutil_getsize
@@ -139,12 +139,12 @@ def set_logging(name=LOGGING_NAME, verbose=True):
             name: {
                 'class': 'logging.StreamHandler',
                 'formatter': name,
-                'level': level, }},
+                'level': level,}},
         'loggers': {
             name: {
                 'level': level,
                 'handlers': [name],
-                'propagate': False, }}})
+                'propagate': False,}}})
 
 
 set_logging(LOGGING_NAME)  # run before defining LOGGER
