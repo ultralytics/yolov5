@@ -511,7 +511,7 @@ def main(opt, callbacks=Callbacks()):
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
-        check_requirements()
+        check_requirements(ROOT / 'requirements.txt')
 
     # Resume
     if opt.resume and not opt.evolve:  # resume from specified or most recent last.pt
