@@ -18,6 +18,7 @@ import pandas as pd
 import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
+from scipy.ndimage.filters import gaussian_filter1d
 
 from utils import TryExcept, threaded
 from utils.general import (CONFIG_DIR, FONT, LOGGER, check_font, check_requirements, clip_boxes, increment_path,
@@ -500,7 +501,8 @@ def plot_results(file='path/to/results.csv', dir=''):
             for i, j in enumerate([1, 2, 3, 4, 5, 8, 9, 10, 6, 7]):
                 y = data.values[:, j].astype('float')
                 # y[y == 0] = np.nan  # don't show zero values
-                ax[i].plot(x, y, marker='.', label=f.stem, linewidth=2, markersize=8)
+                ax[i].plot(x, y, marker='.', label=f.stem, linewidth=2, markersize=8)  # actual results
+                ax[i].plot(x, gaussian_filter1d(y, sigma=3), ':', label='smooth', linewidth=2)  # smoothing line
                 ax[i].set_title(s[j], fontsize=12)
                 # if j in [8, 9, 10]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
