@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Logging utils
 """
@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pkg_resources as pkg
 import torch
-from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import LOGGER, colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
@@ -19,6 +18,11 @@ from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb', 'clearml', 'comet')  # *.csv, TensorBoard, Weights & Biases, ClearML
 RANK = int(os.getenv('RANK', -1))
+
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except ImportError:
+    SummaryWriter = lambda *args: None  # None = SummaryWriter(str)
 
 try:
     import wandb
@@ -114,7 +118,7 @@ class Loggers():
                 self.clearml = None
                 prefix = colorstr('ClearML: ')
                 LOGGER.warning(f'{prefix}WARNING ⚠️ ClearML is installed but not configured, skipping ClearML logging.'
-                               f' See https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml#readme')
+                               f' See https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration#readme')
 
         else:
             self.clearml = None
