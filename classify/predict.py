@@ -29,6 +29,8 @@ Usage - formats:
 """
 
 import argparse
+import csv
+import io
 import os
 import platform
 import sys
@@ -106,80 +108,94 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-    for path, im, im0s, vid_cap, s in dataset:
-        with dt[0]:
-            im = torch.Tensor(im).to(model.device)
-            im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
-            if len(im.shape) == 3:
-                im = im[None]  # expand for batch dim
+    
+    with open(save_dir / 'predictions.csv', 'w', newline='') as csvfile:    # Open CSV file for saving all predictions 
+        csv_output = csv.DictWriter(csvfile, fieldnames=['path', 'label', 'confidence', 'top_5_predicted'])
+        csv_output.writeheader()
 
-        # Inference
-        with dt[1]:
-            results = model(im)
+        for path, im, im0s, vid_cap, s in dataset:
+            with dt[0]:
+                im = torch.Tensor(im).to(model.device)
+                im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
+                if len(im.shape) == 3:
+                    im = im[None]  # expand for batch dim
 
-        # Post-process
-        with dt[2]:
-            pred = F.softmax(results, dim=1)  # probabilities
+            # Inference
+            with dt[1]:
+                results = model(im)
 
-        # Process predictions
-        for i, prob in enumerate(pred):  # per image
-            seen += 1
-            if webcam:  # batch_size >= 1
-                p, im0, frame = path[i], im0s[i].copy(), dataset.count
-                s += f'{i}: '
-            else:
-                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
+            # Post-process
+            with dt[2]:
+                pred = F.softmax(results, dim=1)  # probabilities      
+            
+            # Process predictions
+            for i, prob in enumerate(pred):  # per image
+                seen += 1
+                if webcam:  # batch_size >= 1
+                    p, im0, frame = path[i], im0s[i].copy(), dataset.count
+                    s += f'{i}: '
+                else:
+                    p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
-            p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+                p = Path(p)  # to Path
+                save_path = str(save_dir / p.name)  # im.jpg
+                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
 
-            s += '%gx%g ' % im.shape[2:]  # print string
-            annotator = Annotator(im0, example=str(names), pil=True)
+                s += '%gx%g ' % im.shape[2:]  # print string
+                annotator = Annotator(im0, example=str(names), pil=True)
 
-            # Print results
-            top5i = prob.argsort(0, descending=True)[:5].tolist()  # top 5 indices
-            s += f"{', '.join(f'{names[j]} {prob[j]:.2f}' for j in top5i)}, "
+                # Print results
+                top5i = prob.argsort(0, descending=True)[:5].tolist()  # top 5 indices
+                s += f"{', '.join(f'{names[j]} {prob[j]:.2f}' for j in top5i)}, "
 
-            # Write results
-            text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
-            if save_img or view_img:  # Add bbox to image
-                annotator.text((32, 32), text, txt_color=(255, 255, 255))
-            if save_txt:  # Write to file
-                with open(f'{txt_path}.txt', 'a') as f:
-                    f.write(text + '\n')
+                # Save results to predictions CSV
+                top_pred_index = top5i[0]
+                csv_output.writerow({
+                    'path': path,
+                    'top_5_predicted': [(names[j], prob[j].item()) for j in top5i],
+                    'label': names[top_pred_index],
+                    'confidence': f'{prob[top_pred_index]:.2f}'
+                })
 
-            # Stream results
-            im0 = annotator.result()
-            if view_img:
-                if platform.system() == 'Linux' and p not in windows:
-                    windows.append(p)
-                    cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
-                    cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0)
-                cv2.waitKey(1)  # 1 millisecond
+                # Write results
+                text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
+                if save_img or view_img:  # Add bbox to image
+                    annotator.text((32, 32), text, txt_color=(255, 255, 255))
+                if save_txt:  # Write to file
+                    with open(f'{txt_path}.txt', 'a') as f:
+                        f.write(text + '\n')
 
-            # Save results (image with detections)
-            if save_img:
-                if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
-                else:  # 'video' or 'stream'
-                    if vid_path[i] != save_path:  # new video
-                        vid_path[i] = save_path
-                        if isinstance(vid_writer[i], cv2.VideoWriter):
-                            vid_writer[i].release()  # release previous video writer
-                        if vid_cap:  # video
-                            fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                            w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                            h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                        else:  # stream
-                            fps, w, h = 30, im0.shape[1], im0.shape[0]
-                        save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                    vid_writer[i].write(im0)
+                # Stream results
+                im0 = annotator.result()
+                if view_img:
+                    if platform.system() == 'Linux' and p not in windows:
+                        windows.append(p)
+                        cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
+                        cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
+                    cv2.imshow(str(p), im0)
+                    cv2.waitKey(1)  # 1 millisecond
 
-        # Print time (inference-only)
-        LOGGER.info(f'{s}{dt[1].dt * 1E3:.1f}ms')
+                # Save results (image with detections)
+                if save_img:
+                    if dataset.mode == 'image':
+                        cv2.imwrite(save_path, im0)
+                    else:  # 'video' or 'stream'
+                        if vid_path[i] != save_path:  # new video
+                            vid_path[i] = save_path
+                            if isinstance(vid_writer[i], cv2.VideoWriter):
+                                vid_writer[i].release()  # release previous video writer
+                            if vid_cap:  # video
+                                fps = vid_cap.get(cv2.CAP_PROP_FPS)
+                                w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                                h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                            else:  # stream
+                                fps, w, h = 30, im0.shape[1], im0.shape[0]
+                            save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
+                            vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                        vid_writer[i].write(im0)
+
+            # Print time (inference-only)
+            LOGGER.info(f'{s}{dt[1].dt * 1E3:.1f}ms')
 
     # Print results
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
