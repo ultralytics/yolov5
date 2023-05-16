@@ -300,7 +300,7 @@ def main(opt):
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
-        check_requirements()
+        check_requirements(ROOT / 'requirements.txt')
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
