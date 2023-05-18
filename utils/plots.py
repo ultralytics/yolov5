@@ -85,6 +85,7 @@ class Annotator:
 
     def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
         # Add one xyxy box to image with label
+        bbox_count = 0
         if self.pil or not is_ascii(label):
             self.draw.rectangle(box, width=self.lw, outline=color)  # box
             if label:
@@ -100,9 +101,12 @@ class Annotator:
                 self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
         else:  # cv2
             p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
+            bbox_count +=1
             cv2.rectangle(self.im, p1, p2, color, thickness=self.lw, lineType=cv2.LINE_AA)
+            
             if label:
                 tf = max(self.lw - 1, 1)  # font thickness
+                text_str_count = f"Bboxes: {bbox_count}"
                 w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]  # text width, height
                 outside = p1[1] - h >= 3
                 p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
@@ -111,6 +115,13 @@ class Annotator:
                             label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
                             0,
                             self.lw / 3,
+                            txt_color,
+                            thickness=tf,
+                            lineType=cv2.LINE_AA)
+              cv2.putText(self.im,
+                            text_str_count, (10, self.im[0] - 10),
+                            0,
+                            1.0,
                             txt_color,
                             thickness=tf,
                             lineType=cv2.LINE_AA)
