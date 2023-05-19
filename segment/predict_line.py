@@ -106,7 +106,8 @@ def run(
     font_scale = 1
     font_thickness = 2
     font_color = (255, 255, 255)
-
+    area_rect = [(141, 470), (141, 0), (1279, 0), (1150, 470)]
+    area_polygon = np.array(area_rect)
     # Dataloader
     bs = 1  # batch_size
     if webcam:
@@ -210,7 +211,10 @@ def run(
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
                             
                             annotator.box_label(xyxy, label, color=colors(c, True))
-                            
+                            bbox_polygon = np.array([(xyxy[0], xyxy[1]), (xyxy[0], xyxy[3]), (xyxy[2], xyxy[3]), (xyxy[2], xyxy[1])])
+                            intersects = cv2.pointPolygonTest(area_polygon, (int((xyxy[0]+xyxy[2])/2), int((xyxy[1]+xyxy[3])/2)), False) >= 0
+                            if intersects:
+                                counter += 1
                             # cv2.putText(frame, int(box_count), text_position, font, font_scale, font_color, font_thickness)
 
                             # annotator.draw.polygon(segments[j], outline=colors(c, True), width=3)
