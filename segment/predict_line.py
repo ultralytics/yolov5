@@ -129,6 +129,7 @@ def run(
 
     for path, im, im0s, vid_cap, s in dataset:
         counter = 0
+        count = 0
         min_counter = 0
         max_counter =0
         avg_counter = 0
@@ -214,7 +215,8 @@ def run(
                             bbox_polygon = np.array([(xyxy[0], xyxy[1]), (xyxy[0], xyxy[3]), (xyxy[2], xyxy[3]), (xyxy[2], xyxy[1])])
                             intersects = cv2.pointPolygonTest(area_polygon, (int((xyxy[0]+xyxy[2])/2), int((xyxy[1]+xyxy[3])/2)), False) >= 0
                             if intersects:
-                                counter += 1
+                                count += 1
+                        print(count)    
                             # cv2.putText(frame, int(box_count), text_position, font, font_scale, font_color, font_thickness)
 
                             # annotator.draw.polygon(segments[j], outline=colors(c, True), width=3)
