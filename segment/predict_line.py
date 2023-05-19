@@ -265,7 +265,7 @@ def run(
                                 fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
                             vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                            cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (0, 0, 0), -1)
+                        cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (255, 255, 255), 2)
                         cv2.putText(im0, f'Total piglets detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
                         cv2.putText(im0, f"Max objects detected piglets all frames: {max_counter}", (10, 100), font, font_scale, font_color, font_thickness)
                         cv2.putText(im0, f"Average objects detected piglets all frames: {math.ceil(avg_count)}", (10, 200), font, font_scale, font_color, font_thickness)
