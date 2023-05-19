@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 import math
 import torch
-
+import numpy as np
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -106,7 +106,9 @@ def run(
     font_scale = 1
     font_thickness = 2
     font_color = (255, 255, 255)
-    area_rect = [(141, 470), (141, 0), (1279, 0), (1150, 470)]
+    area_rect = [(141, 470), (141, 141), (1150, 141), (1150, 470)]
+    rectangle_top_left = (141, 141)
+    rectangle_bottom_right = (1150, 470)
     area_polygon = np.array(area_rect)
     # Dataloader
     bs = 1  # batch_size
@@ -212,8 +214,8 @@ def run(
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
                             
                             annotator.box_label(xyxy, label, color=colors(c, True))
-                            bbox_polygon = np.array([(xyxy[0], xyxy[1]), (xyxy[0], xyxy[3]), (xyxy[2], xyxy[3]), (xyxy[2], xyxy[1])])
-                            intersects = cv2.pointPolygonTest(area_polygon, (int((xyxy[0]+xyxy[2])/2), int((xyxy[1]+xyxy[3])/2)), False) >= 0
+                            # bbox_polygon = np.array([(xyxy[0], xyxy[1]), (xyxy[0], xyxy[3]), (xyxy[2], xyxy[3]), (xyxy[2], xyxy[1])])
+                            intersects = cv2.pointPolygonTest(area_polygon, annotator.box_label(xyxy, label, color=colors(c, True)), False) >= 0
                             if intersects:
                                 count += 1
                         print(count)    
@@ -263,11 +265,12 @@ def run(
                                 fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
                             vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                            cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (0, 0, 0), -1)
                         cv2.putText(im0, f'Total piglets detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
                         cv2.putText(im0, f"Max objects detected piglets all frames: {max_counter}", (10, 100), font, font_scale, font_color, font_thickness)
                         cv2.putText(im0, f"Average objects detected piglets all frames: {math.ceil(avg_count)}", (10, 200), font, font_scale, font_color, font_thickness)
                         cv2.putText(im0, f"Min objects detected piglets all frames: {min_counter}", (10, 300), font, font_scale, font_color, font_thickness)
-                        
+                        cv2.putText(im0, f"objects detected {count}", (141, 500), font, font_scale, font_color, font_thickness)
                         vid_writer[i].write(im0)
 
             # counters.append(counter) 
