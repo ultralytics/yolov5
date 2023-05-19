@@ -196,11 +196,14 @@ def run(
                 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
-                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                        n = (det[:, 5] == c).sum()
+                        box_count = len(det)
+                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
                         
-                        annotator.box_label(det[:, 5], label, color=colors(c, True))
-                        box_count = len(annotator.box_label(xyxy, label, color=colors(c, True)))
-                        annotator.box_counting(xyxy, box_count, color=colors(c, True))
+                        annotator.box_label(xyxy, label, color=colors(c, True))
+                        
+                        # cv2.putText(frame, int(box_count), text_position, font, font_scale, font_color, font_thickness)
+
                         # annotator.draw.polygon(segments[j], outline=colors(c, True), width=3)
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
@@ -234,8 +237,12 @@ def run(
                             fps, w, h = 30, im0.shape[1], im0.shape[0]
                         save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                    print('4')
+                    cv2.putText(im0, f'Total objects detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
                     vid_writer[i].write(im0)
         print(f"Total objects detected: {counter}")
+        cv2.putText(im0, f'Total objects detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
+
         # Print time (inference-only)
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
