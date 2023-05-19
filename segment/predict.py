@@ -124,6 +124,11 @@ def run(
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
     for path, im, im0s, vid_cap, s in dataset:
         counter = 0
+        min_counter = 0
+        max_counter =0
+        avg_counter = 0
+        total_count = 0
+        frame_count =0
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -240,9 +245,21 @@ def run(
                     print('4')
                     cv2.putText(im0, f'Total objects detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
                     vid_writer[i].write(im0)
+        max_counter = max(max_counter, counter)
+        min_counter = min(min_counter, counter)
+        avg_counter = max_counter
         print(f"Total objects detected: {counter}")
         cv2.putText(im0, f'Total objects detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
+        total_count += counter
+        frame_count +=1
+        if avg_counter > 0:
+            avg_counter = total_count / frame_count
+        else:
+            avg_counter = 0
 
+        print(f"Maximum objects detected: {max_counter}")
+        print(f"Minimum objects detected: {min_counter}")
+        print(f"Average objects detected: {avg_counter}")
         # Print time (inference-only)
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
