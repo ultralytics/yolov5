@@ -118,6 +118,7 @@ def run(
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
     for path, im, im0s, vid_cap, s in dataset:
+        counter = 0
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -139,6 +140,7 @@ def run(
 
         # Process predictions
         for i, det in enumerate(pred):  # per image
+            counter += len(det)
             seen += 1
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i], im0s[i].copy(), dataset.count
@@ -191,21 +193,13 @@ def run(
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
-                        for c in det[:, 5].unique():
-                            n = (det[:, 5] == c).sum()  # detections per class
-                            s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  
-                            cv2.putText(self.im,
-                            text_str_count, p1[1] - 2 if outside else p1[1] + h + 2),
-                            0,
-                            1.0,
-                            txt_color,
-                            thickness=tf,
-                            lineType=cv2.LINE_AA)
+           
                         # annotator.draw.polygon(segments[j], outline=colors(c, True), width=3)
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # Stream results
+            
             im0 = annotator.result()
             if view_img:
                 if platform.system() == 'Linux' and p not in windows:
@@ -234,7 +228,7 @@ def run(
                         save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
-
+        print(f"Total objects detected: {counter}")
         # Print time (inference-only)
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
