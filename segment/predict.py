@@ -259,7 +259,7 @@ def run(
                             vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                         cv2.putText(im0, f'Total piglets detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
                         cv2.putText(im0, f"Max objects detected piglets all frames: {max_counter}", (10, 100), font, font_scale, font_color, font_thickness)
-                        cv2.putText(im0, f"Average objects detected piglets all frames: {math.ceil(avg_counter)}", (10, 200), font, font_scale, font_color, font_thickness)
+                        cv2.putText(im0, f"Average objects detected piglets all frames: {math.ceil(avg_count)}", (10, 200), font, font_scale, font_color, font_thickness)
                         cv2.putText(im0, f"Min objects detected piglets all frames: {min_counter}", (10, 300), font, font_scale, font_color, font_thickness)
                         
                         vid_writer[i].write(im0)
