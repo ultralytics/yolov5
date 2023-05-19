@@ -122,8 +122,8 @@ class Annotator:
                             txt_color,
                             thickness=tf,
                             lineType=cv2.LINE_AA)
-              cv2.putText(self.im,
-                            text_str_count, (10, self.im[0] - 10),
+             cv2.putText(self.im,
+                            text_str_count, p1[1] - 2 if outside else p1[1] + h + 2),
                             0,
                             1.0,
                             txt_color,
