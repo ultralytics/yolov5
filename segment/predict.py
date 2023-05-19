@@ -33,7 +33,7 @@ import os
 import platform
 import sys
 from pathlib import Path
-
+import math
 import torch
 
 FILE = Path(__file__).resolve()
@@ -122,6 +122,10 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    counters = []
+    max_counter = max(counters) if counters else 0
+    max_text = f"Max objects detected across all frames: {max_counter}"
+
     for path, im, im0s, vid_cap, s in dataset:
         counter = 0
         min_counter = 0
@@ -149,120 +153,124 @@ def run(
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
-        for i, det in enumerate(pred):  # per image
-            counter += len(det)
-            seen += 1
-            if webcam:  # batch_size >= 1
-                p, im0, frame = path[i], im0s[i].copy(), dataset.count
-                s += f'{i}: '
-            else:
-                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-
-            p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
-            s += '%gx%g ' % im.shape[2:]  # print string
-            imc = im0.copy() if save_crop else im0  # for save_crop
-            annotator = Annotator(im0, line_width=line_thickness, example=str(names))
-            if len(det):
-                if retina_masks:
-                    # scale bbox first the crop masks
-                    det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
-                    masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
+            for i, det in enumerate(pred):  # per image
+                counter += len(det)
+                seen += 1
+                if webcam:  # batch_size >= 1
+                    p, im0, frame = path[i], im0s[i].copy(), dataset.count
+                    s += f'{i}: '
                 else:
-                    masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
-                    det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                    p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
-                # Segments
-                if save_txt:
-                    segments = [
-                        scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
-                        for x in reversed(masks2segments(masks))]
+                p = Path(p)  # to Path
+                save_path = str(save_dir / p.name)  # im.jpg
+                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+                s += '%gx%g ' % im.shape[2:]  # print string
+                imc = im0.copy() if save_crop else im0  # for save_crop
+                annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+                if len(det):
+                    if retina_masks:
+                        # scale bbox first the crop masks
+                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                        masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
+                    else:
+                        masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
+                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
 
-                # Print results
-                for c in det[:, 5].unique():
-                    n = (det[:, 5] == c).sum()  # detections per class
-                    s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                    # Segments
+                    if save_txt:
+                        segments = [
+                            scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
+                            for x in reversed(masks2segments(masks))]
 
-                # Mask plotting
-                annotator.masks(
-                    masks,
-                    colors=[colors(x, True) for x in det[:, 5]],
-                    im_gpu=torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() /
-                    255 if retina_masks else im[i])
+                    # Print results
+                    for c in det[:, 5].unique():
+                        n = (det[:, 5] == c).sum()  # detections per class
+                        s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-                # Write results
-                for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
-                    if save_txt:  # Write to file
-                        seg = segments[j].reshape(-1)  # (n,2) to (n*2)
-                        line = (cls, *seg, conf) if save_conf else (cls, *seg)  # label format
-                        with open(f'{txt_path}.txt', 'a') as f:
-                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
-                
-                    if save_img or save_crop or view_img:  # Add bbox to image
-                        c = int(cls)  # integer class
-                        n = (det[:, 5] == c).sum()
-                        box_count = len(det)
-                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
+                    # Mask plotting
+                    annotator.masks(
+                        masks,
+                        colors=[colors(x, True) for x in det[:, 5]],
+                        im_gpu=torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() /
+                        255 if retina_masks else im[i])
+
+                    # Write results
+                    for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
+                        if save_txt:  # Write to file
+                            seg = segments[j].reshape(-1)  # (n,2) to (n*2)
+                            line = (cls, *seg, conf) if save_conf else (cls, *seg)  # label format
+                            with open(f'{txt_path}.txt', 'a') as f:
+                                f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                    
+                        if save_img or save_crop or view_img:  # Add bbox to image
+                            c = int(cls)  # integer class
+                            n = (det[:, 5] == c).sum()
+                            box_count = len(det)
+                            label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
+                            
+                            annotator.box_label(xyxy, label, color=colors(c, True))
+                            
+                            # cv2.putText(frame, int(box_count), text_position, font, font_scale, font_color, font_thickness)
+
+                            # annotator.draw.polygon(segments[j], outline=colors(c, True), width=3)
+                        if save_crop:
+                            save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)        
+                # Stream results
+                counters.append(counter) 
+                print(f"Total objects detected: {counter}")
+                max_counter = max(counters)
+                min_counter = min(counters)
+                total_count = sum(counters)
+                frame_count += len(counters)
+                if frame_count > 0:
+                    avg_count = total_count / frame_count
+                else:
+                    avg_count = 0
+
+                print(f"Average objects detected: {math.ceil(avg_count)}")
+                print(f"Average objects detected: {avg_count}")
+                im0 = annotator.result()
+                if view_img:
+                    if platform.system() == 'Linux' and p not in windows:
+                        windows.append(p)
+                        cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
+                        cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
+                    cv2.imshow(str(p), im0)
+                    if cv2.waitKey(1) == ord('q'):  # 1 millisecond
+                        exit()
+
+                # Save results (image with detections)
+                if save_img:
+                    if dataset.mode == 'image':
+                        cv2.imwrite(save_path, im0)
+                    else:  # 'video' or 'stream'
+                        if vid_path[i] != save_path:  # new video
+                            vid_path[i] = save_path
+                            if isinstance(vid_writer[i], cv2.VideoWriter):
+                                vid_writer[i].release()  # release previous video writer
+                            if vid_cap:  # video
+                                fps = vid_cap.get(cv2.CAP_PROP_FPS)
+                                w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                                h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                            else:  # stream
+                                fps, w, h = 30, im0.shape[1], im0.shape[0]
+                            save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
+                            vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                        cv2.putText(im0, f'Total piglets detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
+                        cv2.putText(im0, f"Max objects detected piglets all frames: {max_counter}", (10, 100), font, font_scale, font_color, font_thickness)
+                        cv2.putText(im0, f"Average objects detected piglets all frames: {math.ceil(avg_counter)}", (10, 200), font, font_scale, font_color, font_thickness)
+                        cv2.putText(im0, f"Min objects detected piglets all frames: {min_counter}", (10, 300), font, font_scale, font_color, font_thickness)
                         
-                        annotator.box_label(xyxy, label, color=colors(c, True))
-                        
-                        # cv2.putText(frame, int(box_count), text_position, font, font_scale, font_color, font_thickness)
+                        vid_writer[i].write(im0)
 
-                        # annotator.draw.polygon(segments[j], outline=colors(c, True), width=3)
-                    if save_crop:
-                        save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-                
-            # Stream results
-            
-            im0 = annotator.result()
-            if view_img:
-                if platform.system() == 'Linux' and p not in windows:
-                    windows.append(p)
-                    cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
-                    cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0)
-                if cv2.waitKey(1) == ord('q'):  # 1 millisecond
-                    exit()
-
-            # Save results (image with detections)
-            if save_img:
-                if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
-                else:  # 'video' or 'stream'
-                    if vid_path[i] != save_path:  # new video
-                        vid_path[i] = save_path
-                        if isinstance(vid_writer[i], cv2.VideoWriter):
-                            vid_writer[i].release()  # release previous video writer
-                        if vid_cap:  # video
-                            fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                            w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                            h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                        else:  # stream
-                            fps, w, h = 30, im0.shape[1], im0.shape[0]
-                        save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                    print('4')
-                    cv2.putText(im0, f'Total objects detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
-                    vid_writer[i].write(im0)
-        max_counter = max(max_counter, counter)
-        min_counter = min(min_counter, counter)
-        avg_counter = max_counter
-        print(f"Total objects detected: {counter}")
-        cv2.putText(im0, f'Total objects detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
-        total_count += counter
-        frame_count +=1
-        if avg_counter > 0:
-            avg_counter = total_count / frame_count
-        else:
-            avg_counter = 0
-
-        print(f"Maximum objects detected: {max_counter}")
-        print(f"Minimum objects detected: {min_counter}")
-        print(f"Average objects detected: {avg_counter}")
-        # Print time (inference-only)
-        LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
-
+            # counters.append(counter) 
+            # print(f"Total objects detected: {counter}")
+            # Print time (inference-only)
+            LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
+    
+        # max_counter = max(counters)
+        # print(f"Max objects detected across all frames: {max_counter}")
     # Print results
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
