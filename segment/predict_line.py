@@ -109,6 +109,8 @@ def run(
     area_rect = [(141, 470), (141, 141), (1150, 141), (1150, 470)]
     rectangle_top_left = (141, 141)
     rectangle_bottom_right = (1150, 470)
+    rectangle_top_left_back = (750, 470)
+    rectangle_bottom_right_back = (1279, 719)
     area_polygon = np.array(area_rect)
     # Dataloader
     bs = 1  # batch_size
@@ -265,6 +267,8 @@ def run(
                                 fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
                             vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                            
+                        cv2.rectangle(img_numpy, rectangle_top_left_back, rectangle_bottom_back, (0, 0, 0), -1)
                         cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (255, 255, 255), 2)
                         cv2.putText(im0, f'Total piglets detected: {counter}', text_position, font, font_scale, font_color, font_thickness)
                         cv2.putText(im0, f"Max objects detected piglets all frames: {max_counter}", (10, 100), font, font_scale, font_color, font_thickness)
