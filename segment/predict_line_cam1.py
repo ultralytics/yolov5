@@ -51,6 +51,17 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import masks2segments, process_mask, process_mask_native
 from utils.torch_utils import select_device, smart_inference_mode
 
+def check_rect_overlap(xyxy1, xyxy2):
+    x1, y1, x2, y2 = xyxy1
+    x3, y3, x4, y4 = xyxy2
+
+    if x1 > x4 or x3 > x2:
+        return False
+
+    if y1 > y4 or y3 > y2:
+        return False
+
+    return True
 
 @smart_inference_mode()
 def run(
@@ -175,20 +186,20 @@ def run(
                 imc = im0.copy() if save_crop else im0  # for save_crop
                 annotator = Annotator(im0, line_width=line_thickness, example=str(names))
                 if len(det):
-                    cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                    
                     if retina_masks:
-                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                        
                         # scale bbox first the crop masks
                         det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
                         masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
                     else:
-                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                        
                         masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
                         det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
 
                     # Segments
                     if save_txt:
-                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                        
                         segments = [
                             scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
                             for x in reversed(masks2segments(masks))]
@@ -206,8 +217,7 @@ def run(
                         255 if retina_masks else im[i])
 
                     # Write results
-                    for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
-                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                    for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])): # per bbox
                         if save_txt:  # Write to file
                             seg = segments[j].reshape(-1)  # (n,2) to (n*2)
                             line = (cls, *seg, conf) if save_conf else (cls, *seg)  # label format
@@ -217,26 +227,16 @@ def run(
                         if save_img or save_crop or view_img:  # Add bbox to image
                             c = int(cls)  # integer class
                             n = (det[:, 5] == c).sum()
+                            overlapped_boxes = 0
                             box_count = len(det)
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
                             cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                            if check_rect_overlap(xyxy, (rectangle_top_left_back, rectangle_bottom_right_back)):
+                                overlapped_boxes += 1
+                            counter =- overlapped_boxes
+                            
                             annotator.box_label(xyxy, label, color=colors(c, True))
-                            # bbox_polygon = np.array([(xyxy[0], xyxy[1]), (xyxy[0], xyxy[3]), (xyxy[2], xyxy[3]), (xyxy[2], xyxy[1])])
-                            intersects = cv2.pointPolygonTest(area_polygon, annotator.box_label(xyxy, label, color=colors(c, True)), False) >= 0
-                            if intersects:
-                                print("Point intersects with the polygon")
-                                box_label = annotator.box_label(xyxy, label, color=colors(c, True))
-                                intersection_area = calculate_intersection_area(box_label, area_polygon)
-                                if intersection_area / box_label.area > 0.8:
-                                    count += 1
-                            else:
-                                print("Point not intersects with the polygon")
-                                
-
-                    print(count)   
-                            # cv2.putText(frame, int(box_count), text_position, font, font_scale, font_color, font_thickness)
-
-                            # annotator.draw.polygon(segments[j], outline=colors(c, True), width=3)
+                            
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)        
                 # Stream results
