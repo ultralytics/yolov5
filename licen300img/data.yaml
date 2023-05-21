@@ -1,0 +1,11 @@
+train: licen300img\train
+val: licen300img\train
+nc: 2
+names: ['car', 'motorcycle']
+
+roboflow:
+  workspace: unit
+  project: licenplate-detect
+  version: 8
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/unit/licenplate-detect/dataset/8
