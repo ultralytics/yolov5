@@ -51,17 +51,11 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import masks2segments, process_mask, process_mask_native
 from utils.torch_utils import select_device, smart_inference_mode
 
-def check_rect_overlap(xyxy1, xyxy2):
-    x1, y1, x2, y2 = xyxy1
-    x3, y3, x4, y4 = xyxy2
-
-    if x1 > x4 or x3 > x2:
-        return False
-
-    if y1 > y4 or y3 > y2:
-        return False
-
-    return True
+def check_rect_overlap(R1, R2):
+      if (R1[0]>=R2[2]) or (R1[2]<=R2[0]) or (R1[3]<=R2[1]) or (R1[1]>=R2[3]):
+         return False
+      else:
+         return True
 
 @smart_inference_mode()
 def run(
@@ -229,14 +223,19 @@ def run(
                             n = (det[:, 5] == c).sum()
                             overlapped_boxes = 0
                             box_count = len(det)
+                            bbow_xyxy = [tensor.item() for tensor in xyxy]
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
                             cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
-                            if check_rect_overlap(xyxy, (rectangle_top_left_back, rectangle_bottom_right_back)):
-                                overlapped_boxes += 1
-                            counter =- overlapped_boxes
-                            
+                            if check_rect_overlap(bbow_xyxy, rectangle_top_left_back+rectangle_bottom_right_back):
+
+                                counter = counter -1
+                                continue
+                            #     overlapped_boxes += 1
+                            # counter =- overlapped_boxes
+                            # print(f'overlapped_boxes:{overlapped_boxes}')
                             annotator.box_label(xyxy, label, color=colors(c, True))
                             
+                            # print([tensor.item() for tensor in xyxy])
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)        
                 # Stream results
