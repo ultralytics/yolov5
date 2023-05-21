@@ -219,10 +219,14 @@ def run(
                             # bbox_polygon = np.array([(xyxy[0], xyxy[1]), (xyxy[0], xyxy[3]), (xyxy[2], xyxy[3]), (xyxy[2], xyxy[1])])
                             intersects = cv2.pointPolygonTest(area_polygon, annotator.box_label(xyxy, label, color=colors(c, True)), False) >= 0
                             if intersects:
+                                print("Point intersects with the polygon")
                                 box_label = annotator.box_label(xyxy, label, color=colors(c, True))
                                 intersection_area = calculate_intersection_area(box_label, area_polygon)
                                 if intersection_area / box_label.area > 0.8:
                                     count += 1
+                            else:
+                                print("Point not intersects with the polygon")
+                                
 
                     print(count)   
                             # cv2.putText(frame, int(box_count), text_position, font, font_scale, font_color, font_thickness)
