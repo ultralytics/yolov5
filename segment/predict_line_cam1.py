@@ -175,16 +175,20 @@ def run(
                 imc = im0.copy() if save_crop else im0  # for save_crop
                 annotator = Annotator(im0, line_width=line_thickness, example=str(names))
                 if len(det):
+                    cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
                     if retina_masks:
+                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
                         # scale bbox first the crop masks
                         det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
                         masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
                     else:
+                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
                         masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
                         det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
 
                     # Segments
                     if save_txt:
+                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
                         segments = [
                             scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
                             for x in reversed(masks2segments(masks))]
@@ -203,6 +207,7 @@ def run(
 
                     # Write results
                     for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
+                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
                         if save_txt:  # Write to file
                             seg = segments[j].reshape(-1)  # (n,2) to (n*2)
                             line = (cls, *seg, conf) if save_conf else (cls, *seg)  # label format
@@ -214,7 +219,7 @@ def run(
                             n = (det[:, 5] == c).sum()
                             box_count = len(det)
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
-                            
+                            cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
                             annotator.box_label(xyxy, label, color=colors(c, True))
                             # bbox_polygon = np.array([(xyxy[0], xyxy[1]), (xyxy[0], xyxy[3]), (xyxy[2], xyxy[3]), (xyxy[2], xyxy[1])])
                             intersects = cv2.pointPolygonTest(area_polygon, annotator.box_label(xyxy, label, color=colors(c, True)), False) >= 0
