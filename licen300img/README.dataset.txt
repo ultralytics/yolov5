@@ -3,4 +3,3 @@ https://universe.roboflow.com/unit/licenplate-detect
 
 Provided by a Roboflow user
 License: CC BY 4.0
-
