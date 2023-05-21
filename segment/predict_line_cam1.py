@@ -112,8 +112,8 @@ def run(
     font_thickness = 2
     font_color = (255, 255, 255)
     area_rect = [(141, 470), (141, 141), (1150, 141), (1150, 470)]
-    rectangle_top_left = (141, 141)
-    rectangle_bottom_right = (1150, 480)
+    rectangle_top_left = (141, 151)
+    rectangle_bottom_right = (1150, 460)
     rectangle_top_left_back = (750, 470)
     rectangle_bottom_right_back = (1279, 719)
     area_polygon = np.array(area_rect)
@@ -227,9 +227,13 @@ def run(
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
                             cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
                             if check_rect_overlap(bbow_xyxy, rectangle_top_left_back+rectangle_bottom_right_back) or check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right) :
-                                count +=1
-                                counter = counter -1
-                                continue
+                                counter = counter -1    
+                                if check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right):
+                                  count +=1
+                                  counter = counter -1
+                                else:
+                                  continue
+                      
                             #     overlapped_boxes += 1
                             # counter =- overlapped_boxes
                             # print(f'overlapped_boxes:{overlapped_boxes}')
