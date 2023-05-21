@@ -226,8 +226,8 @@ def run(
                             bbow_xyxy = [tensor.item() for tensor in xyxy]
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
                             cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
-                            if check_rect_overlap(bbow_xyxy, rectangle_top_left_back+rectangle_bottom_right_back):
-
+                            if check_rect_overlap(bbow_xyxy, rectangle_top_left_back+rectangle_bottom_right_back) or check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right) :
+                                count +=1
                                 counter = counter -1
                                 continue
                             #     overlapped_boxes += 1
@@ -239,7 +239,8 @@ def run(
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)        
                 # Stream results
-                counters.append(counter) 
+                counters.append(counter)
+                print(f"objects detected {count}") 
                 print(f"Total objects detected: {counter}")
                 max_counter = max(counters)
                 min_counter = min(counters)
