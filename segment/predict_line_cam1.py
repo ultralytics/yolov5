@@ -230,7 +230,6 @@ def run(
                                 counter = counter -1    
                                 if check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right):
                                   count +=1
-                                  counter = counter -1
                                 else:
                                   continue
                       
