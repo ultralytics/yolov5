@@ -294,6 +294,7 @@ def run(
                             vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
 
                         cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (255, 0, 0), 3)
                         cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (255, 255, 255), 2)
                         cv2.putText(
                             im0,
