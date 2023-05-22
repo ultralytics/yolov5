@@ -29,13 +29,15 @@ Usage - formats:
 """
 
 import argparse
+import math
 import os
 import platform
 import sys
 from pathlib import Path
-import math
-import torch
+
 import numpy as np
+import torch
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -51,11 +53,13 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import masks2segments, process_mask, process_mask_native
 from utils.torch_utils import select_device, smart_inference_mode
 
+
 def check_rect_overlap(R1, R2):
-      if (R1[0]>=R2[2]) or (R1[2]<=R2[0]) or (R1[3]<=R2[1]) or (R1[1]>=R2[3]):
-         return False
-      else:
-         return True
+    if (R1[0] >= R2[2]) or (R1[2] <= R2[0]) or (R1[3] <= R2[1]) or (R1[1] >= R2[3]):
+        return False
+    else:
+        return True
+
 
 @smart_inference_mode()
 def run(
@@ -134,16 +138,16 @@ def run(
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
     counters = []
     max_counter = max(counters) if counters else 0
-    max_text = f"Max objects detected across all frames: {max_counter}"
+    max_text = f'Max objects detected across all frames: {max_counter}'
 
     for path, im, im0s, vid_cap, s in dataset:
         counter = 0
         count = 0
         min_counter = 0
-        max_counter =0
+        max_counter = 0
         avg_counter = 0
         total_count = 0
-        frame_count =0
+        frame_count = 0
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -160,10 +164,10 @@ def run(
         with dt[2]:
             pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32)
 
-        # Second-stage classifier (optional)
-        # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
+            # Second-stage classifier (optional)
+            # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
-        # Process predictions
+            # Process predictions
             for i, det in enumerate(pred):  # per image
                 counter += len(det)
                 seen += 1
@@ -175,25 +179,28 @@ def run(
 
                 p = Path(p)  # to Path
                 save_path = str(save_dir / p.name)  # im.jpg
-                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}'
+                                                                )  # im.txt
                 s += '%gx%g ' % im.shape[2:]  # print string
                 imc = im0.copy() if save_crop else im0  # for save_crop
                 annotator = Annotator(im0, line_width=line_thickness, example=str(names))
                 if len(det):
-                    
+
                     if retina_masks:
-                        
+
                         # scale bbox first the crop masks
-                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4],
+                                                 im0.shape).round()  # rescale boxes to im0 size
                         masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
                     else:
-                        
+
                         masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
-                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4],
+                                                 im0.shape).round()  # rescale boxes to im0 size
 
                     # Segments
                     if save_txt:
-                        
+
                         segments = [
                             scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
                             for x in reversed(masks2segments(masks))]
@@ -204,47 +211,49 @@ def run(
                         s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                     # Mask plotting
-                    annotator.masks(
-                        masks,
-                        colors=[colors(x, True) for x in det[:, 5]],
-                        im_gpu=torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() /
-                        255 if retina_masks else im[i])
+                    annotator.masks(masks,
+                                    colors=[colors(x, True) for x in det[:, 5]],
+                                    im_gpu=torch.as_tensor(im0, dtype=torch.float16).to(device).permute(
+                                        2, 0, 1).flip(0).contiguous() / 255 if retina_masks else im[i])
 
                     # Write results
-                    for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])): # per bbox
+                    for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):  # per bbox
                         if save_txt:  # Write to file
                             seg = segments[j].reshape(-1)  # (n,2) to (n*2)
                             line = (cls, *seg, conf) if save_conf else (cls, *seg)  # label format
                             with open(f'{txt_path}.txt', 'a') as f:
                                 f.write(('%g ' * len(line)).rstrip() % line + '\n')
-                    
+
                         if save_img or save_crop or view_img:  # Add bbox to image
                             c = int(cls)  # integer class
                             n = (det[:, 5] == c).sum()
                             overlapped_boxes = 0
                             box_count = len(det)
                             bbow_xyxy = [tensor.item() for tensor in xyxy]
-                            label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
+                            label = None if hide_labels else (
+                                names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
                             cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
-                            if check_rect_overlap(bbow_xyxy, rectangle_top_left_back+rectangle_bottom_right_back) or check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right) :
-                                counter = counter -1    
-                                if check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right):
-                                  count +=1
+                            if check_rect_overlap(bbow_xyxy, rectangle_top_left_back +
+                                                  rectangle_bottom_right_back) or check_rect_overlap(
+                                                      bbow_xyxy, rectangle_top_left + rectangle_bottom_right):
+                                counter = counter - 1
+                                if check_rect_overlap(bbow_xyxy, rectangle_top_left + rectangle_bottom_right):
+                                    count += 1
                                 else:
-                                  continue
-                      
+                                    continue
+
                             #     overlapped_boxes += 1
                             # counter =- overlapped_boxes
                             # print(f'overlapped_boxes:{overlapped_boxes}')
                             annotator.box_label(xyxy, label, color=colors(c, True))
-                            
+
                             # print([tensor.item() for tensor in xyxy])
                         if save_crop:
-                            save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)        
+                            save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
                 # Stream results
                 counters.append(counter)
-                print(f"objects detected {count}") 
-                print(f"Total objects detected: {counter}")
+                print(f'objects detected {count}')
+                print(f'Total objects detected: {counter}')
                 max_counter = max(counters)
                 min_counter = min(counters)
                 total_count = sum(counters)
@@ -254,8 +263,8 @@ def run(
                 else:
                     avg_count = 0
 
-                print(f"Average objects detected: {math.ceil(avg_count)}")
-                print(f"Average objects detected: {avg_count}")
+                print(f'Average objects detected: {math.ceil(avg_count)}')
+                print(f'Average objects detected: {avg_count}')
                 im0 = annotator.result()
                 if view_img:
                     if platform.system() == 'Linux' and p not in windows:
@@ -283,21 +292,25 @@ def run(
                                 fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
                             vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                            
+
                         cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
                         cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (255, 255, 255), 2)
-                        cv2.putText(im0, f'piglets detected: {counter} Max: {max_counter} Avg: {math.ceil(avg_count)} Min: {min_counter}', text_position, font, font_scale, font_color, font_thickness)
-#                         cv2.putText(im0, f"Max objects detected piglets all frames: {max_counter}", (10, 100), font, font_scale, font_color, font_thickness)
-#                         cv2.putText(im0, f"Average objects detected piglets all frames: {math.ceil(avg_count)}", (10, 200), font, font_scale, font_color, font_thickness)
-#                         cv2.putText(im0, f"Min objects detected piglets all frames: {min_counter}", (10, 300), font, font_scale, font_color, font_thickness)
-                        cv2.putText(im0, f"objects detected {count}", (141, 500), font, font_scale, font_color, font_thickness)
+                        cv2.putText(
+                            im0,
+                            f'piglets detected: {counter} Max: {max_counter} Avg: {math.ceil(avg_count)} Min: {min_counter}',
+                            text_position, font, font_scale, font_color, font_thickness)
+                        #                         cv2.putText(im0, f"Max objects detected piglets all frames: {max_counter}", (10, 100), font, font_scale, font_color, font_thickness)
+                        #                         cv2.putText(im0, f"Average objects detected piglets all frames: {math.ceil(avg_count)}", (10, 200), font, font_scale, font_color, font_thickness)
+                        #                         cv2.putText(im0, f"Min objects detected piglets all frames: {min_counter}", (10, 300), font, font_scale, font_color, font_thickness)
+                        cv2.putText(im0, f'objects detected {count}', (141, 500), font, font_scale, font_color,
+                                    font_thickness)
                         vid_writer[i].write(im0)
 
-            # counters.append(counter) 
+            # counters.append(counter)
             # print(f"Total objects detected: {counter}")
             # Print time (inference-only)
             LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
-    
+
         # max_counter = max(counters)
         # print(f"Max objects detected across all frames: {max_counter}")
     # Print results

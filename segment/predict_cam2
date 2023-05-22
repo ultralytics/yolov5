@@ -203,22 +203,22 @@ def run(
                             line = (cls, *seg, conf) if save_conf else (cls, *seg)  # label format
                             with open(f'{txt_path}.txt', 'a') as f:
                                 f.write(('%g ' * len(line)).rstrip() % line + '\n')
-                    
+
                         if save_img or save_crop or view_img:  # Add bbox to image
                             c = int(cls)  # integer class
                             n = (det[:, 5] == c).sum()
                             box_count = len(det)
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f} {box_count}')
-                            
+
                             annotator.box_label(xyxy, label, color=colors(c, True))
                             # bbox_polygon = np.array([(xyxy[0], xyxy[1]), (xyxy[0], xyxy[3]), (xyxy[2], xyxy[3]), (xyxy[2], xyxy[1])])
                             # cv2.putText(frame, int(box_count), text_position, font, font_scale, font_color, font_thickness)
 
                             # annotator.draw.polygon(segments[j], outline=colors(c, True), width=3)
                         if save_crop:
-                            save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)        
+                            save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
                 # Stream results
-                counters.append(counter) 
+                counters.append(counter)
                 print(f"Total objects detected: {counter}")
                 max_counter = max(counters)
                 min_counter = min(counters)
@@ -258,16 +258,16 @@ def run(
                                 fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
                             vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                            
+
                         cv2.putText(im0, f'piglets detected: {counter} Max: {max_counter} Avg: {math.ceil(avg_count)} Min: {min_counter}', text_position, font, font_scale, font_color, font_thickness)
 
                         vid_writer[i].write(im0)
 
-            # counters.append(counter) 
+            # counters.append(counter)
             # print(f"Total objects detected: {counter}")
             # Print time (inference-only)
             LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
-    
+
         # max_counter = max(counters)
         # print(f"Max objects detected across all frames: {max_counter}")
     # Print results
