@@ -388,7 +388,7 @@ download: |
 
   from utils.general import Path, check_requirements, download, np, xyxy2xywhn
 
-  check_requirements(('pycocotools>=2.0',))
+  check_requirements('pycocotools>=2.0')
   from pycocotools.coco import COCO
 
   # Make Directories
