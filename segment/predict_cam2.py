@@ -286,7 +286,7 @@ def run(
 #                         cv2.putText(im0, f"Max objects detected piglets all frames: {max_counter}", (10, 100), font, font_scale, font_color, font_thickness)
 #                         cv2.putText(im0, f"Average objects detected piglets all frames: {math.ceil(avg_count)}", (10, 200), font, font_scale, font_color, font_thickness)
 #                         cv2.putText(im0, f"Min objects detected piglets all frames: {min_counter}", (10, 300), font, font_scale, font_color, font_thickness)
-                        cv2.putText(im0, f"objects detected {count}", (141, 500), font, font_scale, font_color, font_thickness)
+#                         cv2.putText(im0, f"objects detected {count}", (141, 500), font, font_scale, font_color, font_thickness)
                         vid_writer[i].write(im0)
 
             # counters.append(counter) 
