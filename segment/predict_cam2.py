@@ -272,7 +272,13 @@ def run(
                 # Save results (image with detections)
                 if save_img:
                     if dataset.mode == 'image':
+                        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                        cv2.putText(
+                            im0,
+                            f'piglets detected: {counter} Max: {max_counter} Avg: {math.ceil(avg_count)} Min: {min_counter}',
+                            text_position, font, font_scale, font_color, font_thickness)
                         cv2.imwrite(save_path, im0)
+
                     else:  # 'video' or 'stream'
                         if vid_path[i] != save_path:  # new video
                             vid_path[i] = save_path
