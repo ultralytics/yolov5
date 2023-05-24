@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Download utils
 """
@@ -118,8 +118,8 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v7.0'):
                 except Exception:
                     tag = release
 
-        file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         if name in assets:
+            file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
             safe_download(file,
                           url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
                           min_bytes=1E5,
