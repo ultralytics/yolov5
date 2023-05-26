@@ -28,7 +28,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import AutoShape, DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
-from utils.general import check_file, check_img_size, print_args, xywh2xyxy
+from utils.general import (check_file, check_img_size, print_args,
+                        xywh2xyxy, increment_path)
 from utils.torch_utils import select_device
 
 
@@ -320,6 +321,9 @@ def run(
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        project=ROOT / 'runs/detect',  # save results to project/name
+        name='exp',  # save results to project/name
+        exist_ok=False,  # existing project/name ok, do not increment
         nosave=False,  # do not save images/videos
         dnn=False,  # use OpenCV DNN for ONNX inference
         half=False,  # use FP16 half-precision inference
@@ -351,7 +355,11 @@ def run(
     model_classes = {v: k for k, v in model.names.items()}
     class_idx = [model_classes[item] for item in class_names]
 
-    for _, im, _, _, _ in dataset:
+    # Directories
+    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
+    save_dir.mkdir(parents=True, exist_ok=True)  # make dir
+
+    for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
         # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
@@ -378,8 +386,11 @@ def run(
 
         # for now, we only support one image at a time
         # then we should save the image in a file
+        
         if save_img:
-            cv2.imwrite('explainer/output.jpg', cam_image)
+            path = Path(path)
+            save_path = str(save_dir / path.name)  # im.jpg
+            cv2.imwrite(save_path, cam_image)
 
         return cam_image
 
