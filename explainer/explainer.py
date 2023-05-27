@@ -390,7 +390,7 @@ def run(
             path = Path(path)
             save_path = str(save_dir / path.name)  # im.jpg
             cv2.imwrite(save_path, cam_image)
-            cv2.imwrite(save_path.replace(path.suffix, '_heat_'/path.suffix), heat_map)
+            cv2.imwrite(save_path.replace(path.suffix, '_heat_'+path.suffix), heat_map)
             LOGGER.info(f'saved image to {save_path}')
         else: 
             return cam_image
