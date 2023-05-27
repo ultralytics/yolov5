@@ -300,7 +300,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
                             use_cuda,
                             backprop_array=backprop_array,
                             keep_only_topk=keep_only_topk,
-                            crop = crop
+                            crop = crop,
                             **extra_arguments)
     return cam_image, heat_map
 
