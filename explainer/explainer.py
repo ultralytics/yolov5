@@ -191,7 +191,7 @@ class YOLOBoxScoreTarget2():
         return score
 
 def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backward_per_class: bool, image, layer: int,
-                use_cuda: bool, backprop_array,keep_only_topk,crop, **kwargs):
+                device, backprop_array,keep_only_topk,crop, **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
         classes = predicted_bbox['class'].values
@@ -201,12 +201,14 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     # targets = [YOLOBoxScoreTarget(classes=classes)]
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name', axis=1).values
-                              .astype(np.float64))
+                              .astype(np.float64),device=device)
 
     if not backprop_array:
         backprop_array = ['class']
 
     cam_array = []
+    use_cuda = len(device) > 0
+
     if not backward_per_class:
         for item in backprop_array:
             targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=classes)]
@@ -253,7 +255,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     return cam_image, final_cam
 
 
-def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class, image, layer: int, use_cuda: bool,
+def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class, image, layer: int, device,
             backprop_array,keep_only_topk,crop):
     cam_image = None
     method_obj = None
@@ -298,7 +300,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
                             backward_per_class,
                             image,
                             layer,
-                            use_cuda,
+                            device=device,
                             backprop_array=backprop_array,
                             keep_only_topk=keep_only_topk,
                             crop = crop,
@@ -377,7 +379,7 @@ def run(
 
     for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
-        predicted_bbox = processed_output.pandas().xyxy[0].to(model.device)
+        predicted_bbox = processed_output.pandas().xyxy[0]
         # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
 
         im = torch.from_numpy(im).to(model.device)
@@ -396,7 +398,7 @@ def run(
                             backward_per_class=backward_per_class,
                             image=im,
                             layer=layer,
-                            use_cuda=use_cuda,
+                            device=device,
                             backprop_array=backprop_array,
                             keep_only_topk=keep_only_topk,
                             crop=crop)
