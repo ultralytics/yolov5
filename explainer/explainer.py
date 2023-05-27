@@ -419,6 +419,7 @@ def run(
             else: 
                 return cam_image
         except Exception as e:
+            raise e
             LOGGER.error(f'{e}')
 
 def parseopt():
