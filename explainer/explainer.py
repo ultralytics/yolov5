@@ -238,7 +238,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     fixed_image = np.array(image[0].cpu()).transpose(1, 2, 0)
 
     if crop:
-        indices = np.where(final_cam == 0)
+        indices = np.where(final_cam > 0)
         cam_image = fixed_image.copy()
         cam_image[indices] = fixed_image.mean()
         cam_image = cam_image*255
