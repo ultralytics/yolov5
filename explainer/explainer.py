@@ -190,7 +190,6 @@ class YOLOBoxScoreTarget2():
 
         return score
 
-
 def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backward_per_class: bool, image, layer: int,
                 use_cuda: bool, backprop_array,keep_only_topk, **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
@@ -231,8 +230,10 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     final_cam = sum(cam_array)
     final_cam = final_cam / final_cam.max()
 
-    if 0<keep_only_topk<1:
-        breakpoint()
+    if 0<keep_only_topk<100:
+        k = np.percentile(final_cam, 100-keep_only_topk)
+        indices = np.where(final_cam <= k)
+        final_cam[indices] = 0 
 
     fixed_image = np.array(image[0].cpu()).transpose(1, 2, 0)
     cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
@@ -320,7 +321,7 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         method='GradCAM',  # the method for interpreting the results
         layer=-2,
-        keep_only_topk=1, # this can be 0 to 1. it shows maximum percentage of pixels 
+        keep_only_topk=100, # this can be 0 to 1. it shows maximum percentage of pixels 
         # which can be used for heatmap. This is good for evaluation of heatmaps!
         class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
@@ -426,7 +427,7 @@ def parseopt():
     parser.add_argument('--layer', type=int, default=-2, help="layer to backpropagate gradients to")
     parser.add_argument('--class-names', nargs='*',default='', help='filter by class: --classes dog, or --classes dog cat')
 
-    parser.add_argument('--keep-only-topk', type=float, default=1, help="percentage of heatmap pixels to keep")
+    parser.add_argument('--keep-only-topk', type=int, default=1, help="percentage of heatmap pixels to keep")
     parser.add_argument('--backprop-array', nargs='*',default='', help="backprop array items" )
     parser.add_argument('--backward-per-class', type=bool, default=False, help="whether the method should backprop per each class or do it all at one backward")
     
