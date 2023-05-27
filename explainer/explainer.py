@@ -231,7 +231,9 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
                 cam_array.append(grayscale_cam)
 
     final_cam = sum(cam_array)
-    final_cam = final_cam / final_cam.max()
+
+    if final_cam.max() > 0: # divide by zero
+        final_cam = final_cam / final_cam.max() #normalize the result
 
     if 0 < keep_only_topk < 100:
         k = np.percentile(final_cam, 100-keep_only_topk)
