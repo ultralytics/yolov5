@@ -345,7 +345,6 @@ def run(
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
     stride, pt = model.stride, model.pt
 
-    model = YoloOutputWrapper(model)
     autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
 
     imgsz = check_img_size(imgsz, s=stride)  # check image size
@@ -361,6 +360,7 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
+    model = YoloOutputWrapper(model)
     last_cam_image = None
     for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
