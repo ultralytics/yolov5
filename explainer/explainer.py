@@ -192,7 +192,7 @@ class YOLOBoxScoreTarget2():
 
 
 def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backward_per_class: bool, image, layer: int,
-                use_cuda: bool, backprop_array, **kwargs):
+                use_cuda: bool, backprop_array,keep_only_topk, **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
         classes = predicted_bbox['class'].values
@@ -231,6 +231,9 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     final_cam = sum(cam_array)
     final_cam = final_cam / final_cam.max()
 
+    if 0<keep_only_topk<1:
+        breakpoint()
+
     fixed_image = np.array(image[0].cpu()).transpose(1, 2, 0)
     cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
     # And lets draw the boxes again:
@@ -243,7 +246,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
 
 def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class, image, layer: int, use_cuda: bool,
-            backprop_array):
+            backprop_array,keep_only_topk):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -289,6 +292,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
                             layer,
                             use_cuda,
                             backprop_array=backprop_array,
+                            keep_only_topk=keep_only_topk,
                             **extra_arguments)
     return cam_image, heat_map
 
@@ -316,6 +320,8 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         method='GradCAM',  # the method for interpreting the results
         layer=-2,
+        keep_only_topk=1, # this can be 0 to 1. it shows maximum percentage of pixels 
+        # which can be used for heatmap. This is good for evaluation of heatmaps!
         class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
@@ -381,7 +387,8 @@ def run(
                             image=im,
                             layer=layer,
                             use_cuda=use_cuda,
-                            backprop_array=backprop_array)
+                            backprop_array=backprop_array,
+                            keep_only_topk=keep_only_topk)
 
         # for now, we only support one image at a time
         # then we should save the image in a file
@@ -407,8 +414,22 @@ def parseopt():
                         type=str,
                         default='EigenCAM',
                         help='the method to use for interpreting the feature maps')
-    parser.add_argument('--verbose', action='store_true', help='verbose log')
+    parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
+    parser.add_argument('--project', default=ROOT / 'runs/detect', help='save results to project/name')
+    parser.add_argument('--name', default='exp', help='save results to project/name')
+    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
 
+    parser.add_argument('--verbose', action='store_true', help='verbose log')
+    parser.add_argument('--layer', type=int, default=-2, help="layer to backpropagate gradients to")
+    parser.add_argument('--classes-names', nargs='+', type=str, help='filter by class: --classes dog, or --classes dog cat')
+
+    parser.add_argument('--keep-only-topk', type=float, default=1, help="percentage of heatmap pixels to keep")
+    parser.add_argument('--backprop-array', nargs='+', type=str,default='class', help="backprop array items" )
+    parser.add_argument('--backward-per-class', type=bool, default=False, help="whether the method should backprop per each class or do it all at one backward")
+    
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
