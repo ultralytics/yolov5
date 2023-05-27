@@ -106,7 +106,7 @@ class YOLOBoxScoreTarget2():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self, predicted_bbox, backprop, classes):
+    def __init__(self, predicted_bbox, backprop, classes,device):
         """
         # Initializes the YOLOBoxScoreTarget2 module.
 
@@ -119,6 +119,7 @@ class YOLOBoxScoreTarget2():
         self.predicted_bbox = predicted_bbox
         self.backprop = backprop
         self.classes = classes
+        self.device = device
 
     def __call__(self, output):
         """
@@ -142,7 +143,7 @@ class YOLOBoxScoreTarget2():
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:, :4], bboxes_processed[0])
         topk_iou_values, topk_iou_indices = iou_scores.topk(k=10, dim=-1)  # get top 10 similar boxes for each of them
 
-        score = torch.tensor([0.0], requires_grad=True)
+        score = torch.tensor([0.0], requires_grad=True,device=device)
 
         for i, (x1, y1, x2, y2, confidence, class_idx) in enumerate(self.predicted_bbox):
             # bbox format: x1, y1, x2, y2, confidence, class_idx
@@ -211,7 +212,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
     if not backward_per_class:
         for item in backprop_array:
-            targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=classes)]
+            targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=classes,device=device)]
             cam = method(model, target_layers, use_cuda=use_cuda, reshape_transform=yolo_reshape_transform, **kwargs)
             grayscale_cam = cam(image, targets=targets)
             grayscale_cam = grayscale_cam[0, :]
@@ -219,7 +220,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     else:
         for class_ in classes:
             for item in backprop_array:
-                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=[class_])]
+                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item,device=device, classes=[class_])]
                 cam = method(model,
                              target_layers,
                              use_cuda=use_cuda,
