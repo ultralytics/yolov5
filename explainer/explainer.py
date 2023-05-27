@@ -207,7 +207,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
         backprop_array = ['class']
 
     cam_array = []
-    use_cuda = len(device) > 0
+    use_cuda = device is not None
 
     if not backward_per_class:
         for item in backprop_array:
