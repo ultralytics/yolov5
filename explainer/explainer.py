@@ -417,7 +417,7 @@ def run(
             else: 
                 return cam_image
         except Exception as e:
-            LOGGER.Info(f'{e}')
+            LOGGER.error(f'{e}')
 
 def parseopt():
     parser = argparse.ArgumentParser()
