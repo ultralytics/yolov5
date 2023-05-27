@@ -305,7 +305,7 @@ class YoloOutputWrapper(DetectMultiBackend):
         first one is a 3 dim array which contains predictions
         second one is a list of heads with their corresponding predictions
         """
-        total_prediction, _ = super(x)
+        total_prediction, _ = super().forward(x)
         return total_prediction
 
 
