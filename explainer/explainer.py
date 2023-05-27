@@ -197,7 +197,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     if not classes:
         classes = predicted_bbox['class'].values
 
-    target_layers = [model.model.model.model[layer]]
+    target_layers = [model.model.model[layer]]
 
     # targets = [YOLOBoxScoreTarget(classes=classes)]
 
