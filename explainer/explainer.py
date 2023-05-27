@@ -191,7 +191,7 @@ class YOLOBoxScoreTarget2():
         return score
 
 def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backward_per_class: bool, image, layer: int,
-                use_cuda: bool, backprop_array,keep_only_topk, **kwargs):
+                use_cuda: bool, backprop_array,keep_only_topk,crop, **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
         classes = predicted_bbox['class'].values
@@ -230,13 +230,19 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     final_cam = sum(cam_array)
     final_cam = final_cam / final_cam.max()
 
-    if 0<keep_only_topk<100:
+    if 0 < keep_only_topk < 100:
         k = np.percentile(final_cam, 100-keep_only_topk)
         indices = np.where(final_cam <= k)
         final_cam[indices] = 0 
 
     fixed_image = np.array(image[0].cpu()).transpose(1, 2, 0)
-    cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
+
+    if crop:
+        indices=np.where(final_cam == 0)
+        cam_image = fixed_image.copy()
+        cam_image[indices] = fixed_image.mean()
+    else: 
+        cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
     # And lets draw the boxes again:
     # image_with_bounding_boxes = draw_boxes(prediction, cam_image)
     # annotator = Annotator(cam_image)
@@ -247,7 +253,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
 
 def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class, image, layer: int, use_cuda: bool,
-            backprop_array,keep_only_topk):
+            backprop_array,keep_only_topk,crop):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -294,6 +300,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
                             use_cuda,
                             backprop_array=backprop_array,
                             keep_only_topk=keep_only_topk,
+                            crop = crop
                             **extra_arguments)
     return cam_image, heat_map
 
@@ -326,6 +333,7 @@ def run(
         class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
+        crop= False, 
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         project=ROOT / 'runs/detect',  # save results to project/name
@@ -389,7 +397,8 @@ def run(
                             layer=layer,
                             use_cuda=use_cuda,
                             backprop_array=backprop_array,
-                            keep_only_topk=keep_only_topk)
+                            keep_only_topk=keep_only_topk,
+                            crop=crop)
 
         # for now, we only support one image at a time
         # then we should save the image in a file
@@ -430,7 +439,9 @@ def parseopt():
     parser.add_argument('--keep-only-topk', type=int, default=100, help="percentage of heatmap pixels to keep")
     parser.add_argument('--backprop-array', nargs='*',default='', help="backprop array items" )
     parser.add_argument('--backward-per-class', type=bool, default=False, help="whether the method should backprop per each class or do it all at one backward")
+    parser.add_argument('--crop', type=bool, default=False, help="use this if you want to crop heatmap area in order to evaluate methods for interpretability")
     
+
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
