@@ -239,7 +239,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     # for *box, conf, cls in bbox_torch:
     #     annotator.box_label(box,label=, color=colors(cls))
 
-    return cam_image
+    return cam_image, final_cam
 
 
 def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class, image, layer: int, use_cuda: bool,
@@ -280,7 +280,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
 
-    cam_image = extract_CAM(method_obj,
+    cam_image,heat_map = extract_CAM(method_obj,
                             raw_model,
                             predicted_bbox,
                             classes,
@@ -290,7 +290,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
                             use_cuda,
                             backprop_array=backprop_array,
                             **extra_arguments)
-    return cam_image
+    return cam_image, heat_map
 
 
 class YoloOutputWrapper(DetectMultiBackend):
@@ -359,7 +359,6 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    last_cam_image = None
     for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
@@ -374,7 +373,7 @@ def run(
         _ = model(im)
         # here we use the output from autoshaped model since we need to know bbox information
 
-        cam_image = explain(method=method,
+        cam_image, heat_map = explain(method=method,
                             raw_model=model,
                             predicted_bbox=predicted_bbox,
                             classes=class_idx,
@@ -391,11 +390,10 @@ def run(
             path = Path(path)
             save_path = str(save_dir / path.name)  # im.jpg
             cv2.imwrite(save_path, cam_image)
+            cv2.imwrite(save_path.replace(path.suffix, '_heat_'/path.suffix), heat_map)
             LOGGER.info(f'saved image to {save_path}')
-            last_cam_image = cam_image
-
-    # we return the last image to show in the user screen
-    return last_cam_image
+        else: 
+            return cam_image
 
 
 def parseopt():
