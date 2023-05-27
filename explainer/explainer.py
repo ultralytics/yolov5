@@ -343,10 +343,11 @@ def run(
     device = select_device(device)
 
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    stride, pt = model.stride, model.pt
+
     model = YoloOutputWrapper(model)
     autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
 
-    stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     model.requires_grad_(True)
     # model.eval() # not sure about this!
