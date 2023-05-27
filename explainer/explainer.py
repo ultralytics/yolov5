@@ -296,7 +296,10 @@ class YoloOutputWrapper(DetectMultiBackend):
     """
     Main purpose of using this method is to eliminate the second argument in YOLO output.
     """
-
+    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'),
+                  dnn=False, data=None, fp16=False, fuse=True):
+        super().__init__(weights=weights, device=device, dnn=dnn,data=data, fp16=fp16, fuse=fuse)
+        
     def forward(self, x):
         """
         first one is a 3 dim array which contains predictions
