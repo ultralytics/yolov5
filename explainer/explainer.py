@@ -424,10 +424,10 @@ def parseopt():
 
     parser.add_argument('--verbose', action='store_true', help='verbose log')
     parser.add_argument('--layer', type=int, default=-2, help="layer to backpropagate gradients to")
-    parser.add_argument('--class-names', nargs='+', type=str, help='filter by class: --classes dog, or --classes dog cat')
+    parser.add_argument('--class-names', nargs='*', help='filter by class: --classes dog, or --classes dog cat')
 
     parser.add_argument('--keep-only-topk', type=float, default=1, help="percentage of heatmap pixels to keep")
-    parser.add_argument('--backprop-array', nargs='+', type=str,default='class', help="backprop array items" )
+    parser.add_argument('--backprop-array', nargs='*',default='class', help="backprop array items" )
     parser.add_argument('--backward-per-class', type=bool, default=False, help="whether the method should backprop per each class or do it all at one backward")
     
     opt = parser.parse_args()
