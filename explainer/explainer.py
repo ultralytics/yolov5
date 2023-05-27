@@ -299,7 +299,7 @@ class YoloOutputWrapper(DetectMultiBackend):
     def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'),
                   dnn=False, data=None, fp16=False, fuse=True):
         super().__init__(weights=weights, device=device, dnn=dnn,data=data, fp16=fp16, fuse=fuse)
-        
+
     def forward(self, x):
         """
         first one is a 3 dim array which contains predictions
@@ -341,8 +341,7 @@ def run(
     use_cuda = len(device) > 0  # for now we can not choose GPU device
     device = select_device(device)
 
-    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
-    model = YoloOutputWrapper(model)
+    model = YoloOutputWrapper(weights, device=device, dnn=dnn, data=data, fp16=half)
     autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
 
     stride, pt = model.stride, model.pt
