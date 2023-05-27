@@ -343,6 +343,7 @@ def run(
     device = select_device(device)
 
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    model = YoloOutputWrapper(model)
     autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
 
     stride, pt = model.stride, model.pt
@@ -365,13 +366,12 @@ def run(
         predicted_bbox = processed_output.pandas().xyxy[0]
         # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
 
-        im = torch.from_numpy(im).to(model.device)
+        im = torch.from_numpy(im).to(device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
 
-        model = YoloOutputWrapper(model)
         _ = model(im)
         # here we use the output from autoshaped model since we need to know bbox information
 
