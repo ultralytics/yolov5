@@ -295,19 +295,26 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
         method_obj = RandomCAM
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
+    
+    try:
+        cam_image,heat_map = extract_CAM(method_obj,
+                                raw_model,
+                                predicted_bbox,
+                                classes,
+                                backward_per_class,
+                                image,
+                                layer,
+                                device=device,
+                                backprop_array=backprop_array,
+                                keep_only_topk=keep_only_topk,
+                                crop = crop,
+                                **extra_arguments)
+    except Exception as e:
+        # model detects nothing for image
+        LOGGER.errror(f'{e}')
+        cam_image = image
+        heat_map=np.zeros_like(image)
 
-    cam_image,heat_map = extract_CAM(method_obj,
-                            raw_model,
-                            predicted_bbox,
-                            classes,
-                            backward_per_class,
-                            image,
-                            layer,
-                            device=device,
-                            backprop_array=backprop_array,
-                            keep_only_topk=keep_only_topk,
-                            crop = crop,
-                            **extra_arguments)
     return cam_image, heat_map
 
 
@@ -380,47 +387,43 @@ def run(
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
     for path, im, _, _, _ in dataset:
-        try:
-            processed_output = autoshaped_model(im)
-            predicted_bbox = processed_output.pandas().xyxy[0]
-            # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
+        processed_output = autoshaped_model(im)
+        predicted_bbox = processed_output.pandas().xyxy[0]
+        # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
 
-            im = torch.from_numpy(im).to(model.device)
-            im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
-            im /= 255  # 0 - 255 to 0.0 - 1.0
-            if len(im.shape) == 3:
-                im = im[None]  # expand for batch dim
+        im = torch.from_numpy(im).to(model.device)
+        im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
+        im /= 255  # 0 - 255 to 0.0 - 1.0
+        if len(im.shape) == 3:
+            im = im[None]  # expand for batch dim
 
-            _ = model(im)
-            # here we use the output from autoshaped model since we need to know bbox information
+        _ = model(im)
+        # here we use the output from autoshaped model since we need to know bbox information
 
-            cam_image, heat_map = explain(method=method,
-                                raw_model=model,
-                                predicted_bbox=predicted_bbox,
-                                classes=class_idx,
-                                backward_per_class=backward_per_class,
-                                image=im,
-                                layer=layer,
-                                device=device,
-                                backprop_array=backprop_array,
-                                keep_only_topk=keep_only_topk,
-                                crop=crop)
+        cam_image, heat_map = explain(method=method,
+                            raw_model=model,
+                            predicted_bbox=predicted_bbox,
+                            classes=class_idx,
+                            backward_per_class=backward_per_class,
+                            image=im,
+                            layer=layer,
+                            device=device,
+                            backprop_array=backprop_array,
+                            keep_only_topk=keep_only_topk,
+                            crop=crop)
 
-            # for now, we only support one image at a time
-            # then we should save the image in a file
-            
-            if save_img:
-                path = Path(path)
-                save_path = str(save_dir / path.name)  # im.jpg
-                cv2.imwrite(save_path, cam_image)
-                cv2.imwrite(save_path.replace(path.suffix, '_heat_'+path.suffix),
-                            heat_map*255)
-                LOGGER.info(f'saved image to {save_path}')
-            else: 
-                return cam_image
-        except Exception as e:
-            raise e
-            LOGGER.error(f'{e}')
+        # for now, we only support one image at a time
+        # then we should save the image in a file
+        
+        if save_img:
+            path = Path(path)
+            save_path = str(save_dir / path.name)  # im.jpg
+            cv2.imwrite(save_path, cam_image)
+            cv2.imwrite(save_path.replace(path.suffix, '_heat_'+path.suffix),
+                        heat_map*255)
+            LOGGER.info(f'saved image to {save_path}')
+        else: 
+            return cam_image
 
 def parseopt():
     parser = argparse.ArgumentParser()
