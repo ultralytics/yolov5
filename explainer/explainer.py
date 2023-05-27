@@ -310,7 +310,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
                                 crop = crop,
                                 **extra_arguments)
     except Exception as e:
-        # model detects nothing for image
+        # model detects nothing for image so there is not interpretabiliy heatmap!
         LOGGER.error(f'{e}')
         cam_image = image
         heat_map=torch.zeros_like(image)
