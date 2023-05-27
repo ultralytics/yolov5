@@ -359,6 +359,7 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
+    last_cam_image = None
     for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
@@ -392,8 +393,10 @@ def run(
             save_path = str(save_dir / path.name)  # im.jpg
             cv2.imwrite(save_path, cam_image)
             LOGGER.info(f'saved image to {save_path}')
+            last_cam_image = cam_image
 
-        return cam_image
+    # we return the last image to show in the user screen
+    return last_cam_image
 
 
 def parseopt():
