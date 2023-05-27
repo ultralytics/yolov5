@@ -311,7 +311,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
                                 **extra_arguments)
     except Exception as e:
         # model detects nothing for image
-        LOGGER.errror(f'{e}')
+        LOGGER.error(f'{e}')
         cam_image = image
         heat_map=np.zeros_like(image)
 
