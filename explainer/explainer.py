@@ -313,7 +313,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
         # model detects nothing for image
         LOGGER.error(f'{e}')
         cam_image = image
-        heat_map=np.zeros_like(image)
+        heat_map=torch.zeros_like(image)
 
     return cam_image, heat_map
 
