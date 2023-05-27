@@ -207,7 +207,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
         backprop_array = ['class']
 
     cam_array = []
-    use_cuda = device is not None
+    use_cuda = False
 
     if not backward_per_class:
         for item in backprop_array:
@@ -357,7 +357,6 @@ def run(
         source = check_file(source)  # download
     # copied from detect.py
 
-    use_cuda = len(device) > 0  # for now we can not choose GPU device
     device = select_device(device)
 
     model = YoloOutputWrapper(weights, device=device, dnn=dnn, data=data, fp16=half)
