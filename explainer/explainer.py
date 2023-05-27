@@ -377,7 +377,7 @@ def run(
 
     for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
-        predicted_bbox = processed_output.pandas().xyxy[0]
+        predicted_bbox = processed_output.pandas().xyxy[0].to(model.device)
         # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
 
         im = torch.from_numpy(im).to(model.device)
