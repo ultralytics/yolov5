@@ -292,21 +292,17 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
     return cam_image
 
 
-class YoloOutputWrapper(torch.nn.Module):
+class YoloOutputWrapper(DetectMultiBackend):
     """
     Main purpose of using this method is to eliminate the second argument in YOLO output.
     """
-
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
 
     def forward(self, x):
         """
         first one is a 3 dim array which contains predictions
         second one is a list of heads with their corresponding predictions
         """
-        total_prediction, _ = self.model(x)
+        total_prediction, _ = super(x)
         return total_prediction
 
 
@@ -343,10 +339,10 @@ def run(
     device = select_device(device)
 
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
-    stride, pt = model.stride, model.pt
-
+    model = YoloOutputWrapper(model)
     autoshaped_model = AutoShape(DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half))
 
+    stride, pt = model.stride, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     model.requires_grad_(True)
     # model.eval() # not sure about this!
@@ -360,14 +356,13 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    model = YoloOutputWrapper(model)
     last_cam_image = None
     for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
         # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
 
-        im = torch.from_numpy(im).to(device)
+        im = torch.from_numpy(im).to(model.device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         if len(im.shape) == 3:
