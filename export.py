@@ -638,7 +638,7 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr('CoreML Pipeline:
         'confidence_threshold': str(nms.confidenceThreshold)})
 
     # Save the model
-    f = file.with_suffix('.mlmodel')  # filename
+    f = file.with_suffix('.mlpackage')  # filename
     model = ct.models.MLModel(pipeline.spec)
     model.input_description['image'] = 'Input image'
     model.input_description['iouThreshold'] = f'(optional) IOU Threshold override (default: {nms.iouThreshold})'
