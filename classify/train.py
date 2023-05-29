@@ -30,7 +30,8 @@ import torchvision
 from torch.cuda import amp
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.torch_utils import select_device, ModelEMA, de_parallel, model_info, torch_distributed_zero_first
+from ultralytics.yolo.utils.torch_utils import (ModelEMA, de_parallel, model_info, select_device,
+                                                torch_distributed_zero_first)
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory

@@ -12,15 +12,14 @@ import warnings
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from ultralytics.yolo.utils import LOGGER, check_version, colorstr
-from ultralytics.yolo.utils.torch_utils import select_device
 
 import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
-
+from ultralytics.yolo.utils import LOGGER, check_version, colorstr
+from ultralytics.yolo.utils.torch_utils import select_device
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
