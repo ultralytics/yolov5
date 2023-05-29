@@ -192,7 +192,7 @@ class YOLOBoxScoreTarget2():
         return score
 
 def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backward_per_class: bool, image, layer: int,
-                device, backprop_array,keep_only_topk,crop, **kwargs):
+                device, backprop_array,keep_only_topk,crop,use_old_target_method, **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
         classes = predicted_bbox['class'].values
@@ -212,8 +212,11 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
     if not backward_per_class:
         for item in backprop_array:
-            targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=classes,device=device)]
-            targets = [YOLOBoxScoreTarget(classes=classes)]
+            if use_old_target_method:
+                targets = [YOLOBoxScoreTarget(classes=classes)]
+            else:
+                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=classes,device=device)]
+            
             cam = method(model, target_layers, use_cuda=use_cuda, reshape_transform=yolo_reshape_transform, **kwargs)
             grayscale_cam = cam(image, targets=targets)
             grayscale_cam = grayscale_cam[0, :]
@@ -221,7 +224,11 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     else:
         for class_ in classes:
             for item in backprop_array:
-                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item,device=device, classes=[class_])]
+                if use_old_target_method:
+                    targets = [YOLOBoxScoreTarget(classes=class_)]
+                else:
+                    targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item,device=device, classes=[class_])]
+                    
                 cam = method(model,
                              target_layers,
                              use_cuda=use_cuda,
@@ -260,7 +267,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
 
 def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class, image, layer: int, device,
-            backprop_array,keep_only_topk,crop):
+            backprop_array,keep_only_topk,crop,use_old_target_method):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -309,6 +316,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
                                 backprop_array=backprop_array,
                                 keep_only_topk=keep_only_topk,
                                 crop = crop,
+                                use_old_target_method=use_old_target_method,
                                 **extra_arguments)
     except Exception as e:
         # model detects nothing for image so there is no interpretabiliy heatmap!
@@ -348,6 +356,7 @@ def run(
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
         crop= False, 
+        use_old_target_method=False, # whether to use old target method or new one
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         project=ROOT / 'runs/detect',  # save results to project/name
@@ -411,7 +420,8 @@ def run(
                             device=device,
                             backprop_array=backprop_array,
                             keep_only_topk=keep_only_topk,
-                            crop=crop)
+                            crop=crop,
+                            use_old_target_method=use_old_target_method)
 
         # for now, we only support one image at a time
         # then we should save the image in a file
@@ -452,7 +462,7 @@ def parseopt():
     parser.add_argument('--backprop-array', nargs='*',default='', help="backprop array items" )
     parser.add_argument('--backward-per-class', type=bool, default=False, help="whether the method should backprop per each class or do it all at one backward")
     parser.add_argument('--crop', type=bool, default=False, help="use this if you want to crop heatmap area in order to evaluate methods for interpretability")
-    
+    parser.add_argument('--use-old-target-method',default=False, help="use old target method")
 
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
