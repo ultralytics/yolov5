@@ -67,7 +67,7 @@ def run(
         half &= device.type != 'cpu'  # half precision only supported on CUDA
         model.half() if half else model.float()
     else:  # called directly
-        device = select_device(device, batch_size=batch_size)
+        device = select_device(device, batch=batch_size)
 
         # Directories
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run

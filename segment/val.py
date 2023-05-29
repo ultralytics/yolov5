@@ -173,7 +173,7 @@ def run(
         model.half() if half else model.float()
         nm = de_parallel(model).model[-1].nm  # number of masks
     else:  # called directly
-        device = select_device(device, batch_size=batch_size)
+        device = select_device(device, batch=batch_size)
 
         # Directories
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run

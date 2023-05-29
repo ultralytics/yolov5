@@ -87,7 +87,7 @@ def run(parameters, opt):
     opt.batch_size = parameters.get('batch_size')
     opt.epochs = parameters.get('epochs')
 
-    device = select_device(opt.device, batch_size=opt.batch_size)
+    device = select_device(opt.device, batch=opt.batch_size)
     train(hyp_dict, opt, device, callbacks=Callbacks())
 
 

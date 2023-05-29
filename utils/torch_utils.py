@@ -12,8 +12,9 @@ import warnings
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from ultralytics.yolo.utils import LOGGER, check_version, colorstr
+from ultralytics.yolo.utils import LOGGER, colorstr
 from ultralytics.yolo.utils.torch_utils import select_device
+from ultralytics.yolo.utils.checks import check_version
 
 import torch
 import torch.distributed as dist
