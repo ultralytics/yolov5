@@ -34,8 +34,8 @@ from pathlib import Path
 import pandas as pd
 from ulralytics.yolo.utils.checks import check_yaml, print_args
 from ultraltics.yolo.utils import LOGGER, file_size
-from ultralytics.yolo.utils.torch_utils import select_device
 from ultralytics.nn.tasks import attempt_load_weights
+from ultralytics.yolo.utils.torch_utils import select_device
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -48,7 +48,6 @@ from models.yolo import SegmentationModel
 from segment.val import run as val_seg
 from utils import notebook_init
 from val import run as val_det
-
 
 
 def run(
