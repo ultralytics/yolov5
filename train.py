@@ -34,8 +34,9 @@ import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.torch_utils import select_device, EarlyStopping, ModelEMA, torch_distributed_zero_first, de_parallel
-from ultralytics.yolo.utils.checks import check_file, check_requirements, check_suffix, check_yaml, check_requirements, print_args
+from ultralytics.yolo.utils.checks import check_file, check_requirements, check_suffix, check_yaml, print_args
+from ultralytics.yolo.utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device,
+                                                torch_distributed_zero_first)
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -50,16 +51,16 @@ from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download, is_url
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, colorstr, check_dataset, check_img_size, check_git_status, check_git_info,
-                           get_latest_run, increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
-                           labels_to_image_weights, methods, one_cycle, print_mutation, strip_optimizer,
-                           yaml_save)
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_git_info, check_git_status,
+                           check_img_size, colorstr, get_latest_run, increment_path, init_seeds, intersect_dicts,
+                           labels_to_class_weights, labels_to_image_weights, methods, one_cycle, print_mutation,
+                           strip_optimizer, yaml_save)
 from utils.loggers import Loggers
 from utils.loggers.comet.comet_utils import check_comet_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve
-from utils.torch_utils import  smart_optimizer, smart_resume, smart_DDP
+from utils.torch_utils import smart_DDP, smart_optimizer, smart_resume
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))

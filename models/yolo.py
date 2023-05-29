@@ -13,6 +13,7 @@ import platform
 import sys
 from copy import deepcopy
 from pathlib import Path
+
 from ultralytics.yolo.utils.checks import check_yaml, print_args
 from ultralytics.yolo.utils.torch_utils import select_device
 
