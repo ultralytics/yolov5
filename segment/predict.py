@@ -35,6 +35,7 @@ import sys
 from pathlib import Path
 
 import torch
+from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -49,7 +50,6 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
                            strip_optimizer)
 from utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import masks2segments, process_mask, process_mask_native
-from utils.torch_utils import select_device, smart_inference_mode
 
 
 @smart_inference_mode()

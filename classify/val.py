@@ -27,6 +27,7 @@ from pathlib import Path
 
 import torch
 from tqdm import tqdm
+from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -38,7 +39,6 @@ from models.common import DetectMultiBackend
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_img_size, check_requirements, colorstr,
                            increment_path, print_args)
-from utils.torch_utils import select_device, smart_inference_mode
 
 
 @smart_inference_mode()

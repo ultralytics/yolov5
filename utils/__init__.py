@@ -6,6 +6,8 @@ utils/initialization
 import contextlib
 import platform
 import threading
+from ultralytics.yolo.utils.torch_utils import select_device  # imports
+from ultralytics.yolo.utils.checks  import check_font, is_colab
 
 
 def emojis(str=''):
@@ -53,9 +55,6 @@ def notebook_init(verbose=True):
 
     import os
     import shutil
-
-    from utils.general import check_font, check_requirements, is_colab
-    from utils.torch_utils import select_device  # imports
 
     check_font()
 

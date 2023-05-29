@@ -31,11 +31,11 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from pathlib import Path
 
     from ultralytics.nn.tasks import attempt_load_weights
+    from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
     from models.common import AutoShape, DetectMultiBackend
     from models.yolo import ClassificationModel, DetectionModel, SegmentationModel
     from utils.downloads import attempt_download
     from utils.general import LOGGER, ROOT, check_requirements, intersect_dicts, logging
-    from utils.torch_utils import select_device
 
     if not verbose:
         LOGGER.setLevel(logging.WARNING)

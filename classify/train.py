@@ -30,6 +30,7 @@ import torchvision
 from torch.cuda import amp
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
+from ultralytics.yolo.utils.torch_utils import select_device, ModelEMA, de_parallel, model_info, torch_distributed_zero_first
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -44,8 +45,7 @@ from utils.general import (DATASETS_DIR, LOGGER, TQDM_BAR_FORMAT, WorkingDirecto
                            check_requirements, colorstr, download, increment_path, init_seeds, print_args, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import imshow_cls
-from utils.torch_utils import (ModelEMA, de_parallel, model_info, reshape_classifier_output, select_device, smart_DDP,
-                               smart_optimizer, smartCrossEntropyLoss, torch_distributed_zero_first)
+from utils.torch_utils import reshape_classifier_output, smart_DDP, smart_optimizer, smartCrossEntropyLoss
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
