@@ -14,7 +14,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
-from ultralytics.yolo.utils.checks import check_yaml, print_args
+from ultralytics.yolo.utils.checks import print_args
 from ultralytics.yolo.utils.torch_utils import select_device
 
 FILE = Path(__file__).resolve()
@@ -27,7 +27,7 @@ if platform.system() != 'Windows':
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
-from utils.general import LOGGER, check_version, make_divisible
+from utils.general import LOGGER, check_version, make_divisible, check_yaml
 from utils.plots import feature_visualization
 from utils.torch_utils import fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, time_sync
 
