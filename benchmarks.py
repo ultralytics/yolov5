@@ -32,6 +32,10 @@ import time
 from pathlib import Path
 
 import pandas as pd
+from ulralytics.yolo.utils.checks import check_yaml, print_args
+from ultraltics.yolo.utils import LOGGER, file_size
+from ultralytics.yolo.utils.torch_utils import select_device
+from ultralytics.nn.tasks import attempt_load_weights
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -40,13 +44,11 @@ if str(ROOT) not in sys.path:
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
 import export
-from models.experimental import attempt_load
 from models.yolo import SegmentationModel
 from segment.val import run as val_seg
 from utils import notebook_init
-from utils.general import LOGGER, check_yaml, file_size, print_args
-from utils.torch_utils import select_device
 from val import run as val_det
+
 
 
 def run(
@@ -62,7 +64,7 @@ def run(
 ):
     y, t = [], time.time()
     device = select_device(device)
-    model_type = type(attempt_load(weights, fuse=False))  # DetectionModel, SegmentationModel, etc.
+    model_type = type(attempt_load_weights(weights, fuse=False))  # DetectionModel, SegmentationModel, etc.
     for i, (name, f, suffix, cpu, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, CPU, GPU)
         try:
             assert i not in (9, 10), 'inference not supported'  # Edge TPU and TF.js are unsupported

@@ -30,8 +30,8 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
+    from ultralytics.nn.tasks import attempt_load_weights
     from models.common import AutoShape, DetectMultiBackend
-    from models.experimental import attempt_load
     from models.yolo import ClassificationModel, DetectionModel, SegmentationModel
     from utils.downloads import attempt_download
     from utils.general import LOGGER, ROOT, check_requirements, intersect_dicts, logging
@@ -57,7 +57,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                     else:
                         model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
             except Exception:
-                model = attempt_load(path, device=device, fuse=False)  # arbitrary model
+                model = attempt_load_weights(path, device=device, fuse=False)  # arbitrary model
         else:
             cfg = list((Path(__file__).parent / 'models').rglob(f'{path.stem}.yaml'))[0]  # model.yaml path
             model = DetectionModel(cfg, channels, classes)  # create model

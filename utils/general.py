@@ -230,21 +230,6 @@ def methods(instance):
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith('__')]
 
 
-def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
-    # Print function arguments (optional args dict)
-    x = inspect.currentframe().f_back  # previous frame
-    file, _, func, _, _ = inspect.getframeinfo(x)
-    if args is None:  # get args automatically
-        args, _, _, frm = inspect.getargvalues(x)
-        args = {k: v for k, v in frm.items() if k in args}
-    try:
-        file = Path(file).resolve().relative_to(ROOT).with_suffix('')
-    except ValueError:
-        file = Path(file).stem
-    s = (f'{file}: ' if show_file else '') + (f'{func}: ' if show_func else '')
-    LOGGER.info(colorstr(s) + ', '.join(f'{k}={v}' for k, v in args.items()))
-
-
 def init_seeds(seed=0, deterministic=False):
     # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
     random.seed(seed)
@@ -287,18 +272,6 @@ def file_date(path=__file__):
     # Return human-readable file modification date, i.e. '2021-3-26'
     t = datetime.fromtimestamp(Path(path).stat().st_mtime)
     return f'{t.year}-{t.month}-{t.day}'
-
-
-def file_size(path):
-    # Return file/dir size (MB)
-    mb = 1 << 20  # bytes to MiB (1024 ** 2)
-    path = Path(path)
-    if path.is_file():
-        return path.stat().st_size / mb
-    elif path.is_dir():
-        return sum(f.stat().st_size for f in path.glob('**/*') if f.is_file()) / mb
-    else:
-        return 0.0
 
 
 def check_online():
@@ -425,11 +398,6 @@ def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
             s = Path(f).suffix.lower()  # file suffix
             if len(s):
                 assert s in suffix, f'{msg}{f} acceptable suffix is {suffix}'
-
-
-def check_yaml(file, suffix=('.yaml', '.yml')):
-    # Search/download YAML file (if necessary) and return path, checking suffix
-    return check_file(file, suffix)
 
 
 def check_file(file, suffix=''):
