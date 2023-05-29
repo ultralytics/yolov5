@@ -18,7 +18,7 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
-from ultralytics.yolo.utils import LOGGER, check_version, colorstr
+from ultralytics.yolo.utils import LOGGER, colorstr
 from ultralytics.yolo.utils.checks import check_version
 from ultralytics.yolo.utils.torch_utils import select_device
 
