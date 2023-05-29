@@ -31,6 +31,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from pathlib import Path
 
     from ultralytics.nn.tasks import attempt_load_weights
+
     from models.common import AutoShape, DetectMultiBackend
     from models.yolo import ClassificationModel, DetectionModel, SegmentationModel
     from utils.downloads import attempt_download
