@@ -6,8 +6,9 @@ utils/initialization
 import contextlib
 import platform
 import threading
+
+from ultralytics.yolo.utils.checks import check_font, is_colab
 from ultralytics.yolo.utils.torch_utils import select_device  # imports
-from ultralytics.yolo.utils.checks  import check_font, is_colab
 
 
 def emojis(str=''):
