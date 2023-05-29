@@ -27,7 +27,7 @@ if platform.system() != 'Windows':
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
-from utils.general import LOGGER, check_version, make_divisible, check_yaml
+from utils.general import LOGGER, check_version, check_yaml, make_divisible
 from utils.plots import feature_visualization
 from utils.torch_utils import fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, time_sync
 

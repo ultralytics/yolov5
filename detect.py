@@ -35,8 +35,8 @@ import sys
 from pathlib import Path
 
 import torch
-from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 from ultralytics.yolo.utils.checks import print_args
+from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory

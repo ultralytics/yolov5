@@ -278,6 +278,7 @@ def check_yaml(file, suffix=('.yaml', '.yml')):
     # Search/download YAML file (if necessary) and return path, checking suffix
     return check_file(file, suffix)
 
+
 def check_online():
     # Check internet connectivity
     import socket

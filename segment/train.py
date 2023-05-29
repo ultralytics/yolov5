@@ -35,6 +35,7 @@ from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
 from ultralytics.yolo.utils.checks import check_requirements
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -48,9 +49,9 @@ from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
-                           check_git_status, check_img_size, check_suffix, colorstr,
-                           get_latest_run, increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
-                           labels_to_image_weights, one_cycle, print_mutation, strip_optimizer, yaml_save, check_yaml)
+                           check_git_status, check_img_size, check_suffix, check_yaml, colorstr, get_latest_run,
+                           increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
+                           labels_to_image_weights, one_cycle, print_mutation, strip_optimizer, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import plot_evolve, plot_labels
 from utils.segment.dataloaders import create_dataloader
