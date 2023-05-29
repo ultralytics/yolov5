@@ -213,6 +213,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     if not backward_per_class:
         for item in backprop_array:
             targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=classes,device=device)]
+            targets = [YOLOBoxScoreTarget(classes=classes)]
             cam = method(model, target_layers, use_cuda=use_cuda, reshape_transform=yolo_reshape_transform, **kwargs)
             grayscale_cam = cam(image, targets=targets)
             grayscale_cam = grayscale_cam[0, :]
