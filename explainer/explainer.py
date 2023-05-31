@@ -28,8 +28,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import AutoShape, DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
-from utils.general import (check_file, check_img_size, print_args,
-                        xywh2xyxy, increment_path, LOGGER)
+from utils.general import LOGGER, check_file, check_img_size, increment_path, print_args, xywh2xyxy
 from utils.torch_utils import select_device
 
 
@@ -106,7 +105,7 @@ class YOLOBoxScoreTarget2():
         The total score is the sum of all the box scores.
     """
 
-    def __init__(self, predicted_bbox, backprop, classes,device):
+    def __init__(self, predicted_bbox, backprop, classes, device):
         """
         # Initializes the YOLOBoxScoreTarget2 module.
 
@@ -143,7 +142,7 @@ class YOLOBoxScoreTarget2():
         iou_scores = torchvision.ops.box_iou(self.predicted_bbox[:, :4], bboxes_processed[0])
         topk_iou_values, topk_iou_indices = iou_scores.topk(k=10, dim=-1)  # get top 10 similar boxes for each of them
 
-        score = torch.tensor([0.0], requires_grad=True,device=self.device)
+        score = torch.tensor([0.0], requires_grad=True, device=self.device)
 
         for i, (x1, y1, x2, y2, confidence, class_idx) in enumerate(self.predicted_bbox):
             # bbox format: x1, y1, x2, y2, confidence, class_idx
@@ -191,8 +190,9 @@ class YOLOBoxScoreTarget2():
 
         return score
 
+
 def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backward_per_class: bool, image, layer: int,
-                device, backprop_array,keep_only_topk,crop,use_old_target_method, **kwargs):
+                device, backprop_array, keep_only_topk, crop, use_old_target_method, **kwargs):
     # if we have to attend to some specific class, we will attend to it. Otherwise, attend to all present classes
     if not classes:
         classes = predicted_bbox['class'].values
@@ -201,8 +201,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
     # targets = [YOLOBoxScoreTarget(classes=classes)]
 
-    bbox_torch = torch.tensor(predicted_bbox.drop('name', axis=1).values
-                              .astype(np.float64),device=device)
+    bbox_torch = torch.tensor(predicted_bbox.drop('name', axis=1).values.astype(np.float64), device=device)
 
     if not backprop_array:
         backprop_array = ['class']
@@ -215,8 +214,9 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
             if use_old_target_method:
                 targets = [YOLOBoxScoreTarget(classes=classes)]
             else:
-                targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=classes,device=device)]
-            
+                targets = [
+                    YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, classes=classes, device=device)]
+
             cam = method(model, target_layers, use_cuda=use_cuda, reshape_transform=yolo_reshape_transform, **kwargs)
             grayscale_cam = cam(image, targets=targets)
             grayscale_cam = grayscale_cam[0, :]
@@ -227,8 +227,9 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
                 if use_old_target_method:
                     targets = [YOLOBoxScoreTarget(classes=class_)]
                 else:
-                    targets = [YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item,device=device, classes=[class_])]
-                    
+                    targets = [
+                        YOLOBoxScoreTarget2(predicted_bbox=bbox_torch, backprop=item, device=device, classes=[class_])]
+
                 cam = method(model,
                              target_layers,
                              use_cuda=use_cuda,
@@ -240,13 +241,13 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
     final_cam = sum(cam_array)
 
-    if final_cam.max() > 0: # divide by zero
-        final_cam = final_cam / final_cam.max() #normalize the result
+    if final_cam.max() > 0:  # divide by zero
+        final_cam = final_cam / final_cam.max()  #normalize the result
 
     if 0 < keep_only_topk < 100:
-        k = np.percentile(final_cam, 100-keep_only_topk)
+        k = np.percentile(final_cam, 100 - keep_only_topk)
         indices = np.where(final_cam <= k)
-        final_cam[indices] = 0 
+        final_cam[indices] = 0
 
     fixed_image = np.array(image[0].cpu()).transpose(1, 2, 0)
 
@@ -254,8 +255,8 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
         indices = np.where(final_cam > 0)
         cam_image = fixed_image.copy()
         cam_image[indices] = fixed_image.mean()
-        cam_image = cam_image*255
-    else: 
+        cam_image = cam_image * 255
+    else:
         cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
     # And lets draw the boxes again:
     # image_with_bounding_boxes = draw_boxes(prediction, cam_image)
@@ -267,7 +268,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
 
 
 def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class, image, layer: int, device,
-            backprop_array,keep_only_topk,crop,use_old_target_method):
+            backprop_array, keep_only_topk, crop, use_old_target_method):
     cam_image = None
     method_obj = None
     extra_arguments = {}
@@ -303,26 +304,26 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
         method_obj = RandomCAM
     else:
         raise NotImplementedError('The method that you requested has not yet been implemented')
-    
+
     try:
-        cam_image,heat_map = extract_CAM(method_obj,
-                                raw_model,
-                                predicted_bbox,
-                                classes,
-                                backward_per_class,
-                                image,
-                                layer,
-                                device=device,
-                                backprop_array=backprop_array,
-                                keep_only_topk=keep_only_topk,
-                                crop = crop,
-                                use_old_target_method=use_old_target_method,
-                                **extra_arguments)
+        cam_image, heat_map = extract_CAM(method_obj,
+                                          raw_model,
+                                          predicted_bbox,
+                                          classes,
+                                          backward_per_class,
+                                          image,
+                                          layer,
+                                          device=device,
+                                          backprop_array=backprop_array,
+                                          keep_only_topk=keep_only_topk,
+                                          crop=crop,
+                                          use_old_target_method=use_old_target_method,
+                                          **extra_arguments)
     except Exception as e:
         # model detects nothing for image so there is no interpretabiliy heatmap!
         LOGGER.error(f'{e}')
         cam_image = image
-        heat_map=torch.zeros_like(image)
+        heat_map = torch.zeros_like(image)
 
     return cam_image, heat_map
 
@@ -331,9 +332,9 @@ class YoloOutputWrapper(DetectMultiBackend):
     """
     Main purpose of using this method is to eliminate the second argument in YOLO output.
     """
-    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'),
-                  dnn=False, data=None, fp16=False, fuse=True):
-        super().__init__(weights=weights, device=device, dnn=dnn,data=data, fp16=fp16, fuse=fuse)
+
+    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False, fuse=True):
+        super().__init__(weights=weights, device=device, dnn=dnn, data=data, fp16=fp16, fuse=fuse)
 
     def forward(self, x):
         """
@@ -350,13 +351,13 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         method='GradCAM',  # the method for interpreting the results
         layer=-2,
-        keep_only_topk=100, # this can be 0 to 1. it shows maximum percentage of pixels 
+        keep_only_topk=100,  # this can be 0 to 1. it shows maximum percentage of pixels
         # which can be used for heatmap. This is good for evaluation of heatmaps!
-        class_names=[],  # list of class names to use for CAM methods
+    class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
-        crop= False, 
-        use_old_target_method=False, # whether to use old target method or new one
+        crop=False,
+        use_old_target_method=False,  # whether to use old target method or new one
         imgsz=(640, 640),  # inference size (height, width)
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         project=ROOT / 'runs/detect',  # save results to project/name
@@ -411,30 +412,30 @@ def run(
         # here we use the output from autoshaped model since we need to know bbox information
 
         cam_image, heat_map = explain(method=method,
-                            raw_model=model,
-                            predicted_bbox=predicted_bbox,
-                            classes=class_idx,
-                            backward_per_class=backward_per_class,
-                            image=im,
-                            layer=layer,
-                            device=device,
-                            backprop_array=backprop_array,
-                            keep_only_topk=keep_only_topk,
-                            crop=crop,
-                            use_old_target_method=use_old_target_method)
+                                      raw_model=model,
+                                      predicted_bbox=predicted_bbox,
+                                      classes=class_idx,
+                                      backward_per_class=backward_per_class,
+                                      image=im,
+                                      layer=layer,
+                                      device=device,
+                                      backprop_array=backprop_array,
+                                      keep_only_topk=keep_only_topk,
+                                      crop=crop,
+                                      use_old_target_method=use_old_target_method)
 
         # for now, we only support one image at a time
         # then we should save the image in a file
-        
+
         if save_img:
             path = Path(path)
             save_path = str(save_dir / path.name)  # im.jpg
             cv2.imwrite(save_path, cam_image)
-            cv2.imwrite(save_path.replace(path.suffix, '_heat_'+path.suffix),
-                        heat_map*255)
+            cv2.imwrite(save_path.replace(path.suffix, '_heat_' + path.suffix), heat_map * 255)
             LOGGER.info(f'saved image to {save_path}')
-        else: 
+        else:
             return cam_image
+
 
 def parseopt():
     parser = argparse.ArgumentParser()
@@ -455,14 +456,24 @@ def parseopt():
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
 
     parser.add_argument('--verbose', action='store_true', help='verbose log')
-    parser.add_argument('--layer', type=int, default=-2, help="layer to backpropagate gradients to")
-    parser.add_argument('--class-names', nargs='*',default='', help='filter by class: --classes dog, or --classes dog cat')
+    parser.add_argument('--layer', type=int, default=-2, help='layer to backpropagate gradients to')
+    parser.add_argument('--class-names',
+                        nargs='*',
+                        default='',
+                        help='filter by class: --classes dog, or --classes dog cat')
 
-    parser.add_argument('--keep-only-topk', type=int, default=100, help="percentage of heatmap pixels to keep")
-    parser.add_argument('--backprop-array', nargs='*',default='', help="backprop array items" )
-    parser.add_argument('--backward-per-class', type=bool, default=False, help="whether the method should backprop per each class or do it all at one backward")
-    parser.add_argument('--crop', type=bool, default=False, help="use this if you want to crop heatmap area in order to evaluate methods for interpretability")
-    parser.add_argument('--use-old-target-method',default=False, help="use old target method")
+    parser.add_argument('--keep-only-topk', type=int, default=100, help='percentage of heatmap pixels to keep')
+    parser.add_argument('--backprop-array', nargs='*', default='', help='backprop array items')
+    parser.add_argument('--backward-per-class',
+                        type=bool,
+                        default=False,
+                        help='whether the method should backprop per each class or do it all at one backward')
+    parser.add_argument(
+        '--crop',
+        type=bool,
+        default=False,
+        help='use this if you want to crop heatmap area in order to evaluate methods for interpretability')
+    parser.add_argument('--use-old-target-method', default=False, help='use old target method')
 
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
