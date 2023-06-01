@@ -47,7 +47,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
-from utils.general import (LOGGER, Profile, check_file, cv2, increment_path, non_max_suppression, scale_boxes, strip_optimizer, xyxy2xywh)
+from utils.general import (LOGGER, Profile, check_file, cv2, increment_path, non_max_suppression, scale_boxes,
+                           strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 
 

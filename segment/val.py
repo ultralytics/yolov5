@@ -41,13 +41,14 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 import torch.nn.functional as F
 from ultralytis.yolo.utils.checks import check_requirements, print_args, check_imgsz
 from ultralytics.yolo.utils.torch_utils import de_parallel, select_device, smart_inference_mode
+from ultralytis.yolo.utils.checks import check_img_size, check_requirements, print_args
 
 from models.common import DetectMultiBackend
 from models.yolo import SegmentationModel
 from utils.callbacks import Callbacks
-from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_yaml,
+from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_dataset, check_yaml,
                            coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, scale_boxes,
-                           xywh2xyxy, xyxy2xywh, check_dataset)
+                           xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
 from utils.segment.dataloaders import create_dataloader

@@ -41,9 +41,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_yaml,
-                           coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, scale_boxes,
-                           xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_yaml, coco80_to_coco91_class,
+                           colorstr, increment_path, non_max_suppression, scale_boxes, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
 
