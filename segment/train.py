@@ -34,8 +34,8 @@ import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.checks import check_requirements
 from ultralytics.yolo.utils.autobatch import check_train_batch_size
+from ultralytics.yolo.utils.checks import check_requirements
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
