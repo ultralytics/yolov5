@@ -15,7 +15,7 @@ thop>=0.1.1  # FLOPs computation
 torch>=1.7.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.8.1
 tqdm>=4.64.0
-ultralytics>=8.0.100
+ultralytics>=8.0.111
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
 # Logging ---------------------------------------------------------------------
