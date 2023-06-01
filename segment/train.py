@@ -35,6 +35,7 @@ from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
 from ultralytics.yolo.utils.checks import check_requirements
+from ultralytics.yolo.utils.autobatch import check_train_batch_size
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -45,7 +46,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 import segment.val as validate  # for end-of-epoch mAP
 from models.yolo import SegmentationModel
 from utils.autoanchor import check_anchors
-from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,

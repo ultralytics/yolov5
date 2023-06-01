@@ -37,6 +37,7 @@ from ultralytics.nn.tasks import attempt_load_weights
 from ultralytics.yolo.utils.checks import check_requirements, check_suffix, print_args
 from ultralytics.yolo.utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device,
                                                 torch_distributed_zero_first)
+from ultralytics.yolo.utils.autobatch import check_train_batch_size
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -47,7 +48,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 import val as validate  # for end-of-epoch mAP
 from models.yolo import Model
 from utils.autoanchor import check_anchors
-from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download, is_url
