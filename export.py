@@ -62,7 +62,7 @@ from torch.utils.mobile_optimizer import optimize_for_mobile
 from ultralytics.nn.tasks import attempt_load_weights
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 from ultraltics.yolo.utils import file_size, check_requirements, colorstr
-from ultralytics.yolo.utils.checks import print_args, check_img_size, check_version
+from ultralytics.yolo.utils.checks import print_args, check_imgsz, check_version
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -698,7 +698,7 @@ def run(
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
-    imgsz = [check_img_size(x, gs) for x in imgsz]  # verify img_size are gs-multiples
+    imgsz = [check_imgsz(x, gs) for x in imgsz]  # verify img_size are gs-multiples
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model

@@ -39,7 +39,7 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import torch.nn.functional as F
-from ultralytis.yolo.utils.checks import check_requirements, print_args, check_img_size
+from ultralytis.yolo.utils.checks import check_requirements, print_args, check_imgsz
 from ultralytics.yolo.utils.torch_utils import de_parallel, select_device, smart_inference_mode
 
 from models.common import DetectMultiBackend
@@ -183,7 +183,7 @@ def run(
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
-        imgsz = check_img_size(imgsz, s=stride)  # check image size
+        imgsz = check_imgsz(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
         nm = de_parallel(model).model.model[-1].nm if isinstance(model, SegmentationModel) else 32  # number of masks
         if engine:

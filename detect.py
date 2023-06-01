@@ -36,7 +36,7 @@ from pathlib import Path
 
 import torch
 from ultralyitcs.yolo.utils import colorstr
-from ultralytics.yolo.utils.checks import print_args, check_img_size, check_imshow, check_requirements
+from ultralytics.yolo.utils.checks import print_args, check_imgsz, check_imshow, check_requirements
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()
@@ -98,7 +98,7 @@ def run(
     device = select_device(device)
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
     stride, names, pt = model.stride, model.names, model.pt
-    imgsz = check_img_size(imgsz, s=stride)  # check image size
+    imgsz = check_imgsz(imgsz, s=stride)  # check image size
 
     # Dataloader
     bs = 1  # batch_size

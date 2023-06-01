@@ -28,7 +28,7 @@ from pathlib import Path
 import torch
 from tqdm import tqdm
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
-from ultralytics.yolo.utils.checks import check_img_size, check_requirements, print_args
+from ultralytics.yolo.utils.checks import check_imgsz, check_requirements, print_args
 from ultralytics.yolo.utils import colorstr
 
 FILE = Path(__file__).resolve()
@@ -77,7 +77,7 @@ def run(
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
-        imgsz = check_img_size(imgsz, s=stride)  # check image size
+        imgsz = check_imgsz(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
         if engine:
             batch_size = model.batch_size

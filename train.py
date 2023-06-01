@@ -34,10 +34,11 @@ import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.checks import check_requirements, check_suffix, print_args, check_img_size
+from ultralytics.yolo.utils.checks import check_requirements, check_suffix, print_args, check_imgsz
 from ultralytics.yolo.utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, strip_optimizer,
                                                 torch_distributed_zero_first)
 from ultralytics.yolo.utils.autobatch import check_train_batch_size
+from ultralytics.yolo.utils import colorstr
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -144,7 +145,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Image size
     gs = max(int(model.stride.max()), 32)  # grid size (max stride)
-    imgsz = check_img_size(opt.imgsz, gs, floor=gs * 2)  # verify imgsz is gs-multiple
+    imgsz = check_imgsz(opt.imgsz, gs, floor=gs * 2)  # verify imgsz is gs-multiple
 
     # Batch size
     if RANK == -1 and batch_size == -1:  # single-GPU only, estimate best batch size
