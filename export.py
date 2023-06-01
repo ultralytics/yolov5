@@ -536,7 +536,7 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr('CoreML Pipeline:
     batch_size, ch, h, w = list(im.shape)  # BCHW
     t = time.time()
 
-    # Output shapes
+    # Yolov5 Output shapes
     spec = model.get_spec()
     out0, out1 = iter(spec.description.output)
     if platform.system() == 'Darwin':
