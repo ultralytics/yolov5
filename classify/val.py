@@ -27,9 +27,9 @@ from pathlib import Path
 
 import torch
 from tqdm import tqdm
-from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
-from ultralytics.yolo.utils.checks import check_img_size, check_requirements, print_args
 from ultralytics.yolo.utils import colorstr
+from ultralytics.yolo.utils.checks import check_img_size, check_requirements, print_args
+from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory

@@ -34,10 +34,10 @@ import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.checks import check_requirements, check_img_size
+from ultralytics.yolo.utils import colorstr, increment_path
 from ultralytics.yolo.utils.autobatch import check_train_batch_size
-from ultralytics.yolo.utils import  colorstr, increment_path
-from ultralytics.yolo.utils.torch_utils import strip_optimizer, de_parallel, torch_distributed_zero_first
+from ultralytics.yolo.utils.checks import check_img_size, check_requirements
+from ultralytics.yolo.utils.torch_utils import de_parallel, strip_optimizer, torch_distributed_zero_first
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -50,7 +50,9 @@ from models.yolo import SegmentationModel
 from utils.autoanchor import check_anchors
 from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_file, check_git_info, check_git_status, check_suffix, check_yaml, get_latest_run, init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, one_cycle, print_mutation, yaml_save, check_dataset)
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
+                           check_git_status, check_suffix, check_yaml, get_latest_run, init_seeds, intersect_dicts,
+                           labels_to_class_weights, labels_to_image_weights, one_cycle, print_mutation, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import plot_evolve, plot_labels
 from utils.segment.dataloaders import create_dataloader

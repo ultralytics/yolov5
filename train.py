@@ -34,10 +34,10 @@ import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.checks import check_requirements, check_suffix, print_args, check_img_size
+from ultralytics.yolo.utils.autobatch import check_train_batch_size
+from ultralytics.yolo.utils.checks import check_img_size, check_requirements, check_suffix, print_args
 from ultralytics.yolo.utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, strip_optimizer,
                                                 torch_distributed_zero_first)
-from ultralytics.yolo.utils.autobatch import check_train_batch_size
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -52,9 +52,9 @@ from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
-                           check_git_status, check_yaml, get_latest_run, increment_path,
-                           init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
-                           one_cycle, print_mutation, yaml_save)
+                           check_git_status, check_yaml, get_latest_run, increment_path, init_seeds, intersect_dicts,
+                           labels_to_class_weights, labels_to_image_weights, methods, one_cycle, print_mutation,
+                           yaml_save)
 from utils.loggers import Loggers
 from utils.loggers.comet.comet_utils import check_comet_resume
 from utils.loss import ComputeLoss

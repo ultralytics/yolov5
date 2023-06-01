@@ -36,7 +36,7 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from ultralytics.yolo.utils.checks import check_requirements, print_args, check_img_size, check_imshow
+from ultralytics.yolo.utils.checks import check_img_size, check_imshow, check_requirements, print_args
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode, strip_optimizer
 
 FILE = Path(__file__).resolve()
