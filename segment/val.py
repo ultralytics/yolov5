@@ -39,9 +39,8 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import torch.nn.functional as F
-from ultralytis.yolo.utils.checks import check_requirements, print_args, check_imgsz
 from ultralytics.yolo.utils.torch_utils import de_parallel, select_device, smart_inference_mode
-from ultralytis.yolo.utils.checks import check_img_size, check_requirements, print_args
+from ultralytis.yolo.utils.checks import check_img_size, check_imgsz, check_requirements, print_args
 
 from models.common import DetectMultiBackend
 from models.yolo import SegmentationModel

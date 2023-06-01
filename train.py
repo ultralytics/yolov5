@@ -34,11 +34,11 @@ import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.checks import check_requirements, check_suffix, print_args, check_imgsz
+from ultralytics.yolo.utils import colorstr
+from ultralytics.yolo.utils.autobatch import check_train_batch_size
+from ultralytics.yolo.utils.checks import check_imgsz, check_requirements, check_suffix, print_args
 from ultralytics.yolo.utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, strip_optimizer,
                                                 torch_distributed_zero_first)
-from ultralytics.yolo.utils.autobatch import check_train_batch_size
-from ultralytics.yolo.utils import colorstr
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory

@@ -14,9 +14,8 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
-from ultralytics.yolo.utils.checks import print_args
+from ultralytics.yolo.utils.checks import check_version, print_args
 from ultralytics.yolo.utils.torch_utils import select_device
-from ultralytics.yolo.utils.checks import check_version
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory

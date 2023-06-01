@@ -61,10 +61,8 @@ import torch
 from torch.utils.mobile_optimizer import optimize_for_mobile
 from ultraltics.yolo.utils import check_requirements, colorstr, file_size
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.checks import check_img_size, check_version, print_args
+from ultralytics.yolo.utils.checks import check_img_size, check_imgsz, check_version, print_args
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
-from ultraltics.yolo.utils import file_size, check_requirements, colorstr
-from ultralytics.yolo.utils.checks import print_args, check_imgsz, check_version
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory

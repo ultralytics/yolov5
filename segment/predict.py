@@ -36,7 +36,7 @@ from pathlib import Path
 
 import torch
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode, strip_optimizer
-from ultrlalytics.yolo.utils.checks import print_args,  check_imgsz, check_imshow
+from ultrlalytics.yolo.utils.checks import check_imgsz, check_imshow, print_args
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory

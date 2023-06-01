@@ -29,7 +29,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from tqdm import tqdm
-from ultralytics.yolo.utils.checks import check_requirements, print_args, check_imgsz
+from ultralytics.yolo.utils.checks import check_imgsz, check_requirements, print_args
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()

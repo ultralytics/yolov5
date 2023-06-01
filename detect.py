@@ -36,7 +36,7 @@ from pathlib import Path
 
 import torch
 from ultralyitcs.yolo.utils import colorstr
-from ultralytics.yolo.utils.checks import print_args, check_imgsz, check_imshow, check_requirements
+from ultralytics.yolo.utils.checks import check_imgsz, check_imshow, check_requirements, print_args
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()

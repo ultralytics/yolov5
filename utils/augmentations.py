@@ -12,7 +12,7 @@ import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 from ultralytics.yolo.utils import colorstr
-from ultralytics.yolo.utils.checks import check_version 
+from ultralytics.yolo.utils.checks import check_version
 
 from utils.general import LOGGER, resample_segments, segment2box, xywhn2xyxy
 from utils.metrics import bbox_ioa
