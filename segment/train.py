@@ -34,8 +34,10 @@ import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 from ultralytics.nn.tasks import attempt_load_weights
-from ultralytics.yolo.utils.checks import check_requirements
+from ultralytics.yolo.utils.checks import check_requirements, check_img_size
 from ultralytics.yolo.utils.autobatch import check_train_batch_size
+from ultralytics.yolo.utils import  colorstr, increment_path
+from ultralytics.yolo.utils.torch_utils import strip_optimizer, de_parallel, torch_distributed_zero_first
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -48,18 +50,14 @@ from models.yolo import SegmentationModel
 from utils.autoanchor import check_anchors
 from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
-                           check_git_status, check_img_size, check_suffix, check_yaml, colorstr, get_latest_run,
-                           increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
-                           labels_to_image_weights, one_cycle, print_mutation, strip_optimizer, yaml_save)
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_file, check_git_info, check_git_status, check_suffix, check_yaml, get_latest_run, init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, one_cycle, print_mutation, yaml_save, check_dataset)
 from utils.loggers import GenericLogger
 from utils.plots import plot_evolve, plot_labels
 from utils.segment.dataloaders import create_dataloader
 from utils.segment.loss import ComputeLoss
 from utils.segment.metrics import KEYS, fitness
 from utils.segment.plots import plot_images_and_masks, plot_results_with_masks
-from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
-                               smart_resume, torch_distributed_zero_first)
+from utils.torch_utils import EarlyStopping, ModelEMA, smart_DDP, smart_optimizer, smart_resume
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))

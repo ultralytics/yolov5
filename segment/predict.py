@@ -35,8 +35,8 @@ import sys
 from pathlib import Path
 
 import torch
-from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
-from ultrlalytics.yolo.utils.checks import check_reuirements, print_args
+from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode, strip_optimizer
+from ultrlalytics.yolo.utils.checks import print_args,  check_img_size, check_imshow
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -46,8 +46,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
-from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, colorstr, cv2, increment_path,
-                           non_max_suppression, scale_boxes, scale_segments, strip_optimizer)
+from utils.general import (LOGGER, Profile, check_file, colorstr, cv2, increment_path,
+                           non_max_suppression, scale_boxes, scale_segments)
 from utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import masks2segments, process_mask, process_mask_native
 

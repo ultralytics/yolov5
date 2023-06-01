@@ -354,46 +354,6 @@ def check_python(minimum='3.7.0'):
     check_version(platform.python_version(), minimum, name='Python ', hard=True)
 
 
-def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False, verbose=False):
-    # Check version vs. required version
-    current, minimum = (pkg.parse_version(x) for x in (current, minimum))
-    result = (current == minimum) if pinned else (current >= minimum)  # bool
-    s = f'WARNING ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed'  # string
-    if hard:
-        assert result, emojis(s)  # assert min requirements met
-    if verbose and not result:
-        LOGGER.warning(s)
-    return result
-
-
-def check_img_size(imgsz, s=32, floor=0):
-    # Verify image size is a multiple of stride s in each dimension
-    if isinstance(imgsz, int):  # integer i.e. img_size=640
-        new_size = max(make_divisible(imgsz, int(s)), floor)
-    else:  # list i.e. img_size=[640, 480]
-        imgsz = list(imgsz)  # convert to list if tuple
-        new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
-    if new_size != imgsz:
-        LOGGER.warning(f'WARNING ⚠️ --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
-    return new_size
-
-
-def check_imshow(warn=False):
-    # Check if environment supports image displays
-    try:
-        assert not is_jupyter()
-        assert not is_docker()
-        cv2.imshow('test', np.zeros((1, 1, 3)))
-        cv2.waitKey(1)
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)
-        return True
-    except Exception as e:
-        if warn:
-            LOGGER.warning(f'WARNING ⚠️ Environment does not support cv2.imshow() or PIL Image.show()\n{e}')
-        return False
-
-
 def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
     # Check file(s) for acceptable suffix
     if file and suffix:
@@ -626,32 +586,6 @@ def clean_str(s):
 def one_cycle(y1=0.0, y2=1.0, steps=100):
     # lambda function for sinusoidal ramp from y1 to y2 https://arxiv.org/pdf/1812.01187.pdf
     return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
-
-
-def colorstr(*input):
-    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
-    *args, string = input if len(input) > 1 else ('blue', 'bold', input[0])  # color arguments, string
-    colors = {
-        'black': '\033[30m',  # basic colors
-        'red': '\033[31m',
-        'green': '\033[32m',
-        'yellow': '\033[33m',
-        'blue': '\033[34m',
-        'magenta': '\033[35m',
-        'cyan': '\033[36m',
-        'white': '\033[37m',
-        'bright_black': '\033[90m',  # bright colors
-        'bright_red': '\033[91m',
-        'bright_green': '\033[92m',
-        'bright_yellow': '\033[93m',
-        'bright_blue': '\033[94m',
-        'bright_magenta': '\033[95m',
-        'bright_cyan': '\033[96m',
-        'bright_white': '\033[97m',
-        'end': '\033[0m',  # misc
-        'bold': '\033[1m',
-        'underline': '\033[4m'}
-    return ''.join(colors[x] for x in args) + f'{string}' + colors['end']
 
 
 def labels_to_class_weights(labels, nc=80):
