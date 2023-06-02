@@ -7,6 +7,10 @@ import contextlib
 import platform
 import threading
 
+try:
+    import comet_ml  # must be imported before torch (if installed)
+except ImportError:
+    comet_ml = None
 
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string

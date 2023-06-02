@@ -2,10 +2,6 @@
 """
 Logging utils
 """
-try:
-    import comet_ml
-except ImportError:
-    comet_ml = None
 
 import os
 import warnings
