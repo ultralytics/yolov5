@@ -7,10 +7,6 @@ import contextlib
 import platform
 import threading
 
-try:
-    import comet_ml  # must be imported before torch (if installed)
-except ImportError:
-    comet_ml = None
 
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string
@@ -58,7 +54,7 @@ def notebook_init(verbose=True):
     import os
     import shutil
 
-    from utils.general import check_font, check_requirements, is_colab
+    from utils.general import check_font, is_colab
     from utils.torch_utils import select_device  # imports
 
     check_font()
