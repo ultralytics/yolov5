@@ -30,6 +30,7 @@ Usage - formats:
 
 import argparse
 import csv
+import json
 import io
 import os
 import platform
@@ -152,7 +153,7 @@ def run(
                 top_pred_index = top5i[0]
                 csv_output.writerow({
                     'path': path,
-                    'top_5_predicted': [(names[j], prob[j].item()) for j in top5i],
+                    'top_5_predicted': json.dumps([(names[j], prob[j].item()) for j in top5i]),
                     'label': names[top_pred_index],
                     'confidence': f'{prob[top_pred_index]:.2f}'
                 })
