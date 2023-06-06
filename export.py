@@ -110,7 +110,7 @@ def export_formats():
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
-        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True], ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -207,21 +207,21 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
 @try_export
 def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
-    check_requirements('openvino-dev')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-    import openvino.inference_engine as ie
+    check_requirements('openvino-dev>=2022.3')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+    import openvino.runtime as ov  # noqa
+    from openvino.tools import mo  # noqa
 
-    LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
-    f = str(file).replace('.pt', f'_openvino_model{os.sep}')
+    LOGGER.info(f'\n{prefix} starting export with openvino {ov.__version__}...')
+    f = str(file).replace(file.suffix, f'_openvino_model{os.sep}')
+    f_onnx = file.with_suffix('.onnx')
+    f_ov = str(Path(f) / self.file.with_suffix('.xml').name)
 
-    args = [
-        'mo',
-        '--input_model',
-        str(file.with_suffix('.onnx')),
-        '--output_dir',
-        f,
-        '--data_type',
-        ('FP16' if half else 'FP32'),]
-    subprocess.run(args, check=True, env=os.environ)  # export
+    ov_model = mo.convert_model(f_onnx,
+                                model_name=self.pretty_name,
+                                framework='onnx',
+                                compress_to_fp16=half)  # export
+
+    ov.serialize(ov_model, f_ov)  # save
     yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
 
@@ -456,7 +456,7 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
         '10',
         '--out_dir',
         str(file.parent),
-        f_tfl,], check=True)
+        f_tfl, ], check=True)
     return f, None
 
 
@@ -477,7 +477,7 @@ def export_tfjs(file, int8, prefix=colorstr('TensorFlow.js:')):
         '--quantize_uint8' if int8 else '',
         '--output_node_names=Identity,Identity_1,Identity_2,Identity_3',
         str(f_pb),
-        str(f),]
+        str(f), ]
     subprocess.run([arg for arg in args if arg], check=True)
 
     json = Path(f_json).read_text()
@@ -487,9 +487,9 @@ def export_tfjs(file, int8, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-            r'"Identity_1": {"name": "Identity_1"}, '
-            r'"Identity_2": {"name": "Identity_2"}, '
-            r'"Identity_3": {"name": "Identity_3"}}}', json)
+                                                           r'"Identity_1": {"name": "Identity_1"}, '
+                                                           r'"Identity_2": {"name": "Identity_2"}, '
+                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
