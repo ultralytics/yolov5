@@ -207,21 +207,18 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
 @try_export
 def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
-    check_requirements('openvino-dev')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-    import openvino.inference_engine as ie
+    check_requirements('openvino-dev>=2022.3')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+    import openvino.runtime as ov  # noqa
+    from openvino.tools import mo  # noqa
 
-    LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
-    f = str(file).replace('.pt', f'_openvino_model{os.sep}')
+    LOGGER.info(f'\n{prefix} starting export with openvino {ov.__version__}...')
+    f = str(file).replace(file.suffix, f'_openvino_model{os.sep}')
+    f_onnx = file.with_suffix('.onnx')
+    f_ov = str(Path(f) / file.with_suffix('.xml').name)
 
-    args = [
-        'mo',
-        '--input_model',
-        str(file.with_suffix('.onnx')),
-        '--output_dir',
-        f,
-        '--data_type',
-        ('FP16' if half else 'FP32'),]
-    subprocess.run(args, check=True, env=os.environ)  # export
+    ov_model = mo.convert_model(f_onnx, model_name=file.stem, framework='onnx', compress_to_fp16=half)  # export
+
+    ov.serialize(ov_model, f_ov)  # save
     yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
 
