@@ -111,8 +111,7 @@ def export_formats():
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
         ['PaddlePaddle', 'paddle', '_paddle_model', True, True],
-        ['OpenVINO_nncf', 'openvino_nncf', '_openvino_model_int8', True, False],
-    ]
+        ['OpenVINO_nncf', 'openvino_nncf', '_openvino_model_int8', True, False],]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -226,16 +225,23 @@ def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
 
 
 @try_export
-def export_nncf(file, metadata, half, data, prefix=colorstr('OpenVINO_NNCF:'), ):
+def export_nncf(
+        file,
+        metadata,
+        half,
+        data,
+        prefix=colorstr('OpenVINO_NNCF:'),
+):
     # YOLOv5 OpenVINO_NNCF export
     check_requirements('openvino-dev>=2023.0')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
     check_requirements('nncf')
     import nncf
-    from utils.dataloaders import letterbox, create_dataloader
-    from utils.general import check_dataset, check_yaml
+    import numpy as np
     import openvino.runtime as ov  # noqa
     from openvino.runtime import Core
-    import numpy as np
+
+    from utils.dataloaders import create_dataloader, letterbox
+    from utils.general import check_dataset, check_yaml
 
     LOGGER.info(f'\n{prefix} starting export with openvino_nncf {ov.__version__}...')
     core = Core()
@@ -264,10 +270,14 @@ def export_nncf(file, metadata, half, data, prefix=colorstr('OpenVINO_NNCF:'), )
     def gen_dataloader(yaml_path, task='train', imgsz=640, workers=4):
         data_yaml = check_yaml(yaml_path)
         data = check_dataset(data_yaml)
-        dataloader = create_dataloader(
-            data[task], imgsz=imgsz, batch_size=1, stride=32, pad=0.5, single_cls=False,
-            rect=False, workers=workers
-        )[0]
+        dataloader = create_dataloader(data[task],
+                                       imgsz=imgsz,
+                                       batch_size=1,
+                                       stride=32,
+                                       pad=0.5,
+                                       single_cls=False,
+                                       rect=False,
+                                       workers=workers)[0]
         return dataloader
 
     # noqa: F811
@@ -523,7 +533,7 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
         '10',
         '--out_dir',
         str(file.parent),
-        f_tfl, ], check=True)
+        f_tfl,], check=True)
     return f, None
 
 
@@ -544,7 +554,7 @@ def export_tfjs(file, int8, prefix=colorstr('TensorFlow.js:')):
         '--quantize_uint8' if int8 else '',
         '--output_node_names=Identity,Identity_1,Identity_2,Identity_3',
         str(f_pb),
-        str(f), ]
+        str(f),]
     subprocess.run([arg for arg in args if arg], check=True)
 
     json = Path(f_json).read_text()
@@ -554,9 +564,9 @@ def export_tfjs(file, int8, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-                                                           r'"Identity_1": {"name": "Identity_1"}, '
-                                                           r'"Identity_2": {"name": "Identity_2"}, '
-                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
+            r'"Identity_1": {"name": "Identity_1"}, '
+            r'"Identity_2": {"name": "Identity_2"}, '
+            r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
@@ -871,7 +881,8 @@ def parse_opt(known=False):
         '--include',
         nargs='+',
         default=['torchscript'],
-        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, openvino_nncf')
+        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, openvino_nncf'
+    )
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     print_args(vars(opt))
     return opt
