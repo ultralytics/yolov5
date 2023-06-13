@@ -45,7 +45,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
-                           increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh, xyxy2xywh_mot)
+                           increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh,
+                           xyxy2xywh_mot)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 
@@ -176,10 +177,9 @@ def run(
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
                     if save_mot:
                         xywh = (xyxy2xywh_mot(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        line = (frame, -1, *xywh, conf, cls, -1) # if save_conf else (cls, *xywh)  # label format
+                        line = (frame, -1, *xywh, conf, cls, -1)  # if save_conf else (cls, *xywh)  # label format
                         with open(f'{"_".join(txt_path.split("_")[:-1])}.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
-                    
 
             # Stream results
             im0 = annotator.result()
