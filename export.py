@@ -824,7 +824,7 @@ def run(
     if paddle:  # PaddlePaddle
         f[10], _ = export_paddle(model, im, file, metadata)
     if openvino_nncf:
-        f[11], _ = export_openvino(file, metadata, half, data=data)
+        f[11], _ = export_nncf(file, metadata, half, data=data)
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
