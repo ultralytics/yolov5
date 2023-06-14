@@ -205,7 +205,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
 
 
 @try_export
-def export_openvino(file, metadata, half, int8,data,prefix=colorstr('OpenVINO:')):
+def export_openvino(file, metadata, half, int8, data, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     check_requirements('openvino-dev>=2022.3')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
     import openvino.runtime as ov  # noqa
@@ -218,12 +218,14 @@ def export_openvino(file, metadata, half, int8,data,prefix=colorstr('OpenVINO:')
     if int8:
         check_requirements('openvino-dev>=2023.0')
         check_requirements('nncf')
-        from openvino.runtime import Core
-        from utils.dataloaders import create_dataloader, letterbox
         import nncf
         import numpy as np
+        from openvino.runtime import Core
+
+        from utils.dataloaders import create_dataloader, letterbox
         core = Core()
         onnx_model = core.read_model(f_onnx)  # export
+
         def prepare_input_tensor(image: np.ndarray):
             input_tensor = image.astype(np.float32)  # uint8 to fp16/32
             input_tensor /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -770,7 +772,7 @@ def run(
     if onnx or xml:  # OpenVINO requires ONNX
         f[2], _ = export_onnx(model, im, file, opset, dynamic, simplify)
     if xml:  # OpenVINO
-        f[3], _ = export_openvino(file, metadata, half,int8,data)
+        f[3], _ = export_openvino(file, metadata, half, int8, data)
     if coreml:  # CoreML
         f[4], ct_model = export_coreml(model, im, file, int8, half, nms)
         if nms:
