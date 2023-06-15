@@ -18,7 +18,7 @@ try:
     # Project Configuration
     config = comet_ml.config.get_config()
     COMET_PROJECT_NAME = config.get_string(os.getenv('COMET_PROJECT_NAME'), 'comet.project_name', default='yolov5')
-except (ModuleNotFoundError, ImportError):
+except ImportError:
     comet_ml = None
     COMET_PROJECT_NAME = None
 
@@ -82,7 +82,7 @@ class CometLogger:
         self.comet_log_batch_interval = COMET_BATCH_LOGGING_INTERVAL
 
         # Dataset Artifact Settings
-        self.upload_dataset = self.opt.upload_dataset if self.opt.upload_dataset else COMET_UPLOAD_DATASET
+        self.upload_dataset = self.opt.upload_dataset or COMET_UPLOAD_DATASET
         self.resume = self.opt.resume
 
         # Default parameters to pass to Experiment objects
@@ -93,6 +93,7 @@ class CometLogger:
             'project_name': COMET_PROJECT_NAME,}
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
+        self.experiment.set_name(self.opt.name)
 
         self.data_dict = self.check_dataset(self.opt.data)
         self.class_names = self.data_dict['names']
