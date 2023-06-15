@@ -76,7 +76,12 @@ def run(
             if f == '-':
                 w = weights  # PyTorch format
             else:
-                w = export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # all others
+                w = export.run(weights=weights,
+                               imgsz=[imgsz],
+                               include=[f],
+                               batch_size=batch_size,
+                               device=device,
+                               half=half)[-1]  # all others
             assert suffix in str(w), 'export failed'
 
             # Validate
