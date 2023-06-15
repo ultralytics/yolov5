@@ -57,10 +57,7 @@ jobs:
         model: [ yolov5n ]
         include:
           - os: ubuntu-latest
-            python-version: '3.7'  # '3.6.8' min
-            model: yolov5n
-          - os: ubuntu-latest
-            python-version: '3.8'
+            python-version: '3.8'  # '3.6.8' min
             model: yolov5n
           - os: ubuntu-latest
             python-version: '3.9'
