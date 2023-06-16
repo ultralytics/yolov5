@@ -277,7 +277,8 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
         method_obj = EigenCAM
     elif method.lower() == 'EigenGradCAM'.lower():
         method_obj = EigenGradCAM
-    elif method.lower() == 'GradCAMPlusPlus'.lower():
+    elif method.lower() == 'GradCAMPlusPlus'.lower() \
+        or method.lower() == 'GradCAM++'.lower():
         method_obj = GradCAMPlusPlus
     elif method.lower() == 'XGradCAM'.lower():
         method_obj = XGradCAM
