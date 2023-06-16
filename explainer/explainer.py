@@ -172,19 +172,19 @@ class YOLOBoxScoreTarget2():
 
             # score = score + torch.log(class_score) + torch.log(confidence)
             if self.backprop == 'class':
-                score = score + torch.log(class_score)
+                score = score + class_score
             elif self.backprop == 'confidence':
-                score = score + torch.log(confidence)
+                score = score + confidence
             elif self.backprop == 'class_confidence':
-                score = score + torch.log(confidence * class_score)
+                score = score + confidence * class_score
             elif self.backprop == 'x_c':
-                score = score + torch.log(x_c)
+                score = score + x_c
             elif self.backprop == 'y_c':
-                score = score + torch.log(y_c)
+                score = score + y_c
             elif self.backprop == 'h':
-                score = score + torch.log(h)
+                score = score + h
             elif self.backprop == 'w':
-                score = score + torch.log(w)
+                score = score + w
             else:
                 raise NotImplementedError('Not implemented')
 
@@ -198,8 +198,6 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
         classes = predicted_bbox['class'].values
 
     target_layers = [model.model.model[layer]]
-
-    # targets = [YOLOBoxScoreTarget(classes=classes)]
 
     bbox_torch = torch.tensor(predicted_bbox.drop('name', axis=1).values.astype(np.float64), device=device)
 
@@ -353,7 +351,7 @@ def run(
         layer=-2,
         keep_only_topk=100,  # this can be 0 to 1. it shows maximum percentage of pixels
         # which can be used for heatmap. This is good for evaluation of heatmaps!
-    class_names=[],  # list of class names to use for CAM methods
+        class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
         crop=False,
@@ -397,6 +395,7 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
+    last_image=None # last cam image to show
     for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
@@ -427,14 +426,14 @@ def run(
         # for now, we only support one image at a time
         # then we should save the image in a file
 
-        if save_img:
-            path = Path(path)
-            save_path = str(save_dir / path.name)  # im.jpg
-            cv2.imwrite(save_path, cam_image)
-            cv2.imwrite(save_path.replace(path.suffix, '_heat_' + path.suffix), heat_map * 255)
-            LOGGER.info(f'saved image to {save_path}')
-        else:
-            return cam_image
+        path = Path(path)
+        save_path = str(save_dir / path.name)  # im.jpg
+        cv2.imwrite(save_path, cam_image)
+        cv2.imwrite(save_path.replace(path.suffix, '_heat_' + path.suffix), heat_map * 255)
+        LOGGER.info(f'saved image to {save_path}')
+        last_image = cam_image
+    
+    return last_image
 
 
 def parseopt():
