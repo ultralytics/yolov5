@@ -178,10 +178,10 @@ def run(
                     if save_mot:
                         xywh = (xyxy2xywh_mot(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         if frame == 0:
-                            frame = int(txt_path.split("/")[-1])
+                            frame = int(txt_path.split('/')[-1])
                         line = (frame, -1, *xywh, conf, cls, -1)  # label format
                         with open(f'{"/".join(txt_path.split("/")[:-1])}/det.txt', 'a') as f:
-                             f.write((('%g, ' * len(line)).rstrip() % line)[:-1] + '\n')
+                            f.write((('%g, ' * len(line)).rstrip() % line)[:-1] + '\n')
 
             # Stream results
             im0 = annotator.result()
