@@ -177,9 +177,11 @@ def run(
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
                     if save_mot:
                         xywh = (xyxy2xywh_mot(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        line = (frame, -1, *xywh, conf, cls, -1)  # if save_conf else (cls, *xywh)  # label format
-                        with open(f'{"_".join(txt_path.split("_")[:-1])}.txt', 'a') as f:
-                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        if frame == 0:
+                            frame = int(txt_path.split("/")[-1])
+                        line = (frame, -1, *xywh, conf, cls, -1)  # label format
+                        with open(f'{"/".join(txt_path.split("/")[:-1])}/det.txt', 'a') as f:
+                             f.write((('%g, ' * len(line)).rstrip() % line)[:-1] + '\n')
 
             # Stream results
             im0 = annotator.result()
@@ -237,7 +239,7 @@ def parse_opt():
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
-    parser.add_argument('--save-mot', action='store_true', help='save results in MOT 2D detection format in *.txt')
+    parser.add_argument('--save-mot', action='store_true', help='save results in MOT 2D detection format in det.txt')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --classes 0, or --classes 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
