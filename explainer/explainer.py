@@ -351,7 +351,7 @@ def run(
         layer=-2,
         keep_only_topk=100,  # this can be 0 to 1. it shows maximum percentage of pixels
         # which can be used for heatmap. This is good for evaluation of heatmaps!
-        class_names=[],  # list of class names to use for CAM methods
+    class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
         crop=False,
@@ -395,7 +395,7 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    last_image=None # last cam image to show
+    last_image = None  # last cam image to show
     for path, im, _, _, _ in dataset:
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
@@ -432,7 +432,7 @@ def run(
         cv2.imwrite(save_path.replace(path.suffix, '_heat_' + path.suffix), heat_map * 255)
         LOGGER.info(f'saved image to {save_path}')
         last_image = cam_image
-    
+
     return last_image
 
 
