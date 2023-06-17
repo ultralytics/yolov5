@@ -216,7 +216,6 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr('OpenVINO:
     f_onnx = file.with_suffix('.onnx')
     f_ov = str(Path(f) / file.with_suffix('.xml').name)
     if int8:
-        check_requirements('openvino-dev>=2023.0')
         check_requirements('nncf')
         import nncf
         import numpy as np
