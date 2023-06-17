@@ -205,7 +205,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
 
 
 @try_export
-def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
+def export_openvino(file, metadata, half, int8, data, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     check_requirements('openvino-dev>=2022.3')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
     import openvino.runtime as ov  # noqa
@@ -215,8 +215,56 @@ def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     f = str(file).replace(file.suffix, f'_openvino_model{os.sep}')
     f_onnx = file.with_suffix('.onnx')
     f_ov = str(Path(f) / file.with_suffix('.xml').name)
+    if int8:
+        check_requirements('nncf')
+        import nncf
+        import numpy as np
+        from openvino.runtime import Core
 
-    ov_model = mo.convert_model(f_onnx, model_name=file.stem, framework='onnx', compress_to_fp16=half)  # export
+        from utils.dataloaders import create_dataloader, letterbox
+        core = Core()
+        onnx_model = core.read_model(f_onnx)  # export
+
+        def prepare_input_tensor(image: np.ndarray):
+            input_tensor = image.astype(np.float32)  # uint8 to fp16/32
+            input_tensor /= 255.0  # 0 - 255 to 0.0 - 1.0
+
+            if input_tensor.ndim == 3:
+                input_tensor = np.expand_dims(input_tensor, 0)
+            return input_tensor
+
+        def gen_dataloader(yaml_path, task='train', imgsz=640, workers=4):
+            data_yaml = check_yaml(yaml_path)
+            data = check_dataset(data_yaml)
+            dataloader = create_dataloader(data[task],
+                                           imgsz=imgsz,
+                                           batch_size=1,
+                                           stride=32,
+                                           pad=0.5,
+                                           single_cls=False,
+                                           rect=False,
+                                           workers=workers)[0]
+            return dataloader
+
+        # noqa: F811
+
+        def transform_fn(data_item):
+            """
+            Quantization transform function. Extracts and preprocess input data from dataloader item for quantization.
+            Parameters:
+               data_item: Tuple with data item produced by DataLoader during iteration
+            Returns:
+                input_tensor: Input data for quantization
+            """
+            img = data_item[0].numpy()
+            input_tensor = prepare_input_tensor(img)
+            return input_tensor
+
+        ds = gen_dataloader(data)
+        quantization_dataset = nncf.Dataset(ds, transform_fn)
+        ov_model = nncf.quantize(onnx_model, quantization_dataset, preset=nncf.QuantizationPreset.MIXED)
+    else:
+        ov_model = mo.convert_model(f_onnx, model_name=file.stem, framework='onnx', compress_to_fp16=half)  # export
 
     ov.serialize(ov_model, f_ov)  # save
     yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
@@ -723,7 +771,7 @@ def run(
     if onnx or xml:  # OpenVINO requires ONNX
         f[2], _ = export_onnx(model, im, file, opset, dynamic, simplify)
     if xml:  # OpenVINO
-        f[3], _ = export_openvino(file, metadata, half)
+        f[3], _ = export_openvino(file, metadata, half, int8, data)
     if coreml:  # CoreML
         f[4], ct_model = export_coreml(model, im, file, int8, half, nms)
         if nms:
@@ -783,7 +831,7 @@ def parse_opt(known=False):
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--keras', action='store_true', help='TF: use Keras')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
-    parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
+    parser.add_argument('--int8', action='store_true', help='CoreML/TF/OpenVINO INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF/TensorRT: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=17, help='ONNX: opset version')
