@@ -61,6 +61,7 @@ def notebook_init(verbose=True):
 
     import psutil
 
+    os.system('pip uninstall -y wandb')
     if is_colab():
         shutil.rmtree('/content/sample_data', ignore_errors=True)  # remove colab /sample_data directory
 
