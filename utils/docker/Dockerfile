@@ -40,6 +40,9 @@ RUN git clone https://github.com/voxel-ai/yolov5 /usr/src/app
 # Set environment variables
 ENV OMP_NUM_THREADS=8
 
+RUN apt-get -o Dpkg::Options::="--force-confmiss" install -y --no-install-recommends --reinstall netbase
+RUN apt-get update && apt-get install --no-install-recommends -y libgl1-mesa-glx libglib2.0-0
+ENTRYPOINT "/bin/bash"
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
 
