@@ -365,7 +365,7 @@ def run(
                         im0[si],
                 ):
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
-                # ======== END SAVE BLURRED ======== #
+                # ========= END SAVE BLURRED ======= #
         # Plot images
         if plots and not skip_evaluation:
             plot_images(im, targets, paths, save_dir / f'{path.stem}.jpg', names)  # labels
