@@ -47,14 +47,14 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
 </div>
 </div>
 
-## <div align="center">YOLOv8 🚀 NEW</div>
+## <div align="center">YOLOv8 🚀 新品</div>
 
-We are thrilled to announce the launch of Ultralytics YOLOv8 🚀, our NEW cutting-edge, state-of-the-art (SOTA) model
-released at **[https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)**.
-YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent choice for a wide range of
-object detection, image segmentation and image classification tasks.
+我们很高兴宣布 Ultralytics YOLOv8 🚀 的发布，这是我们新推出的领先水平、最先进的（SOTA）模型，发布于 **[https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)**。
+YOLOv8 旨在快速、准确且易于使用，使其成为广泛的物体检测、图像分割和图像分类任务的极佳选择。
 
-See the [YOLOv8 Docs](https://docs.ultralytics.com) for details and get started with:
+请查看 [YOLOv8 文档](https://docs.ultralytics.com)了解详细信息，并开始使用：
+
+[![PyPI 版本](https://badge.fury.io/py/ultralytics.svg)](https://badge.fury.io/py/ultralytics) [![下载量](https://static.pepy.tech/badge/ultralytics)](https://pepy.tech/project/ultralytics)
 
 ```commandline
 pip install ultralytics

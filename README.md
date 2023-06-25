@@ -59,7 +59,9 @@ object detection, image segmentation and image classification tasks.
 
 See the [YOLOv8 Docs](https://docs.ultralytics.com) for details and get started with:
 
-```commandline
+[![PyPI version](https://badge.fury.io/py/ultralytics.svg)](https://badge.fury.io/py/ultralytics) [![Downloads](https://static.pepy.tech/badge/ultralytics)](https://pepy.tech/project/ultralytics)
+
+```bash
 pip install ultralytics
 ```
 
