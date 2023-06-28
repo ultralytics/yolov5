@@ -46,6 +46,7 @@ def yolo_reshape_transform(x):
 
 class YOLOBoxScoreTarget():
     """
+    testing
     This way we see all boxes.
     then we filter out classes and select the classes that we want to attend to.
     At the end, we sum out of all these.
