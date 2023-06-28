@@ -399,6 +399,7 @@ def run(
 
     last_image = None  # last cam image to show
     for path, im, _, _, _ in dataset:
+        im0 = np.array(im).transpose(1, 2, 0)
         processed_output = autoshaped_model(im)
         predicted_bbox = processed_output.pandas().xyxy[0]
         # list of detections, on (n,6) tensor per image [xyxy, conf, cls]
