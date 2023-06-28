@@ -30,7 +30,7 @@ from models.common import AutoShape, DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
 from utils.general import LOGGER, check_file, check_img_size, increment_path, print_args, xywh2xyxy
 from utils.torch_utils import select_device
-
+from utils.plots import Annotator, colors
 
 def yolo_reshape_transform(x):
     """
@@ -46,7 +46,6 @@ def yolo_reshape_transform(x):
 
 class YOLOBoxScoreTarget():
     """
-    testing
     This way we see all boxes.
     then we filter out classes and select the classes that we want to attend to.
     At the end, we sum out of all these.
