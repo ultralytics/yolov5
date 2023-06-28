@@ -32,6 +32,7 @@ from utils.general import LOGGER, check_file, check_img_size, increment_path, pr
 from utils.torch_utils import select_device
 from utils.plots import Annotator, colors
 
+
 def yolo_reshape_transform(x):
     """
     # The backbone outputs different tensors with different spatial sizes, from the FPN.
