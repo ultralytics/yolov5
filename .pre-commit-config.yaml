@@ -62,6 +62,7 @@ repos:
       - id: codespell
         args:
           - --ignore-words-list=crate,nd,strack,dota
+          - --exclude-file=explainer/demo.ipynb
 
   #- repo: https://github.com/asottile/yesqa
   #  rev: v1.4.0
