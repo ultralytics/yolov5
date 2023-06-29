@@ -369,6 +369,7 @@ def run(
         crop=False,
         use_old_target_method=False,  # whether to use old target method or new one
         imgsz=(640, 640),  # inference size (height, width)
+        hide_labels=False,  # hide labels
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         project=ROOT / 'runs/detect',  # save results to project/name
         name='exp',  # save results to project/name
@@ -443,6 +444,9 @@ def run(
         if class_idx:
             predicted_bbox = predicted_bbox[torch.isin(predicted_bbox[:, -1], torch.tensor(class_idx)), :]
         renormalized_cam_image = renormalize_cam_in_bounding_boxes(predicted_bbox, im, heat_map)
+
+        if draw_boxes:
+            annotator = Annotator(renormalized_cam_image)
 
         path = Path(path)
         save_path = str(save_dir / path.name)  # im.jpg
