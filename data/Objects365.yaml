@@ -428,7 +428,7 @@ download: |
               path = Path(im["file_name"])  # image filename
               try:
                   with open(labels / path.with_suffix('.txt').name, 'a') as file:
-                      annIds = coco.getAnnIds(imgIds=im["id"], catIds=catIds, iscrowd=None)
+                      annIds = coco.getAnnIds(imgIds=im["id"], catIds=catIds, iscrowd=False)
                       for a in coco.loadAnns(annIds):
                           x, y, w, h = a['bbox']  # bounding box in xywh (xy top-left corner)
                           xyxy = np.array([x, y, x + w, y + h])[None]  # pixels(1,4)
