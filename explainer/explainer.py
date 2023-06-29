@@ -448,6 +448,10 @@ def run(
 
         if draw_boxes:
             annotator = Annotator(renormalized_cam_image)
+            for *box, conf, cls in predicted_bbox:
+                label = None if hide_labels else model.names[int(cls)]
+                annotator.box_label(box, label, color=colors(int(cls), True))
+
 
 
         path = Path(path)
