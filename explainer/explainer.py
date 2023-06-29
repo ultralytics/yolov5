@@ -399,6 +399,9 @@ def run(
     # model.eval() # not sure about this!
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
+    global model_names
+    model_names = model.names
+
     # reverse key,values pairs since we to index with reverse
     model_classes = {v: k for k, v in model.names.items()}
     class_idx = [model_classes[item] for item in class_names]
