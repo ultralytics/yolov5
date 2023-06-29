@@ -467,7 +467,7 @@ def run(
         LOGGER.info(f'saved image to {save_path}')
 
 
-    return cam_image, renormalized_cam_image, concatenated_image
+    return [cam_image, renormalized_cam_image, concatenated_image]
 
 
 def parseopt():
