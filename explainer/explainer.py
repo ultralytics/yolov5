@@ -46,7 +46,9 @@ def yolo_reshape_transform(x):
 
 def renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam):
     """Normalize the CAM to be in the range [0, 1]
-    inside every bounding boxes, and zero outside of the bounding boxes. """
+    inside every bounding boxes, and zero outside of the bounding boxes.
+    Ref: https://jacobgil.github.io/pytorch-gradcam-book/EigenCAM%20for%20YOLO5.html """
+
     renormalized_cam = np.zeros(grayscale_cam.shape, dtype=np.float32)
     for *box, _, _ in boxes:
         x1, y1, x2, y2 = torch.tensor(box).round().long().view(1, 4).view(-1).tolist()
