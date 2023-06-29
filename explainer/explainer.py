@@ -399,8 +399,6 @@ def run(
     # model.eval() # not sure about this!
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
 
-
-
     # reverse key,values pairs since we to index with reverse
     model_classes = {v: k for k, v in model.names.items()}
     class_idx = [model_classes[item] for item in class_names]
@@ -441,6 +439,9 @@ def run(
         # for now, we only support one image at a time
         # then we should save the image in a file
         predicted_bbox = torch.tensor(predicted_bbox.drop('name', axis=1).values.astype(np.float64), device=device)
+
+        if class_idx:
+            predicted_bbox = predicted_bbox[torch.isin(predicted_bbox[:, -1], torch.tensor(class_idx)), :]
 
         path = Path(path)
         save_path = str(save_dir / path.name)  # im.jpg
