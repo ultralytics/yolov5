@@ -465,7 +465,7 @@ def run(
                     np.hstack((im0[..., ::-1], cam_image, renormalized_cam_image)))
 
         LOGGER.info(f'saved image to {save_path}')
-        last_image = cam_image
+        # last_image = cam_image
 
     return last_image
 
