@@ -411,7 +411,7 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    last_image = None  # last cam image to show
+    last_image = [] # None  # last cam image to show
     for path, im, _, _, _ in dataset:
         im0 = np.array(im).transpose(1, 2, 0)
         processed_output = autoshaped_model(im)
