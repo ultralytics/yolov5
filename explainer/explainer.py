@@ -438,6 +438,7 @@ def run(
 
         # for now, we only support one image at a time
         # then we should save the image in a file
+        predicted_bbox = torch.tensor(predicted_bbox.drop('name', axis=1).values.astype(np.float64), device=device)
 
         path = Path(path)
         save_path = str(save_dir / path.name)  # im.jpg
