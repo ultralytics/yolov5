@@ -449,6 +449,7 @@ def run(
         if draw_boxes:
             annotator = Annotator(renormalized_cam_image)
 
+
         path = Path(path)
         save_path = str(save_dir / path.name)  # im.jpg
         cv2.imwrite(save_path, cam_image)
