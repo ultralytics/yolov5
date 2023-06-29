@@ -453,6 +453,7 @@ def run(
             for *box, conf, cls in predicted_bbox:
                 label = None if hide_labels else model.names[int(cls)]
                 annotator.box_label(box, label, color=colors(int(cls), True))
+            concatenated_image  = np.hstack(im0[..., ::-1], cam_image, renormalized_cam_image)
 
 
 
@@ -461,13 +462,12 @@ def run(
         cv2.imwrite(save_path, cam_image)
         cv2.imwrite(save_path.replace(path.suffix, '_heat_' + path.suffix), heat_map * 255)
         cv2.imwrite(save_path.replace(path.suffix, '_boxes_' + path.suffix), renormalized_cam_image)
-        cv2.imwrite(save_path.replace(path.suffix, '_concatenated_' + path.suffix),
-                    np.hstack((im0[..., ::-1], cam_image, renormalized_cam_image)))
+        cv2.imwrite(save_path.replace(path.suffix, '_concatenated_' + path.suffix), concatenated_image)
 
         LOGGER.info(f'saved image to {save_path}')
         # last_image = cam_image
 
-    return last_image
+    return cam_image, renormalized_cam_image, concatenated_image
 
 
 def parseopt():
