@@ -52,7 +52,7 @@ def renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam):
         x1, y1, x2, y2 = torch.tensor(box).round().long().view(1, 4).view(-1).tolist()
         renormalized_cam[y1:y2, x1:x2] = scale_cam_image(grayscale_cam[y1:y2, x1:x2].copy())
     renormalized_cam = scale_cam_image(renormalized_cam)
-    return show_cam_on_image(image_float_np, renormalized_cam, use_rgb=True) #eigencam_image_renormalized
+    return show_cam_on_image(np.array(image_float_np[0].cpu()).transpose(1, 2, 0), renormalized_cam, use_rgb=True) #eigencam_image_renormalized
 
 
 class YOLOBoxScoreTarget():
