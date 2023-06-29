@@ -471,6 +471,7 @@ def parseopt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
+    parser.add_argument('--draw-boxes', default=True, action='store_true', help='draw boxes')
 
     parser.add_argument('--verbose', action='store_true', help='verbose log')
     parser.add_argument('--layer', type=int, default=-2, help='layer to backpropagate gradients to')
