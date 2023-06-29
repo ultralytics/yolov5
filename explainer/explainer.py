@@ -370,6 +370,7 @@ def run(
         use_old_target_method=False,  # whether to use old target method or new one
         imgsz=(640, 640),  # inference size (height, width)
         hide_labels=False,  # hide labels
+        draw_boxes=True, # draw bounding boxes
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         project=ROOT / 'runs/detect',  # save results to project/name
         name='exp',  # save results to project/name
