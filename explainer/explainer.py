@@ -443,7 +443,7 @@ def run(
         predicted_bbox = torch.tensor(predicted_bbox.drop('name', axis=1).values.astype(np.float64), device=device)
 
         if class_idx:
-            predicted_bbox = predicted_bbox[torch.isin(predicted_bbox[:, -1], torch.tensor(class_idx)), :]
+            predicted_bbox = predicted_bbox[torch.isin(predicted_bbox[:, -1], torch.tensor(class_idx, device=device)), :]
         renormalized_cam_image = renormalize_cam_in_bounding_boxes(predicted_bbox, im, heat_map)
 
         if draw_boxes:
