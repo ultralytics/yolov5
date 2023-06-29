@@ -458,6 +458,7 @@ def run(
         save_path = str(save_dir / path.name)  # im.jpg
         cv2.imwrite(save_path, cam_image)
         cv2.imwrite(save_path.replace(path.suffix, '_heat_' + path.suffix), heat_map * 255)
+        cv2.imwrite(save_path.replace(path.suffix, '_boxes_' + path.suffix), renormalized_cam_image)
         LOGGER.info(f'saved image to {save_path}')
         last_image = cam_image
 
