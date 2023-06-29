@@ -442,6 +442,7 @@ def run(
 
         if class_idx:
             predicted_bbox = predicted_bbox[torch.isin(predicted_bbox[:, -1], torch.tensor(class_idx)), :]
+        renormalized_cam_image = renormalize_cam_in_bounding_boxes(predicted_bbox, im, heat_map, device)
 
         path = Path(path)
         save_path = str(save_dir / path.name)  # im.jpg
