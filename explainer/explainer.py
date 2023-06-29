@@ -465,10 +465,9 @@ def run(
         cv2.imwrite(save_path.replace(path.suffix, '_concatenated_' + path.suffix), concatenated_image)
 
         LOGGER.info(f'saved image to {save_path}')
-        # last_image = cam_image
-        print('testing')
 
-    return renormalized_cam_image #(cam_image, , concatenated_image)
+
+    return renormalized_cam_image, cam_image, concatenated_image
 
 
 def parseopt():
