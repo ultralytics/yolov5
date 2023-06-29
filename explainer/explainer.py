@@ -466,6 +466,7 @@ def run(
 
         LOGGER.info(f'saved image to {save_path}')
         # last_image = cam_image
+        print('testing')
 
     return renormalized_cam_image #(cam_image, , concatenated_image)
 
