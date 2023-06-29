@@ -48,7 +48,7 @@ def renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam):
     """Normalize the CAM to be in the range [0, 1]
     inside every bounding boxes, and zero outside of the bounding boxes. """
     renormalized_cam = np.zeros(grayscale_cam.shape, dtype=np.float32)
-    for *box, _, _ in bboxes:
+    for *box, _, _ in boxes:
         x1, y1, x2, y2 = torch.tensor(box).round().long().view(1, 4).view(-1).tolist()
         renormalized_cam[y1:y2, x1:x2] = scale_cam_image(grayscale_cam[y1:y2, x1:x2].copy())
     renormalized_cam = scale_cam_image(renormalized_cam)
