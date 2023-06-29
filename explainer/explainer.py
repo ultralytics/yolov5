@@ -44,7 +44,7 @@ def yolo_reshape_transform(x):
     """
     return x
 
-def renormalize_cam_in_bounding_boxes(boxes, colors, names, image_float_np, grayscale_cam):
+def renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam):
     """Normalize the CAM to be in the range [0, 1]
     inside every bounding boxes, and zero outside of the bounding boxes. """
     renormalized_cam = np.zeros(grayscale_cam.shape, dtype=np.float32)
@@ -52,7 +52,7 @@ def renormalize_cam_in_bounding_boxes(boxes, colors, names, image_float_np, gray
         x1, y1, x2, y2 = torch.tensor(box).round().long().view(1, 4).view(-1).tolist()
         renormalized_cam[y1:y2, x1:x2] = scale_cam_image(grayscale_cam[y1:y2, x1:x2].copy())
     renormalized_cam = scale_cam_image(renormalized_cam)
-    return  show_cam_on_image(image_float_np, renormalized_cam, use_rgb=True) #eigencam_image_renormalized
+    return show_cam_on_image(image_float_np, renormalized_cam, use_rgb=True) #eigencam_image_renormalized
 
 
 class YOLOBoxScoreTarget():
@@ -363,7 +363,7 @@ def run(
         layer=-2,
         keep_only_topk=100,  # this can be 0 to 1. it shows maximum percentage of pixels
         # which can be used for heatmap. This is good for evaluation of heatmaps!
-    class_names=[],  # list of class names to use for CAM methods
+        class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
         crop=False,
