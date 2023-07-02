@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  image-splitter:
+    build: .
+    command:
+      python3 /app/server.py
+    environment:
+      - ENV_ID=prod
+    ports:
+      - 8700:8700
+    volumes:
+      - .:/app/
+    restart: always
+    network_mode: host

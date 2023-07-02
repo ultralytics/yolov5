@@ -1,0 +1,19 @@
+version: '3.9'
+services:
+  image-splitter:
+    build: .
+    command:
+      python3 /app/server.py
+    environment:
+      - ENV_ID=dev
+    tty: true
+    ports:
+      - 8700:8700
+    volumes:
+      - .:/app/
+    restart: always
+    network_mode: bridge
+    networks:
+      - gratheon
+networks:
+  gratheon:
