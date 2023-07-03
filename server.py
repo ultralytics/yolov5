@@ -4,7 +4,7 @@ import tempfile
 import os
 import cgi
 import time
-import shutil
+import subprocess
 from detect import run
 
 # Define the request handler class
@@ -43,7 +43,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 headers=self.headers,
                 environ={'REQUEST_METHOD': 'POST'}
             )
-
             # Get the uploaded file field
             file_field = form_data['file']
 
@@ -71,12 +70,21 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 save_conf=True,
             )
 
+            if not os.path.exists(reqdir + "exp/result.txt"):
+                self.send_response(200)  # Send 200 OK status code
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                response = {'message': 'Nothing found', 'result': ""}
+                self.wfile.write(json.dumps(response).encode('utf-8'))
+                
+                subprocess.call(["rm", "-rf", reqdir])
+                return
+
             with open(reqdir + "exp/result.txt", 'r') as file:
                 result = file.read()
-            response = {'message': 'File uploaded successfully', 'result': result}
+            response = {'message': 'File processed successfully', 'result': result}
 
-            shutil.rmtree(reqdir)
-
+            subprocess.call(["rm", "-rf", reqdir])
 
             self.send_response(200)  # Send 200 OK status code
             self.send_header('Content-type', 'application/json')

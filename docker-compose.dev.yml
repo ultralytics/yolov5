@@ -1,6 +1,6 @@
 version: '3.9'
 services:
-  image-splitter:
+  models-yolov5:
     build: .
     command:
       python3 /app/server.py
