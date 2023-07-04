@@ -221,7 +221,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr('OpenVINO:
         import numpy as np
         from openvino.runtime import Core
 
-        from utils.dataloaders import create_dataloader, letterbox
+        from utils.dataloaders import create_dataloader
         core = Core()
         onnx_model = core.read_model(f_onnx)  # export
 
