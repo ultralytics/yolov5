@@ -53,7 +53,7 @@ def curl_download(url, filename, *, silent: bool = False) -> bool:
         '--retry',
         '9',
         '-C',
-        '-',])
+        '-', ])
     return proc.returncode == 0
 
 
