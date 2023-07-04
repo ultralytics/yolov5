@@ -90,7 +90,7 @@ class CometLogger:
             'log_code': False,
             'log_env_gpu': True,
             'log_env_cpu': True,
-            'project_name': COMET_PROJECT_NAME,}
+            'project_name': COMET_PROJECT_NAME, }
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
         self.experiment.set_name(self.opt.name)
@@ -153,7 +153,7 @@ class CometLogger:
             'comet_log_per_class_metrics': COMET_LOG_PER_CLASS_METRICS,
             'comet_log_batch_metrics': COMET_LOG_BATCH_METRICS,
             'comet_log_confusion_matrix': COMET_LOG_CONFUSION_MATRIX,
-            'comet_model_name': COMET_MODEL_NAME,})
+            'comet_model_name': COMET_MODEL_NAME, })
 
         # Check if running the Experiment with the Comet Optimizer
         if hasattr(self.opt, 'comet_optimizer_id'):
@@ -170,7 +170,7 @@ class CometLogger:
                     **self.default_experiment_kwargs,
                 )
 
-            return comet_ml.OfflineExperiment(**self.default_experiment_kwargs,)
+            return comet_ml.OfflineExperiment(**self.default_experiment_kwargs, )
 
         else:
             try:
@@ -214,7 +214,7 @@ class CometLogger:
             'fitness_score': fitness_score[-1],
             'epochs_trained': epoch + 1,
             'save_period': opt.save_period,
-            'total_epochs': opt.epochs,}
+            'total_epochs': opt.epochs, }
 
         model_files = glob.glob(f'{path}/*.pt')
         for model_path in model_files:
@@ -270,7 +270,7 @@ class CometLogger:
                     'x': xyxy[0],
                     'y': xyxy[1],
                     'x2': xyxy[2],
-                    'y2': xyxy[3]},})
+                    'y2': xyxy[3]}, })
         for *xyxy, conf, cls in filtered_detections.tolist():
             metadata.append({
                 'label': f'{self.class_names[int(cls)]}',
@@ -279,7 +279,7 @@ class CometLogger:
                     'x': xyxy[0],
                     'y': xyxy[1],
                     'x2': xyxy[2],
-                    'y2': xyxy[3]},})
+                    'y2': xyxy[3]}, })
 
         self.metadata_dict[image_name] = metadata
         self.logged_images_count += 1

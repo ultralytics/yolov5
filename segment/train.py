@@ -605,7 +605,7 @@ def main(opt, callbacks=Callbacks()):
                 'gsutil',
                 'cp',
                 f'gs://{opt.bucket}/evolve.csv',
-                str(evolve_csv),])
+                str(evolve_csv), ])
 
         for _ in range(opt.evolve):  # generations to evolve
             if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate

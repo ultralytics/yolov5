@@ -110,7 +110,7 @@ def export_formats():
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
-        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True], ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -221,7 +221,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr('OpenVINO:
         import numpy as np
         from openvino.runtime import Core
 
-        from utils.dataloaders import create_dataloader, letterbox
+        from utils.dataloaders import create_dataloader
         core = Core()
         onnx_model = core.read_model(f_onnx)  # export
 
@@ -501,7 +501,7 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
         '10',
         '--out_dir',
         str(file.parent),
-        f_tfl,], check=True)
+        f_tfl, ], check=True)
     return f, None
 
 
@@ -522,7 +522,7 @@ def export_tfjs(file, int8, prefix=colorstr('TensorFlow.js:')):
         '--quantize_uint8' if int8 else '',
         '--output_node_names=Identity,Identity_1,Identity_2,Identity_3',
         str(f_pb),
-        str(f),]
+        str(f), ]
     subprocess.run([arg for arg in args if arg], check=True)
 
     json = Path(f_json).read_text()
