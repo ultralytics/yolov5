@@ -4,7 +4,6 @@ Download utils
 """
 
 import logging
-import os
 import subprocess
 import urllib
 from pathlib import Path
