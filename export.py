@@ -59,6 +59,10 @@ from pathlib import Path
 import pandas as pd
 import torch
 from torch.utils.mobile_optimizer import optimize_for_mobile
+from ultraltics.yolo.utils import check_requirements, colorstr, file_size
+from ultralytics.nn.tasks import attempt_load_weights
+from ultralytics.yolo.utils.checks import check_img_size, check_imgsz, check_version, print_args
+from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -67,12 +71,9 @@ if str(ROOT) not in sys.path:
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.experimental import attempt_load
 from models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel
 from utils.dataloaders import LoadImages
-from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
-                           check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
-from utils.torch_utils import select_device, smart_inference_mode
+from utils.general import LOGGER, Profile, check_dataset, check_yaml, get_default_args, url2file, yaml_save
 
 MACOS = platform.system() == 'Darwin'  # macOS environment
 
@@ -733,7 +734,7 @@ def run(
     if half:
         assert device.type != 'cpu' or coreml, '--half only compatible with GPU export, i.e. use --device 0'
         assert not dynamic, '--half not compatible with --dynamic, i.e. use either --half or --dynamic but not both'
-    model = attempt_load(weights, device=device, inplace=True, fuse=True)  # load FP32 model
+    model = attempt_load_weights(weights, device=device, inplace=True, fuse=True)  # load FP32 model
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
@@ -742,7 +743,7 @@ def run(
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
-    imgsz = [check_img_size(x, gs) for x in imgsz]  # verify img_size are gs-multiples
+    imgsz = [check_imgsz(x, gs) for x in imgsz]  # verify img_size are gs-multiples
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model

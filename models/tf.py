@@ -26,10 +26,11 @@ import tensorflow as tf
 import torch
 import torch.nn as nn
 from tensorflow import keras
+from ultralytics.nn.tasks import attempt_load_weights
 
 from models.common import (C3, SPP, SPPF, Bottleneck, BottleneckCSP, C3x, Concat, Conv, CrossConv, DWConv,
                            DWConvTranspose2d, Focus, autopad)
-from models.experimental import MixConv2d, attempt_load
+from models.experimental import MixConv2d
 from models.yolo import Detect, Segment
 from utils.activations import SiLU
 from utils.general import LOGGER, make_divisible, print_args
@@ -570,7 +571,7 @@ def run(
 ):
     # PyTorch model
     im = torch.zeros((batch_size, 3, *imgsz))  # BCHW image
-    model = attempt_load(weights, device=torch.device('cpu'), inplace=True, fuse=False)
+    model = attempt_load_weights(weights, device=torch.device('cpu'), inplace=True, fuse=False)
     _ = model(im)  # inference
     model.info()
 

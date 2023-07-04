@@ -33,6 +33,10 @@ import torch.nn as nn
 import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
+from ultralytics.nn.tasks import attempt_load_weights
+from ultralytics.yolo.utils.autobatch import check_train_batch_size
+from ultralytics.yolo.utils.checks import check_img_size, check_imgsz, check_requirements
+from ultralytics.yolo.utils.torch_utils import de_parallel, strip_optimizer, torch_distributed_zero_first
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -41,24 +45,20 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import segment.val as validate  # for end-of-epoch mAP
-from models.experimental import attempt_load
 from models.yolo import SegmentationModel
 from utils.autoanchor import check_anchors
-from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
-                           check_git_status, check_img_size, check_requirements, check_suffix, check_yaml, colorstr,
-                           get_latest_run, increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
-                           labels_to_image_weights, one_cycle, print_args, print_mutation, strip_optimizer, yaml_save)
+                           check_git_status, check_suffix, check_yaml, get_latest_run, init_seeds, intersect_dicts,
+                           labels_to_class_weights, labels_to_image_weights, one_cycle, print_mutation, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import plot_evolve, plot_labels
 from utils.segment.dataloaders import create_dataloader
 from utils.segment.loss import ComputeLoss
 from utils.segment.metrics import KEYS, fitness
 from utils.segment.plots import plot_images_and_masks, plot_results_with_masks
-from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
-                               smart_resume, torch_distributed_zero_first)
+from utils.torch_utils import EarlyStopping, ModelEMA, smart_DDP, smart_optimizer, smart_resume
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -134,7 +134,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Image size
     gs = max(int(model.stride.max()), 32)  # grid size (max stride)
-    imgsz = check_img_size(opt.imgsz, gs, floor=gs * 2)  # verify imgsz is gs-multiple
+    imgsz = check_imgsz(opt.imgsz, gs, floor=gs * 2)  # verify imgsz is gs-multiple
 
     # Batch size
     if RANK == -1 and batch_size == -1:  # single-GPU only, estimate best batch size
@@ -429,7 +429,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         data_dict,
                         batch_size=batch_size // WORLD_SIZE * 2,
                         imgsz=imgsz,
-                        model=attempt_load(f, device).half(),
+                        model=attempt_load_weights(f, device).half(),
                         iou_thres=0.65 if is_coco else 0.60,  # best pycocotools at iou 0.65
                         single_cls=single_cls,
                         dataloader=val_loader,
@@ -540,7 +540,7 @@ def main(opt, callbacks=Callbacks()):
         opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
     # DDP mode
-    device = select_device(opt.device, batch_size=opt.batch_size)
+    device = select_device(opt.device, batch=opt.batch_size)
     if LOCAL_RANK != -1:
         msg = 'is not compatible with YOLOv5 Multi-GPU DDP training'
         assert not opt.image_weights, f'--image-weights {msg}'

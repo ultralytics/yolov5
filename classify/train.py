@@ -29,6 +29,9 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 from torch.cuda import amp
 from tqdm import tqdm
+from ultralytics.nn.tasks import attempt_load_weights
+from ultralytics.yolo.utils.torch_utils import (ModelEMA, de_parallel, model_info, select_device,
+                                                torch_distributed_zero_first)
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -37,15 +40,13 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from classify import val as validate
-from models.experimental import attempt_load
 from models.yolo import ClassificationModel, DetectionModel
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (DATASETS_DIR, LOGGER, TQDM_BAR_FORMAT, WorkingDirectory, check_git_info, check_git_status,
                            check_requirements, colorstr, download, increment_path, init_seeds, print_args, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import imshow_cls
-from utils.torch_utils import (ModelEMA, de_parallel, model_info, reshape_classifier_output, select_device, smart_DDP,
-                               smart_optimizer, smartCrossEntropyLoss, torch_distributed_zero_first)
+from utils.torch_utils import reshape_classifier_output, smart_DDP, smart_optimizer, smartCrossEntropyLoss
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -108,7 +109,7 @@ def train(opt, device):
     # Model
     with torch_distributed_zero_first(LOCAL_RANK), WorkingDirectory(ROOT):
         if Path(opt.model).is_file() or opt.model.endswith('.pt'):
-            model = attempt_load(opt.model, device='cpu', fuse=False)
+            model = attempt_load_weights(opt.model, device='cpu', fuse=False)
         elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
         else:
@@ -303,7 +304,7 @@ def main(opt):
         check_requirements(ROOT / 'requirements.txt')
 
     # DDP mode
-    device = select_device(opt.device, batch_size=opt.batch_size)
+    device = select_device(opt.device, batch=opt.batch_size)
     if LOCAL_RANK != -1:
         assert opt.batch_size != -1, 'AutoBatch is coming soon for classification, please pass a valid --batch-size'
         assert opt.batch_size % WORLD_SIZE == 0, f'--batch-size {opt.batch_size} must be multiple of WORLD_SIZE'

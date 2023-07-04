@@ -23,12 +23,14 @@ import torch
 import torch.nn as nn
 from PIL import Image
 from torch.cuda import amp
+from ultralytics.nn.tasks import attempt_load_weights
+from ultralytics.yolo.utils import colorstr
+from ultralytics.yolo.utils.checks import check_requirements, check_suffix, check_version
 
 from utils import TryExcept
 from utils.dataloaders import exif_transpose, letterbox
-from utils.general import (LOGGER, ROOT, Profile, check_requirements, check_suffix, check_version, colorstr,
-                           increment_path, is_jupyter, make_divisible, non_max_suppression, scale_boxes, xywh2xyxy,
-                           xyxy2xywh, yaml_load)
+from utils.general import (LOGGER, ROOT, Profile, increment_path, is_jupyter, make_divisible, non_max_suppression,
+                           scale_boxes, xywh2xyxy, xyxy2xywh, yaml_load)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, smart_inference_mode
 
@@ -328,7 +330,7 @@ class DetectMultiBackend(nn.Module):
         #   TensorFlow Lite:                *.tflite
         #   TensorFlow Edge TPU:            *_edgetpu.tflite
         #   PaddlePaddle:                   *_paddle_model
-        from models.experimental import attempt_download, attempt_load  # scoped to avoid circular import
+        from models.experimental import attempt_download  # scoped to avoid circular import
 
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
@@ -341,7 +343,10 @@ class DetectMultiBackend(nn.Module):
             w = attempt_download(w)  # download if not local
 
         if pt:  # PyTorch
-            model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
+            model = attempt_load_weights(weights if isinstance(weights, list) else w,
+                                         device=device,
+                                         inplace=True,
+                                         fuse=fuse)
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             model.half() if fp16 else model.float()

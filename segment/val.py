@@ -39,20 +39,21 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import torch.nn.functional as F
+from ultralytics.yolo.utils.torch_utils import de_parallel, select_device, smart_inference_mode
+from ultralytis.yolo.utils.checks import check_img_size, check_imgsz, check_requirements, print_args
 
 from models.common import DetectMultiBackend
 from models.yolo import SegmentationModel
 from utils.callbacks import Callbacks
-from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size,
-                           check_requirements, check_yaml, coco80_to_coco91_class, colorstr, increment_path,
-                           non_max_suppression, print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_dataset, check_yaml,
+                           coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, scale_boxes,
+                           xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
 from utils.segment.dataloaders import create_dataloader
 from utils.segment.general import mask_iou, process_mask, process_mask_native, scale_image
 from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
 from utils.segment.plots import plot_images_and_masks
-from utils.torch_utils import de_parallel, select_device, smart_inference_mode
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -173,7 +174,7 @@ def run(
         model.half() if half else model.float()
         nm = de_parallel(model).model[-1].nm  # number of masks
     else:  # called directly
-        device = select_device(device, batch_size=batch_size)
+        device = select_device(device, batch=batch_size)
 
         # Directories
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
@@ -182,7 +183,7 @@ def run(
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
-        imgsz = check_img_size(imgsz, s=stride)  # check image size
+        imgsz = check_imgsz(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
         nm = de_parallel(model).model.model[-1].nm if isinstance(model, SegmentationModel) else 32  # number of masks
         if engine:

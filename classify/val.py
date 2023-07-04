@@ -27,6 +27,9 @@ from pathlib import Path
 
 import torch
 from tqdm import tqdm
+from ultralytics.yolo.utils import colorstr
+from ultralytics.yolo.utils.checks import check_imgsz, check_requirements, print_args
+from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -36,9 +39,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_img_size, check_requirements, colorstr,
-                           increment_path, print_args)
-from utils.torch_utils import select_device, smart_inference_mode
+from utils.general import LOGGER, TQDM_BAR_FORMAT, Profile, increment_path
 
 
 @smart_inference_mode()
@@ -67,7 +68,7 @@ def run(
         half &= device.type != 'cpu'  # half precision only supported on CUDA
         model.half() if half else model.float()
     else:  # called directly
-        device = select_device(device, batch_size=batch_size)
+        device = select_device(device, batch=batch_size)
 
         # Directories
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
@@ -76,7 +77,7 @@ def run(
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
-        imgsz = check_img_size(imgsz, s=stride)  # check image size
+        imgsz = check_imgsz(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
         if engine:
             batch_size = model.batch_size

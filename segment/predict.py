@@ -35,6 +35,8 @@ import sys
 from pathlib import Path
 
 import torch
+from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode, strip_optimizer
+from ultrlalytics.yolo.utils.checks import check_imgsz, check_imshow, print_args
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -44,12 +46,10 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
-from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
-                           increment_path, non_max_suppression, print_args, scale_boxes, scale_segments,
-                           strip_optimizer)
+from utils.general import (LOGGER, Profile, check_file, colorstr, cv2, increment_path, non_max_suppression, scale_boxes,
+                           scale_segments)
 from utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import masks2segments, process_mask, process_mask_native
-from utils.torch_utils import select_device, smart_inference_mode
 
 
 @smart_inference_mode()
@@ -100,7 +100,7 @@ def run(
     device = select_device(device)
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
     stride, names, pt = model.stride, model.names, model.pt
-    imgsz = check_img_size(imgsz, s=stride)  # check image size
+    imgsz = check_imgsz(imgsz, s=stride)  # check image size
 
     # Dataloader
     bs = 1  # batch_size

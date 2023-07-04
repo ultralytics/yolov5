@@ -7,6 +7,9 @@ import contextlib
 import platform
 import threading
 
+from ultralytics.yolo.utils.checks import check_font, is_colab
+from ultralytics.yolo.utils.torch_utils import select_device  # imports
+
 
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string

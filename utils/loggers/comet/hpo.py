@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import comet_ml
+from ultralytics.yolo.utils.torch_utils import select_device
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,6 @@ if str(ROOT) not in sys.path:
 from train import train
 from utils.callbacks import Callbacks
 from utils.general import increment_path
-from utils.torch_utils import select_device
 
 # Project Configuration
 config = comet_ml.config.get_config()
@@ -87,7 +87,7 @@ def run(parameters, opt):
     opt.batch_size = parameters.get('batch_size')
     opt.epochs = parameters.get('epochs')
 
-    device = select_device(opt.device, batch_size=opt.batch_size)
+    device = select_device(opt.device, batch=opt.batch_size)
     train(hyp_dict, opt, device, callbacks=Callbacks())
 
 

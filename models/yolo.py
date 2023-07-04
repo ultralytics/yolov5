@@ -14,6 +14,9 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
+from ultralytics.yolo.utils.checks import check_version, print_args
+from ultralytics.yolo.utils.torch_utils import select_device
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -24,10 +27,9 @@ if platform.system() != 'Windows':
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
-from utils.general import LOGGER, check_version, check_yaml, make_divisible, print_args
+from utils.general import LOGGER, check_yaml, make_divisible
 from utils.plots import feature_visualization
-from utils.torch_utils import (fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, select_device,
-                               time_sync)
+from utils.torch_utils import fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, time_sync
 
 try:
     import thop  # for FLOPs computation
