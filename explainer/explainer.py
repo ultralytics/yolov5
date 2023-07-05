@@ -462,7 +462,7 @@ def run(
         cv2.imwrite(save_path, cam_image)
         cv2.imwrite(save_path.replace(path.suffix, '_heat_' + path.suffix), heat_map * 255)
         cv2.imwrite(save_path.replace(path.suffix, '_boxes_' + path.suffix), renormalized_cam_image)
-        cv2.imwrite(save_path.replace(path.suffix, '_concatenated_' + path.suffix), concatenated_image)
+        cv2.imwrite(save_path.replace(path.suffix, '_concatenated_' + path.suffix), np.hstack((im0[..., ::-1], cam_image, renormalized_cam_image)))
 
         LOGGER.info(f'Images are saved to {str(save_dir)}')
 
