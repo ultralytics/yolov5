@@ -139,12 +139,12 @@ def set_logging(name=LOGGING_NAME, verbose=True):
             name: {
                 'class': 'logging.StreamHandler',
                 'formatter': name,
-                'level': level,}},
+                'level': level, }},
         'loggers': {
             name: {
                 'level': level,
                 'handlers': [name],
-                'propagate': False,}}})
+                'propagate': False, }}})
 
 
 set_logging(LOGGING_NAME)  # run before defining LOGGER
@@ -416,7 +416,7 @@ def check_imshow(warn=False):
         return False
 
 
-def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
+def check_suffix(file='yolov5s.pt', suffix=('.pt', ), msg=''):
     # Check file(s) for acceptable suffix
     if file and suffix:
         if isinstance(suffix, str):
