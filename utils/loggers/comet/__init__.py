@@ -485,7 +485,7 @@ class CometLogger:
                             'f1': f1[i],
                             'true_positives': tp[i],
                             'false_positives': fp[i],
-                            'support': nt[c],},
+                            'support': nt[c], },
                         prefix=class_name,
                     )
 
