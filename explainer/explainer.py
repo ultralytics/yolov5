@@ -464,7 +464,7 @@ def run(
         cv2.imwrite(save_path.replace(path.suffix, '_boxes_' + path.suffix), renormalized_cam_image)
         cv2.imwrite(save_path.replace(path.suffix, '_concatenated_' + path.suffix), concatenated_image)
 
-        LOGGER.info(f'saved image to {save_path}')
+        LOGGER.info(f'Images are saved to {str(save_dir)}')
 
 
     return [cam_image, renormalized_cam_image, concatenated_image]
