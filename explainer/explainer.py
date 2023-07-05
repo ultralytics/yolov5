@@ -266,7 +266,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
         indices = np.where(final_cam > 0)
         cam_image = fixed_image.copy()
         cam_image[indices] = fixed_image.mean()
-        cam_image = cam_image * 255
+        cam_image = (cam_image * 255).astype(np.uint8)
     else:
         cam_image = show_cam_on_image(fixed_image, final_cam, use_rgb=True)
     # And lets draw the boxes again:
