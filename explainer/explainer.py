@@ -16,8 +16,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
-from pytorch_grad_cam import (EigenCAM, EigenGradCAM, GradCAM, GradCAMElementWise,
-                              GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
+from pytorch_grad_cam import (EigenCAM, EigenGradCAM, GradCAM, GradCAMElementWise, GradCAMPlusPlus, HiResCAM, LayerCAM,
+                              RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
 FILE = Path(__file__).resolve()
@@ -366,7 +366,7 @@ def run(
         layer=-2,
         keep_only_topk=100,  # this can be 0 to 1. it shows maximum percentage of pixels
         # which can be used for heatmap. This is good for evaluation of heatmaps!
-        class_names=[],  # list of class names to use for CAM methods
+    class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
         crop=False,
