@@ -18,7 +18,7 @@ obj_pw: 1.0  # obj BCELoss positive_weight
 iou_t: 0.2  # IoU training threshold
 anchor_t: 4.0  # anchor-multiple threshold
 # anchors: 3  # anchors per output layer (0 to ignore)
-fl_gamma: 0   # focal loss gamma (efficientDet default gamma=1.5) 
+fl_gamma: 0   # focal loss gamma (efficientDet default gamma=1.5)
 #not good
 hsv_h: 0.00  # image HSV-Hue augmentation (fraction)
 hsv_s: 0.0  # image HSV-Saturation augmentation (fraction)
