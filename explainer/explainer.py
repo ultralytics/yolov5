@@ -29,8 +29,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import AutoShape, DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
 from utils.general import LOGGER, check_file, check_img_size, increment_path, print_args, xywh2xyxy
-from utils.torch_utils import select_device
 from utils.plots import Annotator, colors
+from utils.torch_utils import select_device
 
 
 def yolo_reshape_transform(x):
@@ -44,6 +44,7 @@ def yolo_reshape_transform(x):
     """
     return x
 
+
 def renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam):
     """Normalize the CAM to be in the range [0, 1]
     inside every bounding boxes, and zero outside of the bounding boxes.
@@ -54,7 +55,8 @@ def renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam):
         x1, y1, x2, y2 = torch.tensor(box).round().long().view(1, 4).view(-1).tolist()
         renormalized_cam[y1:y2, x1:x2] = scale_cam_image(grayscale_cam[y1:y2, x1:x2].copy())
     renormalized_cam = scale_cam_image(renormalized_cam)
-    return show_cam_on_image(np.array(image_float_np[0].cpu()).transpose(1, 2, 0), renormalized_cam, use_rgb=True) #eigencam_image_renormalized
+    return show_cam_on_image(np.array(image_float_np[0].cpu()).transpose(1, 2, 0), renormalized_cam,
+                             use_rgb=True)  #eigencam_image_renormalized
 
 
 class YOLOBoxScoreTarget():
@@ -365,14 +367,14 @@ def run(
         layer=-2,
         keep_only_topk=100,  # this can be 0 to 1. it shows maximum percentage of pixels
         # which can be used for heatmap. This is good for evaluation of heatmaps!
-        class_names=[],  # list of class names to use for CAM methods
+    class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
         crop=False,
         use_old_target_method=False,  # whether to use old target method or new one
         imgsz=(640, 640),  # inference size (height, width)
         hide_labels=False,  # hide labels
-        draw_boxes=True, # draw bounding boxes
+        draw_boxes=True,  # draw bounding boxes
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         project=ROOT / 'runs/detect',  # save results to project/name
         name='exp',  # save results to project/name
@@ -411,7 +413,7 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    last_image = [] # None  # last cam image to show
+    last_image = []  # None  # last cam image to show
     for path, im, _, _, _ in dataset:
         im0 = np.array(im).transpose(1, 2, 0)
         processed_output = autoshaped_model(im)
@@ -445,7 +447,8 @@ def run(
         predicted_bbox = torch.tensor(predicted_bbox.drop('name', axis=1).values.astype(np.float64), device=device)
 
         if class_idx:
-            predicted_bbox = predicted_bbox[torch.isin(predicted_bbox[:, -1], torch.tensor(class_idx, device=device)), :]
+            predicted_bbox = predicted_bbox[torch.isin(predicted_bbox[:,
+                                                                      -1], torch.tensor(class_idx, device=device)), :]
         renormalized_cam_image = renormalize_cam_in_bounding_boxes(predicted_bbox, im, heat_map)
 
         if draw_boxes:
@@ -455,17 +458,15 @@ def run(
                 annotator.box_label(box, label, color=colors(int(cls), True))
         concatenated_image = np.hstack((im0, cam_image, renormalized_cam_image))
 
-
-
         path = Path(path)
         save_path = str(save_dir / path.name)  # im.jpg
         cv2.imwrite(save_path, cam_image)
         cv2.imwrite(save_path.replace(path.suffix, '_heat_' + path.suffix), heat_map * 255)
         cv2.imwrite(save_path.replace(path.suffix, '_boxes_' + path.suffix), renormalized_cam_image)
-        cv2.imwrite(save_path.replace(path.suffix, '_concatenated_' + path.suffix), np.hstack((im0[..., ::-1], cam_image, renormalized_cam_image)))
+        cv2.imwrite(save_path.replace(path.suffix, '_concatenated_' + path.suffix),
+                    np.hstack((im0[..., ::-1], cam_image, renormalized_cam_image)))
 
         LOGGER.info(f'Images are saved to {str(save_dir)}')
-
 
     return [cam_image, renormalized_cam_image, concatenated_image]
 
