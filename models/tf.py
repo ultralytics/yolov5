@@ -310,7 +310,7 @@ class TFDetect(keras.layers.Layer):
                 y = tf.concat([xy, wh, tf.sigmoid(y[..., 4:5 + self.nc]), y[..., 5 + self.nc:]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
-        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1),)
+        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1), )
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -486,7 +486,7 @@ class TFModel:
                                                             iou_thres,
                                                             conf_thres,
                                                             clip_boxes=False)
-            return (nms,)
+            return (nms, )
         return x  # output [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
