@@ -16,7 +16,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
-from pytorch_grad_cam import (AblationCAM, EigenCAM, EigenGradCAM, FullGrad, GradCAM, GradCAMElementWise,
+from pytorch_grad_cam import (EigenCAM, EigenGradCAM, GradCAM, GradCAMElementWise,
                               GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
@@ -56,7 +56,7 @@ def renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam):
         renormalized_cam[y1:y2, x1:x2] = scale_cam_image(grayscale_cam[y1:y2, x1:x2].copy())
     renormalized_cam = scale_cam_image(renormalized_cam)
     return show_cam_on_image(np.array(image_float_np[0].cpu()).transpose(1, 2, 0), renormalized_cam,
-                             use_rgb=True)  #eigencam_image_renormalized
+                             use_rgb=True)  # eigencam_image_renormalized
 
 
 class YOLOBoxScoreTarget():
@@ -255,7 +255,7 @@ def extract_CAM(method, model: torch.nn.Module, predicted_bbox, classes, backwar
     final_cam = sum(cam_array)
 
     if final_cam.max() > 0:  # divide by zero
-        final_cam = final_cam / final_cam.max()  #normalize the result
+        final_cam = final_cam / final_cam.max()  # normalize the result
 
     if 0 < keep_only_topk < 100:
         k = np.percentile(final_cam, 100 - keep_only_topk)
@@ -292,8 +292,7 @@ def explain(method: str, raw_model, predicted_bbox, classes, backward_per_class,
         method_obj = EigenCAM
     elif method.lower() == 'EigenGradCAM'.lower():
         method_obj = EigenGradCAM
-    elif method.lower() == 'GradCAMPlusPlus'.lower() \
-        or method.lower() == 'GradCAM++'.lower():
+    elif method.lower() == 'GradCAMPlusPlus'.lower() or method.lower() == 'GradCAM++'.lower():
         method_obj = GradCAMPlusPlus
     elif method.lower() == 'XGradCAM'.lower():
         method_obj = XGradCAM
@@ -367,7 +366,7 @@ def run(
         layer=-2,
         keep_only_topk=100,  # this can be 0 to 1. it shows maximum percentage of pixels
         # which can be used for heatmap. This is good for evaluation of heatmaps!
-    class_names=[],  # list of class names to use for CAM methods
+        class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
         crop=False,
@@ -387,7 +386,7 @@ def run(
 ):
     # copied from detect.py
     source = str(source)
-    save_img = not nosave and not source.endswith('.txt')  # save inference images
+    # save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
     is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
     if is_url and is_file:
@@ -413,7 +412,7 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    last_image = []  # None  # last cam image to show
+    # last_image = []  # None  # last cam image to show
     for path, im, _, _, _ in dataset:
         im0 = np.array(im).transpose(1, 2, 0)
         processed_output = autoshaped_model(im)
