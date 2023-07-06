@@ -16,8 +16,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
-from pytorch_grad_cam import (EigenCAM, EigenGradCAM, GradCAM, GradCAMElementWise,
-                              GradCAMPlusPlus, HiResCAM, LayerCAM, RandomCAM, ScoreCAM, XGradCAM)
+from pytorch_grad_cam import (EigenCAM, EigenGradCAM, GradCAM, GradCAMElementWise, GradCAMPlusPlus, HiResCAM, LayerCAM,
+                              RandomCAM, ScoreCAM, XGradCAM)
 from pytorch_grad_cam.utils.image import scale_cam_image, show_cam_on_image
 
 FILE = Path(__file__).resolve()
