@@ -364,8 +364,7 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         method='GradCAM',  # the method for interpreting the results
         layer=-2,
-        keep_only_topk=100,  # this can be 0 to 1. it shows maximum percentage of pixels
-        # which can be used for heatmap. This is good for evaluation of heatmaps!
+        keep_only_topk=100,  # this can be 0-1, shows max: % of pixels used for heatmap and good for their evaluation!
         class_names=[],  # list of class names to use for CAM methods
         backprop_array=[],  # list of items to do backprop! It can be class, confidence,
         backward_per_class=False,  # whether the method should backprop per each class or do it all at one backward
