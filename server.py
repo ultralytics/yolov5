@@ -62,7 +62,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 os.rename(tmp_file_path, new_filename)
 
             run(
-                weights="/app/weights/bees.pt",
+                weights="/app/weights/best.pt",
                 device="cpu",
                 source=new_filename,
                 project=reqdir,
