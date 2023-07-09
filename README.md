@@ -1,3 +1,13 @@
+## gratheon/models-yolov5 bee detection
+
+- Uses weights by Matt Nudi
+https://github.com/mattnudi/bee-detection
+https://universe.roboflow.com/matt-nudi/honey-bee-detection-model-zgjnb
+
+- Uses Ultralytics yolov5 model
+
+
+
 <div align="center">
   <p>
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
