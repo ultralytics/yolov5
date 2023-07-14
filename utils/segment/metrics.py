@@ -196,7 +196,7 @@ KEYS = [
     'val/cls_loss',
     'x/lr0',
     'x/lr1',
-    'x/lr2',]
+    'x/lr2', ]
 
 BEST_KEYS = [
     'best/epoch',
@@ -207,4 +207,4 @@ BEST_KEYS = [
     'best/precision(M)',
     'best/recall(M)',
     'best/mAP_0.5(M)',
-    'best/mAP_0.5:0.95(M)',]
+    'best/mAP_0.5:0.95(M)', ]

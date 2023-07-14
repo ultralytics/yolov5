@@ -18,7 +18,7 @@ try:
     # Project Configuration
     config = comet_ml.config.get_config()
     COMET_PROJECT_NAME = config.get_string(os.getenv('COMET_PROJECT_NAME'), 'comet.project_name', default='yolov5')
-except (ModuleNotFoundError, ImportError):
+except ImportError:
     comet_ml = None
     COMET_PROJECT_NAME = None
 
@@ -42,7 +42,7 @@ COMET_MODEL_NAME = os.getenv('COMET_MODEL_NAME', 'yolov5')
 COMET_UPLOAD_DATASET = os.getenv('COMET_UPLOAD_DATASET', 'false').lower() == 'true'
 
 # Evaluation Settings
-COMET_LOG_CONFUSION_MATRIX = os.getenv('COMET_LOG_CONFUSION_MATRIX', 'true').lower() == 'true'
+COMET_LOG_CONFUSION_MATRIX = (os.getenv('COMET_LOG_CONFUSION_MATRIX', 'true').lower() == 'true')
 COMET_LOG_PREDICTIONS = os.getenv('COMET_LOG_PREDICTIONS', 'true').lower() == 'true'
 COMET_MAX_IMAGE_UPLOADS = int(os.getenv('COMET_MAX_IMAGE_UPLOADS', 100))
 
@@ -51,10 +51,10 @@ CONF_THRES = float(os.getenv('CONF_THRES', 0.001))
 IOU_THRES = float(os.getenv('IOU_THRES', 0.6))
 
 # Batch Logging Settings
-COMET_LOG_BATCH_METRICS = os.getenv('COMET_LOG_BATCH_METRICS', 'false').lower() == 'true'
+COMET_LOG_BATCH_METRICS = (os.getenv('COMET_LOG_BATCH_METRICS', 'false').lower() == 'true')
 COMET_BATCH_LOGGING_INTERVAL = os.getenv('COMET_BATCH_LOGGING_INTERVAL', 1)
 COMET_PREDICTION_LOGGING_INTERVAL = os.getenv('COMET_PREDICTION_LOGGING_INTERVAL', 1)
-COMET_LOG_PER_CLASS_METRICS = os.getenv('COMET_LOG_PER_CLASS_METRICS', 'false').lower() == 'true'
+COMET_LOG_PER_CLASS_METRICS = (os.getenv('COMET_LOG_PER_CLASS_METRICS', 'false').lower() == 'true')
 
 RANK = int(os.getenv('RANK', -1))
 
@@ -82,7 +82,7 @@ class CometLogger:
         self.comet_log_batch_interval = COMET_BATCH_LOGGING_INTERVAL
 
         # Dataset Artifact Settings
-        self.upload_dataset = self.opt.upload_dataset if self.opt.upload_dataset else COMET_UPLOAD_DATASET
+        self.upload_dataset = self.opt.upload_dataset or COMET_UPLOAD_DATASET
         self.resume = self.opt.resume
 
         # Default parameters to pass to Experiment objects
@@ -90,9 +90,10 @@ class CometLogger:
             'log_code': False,
             'log_env_gpu': True,
             'log_env_cpu': True,
-            'project_name': COMET_PROJECT_NAME,}
+            'project_name': COMET_PROJECT_NAME, }
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
+        self.experiment.set_name(self.opt.name)
 
         self.data_dict = self.check_dataset(self.opt.data)
         self.class_names = self.data_dict['names']
@@ -136,7 +137,7 @@ class CometLogger:
 
         self.comet_log_predictions = COMET_LOG_PREDICTIONS
         if self.opt.bbox_interval == -1:
-            self.comet_log_prediction_interval = 1 if self.opt.epochs < 10 else self.opt.epochs // 10
+            self.comet_log_prediction_interval = (1 if self.opt.epochs < 10 else self.opt.epochs // 10)
         else:
             self.comet_log_prediction_interval = self.opt.bbox_interval
 
@@ -152,7 +153,7 @@ class CometLogger:
             'comet_log_per_class_metrics': COMET_LOG_PER_CLASS_METRICS,
             'comet_log_batch_metrics': COMET_LOG_BATCH_METRICS,
             'comet_log_confusion_matrix': COMET_LOG_CONFUSION_MATRIX,
-            'comet_model_name': COMET_MODEL_NAME,})
+            'comet_model_name': COMET_MODEL_NAME, })
 
         # Check if running the Experiment with the Comet Optimizer
         if hasattr(self.opt, 'comet_optimizer_id'):
@@ -169,7 +170,7 @@ class CometLogger:
                     **self.default_experiment_kwargs,
                 )
 
-            return comet_ml.OfflineExperiment(**self.default_experiment_kwargs,)
+            return comet_ml.OfflineExperiment(**self.default_experiment_kwargs, )
 
         else:
             try:
@@ -213,7 +214,7 @@ class CometLogger:
             'fitness_score': fitness_score[-1],
             'epochs_trained': epoch + 1,
             'save_period': opt.save_period,
-            'total_epochs': opt.epochs,}
+            'total_epochs': opt.epochs, }
 
         model_files = glob.glob(f'{path}/*.pt')
         for model_path in model_files:
@@ -231,7 +232,8 @@ class CometLogger:
         with open(data_file) as f:
             data_config = yaml.safe_load(f)
 
-        if data_config['path'].startswith(COMET_PREFIX):
+        path = data_config.get('path')
+        if path and path.startswith(COMET_PREFIX):
             path = data_config['path'].replace(COMET_PREFIX, '')
             data_dict = self.download_dataset_artifact(path)
 
@@ -269,7 +271,7 @@ class CometLogger:
                     'x': xyxy[0],
                     'y': xyxy[1],
                     'x2': xyxy[2],
-                    'y2': xyxy[3]},})
+                    'y2': xyxy[3]}, })
         for *xyxy, conf, cls in filtered_detections.tolist():
             metadata.append({
                 'label': f'{self.class_names[int(cls)]}',
@@ -278,7 +280,7 @@ class CometLogger:
                     'x': xyxy[0],
                     'y': xyxy[1],
                     'x2': xyxy[2],
-                    'y2': xyxy[3]},})
+                    'y2': xyxy[3]}, })
 
         self.metadata_dict[image_name] = metadata
         self.logged_images_count += 1
@@ -312,8 +314,16 @@ class CometLogger:
             image_logical_path, label_logical_path = map(lambda x: os.path.relpath(x, path), [image_file, label_file])
 
             try:
-                artifact.add(image_file, logical_path=image_logical_path, metadata={'split': split})
-                artifact.add(label_file, logical_path=label_logical_path, metadata={'split': split})
+                artifact.add(
+                    image_file,
+                    logical_path=image_logical_path,
+                    metadata={'split': split},
+                )
+                artifact.add(
+                    label_file,
+                    logical_path=label_logical_path,
+                    metadata={'split': split},
+                )
             except ValueError as e:
                 logger.error('COMET ERROR: Error adding file to Artifact. Skipping file.')
                 logger.error(f'COMET ERROR: {e}')
@@ -475,8 +485,9 @@ class CometLogger:
                             'f1': f1[i],
                             'true_positives': tp[i],
                             'false_positives': fp[i],
-                            'support': nt[c]},
-                        prefix=class_name)
+                            'support': nt[c], },
+                        prefix=class_name,
+                    )
 
         if self.comet_log_confusion_matrix:
             epoch = self.experiment.curr_epoch

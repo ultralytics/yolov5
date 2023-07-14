@@ -19,7 +19,7 @@
 
 YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultralytics.com"> Ultralytics </a>对未来视觉 AI 方法的开源研究，结合在数千小时的研究和开发中积累的经验教训和最佳实践。
 
-我们希望这里的资源能帮助您充分利用 YOLOv5。请浏览 YOLOv5 <a href="https://docs.ultralytics.com/">文档</a> 了解详细信息，在 <a href="https://github.com/ultralytics/yolov5/issues/new/choose">GitHub</a> 上提交问题以获得支持，并加入我们的 <a href="https://discord.gg/n6cFeSPZdD">Discord</a> 社区进行问题和讨论！
+我们希望这里的资源能帮助您充分利用 YOLOv5。请浏览 YOLOv5 <a href="https://docs.ultralytics.com/">文档</a> 了解详细信息，在 <a href="https://github.com/ultralytics/yolov5/issues/new/choose">GitHub</a> 上提交问题以获得支持，并加入我们的 <a href="https://discord.gg/2wNGbc6g9X">Discord</a> 社区进行问题和讨论！
 
 如需申请企业许可，请在 [Ultralytics Licensing](https://ultralytics.com/license) 处填写表格
 
@@ -42,19 +42,19 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-  <a href="https://discord.gg/n6cFeSPZdD" style="text-decoration:none;">
+  <a href="https://discord.gg/2wNGbc6g9X" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="2%" alt="" /></a>
 </div>
 </div>
 
-## <div align="center">YOLOv8 🚀 NEW</div>
+## <div align="center">YOLOv8 🚀 新品</div>
 
-We are thrilled to announce the launch of Ultralytics YOLOv8 🚀, our NEW cutting-edge, state-of-the-art (SOTA) model
-released at **[https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)**.
-YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent choice for a wide range of
-object detection, image segmentation and image classification tasks.
+我们很高兴宣布 Ultralytics YOLOv8 🚀 的发布，这是我们新推出的领先水平、最先进的（SOTA）模型，发布于 **[https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)**。
+YOLOv8 旨在快速、准确且易于使用，使其成为广泛的物体检测、图像分割和图像分类任务的极佳选择。
 
-See the [YOLOv8 Docs](https://docs.ultralytics.com) for details and get started with:
+请查看 [YOLOv8 文档](https://docs.ultralytics.com)了解详细信息，并开始使用：
+
+[![PyPI 版本](https://badge.fury.io/py/ultralytics.svg)](https://badge.fury.io/py/ultralytics) [![下载量](https://static.pepy.tech/badge/ultralytics)](https://pepy.tech/project/ultralytics)
 
 ```commandline
 pip install ultralytics
@@ -461,7 +461,7 @@ YOLOv5 在两种不同的 License 下可用：
 
 ## <div align="center">联系我们</div>
 
-对于 YOLOv5 的错误报告和功能请求，请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues)，并加入我们的 [Discord](https://discord.gg/n6cFeSPZdD) 社区进行问题和讨论！
+对于 YOLOv5 的错误报告和功能请求，请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues)，并加入我们的 [Discord](https://discord.gg/2wNGbc6g9X) 社区进行问题和讨论！
 
 <br>
 <div align="center">
@@ -483,7 +483,7 @@ YOLOv5 在两种不同的 License 下可用：
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="3%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
-  <a href="https://discord.gg/n6cFeSPZdD" style="text-decoration:none;">
+  <a href="https://discord.gg/2wNGbc6g9X" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="3%" alt="" /></a>
 </div>
 

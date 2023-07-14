@@ -4,7 +4,6 @@ Download utils
 """
 
 import logging
-import os
 import subprocess
 import urllib
 from pathlib import Path
@@ -53,7 +52,7 @@ def curl_download(url, filename, *, silent: bool = False) -> bool:
         '--retry',
         '9',
         '-C',
-        '-',])
+        '-', ])
     return proc.returncode == 0
 
 
