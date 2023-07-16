@@ -81,7 +81,7 @@ def run(
         vid_stride=1,  # video frame-rate stride
 ):
     source = str(source)
-    save_img = True #not nosave and not source.endswith('.txt')  # save inference images
+    save_img = True  #not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
     is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
     webcam = source.isnumeric() or source.endswith('.streams') or (is_url and not is_file)
@@ -90,10 +90,9 @@ def run(
         source = check_file(source)  # download
 
     #définir les classes dont on veut afficher les rectangles sur les images, afficher les 3 en même temps peut rendre l'image difficilement lisble
-    liste_classes_sauvegardées=['Porte-Aiguille']
+    liste_classes_sauvegardées = ['Porte-Aiguille']
     #Autres classes possibles : "GepBox" ou "Pincette"
-    
-    
+
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
@@ -119,7 +118,7 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-    compteur=0
+    compteur = 0
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
@@ -141,27 +140,27 @@ def run(
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
-        count=0
+        count = 0
         for i, det in enumerate(pred):  # per image
-            compteur+=1
-            count+=1
+            compteur += 1
+            count += 1
             seen += 1
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i], im0s[i].copy(), dataset.count
                 s += f'{i}: '
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-            l=p.split('/')[-1].split('jpg')[0].split('_')
+            l = p.split('/')[-1].split('jpg')[0].split('_')
             #print(l)
-            save_name=l[0]+'_'+l[1]+'_'+l[2]
-            id_texte=l[-1]
-            chemin=save_name+"_coordinates.txt"
+            save_name = l[0] + '_' + l[1] + '_' + l[2]
+            id_texte = l[-1]
+            chemin = save_name + '_coordinates.txt'
             if not os.path.isfile(chemin):
-              f=open(chemin,"w")
-              f.write('ID, x1, y1, x2, y2, Confidence, Classe\n')
-              f.close()
+                f = open(chemin, 'w')
+                f.write('ID, x1, y1, x2, y2, Confidence, Classe\n')
+                f.close()
             p = Path(p)  # to Path
-            
+
             save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
@@ -178,17 +177,18 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
-                l_max=[0]*len(names)
-                count_max=0
+                l_max = [0] * len(names)
+                count_max = 0
                 for *xyxy, conf, cls in reversed(det):
-                    count_max+=1
-                    if l_max[int(cls)]<float(conf.cpu().numpy()):
-                      l_max[int(cls)]=count_max
+                    count_max += 1
+                    if l_max[int(cls)] < float(conf.cpu().numpy()):
+                        l_max[int(cls)] = count_max
 
-                count_max=0
+                count_max = 0
                 for *xyxy, conf, cls in reversed(det):
-                    count_max+=1
-                    if save_txt and l_max[int(cls)]==count_max:  # Write to file iif box with maximum conf for one class
+                    count_max += 1
+                    if save_txt and l_max[int(
+                            cls)] == count_max:  # Write to file iif box with maximum conf for one class
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         x1 = int(xyxy[0].item())
@@ -197,19 +197,22 @@ def run(
                         y2 = int(xyxy[3].item())
 
                         confidence_score = conf
-                        conf=float(conf.cpu().numpy())
+                        conf = float(conf.cpu().numpy())
                         class_index = cls
                         object_name = names[int(cls)]
-                        f=open(chemin,"a+")
-                        f.write(id_texte+','+str(x1)+','+str(y1)+','+str(x2)+','+str(y2)+','+str(conf)+','+str(object_name)+'\n')
+                        f = open(chemin, 'a+')
+                        f.write(id_texte + ',' + str(x1) + ',' + str(y1) + ',' + str(x2) + ',' + str(y2) + ',' +
+                                str(conf) + ',' + str(object_name) + '\n')
                         f.close()
-                    
-                    if (save_img or save_crop or view_img) and l_max[int(cls)]==count_max and names[int(cls)] in liste_classes_sauvegardées:  # Add bbox to image iif box with maximum conf for PorteAiguille class
+
+                    if (save_img or save_crop or view_img) and l_max[int(cls)] == count_max and names[int(
+                            cls
+                    )] in liste_classes_sauvegardées:  # Add bbox to image iif box with maximum conf for PorteAiguille class
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
-                    
-                    count_max+=1
+
+                    count_max += 1
 
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)

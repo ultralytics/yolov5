@@ -114,9 +114,9 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-    compteur=0
-    path="box_coordinates.txt"
-    f=open(path,"w")
+    compteur = 0
+    path = 'box_coordinates.txt'
+    f = open(path, 'w')
     f.write('ID, x1, y1, x2, y2, Confidence, Classe\n')
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
@@ -139,10 +139,10 @@ def run(
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
-        count=0
+        count = 0
         for i, det in enumerate(pred):  # per image
-            compteur+=1
-            count+=1
+            compteur += 1
+            count += 1
             seen += 1
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i], im0s[i].copy(), dataset.count
@@ -151,7 +151,7 @@ def run(
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
             print(p.split('/')[-1].split('jpg')[0].split('_')[-2])
             p = Path(p)  # to Path
-            
+
             save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
@@ -168,18 +168,18 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
-                l_max=[0]*len(names)
-                count_max=0
+                l_max = [0] * len(names)
+                count_max = 0
                 for *xyxy, conf, cls in reversed(det):
-                    count_max+=1
-                    if l_max[int(cls)]<float(conf.cpu().numpy()):
-                      l_max[int(cls)]=count_max
-                    
-                
-                count_max=0
+                    count_max += 1
+                    if l_max[int(cls)] < float(conf.cpu().numpy()):
+                        l_max[int(cls)] = count_max
+
+                count_max = 0
                 for *xyxy, conf, cls in reversed(det):
-                    count_max+=1
-                    if save_txt and l_max[int(cls)]==count_max:  # Write to file iif box with maximum conf for one class
+                    count_max += 1
+                    if save_txt and l_max[int(
+                            cls)] == count_max:  # Write to file iif box with maximum conf for one class
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         x1 = int(xyxy[0].item())
@@ -188,13 +188,16 @@ def run(
                         y2 = int(xyxy[3].item())
 
                         confidence_score = conf
-                        conf=float(conf.cpu().numpy())
+                        conf = float(conf.cpu().numpy())
                         class_index = cls
                         object_name = names[int(cls)]
-                        
-                        f.write(str(compteur)+','+str(x1)+','+str(y1)+','+str(x2)+','+str(y2)+','+str(conf)+','+str(object_name)+'\n')
-                    
-                    if (save_img or save_crop or view_img) and l_max[int(cls)]==count_max:  # Add bbox to image iif box with maximum conf for one class
+
+                        f.write(
+                            str(compteur) + ',' + str(x1) + ',' + str(y1) + ',' + str(x2) + ',' + str(y2) + ',' +
+                            str(conf) + ',' + str(object_name) + '\n')
+
+                    if (save_img or save_crop or view_img
+                        ) and l_max[int(cls)] == count_max:  # Add bbox to image iif box with maximum conf for one class
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
