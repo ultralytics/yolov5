@@ -28,15 +28,46 @@ class Albumentations:
             import albumentations as A
             check_version(A.__version__, '1.0.3', hard=True)  # version requirement
 
-            T = [
-                A.RandomResizedCrop(height=size, width=size, scale=(0.8, 1.0), ratio=(0.9, 1.11), p=0.0),
-                A.Blur(p=0.01),
-                A.MedianBlur(p=0.01),
-                A.ToGray(p=0.01),
-                A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(p=0.0),
-                A.RandomGamma(p=0.0),
-                A.ImageCompression(quality_lower=75, p=0.0)]  # transforms
+
+            HIGH_PROB = 0.5
+            LOW_PROB = 0.2
+
+            compression_xform = [
+                A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255.0, always_apply=False, p=LOW_PROB), #NO
+                A.Posterize(num_bits=5, always_apply=False, p=LOW_PROB),  #YES
+                A.Blur(blur_limit=3, always_apply=False, p=HIGH_PROB),   #YES
+                A.Sharpen(alpha=(0.2, 0.5), lightness=(0.5, 1.0), always_apply=False, p=LOW_PROB),  #YES
+                A.MotionBlur(blur_limit=19, p=HIGH_PROB),  #YES, slight difference
+                A.GaussNoise(var_limit=(100.0, 100.0), mean=0, per_channel=True, always_apply=False, p=HIGH_PROB),  #YES, slight difference
+                A.GaussianBlur(blur_limit=(3, 5), sigma_limit=0, always_apply=False, p=HIGH_PROB),    #YES
+                A.ISONoise(color_shift=(0.01, 0.05), intensity=(0.3, 0.4), always_apply=False, p=HIGH_PROB),  #YES
+                A.Downscale(scale_min=0.25, scale_max=0.25, interpolation=0, always_apply=False, p=LOW_PROB),  #NO
+                A.RandomRain(slant_lower=-10, slant_upper=10, drop_length=7, drop_width=1, drop_color=(200, 200, 200), blur_value=3, brightness_coefficient=1.0, rain_type=None, always_apply=False, p=LOW_PROB), #YES
+                ]
+
+            perpixel_xform = [
+                A.CLAHE(clip_limit=8.0, tile_grid_size=(10, 10), always_apply=False, p=LOW_PROB),    #YES
+                A.ColorJitter(brightness=0.5, contrast=0.2, saturation=0.5, hue=0.1, always_apply=False, p=LOW_PROB),   #YES
+                A.RGBShift(r_shift_limit=20, g_shift_limit=20, b_shift_limit=20, always_apply=False, p=LOW_PROB),   #YES
+                A.RandomBrightnessContrast(brightness_limit=0.4, contrast_limit=0.25, brightness_by_max=True, always_apply=False, p=LOW_PROB),  #YES
+                A.ToGray(p=LOW_PROB),   #NO
+                A.Superpixels(p_replace=0.1, n_segments=100, max_size=128, interpolation=1, always_apply=False, p=LOW_PROB),   #NO
+                A.Equalize(mode='cv', by_channels=True, mask=None, mask_params=(), always_apply=False, p=LOW_PROB),   #NO
+                A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=25, always_apply=False, p=LOW_PROB),  #YES
+                A.RandomGamma(gamma_limit=(10, 80), eps=None, always_apply=False, p=LOW_PROB),  #YES
+                A.RandomShadow(shadow_roi=(0, 0.5, 1, 1), num_shadows_lower=1, num_shadows_upper=5, shadow_dimension=5, always_apply=False, p=HIGH_PROB),  #YES
+                A.RandomSunFlare(flare_roi=(0, 0, 1, 0.5), angle_lower=0, angle_upper=1, num_flare_circles_lower=6, num_flare_circles_upper=10, src_radius=400, src_color=(255, 255, 255), always_apply=False, p=LOW_PROB),  #NO
+                A.RandomToneCurve(scale=0.3, always_apply=False, p=LOW_PROB),   #NO
+                ]
+
+            spatial_xform = [
+                A.HorizontalFlip(p=HIGH_PROB),   #YES
+                A.PiecewiseAffine(scale=(0.02, 0.04), nb_rows=4, nb_cols=4, interpolation=1, mask_interpolation=0, cval=0, cval_mask=0, mode='constant', absolute_scale=False, always_apply=False, keypoints_threshold=0.01, p=LOW_PROB),  #YES
+                A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, border_mode=1, value=None, mask_value=None, shift_limit_x=None, shift_limit_y=None, always_apply=False, p=HIGH_PROB),   #NO
+                A.Perspective(scale=(0.1, 0.15), keep_size=True, pad_mode=0, pad_val=0, mask_pad_val=0, fit_output=False, interpolation=1, always_apply=False, p=LOW_PROB), #YES
+                ]
+
+            T = [spatial_xform + perpixel_xform + compression_xform]  # transforms
             self.transform = A.Compose(T, bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
             LOGGER.info(prefix + ', '.join(f'{x}'.replace('always_apply=False, ', '') for x in T if x.p))
