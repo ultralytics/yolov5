@@ -4,7 +4,7 @@ train: images/train # train images (relative to 'path') 1 images
 val: images/train # val images (relative to 'path') 1 images
 test:  # test images (optional)
 
-# Classes (22 FCC classes)
+# Classes (17 FCC classes)
 names:
   0: Metal Crowns
   1: Tooth Colored Crowns
@@ -23,4 +23,3 @@ names:
   14: Suspected Carious Lesions - D
   15: Suspected Carious Lesions - B
   16: Suspected Carious Lesions - L
-  # #17: 
