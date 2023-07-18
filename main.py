@@ -21,7 +21,9 @@ def main():
         ds.get_mutable_local_copy(target_folder=p)
     # list files in the created dir
     print(f'files in dir: {p}')
-    print(os.listdir(p))
+    # print(os.listdir(p))
+    for root, subdirs, files in os.walk(p):
+        print(files)
 
     # path_to_local = ds.get_local_copy()
     # p = autosplit(path='/home/tomernahshon/datasets/fcc_new_no_none/images/train', annotated_only=True)
