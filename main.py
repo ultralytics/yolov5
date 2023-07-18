@@ -23,7 +23,10 @@ def main():
     print(f'files in dir: {p}')
     # print(os.listdir(p))
     for root, subdirs, files in os.walk(p):
-        print(files)
+        # print(files)
+        print(f'files in dir: {root}')
+        for file in files:
+            print(file)
 
     # path_to_local = ds.get_local_copy()
     # p = autosplit(path='/home/tomernahshon/datasets/fcc_new_no_none/images/train', annotated_only=True)
