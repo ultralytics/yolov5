@@ -20,7 +20,7 @@ def main():
         ds = Dataset.get(dataset_id='8241c11b8b99472e88c953a30b73eedd')
         ds.get_mutable_local_copy(target_folder=p)
     # list files in the created dir
-    print(f'files in dir: {p}')
+    print(f'files in dir: {os.path.abspath(p)}')
     # print(os.listdir(p))
     for root, subdirs, files in os.walk(p):
         # print(files)
