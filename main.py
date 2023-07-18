@@ -13,7 +13,7 @@ def main():
     # path_to_local = ds.get_local_copy()
     # Train the model using the 'coco128.yaml' dataset for 3 epochs
     # copy data set to local
-    p = '../datasets/fcc_new_no_none'
+    p = './datasets/fcc_new_none'
     if not os.path.exists(p):
         print('downloading dataset...')
         os.makedirs(p)
