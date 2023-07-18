@@ -17,7 +17,7 @@ def main():
     if not os.path.exists(p):
         print('downloading dataset...')
         os.makedirs(p)
-        ds = Dataset.get(dataset_id='e679ff62b4cd46afb041d31d65e88b90')
+        ds = Dataset.get(dataset_id='8241c11b8b99472e88c953a30b73eedd')
         ds.get_mutable_local_copy(target_folder=p)
     # path_to_local = ds.get_local_copy()
     # p = autosplit(path='/home/tomernahshon/datasets/fcc_new_no_none/images/train', annotated_only=True)
