@@ -1,3 +1,9 @@
+#### Get model optimized for RKNN
+Exports model with optimization for RKNN, please refer here [README_rkopt_manual.md](./README_rkopt_manual.md)
+
+---
+<br>
+
 <div align="center">
 <p>
    <a align="left" href="https://ultralytics.com/yolov5" target="_blank">
