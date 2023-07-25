@@ -2,7 +2,7 @@
 
 ## Source
 
-  Base on https://github.com/ultralytics/yolov5 with commit id as d3ea0df8b9f923685ce5f2555c303b8eddbf83fd
+  Base on https://github.com/ultralytics/yolov5 (v6.2) with commit id as d3ea0df8b9f923685ce5f2555c303b8eddbf83fd
 
 
 
