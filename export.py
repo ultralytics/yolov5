@@ -526,7 +526,7 @@ def run(
             m.onnx_dynamic = dynamic
             m.export = True
 
-        if os.getenv('RKNN_model_hack', '0') == 'npu_1':
+        if os.getenv('RKNN_model_hack', '0') in ['npu_1','npu_2']:
             from models.common import Focus
             from models.common import Conv
             from models.common_rk_plug_in import surrogate_focus
