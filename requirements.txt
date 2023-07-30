@@ -36,7 +36,7 @@ seaborn>=0.11.0
 # scikit-learn<=1.1.2  # CoreML quantization
 # tensorflow>=2.4.0  # TF exports (-cpu, -aarch64, -macos)
 # tensorflowjs>=3.9.0  # TF.js export
-# openvino-dev  # OpenVINO export
+# openvino-dev>=2023.0  # OpenVINO export
 
 # Deploy ----------------------------------------------------------------------
 setuptools>=65.5.1 # Snyk vulnerability fix

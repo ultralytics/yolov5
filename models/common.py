@@ -373,18 +373,18 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(meta['stride']), eval(meta['names'])
         elif xml:  # OpenVINO
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
-            check_requirements('openvino')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+            check_requirements('openvino>=2023.0')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
             from openvino.runtime import Core, Layout, get_batch
-            ie = Core()
+            core = Core()
             if not Path(w).is_file():  # if not *.xml
                 w = next(Path(w).glob('*.xml'))  # get *.xml file from *_openvino_model dir
-            network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
-            if network.get_parameters()[0].get_layout().empty:
-                network.get_parameters()[0].set_layout(Layout('NCHW'))
-            batch_dim = get_batch(network)
+            ov_model = core.read_model(model=w, weights=Path(w).with_suffix('.bin'))
+            if ov_model.get_parameters()[0].get_layout().empty:
+                ov_model.get_parameters()[0].set_layout(Layout('NCHW'))
+            batch_dim = get_batch(ov_model)
             if batch_dim.is_static:
                 batch_size = batch_dim.get_length()
-            executable_network = ie.compile_model(network, device_name='CPU')  # device_name="MYRIAD" for Intel NCS2
+            ov_compiled_model = core.compile_model(ov_model, device_name='AUTO')  # AUTO selects best available device
             stride, names = self._load_metadata(Path(w).with_suffix('.yaml'))  # load metadata
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
@@ -524,7 +524,7 @@ class DetectMultiBackend(nn.Module):
             y = self.session.run(self.output_names, {self.session.get_inputs()[0].name: im})
         elif self.xml:  # OpenVINO
             im = im.cpu().numpy()  # FP32
-            y = list(self.executable_network([im]).values())
+            y = list(self.ov_compiled_model(im).values())
         elif self.engine:  # TensorRT
             if self.dynamic and im.shape != self.bindings['images'].shape:
                 i = self.model.get_binding_index('images')
