@@ -4,12 +4,12 @@ Plotting utils
 """
 
 import contextlib
+import math
 import os
 from copy import copy
 from pathlib import Path
 
 import cv2
-import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
