@@ -19,7 +19,7 @@
 
 YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultralytics.com"> Ultralytics </a>对未来视觉 AI 方法的开源研究，结合在数千小时的研究和开发中积累的经验教训和最佳实践。
 
-我们希望这里的资源能帮助您充分利用 YOLOv5。请浏览 YOLOv5 <a href="https://docs.ultralytics.com/">文档</a> 了解详细信息，在 <a href="https://github.com/ultralytics/yolov5/issues/new/choose">GitHub</a> 上提交问题以获得支持，并加入我们的 <a href="https://discord.gg/2wNGbc6g9X">Discord</a> 社区进行问题和讨论！
+我们希望这里的资源能帮助您充分利用 YOLOv5。请浏览 YOLOv5 <a href="https://docs.ultralytics.com/">文档</a> 了解详细信息，在 <a href="https://github.com/ultralytics/yolov5/issues/new/choose">GitHub</a> 上提交问题以获得支持，并加入我们的 <a href="https://ultralytics.com/discord">Discord</a> 社区进行问题和讨论！
 
 如需申请企业许可，请在 [Ultralytics Licensing](https://ultralytics.com/license) 处填写表格
 
@@ -42,7 +42,7 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://ultral
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-  <a href="https://discord.gg/2wNGbc6g9X" style="text-decoration:none;">
+  <a href="https://ultralytics.com/discord" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="2%" alt="" /></a>
 </div>
 </div>
@@ -452,16 +452,16 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 <a href="https://github.com/ultralytics/yolov5/graphs/contributors">
 <img src="https://github.com/ultralytics/assets/raw/main/im/image-contributors.png" /></a>
 
-## <div align="center">License</div>
+## <div align="center">许可证</div>
 
-YOLOv5 在两种不同的 License 下可用：
+Ultralytics 提供两种许可证选项以适应各种使用场景：
 
-- **AGPL-3.0 License**： 查看 [License](https://github.com/ultralytics/yolov5/blob/master/LICENSE) 文件的详细信息。
-- **企业License**：在没有 AGPL-3.0 开源要求的情况下为商业产品开发提供更大的灵活性。典型用例是将 Ultralytics 软件和 AI 模型嵌入到商业产品和应用程序中。在以下位置申请企业许可证 [Ultralytics 许可](https://ultralytics.com/license) 。
+- **AGPL-3.0 许可证**：这个[OSI 批准](https://opensource.org/licenses/)的开源许可证非常适合学生和爱好者，可以推动开放的协作和知识分享。请查看[LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) 文件以了解更多细节。
+- **企业许可证**：专为商业用途设计，该许可证允许将 Ultralytics 的软件和 AI 模型无缝集成到商业产品和服务中，从而绕过 AGPL-3.0 的开源要求。如果您的场景涉及将我们的解决方案嵌入到商业产品中，请通过 [Ultralytics Licensing](https://ultralytics.com/license)与我们联系。
 
-## <div align="center">联系我们</div>
+## <div align="center">联系方式</div>
 
-对于 YOLOv5 的错误报告和功能请求，请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues)，并加入我们的 [Discord](https://discord.gg/2wNGbc6g9X) 社区进行问题和讨论！
+对于 Ultralytics 的错误报告和功能请求，请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues)，并加入我们的 [Discord](https://ultralytics.com/discord) 社区进行问题和讨论！
 
 <br>
 <div align="center">
@@ -483,7 +483,7 @@ YOLOv5 在两种不同的 License 下可用：
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="3%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
-  <a href="https://discord.gg/2wNGbc6g9X" style="text-decoration:none;">
+  <a href="https://ultralytics.com/discord" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="3%" alt="" /></a>
 </div>
 
