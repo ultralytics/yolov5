@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import yaml
-
 from ultralytics.utils.plotting import Annotator, colors
 
 try:
