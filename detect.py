@@ -134,8 +134,7 @@ def run(
                     if pred is None:
                         pred = model(image, augment=augment, visualize=visualize).unsqueeze(0)
                     else:
-                        pred = torch.cat((pred, model(
-                            image, augment=augment, visualize=visualize).unsqueeze(0)), dim=0)
+                        pred = torch.cat((pred, model(image, augment=augment, visualize=visualize).unsqueeze(0)), dim=0)
                 pred = [pred, None]
             else:
                 pred = model(im, augment=augment, visualize=visualize)
