@@ -365,15 +365,14 @@ class CometLogger:
         data_dict['path'] = artifact_save_dir
 
         metadata_names = metadata.get('names')
-        if type(metadata_names) == dict:
+        if isinstance(metadata_names, dict):
             data_dict['names'] = {int(k): v for k, v in metadata.get('names').items()}
-        elif type(metadata_names) == list:
+        elif isinstance(metadata_names, list):
             data_dict['names'] = {int(k): v for k, v in zip(range(len(metadata_names)), metadata_names)}
         else:
             raise "Invalid 'names' field in dataset yaml file. Please use a list or dictionary"
 
-        data_dict = self.update_data_paths(data_dict)
-        return data_dict
+        return self.update_data_paths(data_dict)
 
     def update_data_paths(self, data_dict):
         path = data_dict.get('path', '')
