@@ -24,7 +24,7 @@ import torch.nn as nn
 from PIL import Image
 from torch.cuda import amp
 
-# Import Ultralytics and install if not found
+# Import 'ultralytics' package or install if if missing
 try:
     import ultralytics
 
