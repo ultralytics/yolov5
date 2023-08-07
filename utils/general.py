@@ -8,7 +8,6 @@ import glob
 import inspect
 import logging
 import logging.config
-import math
 import os
 import platform
 import random
@@ -29,12 +28,23 @@ from typing import Optional
 from zipfile import ZipFile, is_zipfile
 
 import cv2
+import math
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
+
+# Import Ultralytics and install if not found
+try:
+    import ultralytics
+
+    assert hasattr(ultralytics, '__version__')  # verify package is not directory
+except (ImportError, AssertionError):
+    os.system('pip install -U ultralytics')
+    import ultralytics
+
 from ultralytics.utils.checks import check_requirements
 
 from utils import TryExcept, emojis
@@ -416,7 +426,7 @@ def check_imshow(warn=False):
         return False
 
 
-def check_suffix(file='yolov5s.pt', suffix=('.pt', ), msg=''):
+def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
     # Check file(s) for acceptable suffix
     if file and suffix:
         if isinstance(suffix, str):
