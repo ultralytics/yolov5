@@ -8,6 +8,7 @@ import glob
 import inspect
 import logging
 import logging.config
+import math
 import os
 import platform
 import random
@@ -28,7 +29,6 @@ from typing import Optional
 from zipfile import ZipFile, is_zipfile
 
 import cv2
-import math
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
@@ -426,7 +426,7 @@ def check_imshow(warn=False):
         return False
 
 
-def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
+def check_suffix(file='yolov5s.pt', suffix=('.pt', ), msg=''):
     # Check file(s) for acceptable suffix
     if file and suffix:
         if isinstance(suffix, str):
