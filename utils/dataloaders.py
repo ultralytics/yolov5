@@ -170,6 +170,7 @@ def create_dataloader(path,
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     generator = torch.Generator()
     generator.manual_seed(6148914691236517205 + seed + RANK)
+
     return dataset.im_files, loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
@@ -514,6 +515,7 @@ class LoadImagesAndLabels(Dataset):
 
                 else:
                     raise FileNotFoundError(f'{prefix}{p} does not exist')
+            # images_to_process are all images that the application found in the storage account (paths in the txt file)
             images_to_process = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
 
             # Create a list of images to be processed that are not in the list of processed images
