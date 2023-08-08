@@ -340,6 +340,12 @@ def run(
                                               confusion_matrix=confusion_matrix)
                 else:
                     save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
+                    # Print results
+                    text = ''
+                    for c in predn[:, 5].unique():
+                        n = (predn[:, 5] == c).sum()  # detections per class
+                        text += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                    LOGGER.info(f'{path.stem}: {text}')
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
