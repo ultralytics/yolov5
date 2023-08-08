@@ -125,6 +125,8 @@ def seed_worker(worker_id):
 
 
 def create_dataloader(path,
+                      processed_images,
+                      input_dir,
                       imgsz,
                       batch_size,
                       stride,
@@ -149,6 +151,8 @@ def create_dataloader(path,
             path,
             imgsz,
             batch_size,
+            processed_images=processed_images,
+            input_dir=input_dir,
             augment=augment,  # augmentation
             hyp=hyp,  # hyperparameters
             rect=rect,  # rectangular batches
@@ -166,7 +170,8 @@ def create_dataloader(path,
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     generator = torch.Generator()
     generator.manual_seed(6148914691236517205 + seed + RANK)
-    return loader(dataset,
+
+    return dataset.im_files, loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
                   num_workers=nw,
@@ -455,6 +460,12 @@ def img2label_paths(img_paths):
     return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
 
 
+def extract_folder_and_filename(path):
+    # Function to extract the last folder and file name from the path
+    folder, filename = os.path.split(path)
+    return os.path.join(os.path.basename(folder), filename)
+
+
 class LoadImagesAndLabels(Dataset):
     # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
     cache_version = 0.6  # dataset labels *.cache version
@@ -464,6 +475,8 @@ class LoadImagesAndLabels(Dataset):
                  path,
                  img_size=640,
                  batch_size=16,
+                 processed_images=[],
+                 input_dir="",
                  augment=False,
                  hyp=None,
                  rect=False,
@@ -494,15 +507,24 @@ class LoadImagesAndLabels(Dataset):
                     # f = list(p.rglob('*.*'))  # pathlib
                 elif p.is_file():  # file
                     with open(p) as t:
+                        # Read contents of txt file
                         t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
-                        f += [x.replace('./', parent, 1) if x.startswith('./') else x for x in t]  # to global path
+                        f += [x.replace('./', parent, 1) if x.startswith('./') else input_dir + x for x in t]  # to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # to global path (pathlib)
+
                 else:
                     raise FileNotFoundError(f'{prefix}{p} does not exist')
-            self.im_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
-            # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
-            assert self.im_files, f'{prefix}No images found'
+            # images_to_process are all images that the application found in the storage account (paths in the txt file)
+            images_to_process = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
+
+            # Create a list of images to be processed that are not in the list of processed images
+            # processed_images are all the images in the database that have the label "inprogress" or "processed"
+            self.im_files = [image for image in images_to_process if extract_folder_and_filename(image) not in processed_images]
+
+            if not self.im_files:
+                raise Exception(f'{prefix}No (new) images found')
+
         except Exception as e:
             raise Exception(f'{prefix}Error loading data from {path}: {e}\n{HELP_URL}') from e
 
@@ -1031,7 +1053,11 @@ def verify_image_label(args):
                 if f.read() != b'\xff\xd9':  # corrupt JPEG
                     ImageOps.exif_transpose(Image.open(im_file)).save(im_file, 'JPEG', subsampling=0, quality=100)
                     msg = f'{prefix}WARNING ⚠️ {im_file}: corrupt JPEG restored and saved'
+    except Exception as e:
+        # Stop the process immediately when there is an exception loading an image
+        raise e
 
+    try:
         # verify labels
         if os.path.isfile(lb_file):
             nf = 1  # label found
@@ -1067,7 +1093,7 @@ def verify_image_label(args):
         return im_file, lb, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
-        msg = f'{prefix}WARNING ⚠️ {im_file}: ignoring corrupt image/label: {e}'
+        msg = f'{prefix}WARNING ⚠️ {im_file}: ignoring corrupt label: {e}'
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 

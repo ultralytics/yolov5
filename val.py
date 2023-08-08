@@ -18,17 +18,18 @@ Usage - formats:
                               yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
                               yolov5s_paddle_model       # PaddlePaddle
 """
-
 import argparse
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
-
 import numpy as np
 import torch
 from tqdm import tqdm
+from datetime import datetime
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -36,6 +37,8 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from database.database_handler import DBConfigSQLAlchemy
+from database.tables import ImageProcessingStatus, DetectionInformation
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
@@ -61,6 +64,8 @@ from utils.metrics import ConfusionMatrix, TaggedConfusionMatrix, ap_per_class, 
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
 
+# Use the following repo for local run https://github.com/Computer-Vision-Team-Amsterdam/yolov5-local-docker
+LOCAL_RUN = False
 
 def save_one_txt_and_one_json(predn, save_conf, shape, file, json_file, confusion_matrix):
     """
@@ -93,7 +98,7 @@ def save_one_txt_and_one_json(predn, save_conf, shape, file, json_file, confusio
 
     with open(json_file, 'w') as fp:
         json.dump(confusion_matrix.get_tagged_dict(), fp)
-    print(f'saved json at {json_file}')
+    LOGGER.info(f'saved json at {json_file}')
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -144,6 +149,21 @@ def process_batch(detections, labels, iouv):
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
 
 
+def parse_image_path(path):
+    parts = path.split('/')  # Split the path using the forward slash as the separator
+    image_filename = parts[-1]  # Last part is the filename
+    date_str = parts[-2]  # Second to last part is the date string
+
+    try:
+        # Parse the date string as a datetime object
+        image_upload_date = datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError as e:
+        LOGGER.info(f"Invalid folder structure, can not retrieve date: {date_str}")
+        raise e
+
+    return image_filename, image_upload_date
+
+
 @smart_inference_mode()
 def run(
         data,
@@ -175,10 +195,13 @@ def run(
         callbacks=Callbacks(),
         compute_loss=None,
         tagged_data=False,
-        skip_evaluation=False,
-        save_blurred_image=False):
+        skip_evaluation=True,
+        save_blurred_image=False,
+        customer_name='',
+        run_id=''):
     # Initialize/load model and set device
     training = model is not None
+
     if training:  # called by train.py
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
         half &= device.type != 'cpu'  # half precision only supported on CUDA
@@ -187,7 +210,13 @@ def run(
         device = select_device(device, batch_size=batch_size)
 
         # Directories
-        save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
+        if LOCAL_RUN:
+            save_dir = Path('/container/landing_zone/output')
+            input_dir = Path('/container/landing_zone/input_structured/')
+        else:
+            save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
+            input_dir = ""
+
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
         if tagged_data:
             (save_dir / 'labels_tagged' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)
@@ -215,6 +244,11 @@ def run(
     iouv = torch.linspace(0.5, 0.95, 10, device=device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
 
+    # Create a DBConfigSQLAlchemy object
+    db_config = DBConfigSQLAlchemy()
+    # Create the database connection
+    db_config.create_connection()
+
     # Dataloader
     if not training:
         if pt and not single_cls:  # check --weights are trained on --data
@@ -224,7 +258,39 @@ def run(
         model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz))  # warmup
         pad, rect = (0.0, False) if task == 'speed' else (0.5, pt)  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task],
+
+        # Define the processing statuses
+        processing_statuses = ["inprogress", "processed"]
+
+        # Perform database operations using the 'session'
+        # The session will be automatically closed at the end of this block
+        with db_config.get_session() as session:
+            try:
+                # Construct the query to get all rows with a certain processing status
+                query = session.query(
+                    func.date(ImageProcessingStatus.image_upload_date).label('upload_date'),
+                    ImageProcessingStatus.image_filename
+                ) \
+                .filter(
+                    ImageProcessingStatus.image_customer_name == customer_name,
+                    ImageProcessingStatus.processing_status.in_(processing_statuses)
+                )
+
+                # Execute the query and fetch the results
+                result = query.all()
+            except SQLAlchemyError as e:
+                # Handle the exception
+                db_config.close_connection()
+                raise e
+
+        # Extract the processed images from the result
+        processed_images = [
+            f"{input_dir / row.upload_date / row.image_filename}" if input_dir else f"{row.upload_date}/{row.image_filename}"
+            for row in result]
+
+        image_files, dataloader, _ = create_dataloader(data[task],
+                                       processed_images,
+                                       input_dir,
                                        imgsz,
                                        batch_size,
                                        stride,
@@ -232,7 +298,25 @@ def run(
                                        pad=pad,
                                        rect=rect,
                                        workers=workers,
-                                       prefix=colorstr(f'{task}: '))[0]
+                                       prefix=colorstr(f'{task}: '))
+
+        # Perform database operations using the 'session'
+        # The session will be automatically closed at the end of this block
+        with db_config.managed_session() as session:
+            # Lock the images that we are processing in this run with the state "inprogress"
+            for image_path in image_files:
+                image_filename, image_upload_date = parse_image_path(image_path)
+
+                # Create a new instance of the ImageProcessingStatus model
+                image_processing_status = ImageProcessingStatus(
+                    image_filename=image_filename,
+                    image_upload_date=image_upload_date,
+                    image_customer_name=customer_name,
+                    processing_status="inprogress"
+                )
+
+                # Add the instance to the session
+                session.add(image_processing_status)
 
     seen = 0
     if not tagged_data:
@@ -249,7 +333,6 @@ def run(
     callbacks.run('on_val_start')
     pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
     for batch_i, (im0, im, targets, paths, shapes) in enumerate(pbar):
-
         callbacks.run('on_val_batch_start')
         if tagged_data:
             confusion_matrix = TaggedConfusionMatrix(nc=nc)
@@ -284,18 +367,26 @@ def run(
                                         agnostic=single_cls,
                                         max_det=max_det)
 
+        # Dictionary to store detection flags for each image
+        image_detections = {path: False for path in paths}  # Initialize all paths with False
+
         # Metrics
         for si, pred in enumerate(preds):
+            # Update image detection flag
+            image_detections[paths[si]] = len(pred) > 0
+
             labels = targets[targets[:, 0] == si, 1:]
             if tagged_data:
                 tagged_labels = targets[:, -1]
                 gt_boxes = targets[:, 2:-1] / torch.tensor((width, height, width, height), device=device)
             nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
             path, shape = Path(paths[si]), shapes[si][0]
+            image_height, image_width = shape
+
             correct = torch.zeros(npr, niou, dtype=torch.bool, device=device)  # init
             seen += 1
 
-            p = Path(path)  # to Path
+            p = Path(path)  # to Path # TODO it is already Path
             is_wd_path = 'wd' in p.parts
             relative_path_in_azure_mounted_folder = Path('/'.join(p.parts[p.parts.index('wd') +
                                                                           2:])) if is_wd_path else None
@@ -350,11 +441,15 @@ def run(
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
-            # ======== SAVE BLURRED ======== #
-            if save_blurred_image:
-                pred_clone[:, :4] = scale_boxes(im.shape[2:], pred_clone[:, :4],
-                                                im0[si].shape).round()  # TODO why not im[si].shape[2:]
+            # TODO the following code contains a bug and will be fixed in PR #13
+            pred_clone[:, :4] = scale_boxes(im.shape[2:], pred_clone[:, :4],
+                                            im0[si].shape).round()
 
+            image_filename, image_upload_date = parse_image_path(paths[si])
+
+            # Perform database operations using the 'session'
+            # The session will be automatically closed at the end of this block
+            with db_config.managed_session() as session:
                 for *xyxy, conf, cls in pred_clone.tolist():
                     x1, y1 = int(xyxy[0]), int(xyxy[1])
                     x2, y2 = int(xyxy[2]), int(xyxy[3])
@@ -363,21 +458,97 @@ def run(
                     blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
                     im0[si][y1:y2, x1:x2] = blurred
 
+                    # Create an instance of DetectionInformation
+                    detection_info = DetectionInformation(
+                        image_customer_name=customer_name,
+                        image_upload_date=image_upload_date,
+                        image_filename=image_filename,
+                        has_detection=True,
+                        class_id=int(cls),
+                        x_norm=x1,
+                        y_norm=y1,
+                        w_norm=x2,
+                        h_norm=y2,
+                        image_width=image_width,
+                        image_height=image_height,
+                        run_id=run_id
+                    )
+
+                    # Add the instance to the session
+                    session.add(detection_info)
+
+                    # Create a new instance of the ImageProcessingStatus model
+                    image_processing_status = ImageProcessingStatus(
+                        image_filename=image_filename,
+                        image_upload_date=image_upload_date,
+                        image_customer_name=customer_name,
+                        processing_status="processed"
+                    )
+
+                    # Merge the instance into the session (updates if already exists)
+                    session.merge(image_processing_status)
+
+            # Save the blurred image
+            if save_blurred_image:
                 folder_path = os.path.dirname(save_path)
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
+
                 if not cv2.imwrite(
                         save_path,
                         im0[si],
                 ):
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
-                # ========= END SAVE BLURRED ======= #
+
+        # Filter and iterate over paths with no detection in current batch
+        false_paths = [path for path in image_detections if not image_detections[path]]
+
+        # Perform database operations using the 'session'
+        # The session will be automatically closed at the end of this block
+        with db_config.managed_session() as session:
+            # Process images with no detection
+            for false_path in false_paths:
+                image_filename, image_upload_date = parse_image_path(false_path)
+
+                # Create an instance of DetectionInformation
+                detection_info = DetectionInformation(
+                    image_customer_name=customer_name,
+                    image_upload_date=image_upload_date,
+                    image_filename=image_filename,
+                    has_detection=False,
+                    class_id=None,
+                    x_norm=None,
+                    y_norm=None,
+                    w_norm=None,
+                    h_norm=None,
+                    image_width=None,
+                    image_height=None,
+                    run_id=run_id
+                )
+
+                # Add the instance to the session
+                session.add(detection_info)
+
+                # Create a new instance of the ImageProcessingStatus model
+                image_processing_status = ImageProcessingStatus(
+                    image_filename=image_filename,
+                    image_upload_date=image_upload_date,
+                    image_customer_name=customer_name,
+                    processing_status="processed"
+                )
+
+                # Merge the instance into the session (updates if already exists)
+                session.merge(image_processing_status)
+
         # Plot images
         if plots and not skip_evaluation:
             plot_images(im, targets, paths, save_dir / f'{path.stem}.jpg', names)  # labels
             plot_images(im, output_to_target(preds), paths, save_dir / f'{path.stem}_pred.jpg', names)  # pred
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
+
+    # Close the DB connection
+    db_config.close_connection()
 
     # Compute metrics
     if not skip_evaluation:
@@ -436,10 +607,11 @@ def run(
         except Exception as e:
             LOGGER.info(f'pycocotools unable to run: {e}')
 
+
     # Return results
     model.float()  # for training
     if not training:
-        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
+        s = f"\nTotal {len(list(save_dir.glob('labels/*.txt')))} labels found in the folder {save_dir / 'labels'}" if save_txt else ''
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
@@ -451,9 +623,9 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
-    parser.add_argument('--batch-size', type=int, default=32, help='batch size')
+    parser.add_argument('--data', type=str, default='/container/landing_zone/pano.yaml', help='dataset.yaml path')
+    parser.add_argument('--weights', nargs='+', type=str, default='/container/landing_zone/best.pt', help='model path(s)')
+    parser.add_argument('--batch-size', type=int, default=4, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
@@ -475,7 +647,9 @@ def parse_opt():
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--tagged-data', action='store_true', help='use tagged validation')
     parser.add_argument('--skip-evaluation', action='store_true', help='ignore code parts for production')
-    parser.add_argument('--save_blurred_image', action='store_true', help='save blurred images')
+    parser.add_argument('--save-blurred-image', action='store_true', help='save blurred images')
+    parser.add_argument('--customer-name', type=str, default='example_customer', help='the customer for which we process the images')
+    parser.add_argument('--run-id', type=str, default='default_run_id', help='the run id generated by Azure Machine Learning')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
