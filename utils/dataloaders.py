@@ -170,7 +170,7 @@ def create_dataloader(path,
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     generator = torch.Generator()
     generator.manual_seed(6148914691236517205 + seed + RANK)
-    return image_files, loader(dataset,
+    return dataset.im_files, loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
                   num_workers=nw,
@@ -457,6 +457,12 @@ def img2label_paths(img_paths):
     # Define label paths as a function of image paths
     sa, sb = f'{os.sep}images{os.sep}', f'{os.sep}labels{os.sep}'  # /images/, /labels/ substrings
     return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
+
+
+def extract_folder_and_filename(path):
+    # Function to extract the last folder and file name from the path
+    folder, filename = os.path.split(path)
+    return os.path.join(os.path.basename(folder), filename)
 
 
 class LoadImagesAndLabels(Dataset):
