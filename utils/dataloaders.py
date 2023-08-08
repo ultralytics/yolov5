@@ -170,8 +170,7 @@ def create_dataloader(path,
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     generator = torch.Generator()
     generator.manual_seed(6148914691236517205 + seed + RANK)
-
-    return dataset.im_files, loader(dataset,
+    return image_files, loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
                   num_workers=nw,
@@ -460,12 +459,6 @@ def img2label_paths(img_paths):
     return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
 
 
-def extract_folder_and_filename(path):
-    # Function to extract the last folder and file name from the path
-    folder, filename = os.path.split(path)
-    return os.path.join(os.path.basename(folder), filename)
-
-
 class LoadImagesAndLabels(Dataset):
     # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
     cache_version = 0.6  # dataset labels *.cache version
@@ -515,7 +508,6 @@ class LoadImagesAndLabels(Dataset):
 
                 else:
                     raise FileNotFoundError(f'{prefix}{p} does not exist')
-            # images_to_process are all images that the application found in the storage account (paths in the txt file)
             images_to_process = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
 
             # Create a list of images to be processed that are not in the list of processed images
@@ -629,8 +621,9 @@ class LoadImagesAndLabels(Dataset):
                 if cache_images == 'disk':
                     b += self.npy_files[i].stat().st_size
                 else:  # 'ram'
-                    self.ims[i], self.im_hw0[i], self.im_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
+                    self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
                     b += self.ims[i].nbytes
+                    b += self.ims_orig[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images})'
             pbar.close()
 
@@ -714,7 +707,7 @@ class LoadImagesAndLabels(Dataset):
 
         else:
             # Load image
-            img, (h0, w0), (h, w) = self.load_image(index)
+            img, (h0, w0), (h, w), im_orig = self.load_image(index)
             im0 = img.copy()
             # Letterbox
             shape = self.batch_shapes[self.batch[index]] if self.rect else self.img_size  # final letterboxed shape
@@ -770,7 +763,7 @@ class LoadImagesAndLabels(Dataset):
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
-        return im0, torch.from_numpy(img), labels_out, self.im_files[index], shapes
+        return im0, torch.from_numpy(img), labels_out, self.im_files[index], shapes, im_orig
 
     def load_image(self, i):
         # Loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
@@ -786,8 +779,8 @@ class LoadImagesAndLabels(Dataset):
             if r != 1:  # if sizes are not equal
                 interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
                 im = cv2.resize(im, (math.ceil(w0 * r), math.ceil(h0 * r)), interpolation=interp)
-            return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
-        return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
+            return im, (h0, w0), im.shape[:2], im_orig  # im, hw_original, hw_resized
+        return self.ims[i], self.im_hw0[i], self.im_hw[i], None  # im, hw_original, hw_resized
 
     def cache_images_to_disk(self, i):
         # Saves an image as an *.npy file for faster loading
@@ -804,7 +797,7 @@ class LoadImagesAndLabels(Dataset):
         random.shuffle(indices)
         for i, index in enumerate(indices):
             # Load image
-            img, _, (h, w) = self.load_image(index)
+            img, _, (h, w), _ = self.load_image(index)
 
             # place img in img4
             if i == 0:  # top left
@@ -862,7 +855,7 @@ class LoadImagesAndLabels(Dataset):
         hp, wp = -1, -1  # height, width previous
         for i, index in enumerate(indices):
             # Load image
-            img, _, (h, w) = self.load_image(index)
+            img, _, (h, w), _ = self.load_image(index)
 
             # place img in img9
             if i == 0:  # center
@@ -932,10 +925,10 @@ class LoadImagesAndLabels(Dataset):
 
     @staticmethod
     def collate_fn(batch):
-        im0, im, label, path, shapes = zip(*batch)  # transposed
+        im0, im, label, path, shapes, im_orig = zip(*batch)  # transposed
         for i, lb in enumerate(label):
             lb[:, 0] = i  # add target image index for build_targets()
-        return im0, torch.stack(im, 0), torch.cat(label, 0), path, shapes
+        return im0, torch.stack(im, 0), torch.cat(label, 0), path, shapes, im_orig
 
     @staticmethod
     def collate_fn4(batch):
