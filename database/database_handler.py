@@ -14,9 +14,12 @@ from utils.general import LOGGER
 class DBConfigSQLAlchemy:
     Base = declarative_base()
 
-    def __init__(self):
+    def __init__(self, db_username, db_hostname, db_name):
         self.engine = None
         self.session_maker = None
+        self.db_username = db_username
+        self.db_hostname = db_hostname
+        self.db_name = db_name
 
     def _get_db_access_token(self, client_id):
         # Authenticate using Managed Identity (MSI)
@@ -37,31 +40,19 @@ class DBConfigSQLAlchemy:
         return access_token
 
     def _get_database_connection_string(self):
-        """
-        Gets the connection string for the PostgreSQL database.
+        # Get the connection string for the PostgreSQL database.
 
-        The method first checks if the code is running locally. If it is,
-        it retrieves the PostgreSQL credentials from environment variables.
-        Otherwise, it loads the credentials from a JSON file in the project root.
-        """
-        if os.environ.get('POSTGRES_USER'):
-            # Local run, use environment variables for credentials
-            db_url = f"postgresql://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}@{os.environ['POSTGRES_HOST']}/{os.environ['POSTGRES_DB']}"
-        else:
-            # Production run, load credentials from the JSON file
-            with open('database.json') as f:
-                config = json.load(f)
+        # Production run, load credentials from the JSON file
+        with open('database.json') as f:
+            config = json.load(f)
 
-            # Retrieve values from the JSON
-            hostname = config["hostname"]
-            username = config["username"]
-            database_name = config["database_name"]
-            client_id = config["client_id"]
+        # Retrieve values from the JSON
+        client_id = config["client_id"]  # TODO get this from the Managed Identity name in code
 
-            # Get the password using the client_id from a secure source
-            password = self._get_db_access_token(client_id)
+        # Get the password using the client_id from a secure source
+        password = self._get_db_access_token(client_id)
 
-            db_url = f"postgresql://{username}:{password}@{hostname}/{database_name}"
+        db_url = f"postgresql://{self.db_username}:{password}@{self.db_hostname}/{self.db_name}"
 
         return db_url
 
