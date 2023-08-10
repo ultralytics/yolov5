@@ -72,7 +72,7 @@ pip install ultralytics
 <details open>
 <summary>安装</summary>
 
-克隆 repo，并要求在 [**Python>=3.7.0**](https://www.python.org/) 环境中安装 [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) ，且要求 [**PyTorch>=1.8**](https://pytorch.org/get-started/locally/) 。
+克隆 repo，并要求在 [**Python>=3.8.0**](https://www.python.org/) 环境中安装 [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) ，且要求 [**PyTorch>=1.8**](https://pytorch.org/get-started/locally/) 。
 
 ```bash
 git clone https://github.com/ultralytics/yolov5  # clone
