@@ -449,10 +449,10 @@ def run(
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
-            if skip_evaluation:
+            if skip_evaluation or save_blurred_image:
                 # TODO the following code contains a bug and will be fixed in PR #13
                 predn[:, :4] = scale_boxes(im.shape[2:], predn[:, :4],
-                                                im0[si].shape).round()
+                                           im0[si].shape).round()
 
                 image_filename, image_upload_date = parse_image_path(paths[si])
 
@@ -497,8 +497,6 @@ def run(
                         # Merge the instance into the session (updates if already exists)
                         session.merge(image_processing_status)
 
-            # Save the blurred image
-            if save_blurred_image:
                 folder_path = os.path.dirname(save_path)
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
