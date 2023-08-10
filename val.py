@@ -510,7 +510,7 @@ def run(
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
 
         if skip_evaluation:
-        # Filter and iterate over paths with no detection in current batch
+            # Filter and iterate over paths with no detection in current batch
             false_paths = [path for path in image_detections if not image_detections[path]]
 
             # Perform database operations using the 'session'
