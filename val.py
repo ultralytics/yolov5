@@ -249,6 +249,10 @@ def run(
     niou = iouv.numel()
 
     if skip_evaluation:
+        # Validate if database credentials are provided
+        if not db_username or not db_name or not db_hostname:
+            raise ValueError("Please provide database credentials.")
+
         # Create a DBConfigSQLAlchemy object
         db_config = DBConfigSQLAlchemy(db_username, db_hostname, db_name)
         # Create the database connection
