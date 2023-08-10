@@ -63,9 +63,9 @@ jobs:
             python-version: '3.9'
             model: yolov5n
           - os: ubuntu-latest
-            python-version: '3.8'  # torch 1.7.0 requires python >=3.6, <=3.8
+            python-version: '3.8'  # torch 1.8.0 requires python >=3.6, <=3.8
             model: yolov5n
-            torch: '1.7.0'  # min torch version CI https://pypi.org/project/torchvision/
+            torch: '1.8.0'  # min torch version CI https://pypi.org/project/torchvision/
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -75,8 +75,8 @@ jobs:
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip wheel
-          if [ "${{ matrix.torch }}" == "1.7.0" ]; then
-              pip install -r requirements.txt torch==1.7.0 torchvision==0.8.1 --extra-index-url https://download.pytorch.org/whl/cpu
+          if [ "${{ matrix.torch }}" == "1.8.0" ]; then
+              pip install -r requirements.txt torch==1.8.0 torchvision==0.9.0 --extra-index-url https://download.pytorch.org/whl/cpu
           else
               pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
           fi
