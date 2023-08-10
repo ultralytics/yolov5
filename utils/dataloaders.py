@@ -116,7 +116,8 @@ def create_dataloader(path,
                       quad=False,
                       prefix='',
                       shuffle=False,
-                      seed=0):
+                      seed=0,
+                      include_classes=None):
     if rect and shuffle:
         LOGGER.warning('WARNING ⚠️ --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -133,7 +134,8 @@ def create_dataloader(path,
             stride=int(stride),
             pad=pad,
             image_weights=image_weights,
-            prefix=prefix)
+            prefix=prefix,
+            include_classes=include_classes)
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -449,7 +451,8 @@ class LoadImagesAndLabels(Dataset):
                  stride=32,
                  pad=0.0,
                  min_items=0,
-                 prefix=''):
+                 prefix='',
+                 include_classes=None):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -530,17 +533,30 @@ class LoadImagesAndLabels(Dataset):
         self.indices = range(n)
 
         # Update labels
-        include_class = []  # filter labels to include only these classes (optional)
-        self.segments = list(self.segments)
-        include_class_array = np.array(include_class).reshape(1, -1)
+        # filter labels to include only a user-specified subset of classes (optional)
+        include_classes = [] if include_classes is None else list(include_classes)
+        LOGGER.info(f"Filtering labels for classes {include_classes}")
+        # Re-number included classes in the order specified by the user
+        new_label_idx = None
+        if len(include_classes):
+            new_label_idx = np.array([-1] * (np.max(include_classes) + 1), dtype=int)
+            for i, c in enumerate(include_classes):
+                new_label_idx[c] = i
+
+        include_class_array = np.array(include_classes, dtype=int).reshape(1, -1)
+
         for i, (label, segment) in enumerate(zip(self.labels, self.segments)):
-            if include_class:
+            if len(include_classes) and len(label) != 0:
                 j = (label[:, 0:1] == include_class_array).any(1)
                 self.labels[i] = label[j]
+                # Modify labels to use the new class numbers
+                self.labels[i][:, 0] = new_label_idx[self.labels[i][:, 0].astype(int)]
                 if segment:
-                    self.segments[i] = [segment[idx] for idx, elem in enumerate(j) if elem]
+                    self.segments[i] = segment[j]
             if single_cls:  # single-class training, merge all classes into 0
                 self.labels[i][:, 0] = 0
+                if segment:
+                    self.segments[i][:, 0] = 0
 
         # Rectangular Training
         if self.rect:

@@ -120,6 +120,16 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     names = {0: 'item'} if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     is_coco = isinstance(val_path, str) and val_path.endswith('coco/val2017.txt')  # COCO dataset
 
+    # Classes to include in training
+    include_classes = None  # Default, means all classes included
+    # Sequence of user specified class names (optional)
+    include_names = (data_dict['include_names']) if 'include_names' in data_dict else []
+    if len(include_names) != 0:
+        all_names_map = {name: i for i, name in names.items()}
+        # Class numbers of user-specified class subset according to dataset
+        include_classes = [all_names_map[c_] for c_ in include_names]
+        LOGGER.info(f"Including classes {include_classes}")
+
     # Model
     check_suffix(weights, '.pt')  # check weights
     pretrained = weights.endswith('.pt')
@@ -207,7 +217,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               quad=opt.quad,
                                               prefix=colorstr('train: '),
                                               shuffle=True,
-                                              seed=opt.seed)
+                                              seed=opt.seed,
+                                              include_classes=include_classes)
     labels = np.concatenate(dataset.labels, 0)
     mlc = int(labels[:, 0].max())  # max label class
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
@@ -225,7 +236,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        rank=-1,
                                        workers=workers * 2,
                                        pad=0.5,
-                                       prefix=colorstr('val: '))[0]
+                                       prefix=colorstr('val: '),
+                                       include_classes=include_classes)[0]
 
         if not resume:
             if not opt.noautoanchor:
