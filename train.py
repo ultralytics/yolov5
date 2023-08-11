@@ -128,7 +128,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         all_names_map = {name: i for i, name in names.items()}
         # Class numbers of user-specified class subset according to dataset
         include_classes = [all_names_map[c_] for c_ in include_names]
-        LOGGER.info(f"Including classes {include_classes}")
+        LOGGER.info(f'Including classes {include_classes}')
 
     # Model
     check_suffix(weights, '.pt')  # check weights

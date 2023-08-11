@@ -172,7 +172,7 @@ def run(
         all_names_map = {name: i for i, name in names.items()}
         # Class numbers of user-specified class subset according to dataset
         include_classes = [all_names_map[c_] for c_ in include_names]
-        LOGGER.info(f"Including classes {include_classes}")
+        LOGGER.info(f'Including classes {include_classes}')
 
     # Dataloader
     if not training:

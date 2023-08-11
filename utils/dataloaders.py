@@ -535,7 +535,7 @@ class LoadImagesAndLabels(Dataset):
         # Update labels
         # filter labels to include only a user-specified subset of classes (optional)
         include_classes = [] if include_classes is None else list(include_classes)
-        LOGGER.info(f"Filtering labels for classes {include_classes}")
+        LOGGER.info(f'Filtering labels for classes {include_classes}')
         # Re-number included classes in the order specified by the user
         new_label_idx = None
         if len(include_classes):
