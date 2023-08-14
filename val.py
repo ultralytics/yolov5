@@ -458,20 +458,20 @@ def run(
                 predn[:, :4] = scale_boxes(im.shape[2:], predn[:, :4],
                                            im0[si].shape).round()
 
-                image_filename, image_upload_date = parse_image_path(paths[si])
+                for *xyxy, conf, cls in predn.tolist():
+                    x1, y1 = int(xyxy[0]), int(xyxy[1])
+                    x2, y2 = int(xyxy[2]), int(xyxy[3])
+                    area_to_blur = im0[si][y1:y2, x1:x2]
 
-                # Perform database operations using the 'session'
-                # The session will be automatically closed at the end of this block
-                with db_config.managed_session() as session:
-                    for *xyxy, conf, cls in predn.tolist():
-                        x1, y1 = int(xyxy[0]), int(xyxy[1])
-                        x2, y2 = int(xyxy[2]), int(xyxy[3])
-                        area_to_blur = im0[si][y1:y2, x1:x2]
+                    blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
+                    im0[si][y1:y2, x1:x2] = blurred
 
-                        blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
-                        im0[si][y1:y2, x1:x2] = blurred
+                    if skip_evaluation:
+                        image_filename, image_upload_date = parse_image_path(paths[si])
 
-                        if skip_evaluation:
+                        # Perform database operations using the 'session'
+                        # The session will be automatically closed at the end of this block
+                        with db_config.managed_session() as session:
                             # Create an instance of DetectionInformation
                             detection_info = DetectionInformation(
                                 image_customer_name=customer_name,
