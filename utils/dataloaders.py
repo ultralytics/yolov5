@@ -705,18 +705,18 @@ class LoadImagesAndLabels(Dataset):
         hyp = self.hyp
         mosaic = self.mosaic and random.random() < hyp['mosaic']
         if mosaic:
-            # # Load mosaic
-            # img, labels = self.load_mosaic(index)  # TODO im_orig
-            # shapes = None
-            #
-            # # MixUp augmentation
-            # if random.random() < hyp['mixup']:
-            #     img, labels = mixup(img, labels, *self.load_mosaic(random.randint(0, self.n - 1)))
-
             # Raise an exception to indicate that the 'mosaic' hyperparameter is not supported
             raise NotImplementedError(
                 "The 'mosaic' augmentation technique is not supported by our current implementation. "
                 "Please consider using other augmentation techniques.")
+
+            # Load mosaic
+            img, labels = self.load_mosaic(index)
+            shapes = None
+
+            # MixUp augmentation
+            if random.random() < hyp['mixup']:
+                img, labels = mixup(img, labels, *self.load_mosaic(random.randint(0, self.n - 1)))
         else:
             # Load image
             img, (h0, w0), (h, w), im_orig = self.load_image(index)
@@ -792,7 +792,7 @@ class LoadImagesAndLabels(Dataset):
                 interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
                 im = cv2.resize(im, (math.ceil(w0 * r), math.ceil(h0 * r)), interpolation=interp)
             return im, (h0, w0), im.shape[:2], im_orig  # im, hw_original, hw_resized
-        return self.ims[i], self.im_hw0[i], self.im_hw[i], None  # im, hw_original, hw_resized
+        return self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i]  # im, hw_original, hw_resized, ims_orig
 
     def cache_images_to_disk(self, i):
         # Saves an image as an *.npy file for faster loading
