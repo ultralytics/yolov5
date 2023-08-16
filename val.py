@@ -39,6 +39,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from database.database_handler import DBConfigSQLAlchemy
 from database.tables import ImageProcessingStatus, DetectionInformation
+from database.image_utils import parse_image_path
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
@@ -147,23 +148,6 @@ def process_batch(detections, labels, iouv):
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             correct[matches[:, 1].astype(int), i] = True
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
-
-
-def parse_image_path(path):
-    parts = path.split('/')  # Split the path using the forward slash as the separator
-    image_filename = parts[-1]  # Last part is the filename
-    date_time_str = parts[-2]  # Second to last part is the date string
-
-    try:
-        # Parse the date and time string as a datetime object
-        image_upload_date = datetime.strptime(date_time_str, "%Y-%m-%d_%H:%M:%S")
-        # Extract the date portion of the datetime object
-        image_upload_date = image_upload_date.strftime("%Y-%m-%d")
-    except ValueError as e:
-        LOGGER.info(f"Invalid folder structure, can not retrieve date: {image_upload_date}")
-        raise e
-
-    return image_filename, image_upload_date
 
 
 @smart_inference_mode()
@@ -320,6 +304,7 @@ def run(
             with db_config.managed_session() as session:
                 # Lock the images that we are processing in this run with the state "inprogress"
                 for image_path in image_files:
+                    # Get variables to later insert into the database
                     image_filename, image_upload_date = parse_image_path(image_path)
 
                     # Create a new instance of the ImageProcessingStatus model
@@ -469,6 +454,7 @@ def run(
                     im0[si][y1:y2, x1:x2] = blurred
 
                     if skip_evaluation:
+                        # Get variables to later insert into the database
                         image_filename, image_upload_date = parse_image_path(paths[si])
 
                         # Perform database operations using the 'session'
