@@ -456,7 +456,7 @@ def run(
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
             if save_blurred_image:
-                # TODO the following code contains a bug and will be fixed in PR #13
+                # TODO the following code contains a bug and will be fixed in https://github.com/Computer-Vision-Team-Amsterdam/yolov5/pull/14 
                 predn[:, :4] = scale_boxes(im.shape[2:], predn[:, :4],
                                            im0[si].shape).round()
 
