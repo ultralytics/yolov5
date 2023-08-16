@@ -402,6 +402,7 @@ def run(
             if single_cls:
                 pred[:, 5] = 0
             predn = pred.clone()
+            pred_clone = pred.clone()
             scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
 
             # Evaluate
@@ -440,11 +441,11 @@ def run(
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
             if save_blurred_image:
-                # TODO the following code contains a bug and will be fixed in https://github.com/Computer-Vision-Team-Amsterdam/yolov5/pull/14 
-                predn[:, :4] = scale_boxes(im.shape[2:], predn[:, :4],
+                # TODO the following code contains a bug and will be fixed in https://github.com/Computer-Vision-Team-Amsterdam/yolov5/pull/14
+                pred_clone[:, :4] = scale_boxes(im.shape[2:], pred_clone[:, :4],
                                            im0[si].shape).round()
 
-                for *xyxy, conf, cls in predn.tolist():
+                for *xyxy, conf, cls in pred_clone.tolist():
                     x1, y1 = int(xyxy[0]), int(xyxy[1])
                     x2, y2 = int(xyxy[2]), int(xyxy[3])
                     area_to_blur = im0[si][y1:y2, x1:x2]
