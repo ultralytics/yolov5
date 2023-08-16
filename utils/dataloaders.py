@@ -705,18 +705,21 @@ class LoadImagesAndLabels(Dataset):
         hyp = self.hyp
         mosaic = self.mosaic and random.random() < hyp['mosaic']
         if mosaic:
-            # Load mosaic
-            img, labels = self.load_mosaic(index)
-            shapes = None
+            # # Load mosaic
+            # img, labels = self.load_mosaic(index)  # TODO im_orig
+            # shapes = None
+            #
+            # # MixUp augmentation
+            # if random.random() < hyp['mixup']:
+            #     img, labels = mixup(img, labels, *self.load_mosaic(random.randint(0, self.n - 1)))
 
-            # MixUp augmentation
-            if random.random() < hyp['mixup']:
-                img, labels = mixup(img, labels, *self.load_mosaic(random.randint(0, self.n - 1)))
-
+            # Raise an exception to indicate that the 'mosaic' hyperparameter is not supported
+            raise NotImplementedError(
+                "The 'mosaic' augmentation technique is not supported by our current implementation. "
+                "Please consider using other augmentation techniques.")
         else:
             # Load image
             img, (h0, w0), (h, w), im_orig = self.load_image(index)
-            im0 = img.copy()
             # Letterbox
             shape = self.batch_shapes[self.batch[index]] if self.rect else self.img_size  # final letterboxed shape
             img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
@@ -771,8 +774,7 @@ class LoadImagesAndLabels(Dataset):
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
-        # TODO it seems that im0 is not in the if statement, this was bug was introduced by us
-        return im0, torch.from_numpy(img), labels_out, self.im_files[index], shapes, im_orig
+        return torch.from_numpy(img), labels_out, self.im_files[index], shapes, im_orig
 
     def load_image(self, i):
         # Loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
@@ -935,14 +937,14 @@ class LoadImagesAndLabels(Dataset):
 
     @staticmethod
     def collate_fn(batch):
-        im0, im, label, path, shapes, im_orig = zip(*batch)  # transposed
+        im, label, path, shapes, im_orig = zip(*batch)  # transposed
         for i, lb in enumerate(label):
             lb[:, 0] = i  # add target image index for build_targets()
-        return im0, torch.stack(im, 0), torch.cat(label, 0), path, shapes, im_orig
+        return torch.stack(im, 0), torch.cat(label, 0), path, shapes, im_orig
 
     @staticmethod
     def collate_fn4(batch):
-        im0, im, label, path, shapes = zip(*batch)  # transposed
+        im, label, path, shapes, im_orig = zip(*batch)  # transposed
         n = len(shapes) // 4
         im4, label4, path4, shapes4 = [], [], path[:n], shapes[:n]
 
@@ -964,7 +966,7 @@ class LoadImagesAndLabels(Dataset):
         for i, lb in enumerate(label4):
             lb[:, 0] = i  # add target image index for build_targets()
 
-        return im0, torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4
+        return torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4, im_orig
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
