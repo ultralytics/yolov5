@@ -39,7 +39,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from database.database_handler import DBConfigSQLAlchemy
 from database.tables import ImageProcessingStatus, DetectionInformation
-from database.image_utils import parse_image_path
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
@@ -455,7 +454,8 @@ def run(
 
                     if skip_evaluation:
                         # Get variables to later insert into the database
-                        image_filename, image_upload_date = parse_image_path(paths[si])
+                        image_filename, image_upload_date = \
+                            DBConfigSQLAlchemy.extract_upload_date(paths[si])
 
                         # Perform database operations using the 'session'
                         # The session will be automatically closed at the end of this block
@@ -509,7 +509,7 @@ def run(
             with db_config.managed_session() as session:
                 # Process images with no detection
                 for false_path in false_paths:
-                    image_filename, image_upload_date = parse_image_path(false_path)
+                    image_filename, image_upload_date = DBConfigSQLAlchemy.extract_upload_date(false_path)
 
                     # Create an instance of DetectionInformation
                     detection_info = DetectionInformation(
