@@ -444,20 +444,22 @@ def run(
                 pred_clone[:, :4] = scale_boxes(im[si].shape[1:], pred_clone[:, :4],
                                                 shape, shapes[si][1])
 
-                # Perform database operations using the 'session'
-                # The session will be automatically closed at the end of this block
-                with db_config.managed_session() as session:
-                    for *xyxy, conf, cls in pred_clone.tolist():
-                        x1, y1 = int(xyxy[0]), int(xyxy[1])
-                        x2, y2 = int(xyxy[2]), int(xyxy[3])
-                        area_to_blur = im_orig[si][y1:y2, x1:x2]
+                for *xyxy, conf, cls in pred_clone.tolist():
+                    x1, y1 = int(xyxy[0]), int(xyxy[1])
+                    x2, y2 = int(xyxy[2]), int(xyxy[3])
+                    area_to_blur = im_orig[si][y1:y2, x1:x2]
 
-                        blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
-                        im_orig[si][y1:y2, x1:x2] = blurred
+                    blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
+                    im_orig[si][y1:y2, x1:x2] = blurred
 
-                        if skip_evaluation:
-                            image_filename, image_upload_date = parse_image_path(paths[si])
+                    if skip_evaluation:
+                        # Get variables to later insert into the database
+                        image_filename, image_upload_date = \
+                            DBConfigSQLAlchemy.extract_upload_date(paths[si])
 
+                        # Perform database operations using the 'session'
+                        # The session will be automatically closed at the end of this block
+                        with db_config.managed_session() as session:
                             # Create an instance of DetectionInformation
                             detection_info = DetectionInformation(
                                 image_customer_name=customer_name,
@@ -488,8 +490,6 @@ def run(
                             # Merge the instance into the session (updates if already exists)
                             session.merge(image_processing_status)
 
-            # Save the blurred image
-            if save_blurred_image:
                 folder_path = os.path.dirname(save_path)
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
@@ -500,45 +500,46 @@ def run(
                 ):
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
 
-        # Filter and iterate over paths with no detection in current batch
-        false_paths = [path for path in image_detections if not image_detections[path]]
+        if skip_evaluation:
+            # Filter and iterate over paths with no detection in current batch
+            false_paths = [path for path in image_detections if not image_detections[path]]
 
-        # Perform database operations using the 'session'
-        # The session will be automatically closed at the end of this block
-        with db_config.managed_session() as session:
-            # Process images with no detection
-            for false_path in false_paths:
-                image_filename, image_upload_date = parse_image_path(false_path)
+            # Perform database operations using the 'session'
+            # The session will be automatically closed at the end of this block
+            with db_config.managed_session() as session:
+                # Process images with no detection
+                for false_path in false_paths:
+                    image_filename, image_upload_date = DBConfigSQLAlchemy.extract_upload_date(false_path)
 
-                # Create an instance of DetectionInformation
-                detection_info = DetectionInformation(
-                    image_customer_name=customer_name,
-                    image_upload_date=image_upload_date,
-                    image_filename=image_filename,
-                    has_detection=False,
-                    class_id=None,
-                    x_norm=None,
-                    y_norm=None,
-                    w_norm=None,
-                    h_norm=None,
-                    image_width=None,
-                    image_height=None,
-                    run_id=run_id
-                )
+                    # Create an instance of DetectionInformation
+                    detection_info = DetectionInformation(
+                        image_customer_name=customer_name,
+                        image_upload_date=image_upload_date,
+                        image_filename=image_filename,
+                        has_detection=False,
+                        class_id=None,
+                        x_norm=None,
+                        y_norm=None,
+                        w_norm=None,
+                        h_norm=None,
+                        image_width=None,
+                        image_height=None,
+                        run_id=run_id
+                    )
 
-                # Add the instance to the session
-                session.add(detection_info)
+                    # Add the instance to the session
+                    session.add(detection_info)
 
-                # Create a new instance of the ImageProcessingStatus model
-                image_processing_status = ImageProcessingStatus(
-                    image_filename=image_filename,
-                    image_upload_date=image_upload_date,
-                    image_customer_name=customer_name,
-                    processing_status="processed"
-                )
+                    # Create a new instance of the ImageProcessingStatus model
+                    image_processing_status = ImageProcessingStatus(
+                        image_filename=image_filename,
+                        image_upload_date=image_upload_date,
+                        image_customer_name=customer_name,
+                        processing_status="processed"
+                    )
 
-                # Merge the instance into the session (updates if already exists)
-                session.merge(image_processing_status)
+                    # Merge the instance into the session (updates if already exists)
+                    session.merge(image_processing_status)
 
         # Plot images
         if plots and not skip_evaluation:
