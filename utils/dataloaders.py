@@ -771,7 +771,7 @@ class LoadImagesAndLabels(Dataset):
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
-        # TODO it seems that im0 is not in the if statement, this was a bug in original YOLOv5 code
+        # TODO it seems that im0 is not in the if statement, this was bug was introduced by us
         return im0, torch.from_numpy(img), labels_out, self.im_files[index], shapes, im_orig
 
     def load_image(self, i):
