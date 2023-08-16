@@ -621,7 +621,7 @@ class LoadImagesAndLabels(Dataset):
         self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
         if cache_images:
             b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
-            self.im_hw0, self.im_hw = [None] * n, [None] * n
+            self.im_hw0, self.im_hw, self.ims_orig = [None] * n, [None] * n, [None] * n
             fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_image
             results = ThreadPool(NUM_THREADS).imap(fcn, range(n))
             pbar = tqdm(enumerate(results), total=n, bar_format=TQDM_BAR_FORMAT, disable=LOCAL_RANK > 0)
@@ -629,9 +629,9 @@ class LoadImagesAndLabels(Dataset):
                 if cache_images == 'disk':
                     b += self.npy_files[i].stat().st_size
                 else:  # 'ram'
-                    self.ims[i], self.im_hw0[i], self.im_hw[i], self.im_orig[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
+                    self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i] = x  # im, hw_orig, hw_resized, im_orig = load_image(self, i)
                     b += self.ims[i].nbytes
-                    b += self.im_orig[i].nbytes
+                    b += self.ims_orig[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images})'
             pbar.close()
 
@@ -771,6 +771,7 @@ class LoadImagesAndLabels(Dataset):
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
+        # TODO it seems that im0 is not in the if statement, this was a bug in original YOLOv5 code
         return im0, torch.from_numpy(img), labels_out, self.im_files[index], shapes, im_orig
 
     def load_image(self, i):
