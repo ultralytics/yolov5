@@ -304,7 +304,7 @@ def run(
                 # Lock the images that we are processing in this run with the state "inprogress"
                 for image_path in image_files:
                     # Get variables to later insert into the database
-                    image_filename, image_upload_date = parse_image_path(image_path)
+                    image_filename, image_upload_date = DBConfigSQLAlchemy.extract_upload_date(image_path)
 
                     # Create a new instance of the ImageProcessingStatus model
                     image_processing_status = ImageProcessingStatus(
