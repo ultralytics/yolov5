@@ -621,7 +621,7 @@ class LoadImagesAndLabels(Dataset):
         self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
         if cache_images:
             b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
-            self.im_hw0, self.im_hw, self.ims_orig = [None] * n, [None] * n, [None] * n
+            self.im_hw0, self.im_hw = [None] * n, [None] * n
             fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_image
             results = ThreadPool(NUM_THREADS).imap(fcn, range(n))
             pbar = tqdm(enumerate(results), total=n, bar_format=TQDM_BAR_FORMAT, disable=LOCAL_RANK > 0)
@@ -629,9 +629,8 @@ class LoadImagesAndLabels(Dataset):
                 if cache_images == 'disk':
                     b += self.npy_files[i].stat().st_size
                 else:  # 'ram'
-                    self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i] = x  # im, hw_orig, hw_resized, im_orig = load_image(self, i)
+                    self.ims[i], self.im_hw0[i], self.im_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
                     b += self.ims[i].nbytes
-                    b += self.ims_orig[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images})'
             pbar.close()
 
@@ -705,11 +704,6 @@ class LoadImagesAndLabels(Dataset):
         hyp = self.hyp
         mosaic = self.mosaic and random.random() < hyp['mosaic']
         if mosaic:
-            # Raise an exception to indicate that the 'mosaic' hyperparameter is not supported
-            raise NotImplementedError(
-                "The 'mosaic' augmentation technique is not supported by our current implementation. "
-                "Please consider using other augmentation techniques.")
-
             # Load mosaic
             img, labels = self.load_mosaic(index)
             shapes = None
@@ -717,9 +711,11 @@ class LoadImagesAndLabels(Dataset):
             # MixUp augmentation
             if random.random() < hyp['mixup']:
                 img, labels = mixup(img, labels, *self.load_mosaic(random.randint(0, self.n - 1)))
+
         else:
             # Load image
-            img, (h0, w0), (h, w), im_orig = self.load_image(index)
+            img, (h0, w0), (h, w) = self.load_image(index)
+            im0 = img.copy()
             # Letterbox
             shape = self.batch_shapes[self.batch[index]] if self.rect else self.img_size  # final letterboxed shape
             img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
@@ -774,7 +770,7 @@ class LoadImagesAndLabels(Dataset):
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
-        return torch.from_numpy(img), labels_out, self.im_files[index], shapes, im_orig
+        return im0, torch.from_numpy(img), labels_out, self.im_files[index], shapes
 
     def load_image(self, i):
         # Loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
@@ -786,13 +782,12 @@ class LoadImagesAndLabels(Dataset):
                 im = cv2.imread(f)  # BGR
                 assert im is not None, f'Image Not Found {f}'
             h0, w0 = im.shape[:2]  # orig hw
-            im_orig = np.copy(im)
             r = self.img_size / max(h0, w0)  # ratio
             if r != 1:  # if sizes are not equal
                 interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
                 im = cv2.resize(im, (math.ceil(w0 * r), math.ceil(h0 * r)), interpolation=interp)
-            return im, (h0, w0), im.shape[:2], im_orig  # im, hw_original, hw_resized
-        return self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i]  # im, hw_original, hw_resized, ims_orig
+            return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
+        return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
 
     def cache_images_to_disk(self, i):
         # Saves an image as an *.npy file for faster loading
@@ -809,7 +804,7 @@ class LoadImagesAndLabels(Dataset):
         random.shuffle(indices)
         for i, index in enumerate(indices):
             # Load image
-            img, _, (h, w), _ = self.load_image(index)
+            img, _, (h, w) = self.load_image(index)
 
             # place img in img4
             if i == 0:  # top left
@@ -867,7 +862,7 @@ class LoadImagesAndLabels(Dataset):
         hp, wp = -1, -1  # height, width previous
         for i, index in enumerate(indices):
             # Load image
-            img, _, (h, w), _ = self.load_image(index)
+            img, _, (h, w) = self.load_image(index)
 
             # place img in img9
             if i == 0:  # center
@@ -937,14 +932,14 @@ class LoadImagesAndLabels(Dataset):
 
     @staticmethod
     def collate_fn(batch):
-        im, label, path, shapes, im_orig = zip(*batch)  # transposed
+        im0, im, label, path, shapes = zip(*batch)  # transposed
         for i, lb in enumerate(label):
             lb[:, 0] = i  # add target image index for build_targets()
-        return torch.stack(im, 0), torch.cat(label, 0), path, shapes, im_orig
+        return im0, torch.stack(im, 0), torch.cat(label, 0), path, shapes
 
     @staticmethod
     def collate_fn4(batch):
-        im, label, path, shapes, im_orig = zip(*batch)  # transposed
+        im0, im, label, path, shapes = zip(*batch)  # transposed
         n = len(shapes) // 4
         im4, label4, path4, shapes4 = [], [], path[:n], shapes[:n]
 
@@ -966,7 +961,7 @@ class LoadImagesAndLabels(Dataset):
         for i, lb in enumerate(label4):
             lb[:, 0] = i  # add target image index for build_targets()
 
-        return torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4, im_orig
+        return im0, torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
