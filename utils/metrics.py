@@ -8,8 +8,11 @@ import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import numpy as np
+import pandas as pd
 import torch
+from sklearn.metrics import roc_auc_score
 
 from utils import TryExcept, threaded
 
@@ -122,6 +125,99 @@ def compute_ap(recall, precision):
 
     return ap, mpre, mrec
 
+class AUROC:
+    """ Compute the auroc scores, given the auc for each class.
+    """
+    def __init__(self, nc, conf=0.25, iou_thres=0.45):
+        """
+        different thresholds (like prediction confidence, Iou) will have a great impact on the results of AUC.
+        Default: conf=0.25, iou_thres=0.45
+        """
+        self.auc_scores = np.zeros(nc) # Store the AUROC score for each cls
+        self.nc = nc # number of cls
+        self.conf = conf # confidence threshold
+        self.iou_thres = iou_thres # IoU threshold
+
+        self.pred = [[] for _ in range(nc)]  # list to store model predictions for each class
+        self.true = [[] for _ in range(nc)]  # list to store ground truth labels for each class
+
+    def process_batch(self, detections, labels):
+        """
+        Return /
+        Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+        Arguments:
+            detections (Array[N, 6]), x1, y1, x2, y2, conf, class
+            labels (Array[M, 5]), class, x1, y1, x2, y2
+        Returns:
+            None, updates pred[list] and true[list] accordingly
+        """
+        if detections is None:
+            # If there is no prediction result, all ground truths are considered to be negative samples, 
+            # Ignored during calculating auc
+            return
+
+        t = 0
+
+        detections = detections[detections[:, 4] > self.conf] # # Filter out prediction db boxes with low confidence (similar to nms)
+        gt_classes = labels[:, 0].int() # All gt box categories (int) cls, may be repeated
+        detection_classes = detections[:, 5].int() # All pred box cls (int) categories, may repeat positive + negative
+        iou = box_iou(labels[:, 1:], detections[:, :4]) # # Find the iou of all gt boxes and all pred boxes
+
+        x = torch.where(iou > self.iou_thres) # Filtered by iou threshold
+
+        if x[0].shape[0]: # When have iou > iou threshold
+            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()
+            #cat gt_index+pred_index+iou
+            if x[0].shape[0] > 1:
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+                # finally get the one with the largest iou of each db pred and all db gt (greater than the iou_thres)
+                # Each db gt will only correspond to the only one db pred. The filtered preds are all positive samples _> (tp or fp)
+        else:
+            matches = np.zeros((0, 3))
+
+        n = matches.shape[0] > 0
+        m0, m1, _ = matches.transpose().astype(int)
+        for class_id in range(self.nc):
+            for i, gc in enumerate(gt_classes):
+                if gc == class_id:
+                    j = m0 == i
+                    if n and sum(j) == 1:
+                        if detection_classes[m1[j]] == gc:
+                            # same cls -> True Positive
+                            self.pred[class_id].append(detections[m1[j], 4].item())  # save conf
+                            self.true[class_id].append(1)  # True Positive set 1
+                        else:
+                            # diff cls -> False Positive
+                            self.pred[class_id].append(detections[m1[j], 4].item())  # save conf
+                            self.true[class_id].append(0)  # False Positive set 0
+                        t = t + 1
+                    '''
+                    # Ignored during calculating auc
+                    else:
+                        self.pred[class_id].append(0.0)  
+                        self.true[class_id].append(-1)  
+                    '''
+ 
+    def out(self):
+        '''
+        Computes the AUROC score for each category and returns it.
+        '''
+        auc_scores = np.zeros(self.nc)
+        for class_id in range(self.nc):
+            labels = self.true[class_id]
+            preds = self.pred[class_id]
+            #print(len(labels))
+            try:
+                auroc = roc_auc_score(labels, preds)
+                auc_scores[class_id] = auroc
+            except ValueError:
+                print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
+                auc_scores[class_id] = 0
+
+        return auc_scores
 
 class ConfusionMatrix:
     # Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
@@ -217,7 +313,6 @@ class ConfusionMatrix:
     def print(self):
         for i in range(self.nc + 1):
             print(' '.join(map(str, self.matrix[i])))
-
 
 def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
     # Returns Intersection over Union (IoU) of box1(1,4) to box2(n,4)
@@ -358,3 +453,43 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_title(f'{ylabel}-Confidence Curve')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
+
+@TryExcept('WARNING ⚠️ polar_chart plot failure')
+def plot_polar_chart(auc_scores, names, save_dir=''):
+    '''
+    Generate polar_chart for auc scores.
+    auc_scores : [dict] auc_scores
+    names : [list] cls names
+    return None
+    save img at Path(save_dir) / 'polar_chart.png'
+    '''
+    mauc = auc_scores.mean()
+    auc_scores_name = dict(zip(names, auc_scores))
+    auc_scores_name['mAUC'] = mauc
+    df = pd.DataFrame.from_dict(auc_scores_name, orient='index')
+    columns = list(df.index)
+    fig = go.Figure(
+            data=[
+                go.Scatterpolar(
+                    r=(df[0] * 100).round(0), fill="toself", name="diseases", theta=columns
+                )
+            ],
+            layout=go.Layout(
+                # title=go.layout.Title(text='Class AUC'),
+                polar={
+                "radialaxis": {
+                    "range": [0, 100],
+                    "tickvals": [0, 25, 50, 75, 100], 
+                    "ticktext": ["0%", "25%", "50%", "75%", "100%"], 
+                    "visible": True,
+                }
+            },
+                showlegend=True,
+                template="plotly_dark",
+            ),
+        )
+
+    #fig.show()
+    file_name = Path(save_dir) / 'polar_chart.png'
+    fig.write_image(file_name)
+    print('plot_polar_chart DONE')

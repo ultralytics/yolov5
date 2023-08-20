@@ -82,6 +82,7 @@ class Loggers():
             'x/lr0',
             'x/lr1',
             'x/lr2']  # params
+        self.aucs = ['metrics/mAUROC'] # mean auc
         self.best_keys = ['best/epoch', 'best/precision', 'best/recall', 'best/mAP_0.5', 'best/mAP_0.5:0.95']
         for k in LOGGERS:
             setattr(self, k, None)  # init empty logger dictionary
@@ -219,7 +220,7 @@ class Loggers():
         if self.comet_logger:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
-    def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
+    def on_fit_epoch_end(self, vals, epoch, best_fitness, fi, auc_scores):
         # Callback runs at the end of each fit (train+val) epoch
         x = dict(zip(self.keys, vals))
         if self.csv:
@@ -242,6 +243,9 @@ class Loggers():
                 best_results = [epoch] + vals[3:7]
                 for i, name in enumerate(self.best_keys):
                     self.wandb.wandb_run.summary[name] = best_results[i]  # log best results in the summary
+            if auc_scores:
+                print('logging auc ... ')
+                self.wandb.log(auc_scores)
             self.wandb.log(x)
             self.wandb.end_epoch()
 
