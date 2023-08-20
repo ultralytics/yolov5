@@ -214,7 +214,8 @@ class AUROC:
                 auroc = roc_auc_score(labels, preds)
                 auc_scores[class_id] = auroc
             except ValueError:
-                print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
+                # No pred = set auc to 0
+                #print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
                 auc_scores[class_id] = 0
 
         return auc_scores
