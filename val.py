@@ -331,7 +331,7 @@ def run(
     jdict, stats, ap, ap_class = [], [], [], []
     callbacks.run('on_val_start')
     pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
-    for batch_i, (im0, im, targets, paths, shapes) in enumerate(pbar):
+    for batch_i, (im, targets, paths, shapes, im_orig) in enumerate(pbar):
         callbacks.run('on_val_batch_start')
         if tagged_data:
             confusion_matrix = TaggedConfusionMatrix(nc=nc)
@@ -441,17 +441,21 @@ def run(
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
             if save_blurred_image:
-                # TODO the following code contains a bug and will be fixed later
-                pred_clone[:, :4] = scale_boxes(im.shape[2:], pred_clone[:, :4],
-                                           im0[si].shape).round()
+                pred_clone[:, :4] = scale_boxes(im[si].shape[1:], pred_clone[:, :4],
+                                                shape, shapes[si][1]) # TODO do we need padding
 
                 for *xyxy, conf, cls in pred_clone.tolist():
                     x1, y1 = int(xyxy[0]), int(xyxy[1])
                     x2, y2 = int(xyxy[2]), int(xyxy[3])
-                    area_to_blur = im0[si][y1:y2, x1:x2]
+                    print("print xyxy coords (ints)")
+                    print(f"x1 = {x1}")
+                    print(f"y1 = {y1}")
+                    print(f"x2 = {x2}")
+                    print(f"y2 = {y2}")
+                    area_to_blur = im_orig[si][y1:y2, x1:x2]
 
                     blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
-                    im0[si][y1:y2, x1:x2] = blurred
+                    im_orig[si][y1:y2, x1:x2] = blurred
 
                     if skip_evaluation:
                         # Get variables to later insert into the database
@@ -497,7 +501,7 @@ def run(
 
                 if not cv2.imwrite(
                         save_path,
-                        im0[si],
+                        im_orig[si],
                 ):
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
 
