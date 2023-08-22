@@ -382,16 +382,11 @@ def run(
 
             if save_blurred_image:
                 pred_clone[:, :4] = scale_boxes(im[si].shape[1:], pred_clone[:, :4],
-                                                shape, shapes[si][1]) # TODO do we need padding
+                                                im_orig[si].shape[:-1])
 
                 for *xyxy, conf, cls in pred_clone.tolist():
                     x1, y1 = int(xyxy[0]), int(xyxy[1])
                     x2, y2 = int(xyxy[2]), int(xyxy[3])
-                    print("print xyxy coords (ints)")
-                    print(f"x1 = {x1}")
-                    print(f"y1 = {y1}")
-                    print(f"x2 = {x2}")
-                    print(f"y2 = {y2}")
                     area_to_blur = im_orig[si][y1:y2, x1:x2]
 
                     blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
