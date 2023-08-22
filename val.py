@@ -402,8 +402,8 @@ def run(
             if single_cls:
                 pred[:, 5] = 0
             predn = pred.clone()
-            pred_clone = pred.clone()
-            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred # TODO this is doing nothing
+            pred_clone = pred.clone()  # TODO can we just use predn?
+            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
 
             # Evaluate
             if not skip_evaluation:
