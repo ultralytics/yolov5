@@ -42,7 +42,7 @@ from utils.dataloaders import create_dataloader
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size, check_requirements,
                            check_yaml, coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
                            print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
-from utils.metrics import ConfusionMatrix, ap_per_class, box_iou, AUROC, plot_polar_chart
+from utils.metrics import ConfusionMatrix, AUROC, ap_per_class, box_iou 
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
 
@@ -184,7 +184,7 @@ def run(
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
-    auc = AUROC(nc=nc)
+    aucroc = AUROC(nc=nc)
     names = model.names if hasattr(model, 'names') else model.module.names  # get class names
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
@@ -253,7 +253,7 @@ def run(
                 scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
-                auc.process_batch(predn, labels=labelsn)
+                aucroc.process_batch(predn, labels=labelsn)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
             stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
@@ -273,7 +273,7 @@ def run(
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
     # Compute AUC 
-    auc_scores = auc.out()
+    auc_scores, fpr, tpr = aucroc.out()
     mauc = auc_scores.mean()
     new_name =['AUC/'+i for i in names.values()]
     auc_scores_name = dict(zip(new_name, auc_scores))
@@ -307,7 +307,8 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        plot_polar_chart(auc_scores, list(names.values()), save_dir=save_dir)
+        aucroc.plot_polar_chart(auc_scores, save_dir=save_dir, names = list(names.values()))
+        aucroc.plot_auroc_curve(fpr, tpr, auc_scores, save_dir=save_dir, names=list(names.values()))
         callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
     # Save JSON
