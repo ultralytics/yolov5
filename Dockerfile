@@ -8,7 +8,7 @@ WORKDIR /app
 
 EXPOSE 8700
 
-COPY requirements.txt /app/requirements.txt
+COPY . /app/
 
 RUN apt-get update
 RUN apt-get install -y python3 pip
