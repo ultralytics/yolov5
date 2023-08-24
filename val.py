@@ -42,7 +42,7 @@ from utils.dataloaders import create_dataloader
 from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size, check_requirements,
                            check_yaml, coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
                            print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
-from utils.metrics import ConfusionMatrix, AUROC, ap_per_class, box_iou 
+from utils.metrics import AUROC, ConfusionMatrix, ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
 
@@ -272,10 +272,10 @@ def run(
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
-    # Compute AUC 
+    # Compute AUC
     auc_scores, fpr, tpr = aucroc.out()
     mauc = auc_scores.mean()
-    new_name =['AUC/'+i for i in names.values()]
+    new_name = ['AUC/' + i for i in names.values()]
     auc_scores_name = dict(zip(new_name, auc_scores))
     auc_scores_name['AUC/mAUC'] = mauc
 
@@ -307,7 +307,7 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        aucroc.plot_polar_chart(auc_scores, save_dir=save_dir, names = list(names.values()))
+        aucroc.plot_polar_chart(auc_scores, save_dir=save_dir, names=list(names.values()))
         aucroc.plot_auroc_curve(fpr, tpr, auc_scores, save_dir=save_dir, names=list(names.values()))
         callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
