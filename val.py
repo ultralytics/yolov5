@@ -20,16 +20,19 @@ Usage - formats:
 """
 import argparse
 import json
+import logging
 import os
 import subprocess
 import sys
+import time
+from datetime import datetime
 from pathlib import Path
+
 import numpy as np
 import torch
-from tqdm import tqdm
-from datetime import datetime
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
+from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -38,7 +41,7 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from database.database_handler import DBConfigSQLAlchemy
-from database.tables import ImageProcessingStatus, DetectionInformation
+from database.tables import DetectionInformation, ImageProcessingStatus
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
@@ -66,6 +69,7 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 # Use the following repo for local run https://github.com/Computer-Vision-Team-Amsterdam/yolov5-local-docker
 LOCAL_RUN = False
+
 
 def save_one_txt_and_one_json(predn, save_conf, shape, file, json_file, confusion_matrix):
     """
@@ -180,17 +184,15 @@ def run(
         callbacks=Callbacks(),
         compute_loss=None,
         tagged_data=False,
-        skip_evaluation=True,
+        skip_evaluation=False,
         save_blurred_image=False,
         customer_name='',
         run_id='default_run_id',
         db_username='',
         db_hostname='',
-        db_name=''
-        ):
+        db_name=''):
     # Initialize/load model and set device
     training = model is not None
-
     if training:  # called by train.py
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
         half &= device.type != 'cpu'  # half precision only supported on CUDA
@@ -204,7 +206,7 @@ def run(
             input_dir = Path('/container/landing_zone/input_structured/')
         else:
             save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-            input_dir = ""
+            input_dir = ''
 
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
         if tagged_data:
@@ -343,7 +345,7 @@ def run(
                 pred[:, 5] = 0
             predn = pred.clone()
             pred_clone = pred.clone()
-            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred # TODO this is doing nothing
+            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred (this changes predn)
 
             # Evaluate
             if not skip_evaluation:
@@ -381,19 +383,15 @@ def run(
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
             if save_blurred_image:
-                pred_clone[:, :4] = scale_boxes(im[si].shape[1:], pred_clone[:, :4],
-                                                shape, shapes[si][1]) # TODO do we need padding
-
+                pred_clone[:, :4] = scale_boxes(im[si].shape[1:], pred_clone[:, :4], shape, shapes[si][1])
                 for *xyxy, conf, cls in pred_clone.tolist():
                     x1, y1 = int(xyxy[0]), int(xyxy[1])
                     x2, y2 = int(xyxy[2]), int(xyxy[3])
-                    print("print xyxy coords (ints)")
-                    print(f"x1 = {x1}")
-                    print(f"y1 = {y1}")
-                    print(f"x2 = {x2}")
-                    print(f"y2 = {y2}")
-                    area_to_blur = im_orig[si][y1:y2, x1:x2]
 
+                    if x1 == x2 or y1 == y2:
+                        LOGGER.warning('Area to blur is 0.')
+                        continue
+                    area_to_blur = im_orig[si][y1:y2, x1:x2]
                     blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
                     im_orig[si][y1:y2, x1:x2] = blurred
 
@@ -408,9 +406,15 @@ def run(
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
 
         # Plot images
-        if plots and not skip_evaluation:
-            plot_images(im, targets, paths, save_dir / f'{path.stem}.jpg', names)  # labels
-            plot_images(im, output_to_target(preds), paths, save_dir / f'{path.stem}_pred.jpg', names)  # pred
+        if plots:
+            plot_images(im, targets, paths, save_dir / f'{path.stem}_labelled.jpg', names,
+                        conf_thres=conf_thres)  # labels
+            plot_images(im,
+                        output_to_target(preds),
+                        paths,
+                        save_dir / f'{path.stem}_pred.jpg',
+                        names,
+                        conf_thres=conf_thres)  # pred
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
@@ -470,7 +474,6 @@ def run(
         except Exception as e:
             LOGGER.info(f'pycocotools unable to run: {e}')
 
-
     # Return results
     model.float()  # for training
     if not training:
@@ -487,7 +490,11 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default='/container/landing_zone/pano.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default='/container/landing_zone/best.pt', help='model path(s)')
+    parser.add_argument('--weights',
+                        nargs='+',
+                        type=str,
+                        default='/container/landing_zone/best.pt',
+                        help='model path(s)')
     parser.add_argument('--batch-size', type=int, default=4, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
@@ -511,8 +518,14 @@ def parse_opt():
     parser.add_argument('--tagged-data', action='store_true', help='use tagged validation')
     parser.add_argument('--skip-evaluation', action='store_true', help='ignore code parts for production')
     parser.add_argument('--save-blurred-image', action='store_true', help='save blurred images')
-    parser.add_argument('--customer-name', type=str, default='example_customer', help='the customer for which we process the images')
-    parser.add_argument('--run-id', type=str, default='default_run_id', help='the run id generated by Azure Machine Learning')
+    parser.add_argument('--customer-name',
+                        type=str,
+                        default='example_customer',
+                        help='the customer for which we process the images')
+    parser.add_argument('--run-id',
+                        type=str,
+                        default='default_run_id',
+                        help='the run id generated by Azure Machine Learning')
     parser.add_argument('--db-username', type=str, default='', help='database username')
     parser.add_argument('--db-hostname', type=str, default='', help='database hostname')
     parser.add_argument('--db-name', type=str, default='', help='database name')
@@ -526,7 +539,6 @@ def parse_opt():
 
 def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
-
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.skip_evaluation:
             opt.conf_thres, opt.iou_thres = 0.25, 0.45
