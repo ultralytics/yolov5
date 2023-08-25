@@ -162,8 +162,7 @@ class AUROC:
 
         t = 0
 
-        detections = detections[detections[:, 4]
-                                > self.conf]  # # Filter out prediction db boxes with low confidence (similar to nms)
+        detections = detections[detections[:, 4] > self.conf]  # # Filter out prediction db boxes with low confidence (similar to nms)
         gt_classes = labels[:, 0].int()  # All gt box categories (int) cls, may be repeated
         detection_classes = detections[:, 5].int()  # All pred box cls (int) categories, may repeat positive + negative
         iou = box_iou(labels[:, 1:], detections[:, :4])  # # Find the iou of all gt boxes and all pred boxes
