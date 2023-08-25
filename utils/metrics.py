@@ -141,17 +141,9 @@ class AUROC:
         self.pred = [[] for _ in range(nc)]  # list to store model predictions for each class
         self.true = [[] for _ in range(nc)]  # list to store ground truth labels for each class
 
-        try:
-            import sklearn
-        except ImportError:
-            import subprocess
-            subprocess.check_call(['pip', 'install', 'scikit-learn'])
-
-        try:
-            import plotly
-        except ImportError:
-            import subprocess
-            subprocess.check_call(['pip', 'install', 'plotly', 'kaleido'])
+        import subprocess
+        subprocess.check_call(['pip', 'install', 'scikit-learn'])
+        subprocess.check_call(['pip', 'install', 'plotly', 'kaleido'])
 
     def process_batch(self, detections, labels):
         """
@@ -236,7 +228,7 @@ class AUROC:
                 # No pred = set auc to 0
                 # print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
                 auc_scores[class_id] = 0
-                
+
         return auc_scores, fpr, tpr
 
     def plot_polar_chart(self, auc_scores, save_dir='', names=()):
