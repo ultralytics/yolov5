@@ -211,8 +211,8 @@ class AUROC:
         '''
         from sklearn.metrics import roc_auc_score, roc_curve
         auc_scores = np.zeros(self.nc)
-        fpr = [[] for _ in range(self.nc)]
-        tpr = [[] for _ in range(self.nc)]
+        fpr_ = [[] for _ in range(self.nc)]
+        tpr_ = [[] for _ in range(self.nc)]
 
         for class_id in range(self.nc):
             labels = self.true[class_id]
@@ -220,15 +220,15 @@ class AUROC:
             try:
                 fpr_class, tpr_class, _ = roc_curve(labels, preds)
                 auc_scores[class_id] = roc_auc_score(labels, preds)
-                fpr[class_id] = fpr_class
-                tpr[class_id] = tpr_class
+                fpr_[class_id] = fpr_class
+                tpr_[class_id] = tpr_class
 
             except ValueError:
                 # No pred = set auc to 0
                 # print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
                 auc_scores[class_id] = 0
 
-        return auc_scores, fpr, tpr
+        return auc_scores, fpr_, tpr_
 
     def plot_polar_chart(self, auc_scores, save_dir='', names=()):
         '''
@@ -268,10 +268,10 @@ class AUROC:
 
         if 0 < len(names) < 21:  # display per-class legend if < 21 classes
             for i in range(len(names)):
-                ax.plot(fpr[i], tpr[i], linewidth=1, label=f'{names[i]} {auc_scores[i]:.3f}')  # plot(FPR, TPR)
+                ax.plot(fpr[i], tpr[i], linewidth=1, label=f'{names[i]} {auc_scores[i]:.3f}')  # plot(F_PR, T_PR)
         else:
             for i in range(len(names)):
-                ax.plot(fpr[i], tpr[i], linewidth=1, color='grey')  # plot(FPR, TPR)
+                ax.plot(fpr[i], tpr[i], linewidth=1, color='grey')  # plot(F_PR, T_PR)
 
         ax.plot([0, 1], [0, 1], linestyle='--', color='black', linewidth=1)  # diagonal line
         ax.set_xlabel('False Positive Rate')
