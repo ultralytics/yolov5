@@ -263,16 +263,16 @@ class AUROC:
         fig.write_image(file_name)
         # print('plot_polar_chart DONE')
 
-    def plot_auroc_curve(self, FPR, TPR, auc_scores, save_dir='', names=()):
+    def plot_auroc_curve(self, fpr_, tpr_, auc_scores, save_dir='', names=()):
         # AUROC curve
         fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
 
         if 0 < len(names) < 21:  # display per-class legend if < 21 classes
             for i in range(len(names)):
-                ax.plot(FPR[i], TPR[i], linewidth=1, label=f'{names[i]} {auc_scores[i]:.3f}')  # plot(F_PR, T_PR)
+                ax.plot(fpr_[i], tpr_[i], linewidth=1, label=f'{names[i]} {auc_scores[i]:.3f}')  # plot(F_PR, T_PR)
         else:
             for i in range(len(names)):
-                ax.plot(FPR[i], TPR[i], linewidth=1, color='grey')  # plot(F_PR, T_PR)
+                ax.plot(fpr_[i], tpr_[i], linewidth=1, color='grey')  # plot(F_PR, T_PR)
 
         ax.plot([0, 1], [0, 1], linestyle='--', color='black', linewidth=1)  # diagonal line
         ax.set_xlabel('False Positive Rate')

@@ -273,7 +273,7 @@ def run(
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
     # Compute AUC
-    auc_scores, fpr, tpr = aucroc.out()
+    auc_scores, fpr_, tpr_ = aucroc.out()
     mauc = auc_scores.mean()
     new_name = ['AUC/' + i for i in names.values()]
     auc_scores_name = dict(zip(new_name, auc_scores))
@@ -308,7 +308,7 @@ def run(
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
         aucroc.plot_polar_chart(auc_scores, save_dir=save_dir, names=list(names.values()))
-        aucroc.plot_auroc_curve(fpr, tpr, auc_scores, save_dir=save_dir, names=list(names.values()))
+        aucroc.plot_auroc_curve(fpr_, tpr_, auc_scores, save_dir=save_dir, names=list(names.values()))
         callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
     # Save JSON
