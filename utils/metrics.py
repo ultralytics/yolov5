@@ -170,8 +170,7 @@ class AUROC:
 
         t = 0
 
-        detections = detections[detections[:, 4]
-                                > self.conf]  # # Filter out prediction db boxes with low confidence (similar to nms)
+        detections = detections[detections[:, 4] > self.conf]  # # Filter out prediction db boxes with low confidence (similar to nms)
         gt_classes = labels[:, 0].int()  # All gt box categories (int) cls, may be repeated
         detection_classes = detections[:, 5].int()  # All pred box cls (int) categories, may repeat positive + negative
         iou = box_iou(labels[:, 1:], detections[:, :4])  # # Find the iou of all gt boxes and all pred boxes
@@ -180,7 +179,7 @@ class AUROC:
 
         if x[0].shape[0]:  # When have iou > iou threshold
             matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()
-            #cat gt_index+pred_index+iou
+            # cat gt_index+pred_index+iou
             if x[0].shape[0] > 1:
                 matches = matches[matches[:, 2].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
@@ -225,7 +224,6 @@ class AUROC:
         for class_id in range(self.nc):
             labels = self.true[class_id]
             preds = self.pred[class_id]
-            #print(len(labels))
             try:
                 fpr_class, tpr_class, _ = roc_curve(labels, preds)
                 auc_scores[class_id] = roc_auc_score(labels, preds)
@@ -233,7 +231,7 @@ class AUROC:
                 tpr[class_id] = tpr_class
             except ValueError:
                 # No pred = set auc to 0
-                #print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
+                # print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
                 auc_scores[class_id] = 0
 
         return auc_scores, fpr, tpr
@@ -266,11 +264,9 @@ class AUROC:
                 template='plotly_dark',
             ),
         )
-
-        #fig.show()
         file_name = Path(save_dir) / 'polar_chart.png'
         fig.write_image(file_name)
-        #print('plot_polar_chart DONE')
+        # print('plot_polar_chart DONE')
 
     def plot_auroc_curve(self, fpr, tpr, auc_scores, save_dir='', names=()):
         # AUROC curve
@@ -293,9 +289,9 @@ class AUROC:
         if save_dir:
             save_path = Path(save_dir) / 'auroc_curve.png'
             fig.savefig(save_path, dpi=250)
-            #print(f'Saved AUROC curve at: {save_path}')
+            # print(f'Saved AUROC curve at: {save_path}')
         plt.close(fig)
-        #print('plot_auroc_curve DONE')
+        # print('plot_auroc_curve DONE')
 
 
 class ConfusionMatrix:
