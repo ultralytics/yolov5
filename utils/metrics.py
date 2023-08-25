@@ -221,6 +221,7 @@ class AUROC:
         auc_scores = np.zeros(self.nc)
         fpr = [[] for _ in range(self.nc)]
         tpr = [[] for _ in range(self.nc)]
+
         for class_id in range(self.nc):
             labels = self.true[class_id]
             preds = self.pred[class_id]
@@ -229,11 +230,12 @@ class AUROC:
                 auc_scores[class_id] = roc_auc_score(labels, preds)
                 fpr[class_id] = fpr_class
                 tpr[class_id] = tpr_class
+
             except ValueError:
                 # No pred = set auc to 0
                 # print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
                 auc_scores[class_id] = 0
-
+                
         return auc_scores, fpr, tpr
 
     def plot_polar_chart(self, auc_scores, save_dir='', names=()):
