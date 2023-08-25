@@ -144,15 +144,14 @@ class AUROC:
             import sklearn
         except ImportError:
             import subprocess
-            subprocess.check_call(["pip", "install", "scikit-learn"])
-            from sklearn.metrics import roc_auc_score, roc_curve
+            subprocess.check_call(["pip", "install", "-U", "scikit-learn"])
         
         try:
             import plotly
         except ImportError:
             import subprocess
             subprocess.check_call(["pip", "install", "plotly"])
-            import plotly.graph_objects as go
+
 
     def process_batch(self, detections, labels):
         """
@@ -219,6 +218,7 @@ class AUROC:
         '''
         Computes the AUROC score for each category and returns it.
         '''
+        from sklearn.metrics import roc_curve, roc_auc_score
         auc_scores = np.zeros(self.nc)
         fpr = [[] for _ in range(self.nc)]
         tpr = [[] for _ in range(self.nc)]
@@ -246,6 +246,7 @@ class AUROC:
         return None
         save img at Path(save_dir) / 'polar_chart.png'
         '''
+        import plotly.graph_objects as go
         mauc = auc_scores.mean()
         auc_scores_name = dict(zip(names, auc_scores))
         auc_scores_name['mAUC'] = mauc
