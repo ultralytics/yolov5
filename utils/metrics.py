@@ -236,7 +236,7 @@ class AUROC:
                 # No pred = set auc to 0
                 # print('No pred db for cls ' + str(class_id) + ', Set the auc value to 0 ...')
                 auc_scores[class_id] = 0
-                
+
         return auc_scores, fpr, tpr
 
     def plot_polar_chart(self, auc_scores, save_dir='', names=()):
