@@ -145,14 +145,13 @@ class AUROC:
             import sklearn
         except ImportError:
             import subprocess
-            subprocess.check_call(["pip", "install", "scikit-learn"])
-            
+            subprocess.check_call(['pip', 'install', 'scikit-learn'])
+
         try:
             import plotly
         except ImportError:
             import subprocess
-            subprocess.check_call(["pip", "install", "plotly"])
-          
+            subprocess.check_call(['pip', 'install', 'plotly'])
 
     def process_batch(self, detections, labels):
         """
@@ -219,7 +218,7 @@ class AUROC:
         '''
         Computes the AUROC score for each category and returns it.
         '''
-        from sklearn.metrics import roc_curve, roc_auc_score
+        from sklearn.metrics import roc_auc_score, roc_curve
         auc_scores = np.zeros(self.nc)
         fpr = [[] for _ in range(self.nc)]
         tpr = [[] for _ in range(self.nc)]
