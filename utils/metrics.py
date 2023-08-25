@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+
 from utils import TryExcept, threaded
 
 
@@ -144,14 +145,14 @@ class AUROC:
             import sklearn
         except ImportError:
             import subprocess
-            subprocess.check_call(["pip", "install", "-U", "scikit-learn"])
-        
+            subprocess.check_call(["pip", "install", "scikit-learn"])
+            
         try:
             import plotly
         except ImportError:
             import subprocess
             subprocess.check_call(["pip", "install", "plotly"])
-
+          
 
     def process_batch(self, detections, labels):
         """
