@@ -151,7 +151,7 @@ class AUROC:
             import plotly
         except ImportError:
             import subprocess
-            subprocess.check_call(['pip', 'install', 'plotly'])
+            subprocess.check_call(['pip', 'install', 'plotly', 'kaleido'])
 
     def process_batch(self, detections, labels):
         """
