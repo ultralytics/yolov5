@@ -11,8 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.metrics import roc_auc_score, roc_curve
-
 from utils import TryExcept, threaded
 
 
@@ -146,14 +144,14 @@ class AUROC:
             import sklearn
         except ImportError:
             import subprocess
-            subprocess.check_call(['pip', 'install', 'scikit-learn'])
+            subprocess.check_call(["pip", "install", "scikit-learn"])
             from sklearn.metrics import roc_auc_score, roc_curve
-
+        
         try:
             import plotly
         except ImportError:
             import subprocess
-            subprocess.check_call(['pip', 'install', 'plotly'])
+            subprocess.check_call(["pip", "install", "plotly"])
             import plotly.graph_objects as go
 
     def process_batch(self, detections, labels):
