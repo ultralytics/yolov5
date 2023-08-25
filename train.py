@@ -357,16 +357,16 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP and AUC
                 results, maps, _, auc_scores_name = validate.run(data_dict,
-                                                batch_size=batch_size // WORLD_SIZE * 2,
-                                                imgsz=imgsz,
-                                                half=amp,
-                                                model=ema.ema,
-                                                single_cls=single_cls,
-                                                dataloader=val_loader,
-                                                save_dir=save_dir,
-                                                plots=False,
-                                                callbacks=callbacks,
-                                                compute_loss=compute_loss)
+                                                                 batch_size=batch_size // WORLD_SIZE * 2,
+                                                                 imgsz=imgsz,
+                                                                 half=amp,
+                                                                 model=ema.ema,
+                                                                 single_cls=single_cls,
+                                                                 dataloader=val_loader,
+                                                                 save_dir=save_dir,
+                                                                 plots=False,
+                                                                 callbacks=callbacks,
+                                                                 compute_loss=compute_loss)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -431,7 +431,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         callbacks=callbacks,
                         compute_loss=compute_loss)  # val best model with plots
                     if is_coco:
-                        callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi, auc_scores_name)
+                        callbacks.run('on_fit_epoch_end',
+                                      list(mloss) + list(results) + lr, epoch, best_fitness, fi, auc_scores_name)
 
         callbacks.run('on_train_end', last, best, epoch, results)
 
