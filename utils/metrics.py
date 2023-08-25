@@ -142,6 +142,20 @@ class AUROC:
         self.pred = [[] for _ in range(nc)]  # list to store model predictions for each class
         self.true = [[] for _ in range(nc)]  # list to store ground truth labels for each class
 
+        try:
+            import sklearn
+        except ImportError:
+            import subprocess
+            subprocess.check_call(["pip", "install", "scikit-learn"])
+            from sklearn.metrics import roc_auc_score, roc_curve
+        
+        try:
+            import plotly
+        except ImportError:
+            import subprocess
+            subprocess.check_call(["pip", "install", "plotly"])
+            import plotly.graph_objects as go
+
     def process_batch(self, detections, labels):
         """
         Return /
@@ -234,12 +248,6 @@ class AUROC:
         return None
         save img at Path(save_dir) / 'polar_chart.png'
         '''
-        try:
-            import plotly.graph_objects as go
-        except ValueError:
-            print('No module named \'plotly\'')
-            return
-
         mauc = auc_scores.mean()
         auc_scores_name = dict(zip(names, auc_scores))
         auc_scores_name['mAUC'] = mauc
