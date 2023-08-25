@@ -146,14 +146,14 @@ class AUROC:
             import sklearn
         except ImportError:
             import subprocess
-            subprocess.check_call(["pip", "install", "scikit-learn"])
+            subprocess.check_call(['pip', 'install', 'scikit-learn'])
             from sklearn.metrics import roc_auc_score, roc_curve
-        
+
         try:
             import plotly
         except ImportError:
             import subprocess
-            subprocess.check_call(["pip", "install", "plotly"])
+            subprocess.check_call(['pip', 'install', 'plotly'])
             import plotly.graph_objects as go
 
     def process_batch(self, detections, labels):
