@@ -244,7 +244,7 @@ class Loggers():
                 for i, name in enumerate(self.best_keys):
                     self.wandb.wandb_run.summary[name] = best_results[i]  # log best results in the summary
             if auc_scores:
-                print('logging auc ... ')
+                #print('logging auc ... ')
                 self.wandb.log(auc_scores)
             self.wandb.log(x)
             self.wandb.end_epoch()

@@ -8,7 +8,6 @@ import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 import torch
@@ -232,6 +231,12 @@ class AUROC:
         return None
         save img at Path(save_dir) / 'polar_chart.png'
         '''
+        try:
+            import plotly.graph_objects as go
+        except ValueError:
+            print('No module named \'plotly\'')
+            return
+        
         mauc = auc_scores.mean()
         auc_scores_name = dict(zip(names, auc_scores))
         auc_scores_name['mAUC'] = mauc
