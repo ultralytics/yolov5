@@ -240,7 +240,7 @@ class AUROC:
         except ValueError:
             print('No module named \'plotly\'')
             return
-        
+
         mauc = auc_scores.mean()
         auc_scores_name = dict(zip(names, auc_scores))
         auc_scores_name['mAUC'] = mauc
