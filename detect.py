@@ -29,8 +29,8 @@ Usage - formats:
 """
 
 import argparse
-import os
 import csv
+import os
 import platform
 import sys
 from pathlib import Path
@@ -214,10 +214,10 @@ def run(
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
         # Save results to CSV file
-        csv_path = save_dir / "results.csv"
+        csv_path = save_dir / 'results.csv'
         with open(csv_path, mode='w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(["image name", "prediction", "confidence score"])
+            csv_writer.writerow(['image name', 'prediction', 'confidence score'])
             for result in results:
                 csv_writer.writerow(result)
 
