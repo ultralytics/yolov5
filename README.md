@@ -320,9 +320,7 @@ python segment/predict.py --weights yolov5m-seg.pt --source data/images/bus.jpg
 ```
 
 ```python
-model = torch.hub.load(
-    "ultralytics/yolov5", "custom", "yolov5m-seg.pt"
-)  # load from PyTorch Hub (WARNING: inference not yet supported)
+model = torch.hub.load("ultralytics/yolov5", "custom", "yolov5m-seg.pt")  # load from PyTorch Hub (WARNING: inference not yet supported)
 ```
 
 | ![zidane](https://user-images.githubusercontent.com/26833433/203113421-decef4c4-183d-4a0a-a6c2-6435b33bc5d3.jpg) | ![bus](https://user-images.githubusercontent.com/26833433/203113416-11fe0025-69f7-4874-a0a6-65d0bfe2999a.jpg) |
