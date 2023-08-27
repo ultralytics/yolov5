@@ -35,7 +35,6 @@ import platform
 import sys
 from pathlib import Path
 
-import pandas as pd
 import torch
 
 FILE = Path(__file__).resolve()
