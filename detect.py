@@ -64,7 +64,7 @@ def run(
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=False,  # show results
         save_txt=False,  # save results to *.txt
-        save_in_csv=False,  # save results in CSV format
+        save_csv=False,  # save results in CSV format
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
         nosave=False,  # do not save images/videos
@@ -184,7 +184,7 @@ def run(
                     confidence = float(conf)
                     confidence_str = f'{confidence:.2f}'
 
-                    if save_in_csv:
+                    if save_csv:
                         write_to_csv(p.name, label, confidence_str)
 
                     if save_txt:  # Write to file
@@ -254,7 +254,7 @@ def parse_opt():
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--save-in-csv', action='store_true', help='save results in CSV format')
+    parser.add_argument('--save-csv', action='store_true', help='save results in CSV format')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
