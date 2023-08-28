@@ -51,3 +51,16 @@ that is considered a true positive.
 In each JSON we provide information about the bounding boxes detected in each input image.
 This allows us to evaluate the performance of an object detection model based on the ground truth and true positive 
 bounding boxes.
+
+## Database
+
+To access the database is necessary to create a `database.json` file inside the `database` folder.
+An example of the structure can be found in the folder under the name `database.example.json`.
+
+The file contains the following information:
+``` 
+    hostname:       hostname address of the database
+    username:       managed identity name in production
+    database_name
+    client_id:      client id of the managed identity
+```
