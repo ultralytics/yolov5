@@ -24,12 +24,12 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+
 import numpy as np
 import torch
-from tqdm import tqdm
-from datetime import datetime
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
+from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -38,7 +38,7 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from database.database_handler import DBConfigSQLAlchemy
-from database.tables import ImageProcessingStatus, DetectionInformation
+from database.tables import DetectionInformation, ImageProcessingStatus
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
@@ -66,6 +66,13 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 # Use the following repo for local run https://github.com/Computer-Vision-Team-Amsterdam/yolov5-local-docker
 LOCAL_RUN = False
+
+
+def is_area_positive(x1, y1, x2, y2):
+    if x1 == x2 or y1 == y2:
+        return False
+    return True
+
 
 def save_one_txt_and_one_json(predn, save_conf, shape, file, json_file, confusion_matrix):
     """
@@ -180,17 +187,15 @@ def run(
         callbacks=Callbacks(),
         compute_loss=None,
         tagged_data=False,
-        skip_evaluation=True,
+        skip_evaluation=False,
         save_blurred_image=False,
         customer_name='',
         run_id='default_run_id',
         db_username='',
         db_hostname='',
-        db_name=''
-        ):
+        db_name=''):
     # Initialize/load model and set device
     training = model is not None
-
     if training:  # called by train.py
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
         half &= device.type != 'cpu'  # half precision only supported on CUDA
@@ -204,7 +209,7 @@ def run(
             input_dir = Path('/container/landing_zone/input_structured/')
         else:
             save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-            input_dir = ""
+            input_dir = ''
 
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
         if tagged_data:
@@ -236,7 +241,7 @@ def run(
     if skip_evaluation:
         # Validate if database credentials are provided
         if not db_username or not db_name or not db_hostname:
-            raise ValueError("Please provide database credentials.")
+            raise ValueError('Please provide database credentials.')
 
         # Create a DBConfigSQLAlchemy object
         db_config = DBConfigSQLAlchemy(db_username, db_hostname, db_name)
@@ -255,7 +260,7 @@ def run(
 
         if skip_evaluation:
             # Define the processing statuses
-            processing_statuses = ["inprogress", "processed"]
+            processing_statuses = ['inprogress', 'processed']
 
             # Perform database operations using the 'session'
             # The session will be automatically closed at the end of this block
@@ -266,7 +271,7 @@ def run(
                         func.date(ImageProcessingStatus.image_upload_date).label('upload_date'),
                         ImageProcessingStatus.image_filename
                     ) \
-                    .filter(
+                        .filter(
                         ImageProcessingStatus.image_customer_name == customer_name,
                         ImageProcessingStatus.processing_status.in_(processing_statuses)
                     )
@@ -280,8 +285,8 @@ def run(
 
             # Extract the processed images from the result
             processed_images = [
-                f"{input_dir / row.upload_date / row.image_filename}" if input_dir else f"{row.upload_date}/{row.image_filename}"
-                for row in result]
+                f'{input_dir / row.upload_date / row.image_filename}'
+                if input_dir else f'{row.upload_date}/{row.image_filename}' for row in result]
         else:
             processed_images = []
 
@@ -307,12 +312,10 @@ def run(
                     image_filename, image_upload_date = DBConfigSQLAlchemy.extract_upload_date(image_path)
 
                     # Create a new instance of the ImageProcessingStatus model
-                    image_processing_status = ImageProcessingStatus(
-                        image_filename=image_filename,
-                        image_upload_date=image_upload_date,
-                        image_customer_name=customer_name,
-                        processing_status="inprogress"
-                    )
+                    image_processing_status = ImageProcessingStatus(image_filename=image_filename,
+                                                                    image_upload_date=image_upload_date,
+                                                                    image_customer_name=customer_name,
+                                                                    processing_status='inprogress')
 
                     # Add the instance to the session
                     session.add(image_processing_status)
@@ -331,7 +334,7 @@ def run(
     jdict, stats, ap, ap_class = [], [], [], []
     callbacks.run('on_val_start')
     pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
-    for batch_i, (im0, im, targets, paths, shapes) in enumerate(pbar):
+    for batch_i, (im, targets, paths, shapes, im_orig) in enumerate(pbar):
         callbacks.run('on_val_batch_start')
         if tagged_data:
             confusion_matrix = TaggedConfusionMatrix(nc=nc)
@@ -403,7 +406,7 @@ def run(
                 pred[:, 5] = 0
             predn = pred.clone()
             pred_clone = pred.clone()
-            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred # TODO this is doing nothing
+            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred (this changes predn)
 
             # Evaluate
             if not skip_evaluation:
@@ -441,55 +444,51 @@ def run(
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
             if save_blurred_image:
-                # TODO the following code contains a bug and will be fixed later
-                pred_clone[:, :4] = scale_boxes(im.shape[2:], pred_clone[:, :4],
-                                           im0[si].shape).round()
-
+                pred_clone[:, :4] = scale_boxes(im[si].shape[1:], pred_clone[:, :4], shape, shapes[si][1])
                 for *xyxy, conf, cls in pred_clone.tolist():
                     x1, y1 = int(xyxy[0]), int(xyxy[1])
                     x2, y2 = int(xyxy[2]), int(xyxy[3])
-                    area_to_blur = im0[si][y1:y2, x1:x2]
 
-                    blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
-                    im0[si][y1:y2, x1:x2] = blurred
+                    if is_area_positive(x1, y1, x2, y2):
+                        area_to_blur = im_orig[si][y1:y2, x1:x2]
+                        blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
+                        im_orig[si][y1:y2, x1:x2] = blurred
 
-                    if skip_evaluation:
-                        # Get variables to later insert into the database
-                        image_filename, image_upload_date = \
-                            DBConfigSQLAlchemy.extract_upload_date(paths[si])
+                        if skip_evaluation:
+                            # Get variables to later insert into the database
+                            image_filename, image_upload_date = \
+                                DBConfigSQLAlchemy.extract_upload_date(paths[si])
 
-                        # Perform database operations using the 'session'
-                        # The session will be automatically closed at the end of this block
-                        with db_config.managed_session() as session:
-                            # Create an instance of DetectionInformation
-                            detection_info = DetectionInformation(
-                                image_customer_name=customer_name,
-                                image_upload_date=image_upload_date,
-                                image_filename=image_filename,
-                                has_detection=True,
-                                class_id=int(cls),
-                                x_norm=x1,
-                                y_norm=y1,
-                                w_norm=x2,
-                                h_norm=y2,
-                                image_width=image_width,
-                                image_height=image_height,
-                                run_id=run_id
-                            )
+                            # Perform database operations using the 'session'
+                            # The session will be automatically closed at the end of this block
+                            with db_config.managed_session() as session:
+                                # Create an instance of DetectionInformation
+                                detection_info = DetectionInformation(image_customer_name=customer_name,
+                                                                      image_upload_date=image_upload_date,
+                                                                      image_filename=image_filename,
+                                                                      has_detection=True,
+                                                                      class_id=int(cls),
+                                                                      x_norm=x1,
+                                                                      y_norm=y1,
+                                                                      w_norm=x2,
+                                                                      h_norm=y2,
+                                                                      image_width=image_width,
+                                                                      image_height=image_height,
+                                                                      run_id=run_id)
 
-                            # Add the instance to the session
-                            session.add(detection_info)
+                                # Add the instance to the session
+                                session.add(detection_info)
 
-                            # Create a new instance of the ImageProcessingStatus model
-                            image_processing_status = ImageProcessingStatus(
-                                image_filename=image_filename,
-                                image_upload_date=image_upload_date,
-                                image_customer_name=customer_name,
-                                processing_status="processed"
-                            )
+                                # Create a new instance of the ImageProcessingStatus model
+                                image_processing_status = ImageProcessingStatus(image_filename=image_filename,
+                                                                                image_upload_date=image_upload_date,
+                                                                                image_customer_name=customer_name,
+                                                                                processing_status='processed')
 
-                            # Merge the instance into the session (updates if already exists)
-                            session.merge(image_processing_status)
+                                # Merge the instance into the session (updates if already exists)
+                                session.merge(image_processing_status)
+                    else:
+                        LOGGER.warning('Area to blur is 0.')
 
                 folder_path = os.path.dirname(save_path)
                 if not os.path.exists(folder_path):
@@ -497,7 +496,7 @@ def run(
 
                 if not cv2.imwrite(
                         save_path,
-                        im0[si],
+                        im_orig[si],
                 ):
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
 
@@ -513,39 +512,41 @@ def run(
                     image_filename, image_upload_date = DBConfigSQLAlchemy.extract_upload_date(false_path)
 
                     # Create an instance of DetectionInformation
-                    detection_info = DetectionInformation(
-                        image_customer_name=customer_name,
-                        image_upload_date=image_upload_date,
-                        image_filename=image_filename,
-                        has_detection=False,
-                        class_id=None,
-                        x_norm=None,
-                        y_norm=None,
-                        w_norm=None,
-                        h_norm=None,
-                        image_width=None,
-                        image_height=None,
-                        run_id=run_id
-                    )
+                    detection_info = DetectionInformation(image_customer_name=customer_name,
+                                                          image_upload_date=image_upload_date,
+                                                          image_filename=image_filename,
+                                                          has_detection=False,
+                                                          class_id=None,
+                                                          x_norm=None,
+                                                          y_norm=None,
+                                                          w_norm=None,
+                                                          h_norm=None,
+                                                          image_width=None,
+                                                          image_height=None,
+                                                          run_id=run_id)
 
                     # Add the instance to the session
                     session.add(detection_info)
 
                     # Create a new instance of the ImageProcessingStatus model
-                    image_processing_status = ImageProcessingStatus(
-                        image_filename=image_filename,
-                        image_upload_date=image_upload_date,
-                        image_customer_name=customer_name,
-                        processing_status="processed"
-                    )
+                    image_processing_status = ImageProcessingStatus(image_filename=image_filename,
+                                                                    image_upload_date=image_upload_date,
+                                                                    image_customer_name=customer_name,
+                                                                    processing_status='processed')
 
                     # Merge the instance into the session (updates if already exists)
                     session.merge(image_processing_status)
 
         # Plot images
-        if plots and not skip_evaluation:
-            plot_images(im, targets, paths, save_dir / f'{path.stem}.jpg', names)  # labels
-            plot_images(im, output_to_target(preds), paths, save_dir / f'{path.stem}_pred.jpg', names)  # pred
+        if plots:
+            plot_images(im, targets, paths, save_dir / f'{path.stem}_labelled.jpg', names,
+                        conf_thres=conf_thres)  # labels
+            plot_images(im,
+                        output_to_target(preds),
+                        paths,
+                        save_dir / f'{path.stem}_pred.jpg',
+                        names,
+                        conf_thres=conf_thres)  # pred
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
@@ -609,7 +610,6 @@ def run(
         except Exception as e:
             LOGGER.info(f'pycocotools unable to run: {e}')
 
-
     # Return results
     model.float()  # for training
     if not training:
@@ -626,7 +626,11 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default='/container/landing_zone/pano.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default='/container/landing_zone/best.pt', help='model path(s)')
+    parser.add_argument('--weights',
+                        nargs='+',
+                        type=str,
+                        default='/container/landing_zone/best.pt',
+                        help='model path(s)')
     parser.add_argument('--batch-size', type=int, default=4, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
@@ -650,8 +654,14 @@ def parse_opt():
     parser.add_argument('--tagged-data', action='store_true', help='use tagged validation')
     parser.add_argument('--skip-evaluation', action='store_true', help='ignore code parts for production')
     parser.add_argument('--save-blurred-image', action='store_true', help='save blurred images')
-    parser.add_argument('--customer-name', type=str, default='example_customer', help='the customer for which we process the images')
-    parser.add_argument('--run-id', type=str, default='default_run_id', help='the run id generated by Azure Machine Learning')
+    parser.add_argument('--customer-name',
+                        type=str,
+                        default='example_customer',
+                        help='the customer for which we process the images')
+    parser.add_argument('--run-id',
+                        type=str,
+                        default='default_run_id',
+                        help='the run id generated by Azure Machine Learning')
     parser.add_argument('--db-username', type=str, default='', help='database username')
     parser.add_argument('--db-hostname', type=str, default='', help='database hostname')
     parser.add_argument('--db-name', type=str, default='', help='database name')
@@ -665,10 +675,7 @@ def parse_opt():
 
 def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
-
     if opt.task in ('train', 'val', 'test'):  # run normally
-        if opt.skip_evaluation:
-            opt.conf_thres, opt.iou_thres = 0.25, 0.45
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
             LOGGER.info(f'WARNING ⚠️ confidence threshold {opt.conf_thres} > 0.001 produces invalid results')
         if opt.save_hybrid:
