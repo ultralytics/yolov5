@@ -171,15 +171,16 @@ def create_dataloader(path,
     generator = torch.Generator()
     generator.manual_seed(6148914691236517205 + seed + RANK)
 
-    return dataset.im_files, loader(dataset,
-                  batch_size=batch_size,
-                  shuffle=shuffle and sampler is None,
-                  num_workers=nw,
-                  sampler=sampler,
-                  pin_memory=PIN_MEMORY,
-                  collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn,
-                  worker_init_fn=seed_worker,
-                  generator=generator), dataset
+    return dataset.im_files, loader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle and sampler is None,
+        num_workers=nw,
+        sampler=sampler,
+        pin_memory=PIN_MEMORY,
+        collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn,
+        worker_init_fn=seed_worker,
+        generator=generator), dataset
 
 
 class InfiniteDataLoader(dataloader.DataLoader):
@@ -476,7 +477,7 @@ class LoadImagesAndLabels(Dataset):
                  img_size=640,
                  batch_size=16,
                  processed_images=[],
-                 input_dir="",
+                 input_dir='',
                  augment=False,
                  hyp=None,
                  rect=False,
@@ -510,7 +511,8 @@ class LoadImagesAndLabels(Dataset):
                         # Read contents of txt file
                         t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
-                        f += [x.replace('./', parent, 1) if x.startswith('./') else input_dir + x for x in t]  # to global path
+                        f += [x.replace('./', parent, 1) if x.startswith('./') else input_dir + x
+                              for x in t]  # to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # to global path (pathlib)
 
                 else:
@@ -520,7 +522,8 @@ class LoadImagesAndLabels(Dataset):
 
             # Create a list of images to be processed that are not in the list of processed images
             # processed_images are all the images in the database that have the label "inprogress" or "processed"
-            self.im_files = [image for image in images_to_process if extract_folder_and_filename(image) not in processed_images]
+            self.im_files = [
+                image for image in images_to_process if extract_folder_and_filename(image) not in processed_images]
 
             if not self.im_files:
                 raise Exception(f'{prefix}No (new) images found')
@@ -629,7 +632,7 @@ class LoadImagesAndLabels(Dataset):
                 if cache_images == 'disk':
                     b += self.npy_files[i].stat().st_size
                 else:  # 'ram'
-                    self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i] = x  # im, hw_orig, hw_resized, im_orig = load_image(self, i)
+                    self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i] = x
                     b += self.ims[i].nbytes
                     b += self.ims_orig[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images})'
@@ -708,7 +711,7 @@ class LoadImagesAndLabels(Dataset):
             # Raise an exception to indicate that the 'mosaic' hyperparameter is not supported
             raise NotImplementedError(
                 "The 'mosaic' augmentation technique is not supported by our current implementation. "
-                "Please consider using other augmentation techniques.")
+                'Please consider using other augmentation techniques.')
 
             # Load mosaic
             img, labels = self.load_mosaic(index)
@@ -791,8 +794,8 @@ class LoadImagesAndLabels(Dataset):
             if r != 1:  # if sizes are not equal
                 interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
                 im = cv2.resize(im, (math.ceil(w0 * r), math.ceil(h0 * r)), interpolation=interp)
-            return im, (h0, w0), im.shape[:2], im_orig  # im, hw_original, hw_resized
-        return self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i]  # im, hw_original, hw_resized, ims_orig
+            return im, (h0, w0), im.shape[:2], im_orig
+        return self.ims[i], self.im_hw0[i], self.im_hw[i], self.ims_orig[i]
 
     def cache_images_to_disk(self, i):
         # Saves an image as an *.npy file for faster loading
