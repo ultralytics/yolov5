@@ -295,7 +295,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, con
                 cls = classes[j]
                 color = colors(cls)
                 cls = names[cls] if names else cls
-                if labels or conf[j] > conf_thres:  # 0.25 conf thresh
+                if labels or conf[j] > conf_thres:
                     label = f'{cls}' if labels else f'{cls} {conf[j]:.1f}'
                     annotator.box_label(box, label, color=color)
     annotator.im.save(fname)  # save
