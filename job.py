@@ -24,6 +24,7 @@ workspace_name = config['workspace_name']
 gpu_compute_target = config['gpu_compute_target']
 custom_env_name = config['custom_env_name']
 azure_ds_path = config['azure_ds_path']
+data_yaml_path = config['data']
 experiment_name = config['project']
 display_name = config['name']
 
@@ -43,13 +44,14 @@ job = command(
             type = "uri_folder", 
             path = azure_ds_path
         ),
+        data_yaml_path = data_yaml_path
     ),
     compute=gpu_compute_target,
     environment=custom_env_name,
     code=".",  # location of source code
     command="""
     echo "The data asset path is ${{ inputs.data }}" && 
-    sed -i "s|path:.*$|path: ${{ inputs.data }}|" data/lossrun-ca.yaml &&
+    sed -i "s|path:.*$|path: ${{ inputs.data }}|" ${{ inputs.data_yaml_path }} &&
     python train.py
      """,
     experiment_name=experiment_name,
