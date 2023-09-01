@@ -1,0 +1,48 @@
+weights: yolov5x6.pt  # initial weights path
+cfg: ''  # model.yaml path
+data: data/lossrun-ca.yaml  # dataset.yaml path
+hyp: data/hyps/hyp.scratch-low.yaml
+epochs: 100  # total training epochs
+batch_size: 4  # total batch size for all GPUs, -1 for autobatch
+imgsz: 1280  # train, val image size (pixels)
+rect: false  # rectangular training
+resume: false  # resume most recent training
+nosave: false  # only save final checkpoint
+noval: false  # only validate final epoch
+noautoanchor: false  # disable AutoAnchor
+noplots: false  # save no plot files
+evolve: null  # evolve hyperparameters for x generations
+bucket: ''  # gsutil bucket
+cache: null  # image --cache ram/disk
+image_weights: true  # use weighted image selection for training
+device: ''  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+multi_scale: false  # vary img-size +/- 50%
+single_cls: false  # train multi-class data as single-class
+optimizer: SGD  # optimizer
+sync_bn: false  # use SyncBatchNorm, only available in DDP mode
+workers: 8  # max dataloader workers (per RANK in DDP mode)
+project: loss-run  # save to project/name (used by azure-mlflow to select the job project)
+name: yolov5x6-all-groupsubtable  # save to project/name
+exist_ok: false  # existing project/name ok, do not increment
+quad: false  # quad dataloader
+cos_lr: false  # cosine LR scheduler
+label_smoothing: 0.0  # Label smoothing epsilon
+patience: 100  # EarlyStopping patience (epochs without improvement)
+freeze:  # Freeze layers: backbone=10, first3=0 1 2
+  - 0
+save_period: 5  # Save checkpoint every x epochs (disabled if < 1)
+seed: 0  # Global training seed
+local_rank: -1  # Automatic DDP Multi-GPU argument, do not modify
+
+# Logger arguments
+entity: null  # Entity
+upload_dataset: false  # Upload data, "val" option
+bbox_interval: -1  # Set
+
+# azure related fields
+azure_ds_path: azureml:lossrun-commercial-auto:1
+gpu_compute_target: pibit-ml-gpu-cluster-4
+custom_env_name: yolov5:2
+subscription_id: 1624f396-38c4-45b2-bbba-297435c2d313
+resource_group_name: pibit-machine-learning
+workspace_name: pibit-machine-learning-ws

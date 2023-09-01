@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pibit.fullname" . }}
+  labels:
+  {{- include "pibit.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector: 
+  {{- include "pibit.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.service.targetPort }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP

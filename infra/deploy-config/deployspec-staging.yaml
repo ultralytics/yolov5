@@ -1,0 +1,38 @@
+# make sure to add permission in Kubernetes auth config-map
+# expected:
+# this file location: infra/deploy-config/
+# helm location: infra/helm
+# helm values files: values.yaml values-dev.yaml values-prod.yaml values-staging.yaml
+
+# Test output script
+# helm template <repo name> -f values.yaml -f values-staging.yaml -f values-dev.yaml -f values-prod.yaml --set image.tag=<image tag> .
+
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - GIT_REPO_NAME=`cat infra/helm/Chart.yaml | grep "name.*:" | cut -d ' ' -f2 | tr -d ' '`
+      - echo ${GIT_REPO_NAME}
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
+      - chmod +x kubectl
+      - mv ./kubectl /usr/local/bin/kubectl
+      - curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
+      - chmod 700 get_helm.sh
+      - ./get_helm.sh --version v3.8.2
+  pre_build:
+    commands:
+      - REGION=ap-south-1
+      - EKS_CLUSTER_NAME=dev-eks-india
+      - COMMIT_ID_SHORT=`echo "${CODEBUILD_RESOLVED_SOURCE_VERSION}" | cut -c1-7`
+      - TAG=`cat infra/helm/Chart.yaml | grep "^version.*:" | cut -d ' ' -f2 | tr -d ' '`-$COMMIT_ID_SHORT
+      - echo ${TAG}
+      - aws eks --region ${REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+      - kubectl get nodes
+  build:
+    commands:
+      - cd infra/helm
+      - helm upgrade --install --namespace staging ${GIT_REPO_NAME} -f values.yaml -f values-staging.yaml --set image.tag=${TAG} .
+  post_build:
+    commands:
+      - echo Done!!

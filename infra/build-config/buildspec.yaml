@@ -1,0 +1,50 @@
+# make sure following present at the root of the project:
+# Dockerfile
+# change SSM variables and give env variables to docker build
+
+version: 0.2
+
+env:
+  variables:
+    PRODUCT: lossrun
+    USECASE: commercial-auto
+    BUCKET: pibit-dev-model-weights
+  parameter-store:
+    GITHUB_USERNAME: /CodeBuild/GITHUB_USERNAME
+    GITHUB_PAT: /CodeBuild/GITHUB_PAT
+    ACCESS_KEY_ID: /ServiceAccount/ACCESS_KEY_ID
+    ACCESS_KEY: /ServiceAccount/ACCESS_KEY
+    
+
+
+phases:
+  pre_build:
+    on-failure: ABORT
+    commands:
+      - GIT_REPO_NAME=`cat infra/helm/Chart.yaml | grep "name.*:" | cut -d ' ' -f2 | tr -d ' '`
+      - echo ${GIT_REPO_NAME}
+      - ECR_URL=748276930737.dkr.ecr.ap-south-1.amazonaws.com
+      - REGION=ap-south-1
+      - COMMIT_ID_SHORT=`echo "${CODEBUILD_RESOLVED_SOURCE_VERSION}" | cut -c1-7`
+      - TAG=`cat infra/helm/Chart.yaml | grep "^version.*:" | cut -d ' ' -f2 | tr -d ' '`-$COMMIT_ID_SHORT
+      - echo ${TAG}
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin ${ECR_URL}
+  build:
+    on-failure: ABORT
+    commands:
+      - |
+        docker build -t ${GIT_REPO_NAME}:${TAG} \
+          --build-arg GIT_USERNAME=$GITHUB_USERNAME \
+          --build-arg GIT_PAT=$GITHUB_PAT \
+          --build-arg ACCESS_KEY_ID=$ACCESS_KEY_ID \
+          --build-arg SECRET_ACCESS_KEY=$ACCESS_KEY \
+          --build-arg PRODUCT=$PRODUCT \
+          --build-arg USECASE=$USECASE \
+          --build-arg BUCKET=$BUCKET .
+      - docker tag ${GIT_REPO_NAME}:${TAG} ${ECR_URL}/prod-${GIT_REPO_NAME}:${TAG}
+  post_build:
+    on-failure: ABORT
+    commands:
+      - docker push ${ECR_URL}/prod-${GIT_REPO_NAME}:${TAG}
+      - echo "${ECR_URL}/prod-${GIT_REPO_NAME}:${TAG}"
+      - echo "Everything done !!!"

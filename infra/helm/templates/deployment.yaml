@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pibit.fullname" . }}
+  labels:
+    {{- include "pibit.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "pibit.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "pibit.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.serviceAccountName }}
+      serviceAccountName: {{ . }}
+    {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+          - name: NVIDIA_DRIVER_CAPABILITIES
+            value: utility,compute
+          - name: NVIDIA_VISIBLE_DEVICES
+            value: all          
+        {{- if or .Values.secrets .Values.configMap }}
+          envFrom:
+          {{- range .Values.secrets }}
+          - secretRef:
+              name: {{ . }}
+          {{- end }}
+          {{- range .Values.configMap }}
+          - configMapRef:
+              name: {{ . }}
+          {{- end }}
+        {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path | default "/health" }}
+              port: {{ .Values.livenessProbe.port | default .Values.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probe.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .Values.probe.periodSeconds | default 60 }}
+            failureThreshold: {{ .Values.probe.failureThreshold | default 3 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path | default "/health" }}
+              port: {{ .Values.readinessProbe.port | default .Values.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probe.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .Values.probe.periodSeconds | default 60 }}
+            failureThreshold: {{ .Values.probe.failureThreshold | default 3 }}
+            timeoutSeconds: {{ .Values.probe.timeoutSeconds | default 90 }}
+            successThreshold: {{ .Values.probe.successThreshold | default 2 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.probe.terminationGracePeriodSeconds | default 60 }}

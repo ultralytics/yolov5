@@ -1,0 +1,10 @@
+# Exact git repo name.
+# The chart name, git repo name and release name all are the same
+name: lossrun-ca-model
+
+version: 0.0.1
+annotations:
+  prodVersion: "0.0.1-e399f64"
+
+# Helm v3 version
+apiVersion: v2
