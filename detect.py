@@ -139,18 +139,14 @@ def run(
 
         # Define the path for the CSV file
         csv_path = save_dir / 'predictions.csv'
-
         # Create or append to the CSV file
         def write_to_csv(image_name, prediction, confidence):
             data = {'Image Name': image_name, 'Prediction': prediction, 'Confidence': confidence}
-            if not csv_path.is_file():
-                with open(csv_path, mode='w', newline='') as f:
-                    writer = csv.DictWriter(f, fieldnames=data.keys())
+            with open(csv_path, mode='a', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=data.keys())
+                if not csv_path.is_file():
                     writer.writeheader()
-            else:
-                with open(csv_path, mode='a', newline='') as f:
-                    writer = csv.DictWriter(f, fieldnames=data.keys())
-                    writer.writerow(data)
+                writer.writerow(data)
 
         # Process predictions
         for i, det in enumerate(pred):  # per image
