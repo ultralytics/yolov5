@@ -139,6 +139,7 @@ def run(
 
         # Define the path for the CSV file
         csv_path = save_dir / 'predictions.csv'
+
         # Create or append to the CSV file
         def write_to_csv(image_name, prediction, confidence):
             data = {'Image Name': image_name, 'Prediction': prediction, 'Confidence': confidence}
