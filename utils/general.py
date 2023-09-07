@@ -35,6 +35,8 @@ import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
+from blurring_as_a_service.settings.settings import BlurringAsAServiceSettings
+from blurring_as_a_service.utils.logging_handler import setup_azure_logging_from_config
 
 from utils import TryExcept, emojis
 from utils.downloads import curl_download, gsutil_getsize
@@ -43,6 +45,13 @@ from utils.metrics import box_iou, fitness
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 RANK = int(os.getenv('RANK', -1))
+
+# Instantiate the logger
+config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'config.yml'))
+BlurringAsAServiceSettings.set_from_yaml(config_path)
+settings = BlurringAsAServiceSettings.get_settings()
+setup_azure_logging_from_config(settings['logging'])
+LOGGER = logging.getLogger('__main__')
 
 # Settings
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
