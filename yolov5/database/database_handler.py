@@ -45,7 +45,7 @@ class DBConfigSQLAlchemy:
         # Convert the expiration time string to a datetime object
         self.token_expiration_time = datetime.strptime(expires_on_str, "%Y-%m-%d %H:%M:%S.%f")
 
-    def _get_database_connection_string(self):
+    def _get_db_connection_string(self):
         # Get the connection string for the PostgreSQL database.
 
         # Production run, load credentials from the JSON file
