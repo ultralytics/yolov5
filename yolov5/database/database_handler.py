@@ -25,10 +25,10 @@ class DBConfigSQLAlchemy:
         self.token_expiration_time = None
         self.token_renewal_margin = timedelta(minutes=5)  # Set the token renewal margin
 
-    def _get_db_access_token(self):
+    def _get_db_access_token(self, client_id):
         # Authenticate using Managed Identity (MSI)
         try:
-            command = ["az", "login"]
+            command = ["az", "login", "--identity", "--username", client_id]
             subprocess.check_call(command)
         except subprocess.CalledProcessError as e:
             LOGGER.info("Error during 'az login --identity': {e}")
@@ -45,12 +45,20 @@ class DBConfigSQLAlchemy:
         # Convert the expiration time string to a datetime object
         self.token_expiration_time = datetime.strptime(expires_on_str, "%Y-%m-%d %H:%M:%S.%f")
 
-    def _get_db_connection_string(self):
+    def _get_database_connection_string(self):
         # Get the connection string for the PostgreSQL database.
-        # Get the password using the client_id from a secure source
-        self._get_db_access_token()
 
-        db_url = f"postgresql://{self.db_username}:{self.access_token}@{self.db_hostname}/{self.db_name}"
+        # Production run, load credentials from the JSON file
+        with open('database.json') as f:
+            config = json.load(f)
+
+        # Retrieve values from the JSON
+        client_id = config["client_id"]  # TODO get this from the Managed Identity name in code
+
+        # Get the password using the client_id from a secure source
+        password = self._get_db_access_token(client_id)
+
+        db_url = f"postgresql://{self.db_username}:{password}@{self.db_hostname}/{self.db_name}"
 
         return db_url
 
