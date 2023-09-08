@@ -56,9 +56,9 @@ class DBConfigSQLAlchemy:
         client_id = config["client_id"]  # TODO get this from the Managed Identity name in code
 
         # Get the password using the client_id from a secure source
-        password = self._get_db_access_token(client_id)
+        self._get_db_access_token(client_id)
 
-        db_url = f"postgresql://{self.db_username}:{password}@{self.db_hostname}/{self.db_name}"
+        db_url = f"postgresql://{self.db_username}:{self.access_token}@{self.db_hostname}/{self.db_name}"
 
         return db_url
 
