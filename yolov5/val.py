@@ -552,10 +552,6 @@ def run(
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
-    if skip_evaluation:
-        # Close the DB connection
-        db_config.close_connection()
-
     # Compute metrics
     if not skip_evaluation:
         stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
