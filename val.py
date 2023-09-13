@@ -538,7 +538,7 @@ def run(
                     session.merge(image_processing_status)
 
         # Plot images
-        if plots:
+        if plots and not skip_evaluation:
             plot_images(im, targets, paths, save_dir / f'{path.stem}_labelled.jpg', names,
                         conf_thres=conf_thres)  # labels
             plot_images(im,
