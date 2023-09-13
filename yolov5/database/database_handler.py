@@ -23,7 +23,7 @@ class DBConfigSQLAlchemy:
         self.db_name = db_name
         self.access_token = None
         self.token_expiration_time = None
-        self.token_renewal_margin = timedelta(minutes=5)  # Set the token renewal margin
+        self.token_renewal_margin = timedelta(minutes=5)
 
     def _get_db_access_token(self, client_id):
         # Authenticate using Managed Identity (MSI)
@@ -96,7 +96,6 @@ class DBConfigSQLAlchemy:
 
     def close_connection(self):
         try:
-            # Dispose the engine
             self.engine.dispose()
         except SQLAlchemyError as e:
             LOGGER.info(f"Error disposing the database engine: {str(e)}")
