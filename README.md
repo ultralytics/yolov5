@@ -1,6 +1,23 @@
 Forked Yolov5 repository to be used by Computer Vision Team.
 See the README of Yolov5 [here](YOLOv5_README.md).
 
+## Development
+
+#### 1. Clone the code
+
+```bash
+git clone git@github.com:Computer-Vision-Team-Amsterdam/yolov5.git
+```
+
+#### 2. Install Poetry
+If you don't have it yet, follow the instructions [here](https://python-poetry.org/docs/#installation) to install the package manager Poetry.
+
+#### 3. Install dependencies
+In the terminal, navigate to the project root (the folder containing `pyproject.toml`), then use Poetry to create a new virtual environment and install the dependencies.
+
+```bash
+poetry install
+```
 ### Modifications 
 
 #### Tagged validation
