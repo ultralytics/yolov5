@@ -116,9 +116,6 @@ class DBConfigSQLAlchemy:
         return image_filename, image_upload_date
 
     def validate_token_status(self):
-        print("jm")
-        print(self.token_expiration_time)
-        print(datetime.now())
         if self.token_expiration_time < datetime.now():
             # Renew the token after the sleep
             self._get_db_access_token()
