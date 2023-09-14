@@ -1,8 +1,6 @@
 import subprocess
 import json
 from contextlib import contextmanager
-import time
-from threading import Thread
 
 from sqlalchemy import create_engine, Column, String, Boolean, Date, Integer, Float
 from sqlalchemy.orm import sessionmaker
@@ -43,7 +41,8 @@ class DBConfigSQLAlchemy:
         self.access_token = token_info["accessToken"]
         expires_on_str = token_info["expiresOn"]
         # Convert the expiration time string to a datetime object
-        self.token_expiration_time = datetime.strptime(expires_on_str, "%Y-%m-%d %H:%M:%S.%f")
+        token_expiration_time = datetime.strptime(expires_on_str, "%Y-%m-%d %H:%M:%S.%f")
+        self.token_expiration_time = token_expiration_time - self.token_renewal_margin
 
     def _get_db_connection_string(self):
         # Get the connection string for the PostgreSQL database.
@@ -116,24 +115,11 @@ class DBConfigSQLAlchemy:
 
         return image_filename, image_upload_date
 
-    def _renew_token_periodically(self):
-        while True:
-            # Calculate the time to renew the token
-            renew_time = self.token_expiration_time - self.token_renewal_margin
-
-            # Sleep until the renewal time
-            sleep_time = (renew_time - datetime.now()).total_seconds()
-            if sleep_time > 0:
-                LOGGER.info(f"Sleeping for {sleep_time} seconds until token renewal.")
-                time.sleep(sleep_time)
-
+    def validate_token_status(self):
+        print("jm")
+        print(self.token_expiration_time)
+        print(datetime.now())
+        if self.token_expiration_time < datetime.now():
             # Renew the token after the sleep
             self._get_db_access_token()
             LOGGER.info("Token for database renewed.")
-
-    def start_token_renewal_thread(self):
-        # TODO will this have conflicts with the threads used by YOLOv5?
-        # Start a thread to renew the token periodically
-        token_renewal_thread = Thread(target=self._renew_token_periodically)
-        token_renewal_thread.daemon = True
-        token_renewal_thread.start()

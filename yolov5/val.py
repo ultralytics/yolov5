@@ -261,6 +261,8 @@ def run(
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
 
         if skip_evaluation:
+            db_config.validate_token_status() # TODO only in the inference for loop?
+
             # Define the processing statuses
             processing_statuses = ['inprogress', 'processed']
 
@@ -305,6 +307,8 @@ def run(
                                                        prefix=colorstr(f'{task}: '))
 
         if skip_evaluation:
+            db_config.validate_token_status() # TODO only in the inference for loop
+
             # Perform database operations using the 'session'
             # The session will be automatically closed at the end of this block
             with db_config.managed_session() as session:
@@ -457,6 +461,8 @@ def run(
                         im_orig[si][y1:y2, x1:x2] = blurred
 
                         if skip_evaluation:
+                            db_config.validate_token_status() # TODO is this the right location? or line 453
+
                             # Get variables to later insert into the database
                             image_filename, image_upload_date = \
                                 DBConfigSQLAlchemy.extract_upload_date(paths[si])
@@ -503,6 +509,8 @@ def run(
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
 
         if skip_evaluation:
+            db_config.validate_token_status()
+
             # Filter and iterate over paths with no detection in current batch
             false_paths = [path for path in image_detections if not image_detections[path]]
 
