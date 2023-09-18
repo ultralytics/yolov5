@@ -83,6 +83,9 @@ class DBConfigSQLAlchemy:
 
     @contextmanager
     def managed_session(self):
+        # Validate if the token is still valid
+        self._validate_token_status()
+
         session = self._get_session()
         try:
             yield session  # This line yields the 'session' to the with block.
@@ -115,8 +118,8 @@ class DBConfigSQLAlchemy:
 
         return image_filename, image_upload_date
 
-    def validate_token_status(self):
+    def _validate_token_status(self):
         if self.token_expiration_time < datetime.now():
-            # Renew the token after the sleep
+            # Renew the token
             self._get_db_access_token()
             LOGGER.info("Token for database renewed.")
