@@ -27,4 +27,3 @@ mkdir -p $d && cd $d
 # Download/unzip train
 wget https://github.com/ultralytics/yolov5/releases/download/v1.0/imagenet10.zip
 unzip imagenet10.zip && rm imagenet10.zip
-
