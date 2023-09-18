@@ -247,8 +247,6 @@ def run(
         db_config = DBConfigSQLAlchemy(db_username, db_hostname, db_name)
         # Create the database connection
         db_config.create_connection()
-        # Start the token renewal thread
-        db_config.start_token_renewal_thread()
 
     # Dataloader
     if not training:
