@@ -465,7 +465,6 @@ def run(
                             image_filename, image_upload_date = \
                                 DBConfigSQLAlchemy.extract_upload_date(paths[si])
 
-                            # Perform database operations using the 'session'
                             # The session will be automatically closed at the end of this block
                             with db_config.managed_session() as session:
                                 # Create an instance of DetectionInformation
@@ -512,7 +511,6 @@ def run(
             # Filter and iterate over paths with no detection in current batch
             false_paths = [path for path in image_detections if not image_detections[path]]
 
-            # Perform database operations using the 'session'
             # The session will be automatically closed at the end of this block
             with db_config.managed_session() as session:
                 # Process images with no detection
