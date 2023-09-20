@@ -37,8 +37,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from database.database_handler import DBConfigSQLAlchemy
-from database.tables import DetectionInformation, ImageProcessingStatus
+from baas_utils.database_handler import DBConfigSQLAlchemy
+from baas_utils.database_tables import DetectionInformation, ImageProcessingStatus
+from baas_utils.parse import extract_upload_date
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
@@ -309,7 +310,7 @@ def run(
                 # Lock the images that we are processing in this run with the state "inprogress"
                 for image_path in image_files:
                     # Get variables to later insert into the database
-                    image_filename, image_upload_date = DBConfigSQLAlchemy.extract_upload_date(image_path)
+                    image_filename, image_upload_date = extract_upload_date(image_path)
 
                     # Create a new instance of the ImageProcessingStatus model
                     image_processing_status = ImageProcessingStatus(image_filename=image_filename,
