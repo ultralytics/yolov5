@@ -16,3 +16,9 @@ def extract_upload_date(path):
         raise e
 
     return image_filename, image_upload_date
+
+
+def get_current_time():
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")  # Format the datetime as a string
+    return current_time_str

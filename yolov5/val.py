@@ -30,6 +30,7 @@ import torch
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from tqdm import tqdm
+from datetime import datetime
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -38,8 +39,10 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from baas_utils.database_handler import DBConfigSQLAlchemy
-from baas_utils.database_tables import DetectionInformation, ImageProcessingStatus
-from baas_utils.parse import extract_upload_date
+from baas_utils.database_tables import DetectionInformation, ImageProcessingStatus, BatchRunInformation
+from baas_utils.date_utils import extract_upload_date, get_current_time
+from baas_utils.error_handling import exception_handler
+
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
@@ -157,6 +160,7 @@ def process_batch(detections, labels, iouv):
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
 
 
+@exception_handler
 @smart_inference_mode()
 def run(
         data,
@@ -194,7 +198,8 @@ def run(
         run_id='default_run_id',
         db_username='',
         db_hostname='',
-        db_name=''):
+        db_name='',
+        start_time=''):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -457,8 +462,7 @@ def run(
 
                         if skip_evaluation:
                             # Get variables to later insert into the database
-                            image_filename, image_upload_date = \
-                                DBConfigSQLAlchemy.extract_upload_date(paths[si])
+                            image_filename, image_upload_date = extract_upload_date(paths[si])
 
                             # The session will be automatically closed at the end of this block
                             with db_config.managed_session() as session:
@@ -508,7 +512,7 @@ def run(
             with db_config.managed_session() as session:
                 # Process images with no detection
                 for false_path in false_paths:
-                    image_filename, image_upload_date = DBConfigSQLAlchemy.extract_upload_date(false_path)
+                    image_filename, image_upload_date = extract_upload_date(false_path)
 
                     # Create an instance of DetectionInformation
                     detection_info = DetectionInformation(image_customer_name=customer_name,
@@ -614,6 +618,27 @@ def run(
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
     if skip_evaluation:
+        try:
+            trained_yolo_model = os.path.split(weights)[-1]
+        except Exception as e:
+            print(f"Error while getting trained_yolo_model name: {str(e)}")
+            trained_yolo_model = ""
+
+        # Perform database operations using the 'session'
+        # The session will be automatically closed at the end of this block
+        with db_config.managed_session() as session:
+            # Create an instance of BatchRunInformation
+            batch_info = BatchRunInformation(run_id=run_id,
+                                             start_time=start_time,
+                                             end_time=get_current_time(),
+                                             trained_yolo_model=trained_yolo_model,
+                                             success=True,
+                                             error_code=None)
+
+            # Add the instance to the session
+            session.add(batch_info)
+
+    if skip_evaluation:
         return (mp, mr, map50, map, []), maps, t
     return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
@@ -660,6 +685,8 @@ def parse_opt():
     parser.add_argument('--db-username', type=str, default='', help='database username')
     parser.add_argument('--db-hostname', type=str, default='', help='database hostname')
     parser.add_argument('--db-name', type=str, default='', help='database name')
+    parser.add_argument('--trained-yolo-model', type=str, help='trained yolo model')
+    parser.add_argument('--start-time', type=str, help='start time of the Azure ML job')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')

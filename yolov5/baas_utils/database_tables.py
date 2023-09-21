@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Boolean, Date, Integer, Float
 from .database_handler import DBConfigSQLAlchemy
 
+
 class ImageProcessingStatus(DBConfigSQLAlchemy.Base):
     __tablename__ = 'image_processing_status'
     __table_args__ = {'schema': 'private_schema_blur'}  # Add the schema here
@@ -12,7 +13,7 @@ class ImageProcessingStatus(DBConfigSQLAlchemy.Base):
 
 
 class DetectionInformation(DBConfigSQLAlchemy.Base):
-    __tablename__ = "detection_information"
+    __tablename__ = 'detection_information'
     __table_args__ = {'schema': 'private_schema_blur'}  # Add the schema here
 
     id = Column(Integer, primary_key=True)
@@ -28,3 +29,15 @@ class DetectionInformation(DBConfigSQLAlchemy.Base):
     image_width = Column(Integer)
     image_height = Column(Integer)
     run_id = Column(String)
+
+
+class BatchRunInformation(DBConfigSQLAlchemy.Base):
+    __tablename__ = 'batch_run_information'
+    __table_args__ = {'schema': 'private_schema_blur'}  # Add the schema here
+
+    run_id = Column(String, primary_key=True)
+    start_time = Column(Date)
+    end_time = Column(Date)
+    trained_yolo_model = Column(String)
+    success = Column(Boolean)
+    error_code = Column(String)
