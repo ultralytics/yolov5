@@ -46,13 +46,6 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 RANK = int(os.getenv('RANK', -1))
 
-# Instantiate the logger
-config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'config.yml'))
-BlurringAsAServiceSettings.set_from_yaml(config_path)
-settings = BlurringAsAServiceSettings.get_settings()
-setup_azure_logging_from_config(settings['logging'])
-LOGGER = logging.getLogger('__main__')
-
 # Settings
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
 DATASETS_DIR = Path(os.getenv('YOLOv5_DATASETS_DIR', ROOT.parent / 'datasets'))  # global datasets directory
@@ -154,8 +147,8 @@ def set_logging(name=LOGGING_NAME, verbose=True):
                 'propagate': False,}}})
 
 
-set_logging(LOGGING_NAME)  # run before defining LOGGER
-LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
+LOGGER = setup_azure_logging_from_config()
+
 if platform.system() == 'Windows':
     for fn in LOGGER.info, LOGGER.warning:
         setattr(LOGGER, fn.__name__, lambda x: fn(emojis(x)))  # emoji safe logging
