@@ -4,6 +4,8 @@ from .database_handler import DBConfigSQLAlchemy
 from .database_tables import BatchRunInformation
 from .date_utils import get_current_time
 
+from utils.general import LOGGER
+
 
 def exception_handler(func):
     def wrapper(*args, **kwargs):
@@ -11,7 +13,7 @@ def exception_handler(func):
             return func(*args, **kwargs)
         except Exception as e:
             # Handle the exception here
-            print(f"Exception caught: {e}")
+            LOGGER.info(f"Exception caught: {e}")
 
             db_username = kwargs.get('db_username', '')
             db_name = kwargs.get('db_name', '')
@@ -26,7 +28,7 @@ def exception_handler(func):
                 try:
                     trained_yolo_model = os.path.split(trained_yolo_model)[-1]
                 except Exception as e:
-                    print(f"Error while getting trained_yolo_model name: {str(e)}")
+                    LOGGER.info(f"Error while getting trained_yolo_model name: {str(e)}")
                     trained_yolo_model = ""
 
                 # Validate if database credentials are provided

@@ -35,6 +35,8 @@ import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
+from blurring_as_a_service.settings.settings import BlurringAsAServiceSettings
+from blurring_as_a_service.utils.logging_handler import setup_azure_logging_from_config
 
 from utils import TryExcept, emojis
 from utils.downloads import curl_download, gsutil_getsize
@@ -145,8 +147,8 @@ def set_logging(name=LOGGING_NAME, verbose=True):
                 'propagate': False,}}})
 
 
-set_logging(LOGGING_NAME)  # run before defining LOGGER
-LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
+LOGGER = setup_azure_logging_from_config()
+
 if platform.system() == 'Windows':
     for fn in LOGGER.info, LOGGER.warning:
         setattr(LOGGER, fn.__name__, lambda x: fn(emojis(x)))  # emoji safe logging
