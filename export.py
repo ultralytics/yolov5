@@ -155,7 +155,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
     import onnx
 
     LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
-    f = file.with_suffix('.onnx')
+    f = str(file.with_suffix('.onnx'))
 
     output_names = ['output0', 'output1'] if isinstance(model, SegmentationModel) else ['output0']
     if dynamic:
