@@ -1,7 +1,11 @@
 <div align="center">
   <p>
+    <a href="https://yolovision.ultralytics.com/" target="_blank">
+      <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/im/banner-yolo-vision-2023.png"></a>
+    <!--
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
       <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov5/v70/splash.png"></a>
+    -->
   </p>
 
 [English](README.md) | [简体中文](README.zh-CN.md)
@@ -128,7 +132,7 @@ python detect.py --weights yolov5s.pt --source 0                               #
                                                list.txt                        # list of images
                                                list.streams                    # list of streams
                                                'path/*.jpg'                    # glob
-                                               'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                                               'https://youtu.be/LNwODJXcvt4'  # YouTube
                                                'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 ```
 
