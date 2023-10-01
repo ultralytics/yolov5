@@ -155,7 +155,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
     import onnx
 
     LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
-    f = file.with_suffix('.onnx')
+    f = str(file.with_suffix('.onnx'))
 
     output_names = ['output0', 'output1'] if isinstance(model, SegmentationModel) else ['output0']
     if dynamic:
@@ -207,7 +207,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
 @try_export
 def export_openvino(file, metadata, half, int8, data, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
-    check_requirements('openvino-dev>=2022.3')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+    check_requirements('openvino-dev>=2023.0')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
     import openvino.runtime as ov  # noqa
     from openvino.tools import mo  # noqa
 
@@ -216,7 +216,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr('OpenVINO:
     f_onnx = file.with_suffix('.onnx')
     f_ov = str(Path(f) / file.with_suffix('.xml').name)
     if int8:
-        check_requirements('nncf')
+        check_requirements('nncf>=2.4.0')  # requires at least version 2.4.0 to use the post-training quantization
         import nncf
         import numpy as np
         from openvino.runtime import Core
