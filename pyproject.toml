@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "yolov5"
-version = "0.1.1"
+version = "0.2.0"
 description = ""
 authors = [
     "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
@@ -9,7 +9,7 @@ authors = [
 ]
 
 [tool.poetry.dependencies]
-python = "~3.9"
+python = "~3.8"
 matplotlib = {version = "^3.7.1", source = "PyPI"}
 numpy = {version = "^1.24.2", source = "PyPI"}
 opencv-python = {version = "^4.7.0", source = "PyPI"}
@@ -29,7 +29,6 @@ GitPython = {version = "^3.1.31", source = "PyPI"}
 pre-commit = {version = "^3.2.0", source = "PyPI"}
 toml = {version = "^0.10.2", source = "PyPI"}
 yapf = {version = "^0.32.0", source = "PyPI"}
-ipython = {version = "^8.15.0", source = "PyPI"}
 
 [tool.poetry.dev-dependencies]
 
