@@ -13,6 +13,7 @@ services:
       - DD_PROFILING_ENABLED=true
     ports:
       - 8700:8700
+      - 8126:8126
     # volumes:
     #   - .:/app/
     restart: always
