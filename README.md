@@ -9,7 +9,7 @@ https://github.com/mattnudi/bee-detection
 https://universe.roboflow.com/matt-nudi/honey-bee-detection-model-zgjnb
 
 
-## <div align="center">Ultralytics yolo v5 License</div>
+## Ultralytics yolo v5 license
 YOLOv5 is available under two different licenses:
 
 - **GPL-3.0 License**: See [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for details.
