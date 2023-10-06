@@ -1,16 +1,20 @@
 version: '3.9'
 services:
   models-yolov5:
-    # image: local/models-yolov5
-    build: .
+    image: local/models-yolov5
+    # build: .
     command:
-      python3 /app/server.py
+      ddtrace-run python3 /app/server.py
     environment:
       - ENV_ID=dev
+      - DD_SERVICE=models-yolov5
+      - DD_ENV=dev
+      - DD_LOGS_INJECTION=true
+      - DD_PROFILING_ENABLED=true
     ports:
       - 8700:8700
-    volumes:
-      - .:/app/
+    # volumes:
+    #   - .:/app/
     restart: always
     network_mode: bridge
     networks:

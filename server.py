@@ -96,5 +96,5 @@ server_address = ('', 8700)  # Listen on all available interfaces, port 8700
 httpd = ThreadingHTTPServer(server_address, SimpleHTTPRequestHandler)
 
 # Start the server
-print('Server running on port 8700...')
+print('Server running on port 8700')
 httpd.serve_forever()

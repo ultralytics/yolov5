@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y curl python3 pip ffmpeg libsm6 libxext6
 WORKDIR /app
 USER root
 
-COPY . /app/
+COPY requirements.txt /app/requirements.txt
 RUN cd /app && pip install -r requirements.txt
 
 EXPOSE 8700
