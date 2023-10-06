@@ -1,4 +1,4 @@
-cd /www/models-yolov5/
+cd /www/models-bee-detector/
 
 chmod 777 tmp
 chmod 755 weights

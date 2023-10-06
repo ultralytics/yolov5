@@ -1,5 +1,5 @@
 docker_compose('docker-compose.dev.yml',project_name="gratheon")
-docker_build('local/models-yolov5', '.',
+docker_build('local/models-bee-detector', '.',
 	live_update = [
     # Sync local files into the container.
     sync('.', '/app/'),

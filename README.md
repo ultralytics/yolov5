@@ -1,4 +1,6 @@
-## gratheon/models-yolov5 bee detection
+## gratheon/models-bee-detector
+
+Microservice that detects bees
 
 - Uses weights by Matt Nudi
 https://github.com/mattnudi/bee-detection

@@ -1,0 +1,17 @@
+name: deploy
+on:
+  push:
+    branches: main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: pull
+        working-directory: /www/models-bee-detector/
+        run: git reset --hard && git pull
+
+      - name: restart
+        working-directory: /www/models-bee-detector/
+        run: chmod +x restart.sh && ./restart.sh

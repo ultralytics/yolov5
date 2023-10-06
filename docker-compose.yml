@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  models-yolov5:
+  models-bee-detector:
     build:
       context: .
       dockerfile: Dockerfile.prod
@@ -8,7 +8,7 @@ services:
       ddtrace-run python3 /app/server.py
     environment:
       - ENV_ID=prod
-      - DD_SERVICE=models-yolov5
+      - DD_SERVICE=models-bee-detector
       - DD_ENV=prod
       - DD_LOGS_INJECTION=true
       - DD_PROFILING_ENABLED=true
