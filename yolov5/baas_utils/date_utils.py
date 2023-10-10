@@ -4,9 +4,14 @@ from utils.general import LOGGER
 
 
 def extract_upload_date(path):
-    parts = path.split('/')
-    image_filename = parts[-1]
-    date_time_str = parts[-2]
+    try:
+        # Split the path at the first occurrence of "wd/INPUT"
+        parts = path.split("wd/INPUT", 1)
+        # Split into two parts, skipping the first Azure input storage part
+        date_time_str, image_filename = parts[1].split("/", 2)[1:]
+    except Exception as e:
+        LOGGER.info(f"Invalid path structure, can not parse path: {path}")
+        raise e
 
     try:
         image_upload_date = datetime.strptime(date_time_str, "%Y-%m-%d_%H:%M:%S")
