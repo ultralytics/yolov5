@@ -1,7 +1,10 @@
-Forked Yolov5 repository to be used by Computer Vision Team.
-See the README of Yolov5 [here](YOLOv5_README.md).
+# YOLOv5 for Computer Vision Team - Amsterdam
 
-## Development
+This repository is a fork of the YOLOv5 implementation customized for the use of the Computer Vision Team in Amsterdam. It builds upon the YOLOv5 framework and introduces custom modifications to work with Azure Machine Learning, database integrations and tagged validation.
+
+For the original YOLOv5 documentation, please refer to [YOLOv5 README](YOLOv5_README.md).
+
+## Installation
 
 #### 1. Clone the code
 
@@ -22,6 +25,10 @@ poetry install
 
 #### Tagged validation
 
+To analyze bias in our data, we divided the categories "person" and "license_plate" into smaller groups. This is called "tagged validation." We added tags for gender, age, and skin tone to each label. Each combination of these tags was given a unique number, like 1 for "man/child/dark," 2 for "man/child/medium," and so on.
+
+Then, we included these numbers in our YOLO annotations. This way, we can see how well our model works in different situations by looking at the validation results.
+
 The input structure is the same as when running yolo validation, but now the 
 labels files contain an extra column with the tagged class id. 
 
@@ -32,7 +39,7 @@ Example of one txt file in `data/labels/val`:
 ```
 
 The indices from the 6th column are coming from the Azure COCO annotation file
-export from Data Labelling tool. First, we 
+export from Data Labelling tool.
 
 To run validation:
 
@@ -69,15 +76,13 @@ In each JSON we provide information about the bounding boxes detected in each in
 This allows us to evaluate the performance of an object detection model based on the ground truth and true positive 
 bounding boxes.
 
-## Database
+#### Database
 
-To access the database is necessary to create a `database.json` file inside the `database` folder.
+To access a database in Azure Machine Learning it is necessary to create a `database.json` file inside the `database` folder.
 An example of the structure can be found in the folder under the name `database.example.json`.
 
-The file contains the following information:
+This database.json file should include the following information:
 ``` 
-    hostname:       hostname address of the database
-    username:       managed identity name in production
-    database_name
-    client_id:      client id of the managed identity
+    client_id:      client id of the managed identity in Azure
 ```
+
