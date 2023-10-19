@@ -11,7 +11,7 @@ Usage - sources:
                                                                    list.txt                        # list of images
                                                                    list.streams                    # list of streams
                                                                    'path/*.jpg'                    # glob
-                                                                   'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                                                                   'https://youtu.be/LNwODJXcvt4'  # YouTube
                                                                    'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 
 Usage - formats:
@@ -46,12 +46,13 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from ultralytics.utils.plotting import Annotator
+
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, print_args, strip_optimizer)
-from utils.plots import Annotator
 from utils.torch_utils import select_device, smart_inference_mode
 
 

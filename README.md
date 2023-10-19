@@ -1,7 +1,11 @@
 <div align="center">
   <p>
+    <a href="https://yolovision.ultralytics.com/" target="_blank">
+      <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/im/banner-yolo-vision-2023.png"></a>
+    <!--
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
       <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov5/v70/splash.png"></a>
+    -->
   </p>
 
 [English](README.md) | [简体中文](README.zh-CN.md)
@@ -20,7 +24,7 @@
 
 YOLOv5 🚀 is the world's most loved vision AI, representing <a href="https://ultralytics.com">Ultralytics</a> open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 
-We hope that the resources here will help you get the most out of YOLOv5. Please browse the YOLOv5 <a href="https://docs.ultralytics.com/yolov5">Docs</a> for details, raise an issue on <a href="https://github.com/ultralytics/yolov5/issues/new/choose">GitHub</a> for support, and join our <a href="https://discord.gg/n6cFeSPZdD">Discord</a> community for questions and discussions!
+We hope that the resources here will help you get the most out of YOLOv5. Please browse the YOLOv5 <a href="https://docs.ultralytics.com/yolov5">Docs</a> for details, raise an issue on <a href="https://github.com/ultralytics/yolov5/issues/new/choose">GitHub</a> for support, and join our <a href="https://ultralytics.com/discord">Discord</a> community for questions and discussions!
 
 To request an Enterprise License please complete the form at [Ultralytics Licensing](https://ultralytics.com/license).
 
@@ -43,7 +47,7 @@ To request an Enterprise License please complete the form at [Ultralytics Licens
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="2%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="2%" alt="" />
-  <a href="https://discord.gg/n6cFeSPZdD" style="text-decoration:none;">
+  <a href="https://ultralytics.com/discord" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="2%" alt="" /></a>
 </div>
 
@@ -59,7 +63,9 @@ object detection, image segmentation and image classification tasks.
 
 See the [YOLOv8 Docs](https://docs.ultralytics.com) for details and get started with:
 
-```commandline
+[![PyPI version](https://badge.fury.io/py/ultralytics.svg)](https://badge.fury.io/py/ultralytics) [![Downloads](https://static.pepy.tech/badge/ultralytics)](https://pepy.tech/project/ultralytics)
+
+```bash
 pip install ultralytics
 ```
 
@@ -76,8 +82,8 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com/yolov5) for full documentatio
 <summary>Install</summary>
 
 Clone repo and install [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) in a
-[**Python>=3.7.0**](https://www.python.org/) environment, including
-[**PyTorch>=1.7**](https://pytorch.org/get-started/locally/).
+[**Python>=3.8.0**](https://www.python.org/) environment, including
+[**PyTorch>=1.8**](https://pytorch.org/get-started/locally/).
 
 ```bash
 git clone https://github.com/ultralytics/yolov5  # clone
@@ -126,7 +132,7 @@ python detect.py --weights yolov5s.pt --source 0                               #
                                                list.txt                        # list of images
                                                list.streams                    # list of streams
                                                'path/*.jpg'                    # glob
-                                               'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                                               'https://youtu.be/LNwODJXcvt4'  # YouTube
                                                'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 ```
 
@@ -459,14 +465,14 @@ We love your input! We want to make contributing to YOLOv5 as easy and transpare
 
 ## <div align="center">License</div>
 
-YOLOv5 is available under two different licenses:
+Ultralytics offers two licensing options to accommodate diverse use cases:
 
-- **AGPL-3.0 License**: See [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for details.
-- **Enterprise License**: Provides greater flexibility for commercial product development without the open-source requirements of AGPL-3.0. Typical use cases are embedding Ultralytics software and AI models in commercial products and applications. Request an Enterprise License at [Ultralytics Licensing](https://ultralytics.com/license).
+- **AGPL-3.0 License**: This [OSI-approved](https://opensource.org/licenses/) open-source license is ideal for students and enthusiasts, promoting open collaboration and knowledge sharing. See the [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for more details.
+- **Enterprise License**: Designed for commercial use, this license permits seamless integration of Ultralytics software and AI models into commercial goods and services, bypassing the open-source requirements of AGPL-3.0. If your scenario involves embedding our solutions into a commercial offering, reach out through [Ultralytics Licensing](https://ultralytics.com/license).
 
 ## <div align="center">Contact</div>
 
-For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues), and join our [Discord](https://discord.gg/n6cFeSPZdD) community for questions and discussions!
+For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues), and join our [Discord](https://ultralytics.com/discord) community for questions and discussions!
 
 <br>
 <div align="center">
@@ -488,7 +494,7 @@ For YOLOv5 bug reports and feature requests please visit [GitHub Issues](https:/
   <a href="https://www.instagram.com/ultralytics/" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-instagram.png" width="3%" alt="" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="" />
-  <a href="https://discord.gg/n6cFeSPZdD" style="text-decoration:none;">
+  <a href="https://ultralytics.com/discord" style="text-decoration:none;">
     <img src="https://github.com/ultralytics/assets/blob/main/social/logo-social-discord.png" width="3%" alt="" /></a>
 </div>
 
