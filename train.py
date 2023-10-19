@@ -26,6 +26,11 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
+try:
+    import comet_ml  # must be imported before torch (if installed)
+except ImportError:
+    comet_ml = None
+
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -579,7 +584,7 @@ def main(opt, callbacks=Callbacks()):
                 'gsutil',
                 'cp',
                 f'gs://{opt.bucket}/evolve.csv',
-                str(evolve_csv),])
+                str(evolve_csv), ])
 
         for _ in range(opt.evolve):  # generations to evolve
             if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
