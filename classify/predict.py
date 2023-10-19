@@ -158,14 +158,13 @@ def run(
                     'label': names[top_pred_index],
                     'confidence': f'{prob[top_pred_index]:.2f}'
                 })
-
-                # Write results
-                text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
-                if save_img or view_img:  # Add bbox to image
-                    annotator.text((32, 32), text, txt_color=(255, 255, 255))
-                if save_txt:  # Write to file
-                    with open(f'{txt_path}.txt', 'a') as f:
-                        f.write(text + '\n')
+            # Write results
+            text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
+            if save_img or view_img:  # Add bbox to image
+                annotator.text([32, 32], text, txt_color=(255, 255, 255))
+            if save_txt:  # Write to file
+                with open(f'{txt_path}.txt', 'a') as f:
+                    f.write(text + '\n')
 
                 # Stream results
                 im0 = annotator.result()
