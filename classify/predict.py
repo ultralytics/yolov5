@@ -30,8 +30,8 @@ Usage - formats:
 
 import argparse
 import csv
-import json
 import io
+import json
 import os
 import platform
 import sys
@@ -110,8 +110,8 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-    
-    with open(save_dir / 'predictions.csv', 'w', newline='') as csvfile:    # Open CSV file for saving all predictions 
+
+    with open(save_dir / 'predictions.csv', 'w', newline='') as csvfile:  # Open CSV file for saving all predictions
         csv_output = csv.DictWriter(csvfile, fieldnames=['path', 'label', 'confidence', 'top_5_predicted'])
         csv_output.writeheader()
 
@@ -128,8 +128,8 @@ def run(
 
             # Post-process
             with dt[2]:
-                pred = F.softmax(results, dim=1)  # probabilities      
-            
+                pred = F.softmax(results, dim=1)  # probabilities
+
             # Process predictions
             for i, prob in enumerate(pred):  # per image
                 seen += 1
@@ -141,7 +141,8 @@ def run(
 
                 p = Path(p)  # to Path
                 save_path = str(save_dir / p.name)  # im.jpg
-                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}'
+                                                                )  # im.txt
 
                 s += '%gx%g ' % im.shape[2:]  # print string
                 annotator = Annotator(im0, example=str(names), pil=True)
@@ -156,8 +157,7 @@ def run(
                     'path': path,
                     'top_5_predicted': json.dumps([(names[j], prob[j].item()) for j in top5i]),
                     'label': names[top_pred_index],
-                    'confidence': f'{prob[top_pred_index]:.2f}'
-                })
+                    'confidence': f'{prob[top_pred_index]:.2f}'})
             # Write results
             text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
             if save_img or view_img:  # Add bbox to image
