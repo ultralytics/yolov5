@@ -882,7 +882,7 @@ class Classify(nn.Module):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
 
-
+# contributed by @aash1999
 class ChannelAttention(nn.Module):
 
     def __init__(self, in_planes, ratio=16):
@@ -918,7 +918,7 @@ class ChannelAttention(nn.Module):
             out = self.sigmoid(avg_out + max_out)
             return out
 
-
+# contributed by @aash1999
 class SpatialAttention(nn.Module):
 
     def __init__(self, kernel_size=7):
@@ -952,7 +952,7 @@ class SpatialAttention(nn.Module):
             x = self.conv(x)
             return self.sigmoid(x)
 
-
+# contributed by @aash1999
 class CBAM(nn.Module):
     # ch_in, ch_out, shortcut, groups, expansion, ratio, kernel_size
     def __init__(self, c1, c2, kernel_size=3, shortcut=True, g=1, e=0.5, ratio=16):
@@ -993,7 +993,7 @@ class CBAM(nn.Module):
             out = self.spatial_attention(out) * out
             return x + out if self.add else out
 
-
+# contributed by @aash1999
 class Involution(nn.Module):
 
     def __init__(self, c1, c2, kernel_size, stride):
