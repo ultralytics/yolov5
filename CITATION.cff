@@ -1,14 +1,13 @@
 cff-version: 1.2.0
 preferred-citation:
   type: software
-  message: If you use YOLOv5, please cite it as below.
+  message: If you use YOLOv5-cbam, please cite it as below.
   authors:
-  - family-names: Jocher
-    given-names: Glenn
-    orcid: "https://orcid.org/0000-0001-5950-6979"
-  title: "YOLOv5 by Ultralytics"
-  version: 7.0
-  doi: 10.5281/zenodo.3908559
-  date-released: 2020-5-29
+  - family-names: Aakash
+    given-names: Singh
+    orcid: "https://orcid.org/0009-0000-6586-9952"
+  title: "HIC-Yolov5"
+  version: 1.0
+  date-released: 2023-10-22
   license: AGPL-3.0
-  url: "https://github.com/ultralytics/yolov5"
+  url: "https://github.com/aash1999/yolov5-cbam"
