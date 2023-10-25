@@ -1,6 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 # hyperparameters for HIC-YOLOv5 for small object detection on VisDrone Dataset
-# python train.py --hyp hyp.hyp.hic-yolov5s
+# python train.py --hyp hyp.hic-yolov5s.yaml
 
 lr0: 0.001  # initial learning rate (SGD=1E-2, Adam=1E-3)
 lrf: 0.01  # final OneCycleLR learning rate (lr0 * lrf)
