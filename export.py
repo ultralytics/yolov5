@@ -78,6 +78,7 @@ MACOS = platform.system() == 'Darwin'  # macOS environment
 
 
 class iOSModel(torch.nn.Module):
+
     def __init__(self, model, im):
         super().__init__()
         b, c, h, w = im.shape  # batch, channel, height, width

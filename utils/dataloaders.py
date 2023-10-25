@@ -158,6 +158,7 @@ class InfiniteDataLoader(dataloader.DataLoader):
 
     Uses same syntax as vanilla DataLoader
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
@@ -177,6 +178,7 @@ class _RepeatSampler:
     Args:
         sampler (Sampler)
     """
+
     def __init__(self, sampler):
         self.sampler = sampler
 
@@ -1052,6 +1054,7 @@ class HUBDatasetStats():
         stats.get_json(save=False)
         stats.process_images()
     """
+
     def __init__(self, path='coco128.yaml', autodownload=False):
         # Initialize class
         zipped, data_dir, yaml_path = self._unzip(Path(path))
@@ -1166,6 +1169,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         transform:  torchvision transforms, used by default
         album_transform: Albumentations transforms, used if installed
     """
+
     def __init__(self, root, augment, imgsz, cache=False):
         super().__init__(root=root)
         self.torch_transforms = classify_transforms(imgsz)

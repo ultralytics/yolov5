@@ -340,6 +340,7 @@ class TFSegment(TFDetect):
 
 
 class TFProto(keras.layers.Layer):
+
     def __init__(self, c1, c_=256, c2=32, w=None):
         super().__init__()
         self.cv1 = TFConv(c1, c_, k=3, w=w.cv1)
