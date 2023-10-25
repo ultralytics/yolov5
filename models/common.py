@@ -365,9 +365,8 @@ class DetectMultiBackend(nn.Module):
             model.half() if fp16 else model.float()
             if extra_files['config.txt']:  # load metadata dict
                 d = json.loads(extra_files['config.txt'],
-                               object_hook=lambda d: {
-                                   int(k) if k.isdigit() else k: v
-                                   for k, v in d.items()})
+                               object_hook=lambda d: {int(k) if k.isdigit() else k: v
+                                                      for k, v in d.items()})
                 stride, names = int(d['stride']), d['names']
         elif dnn:  # ONNX OpenCV DNN
             LOGGER.info(f'Loading {w} for ONNX OpenCV DNN inference...')
@@ -882,9 +881,9 @@ class Classify(nn.Module):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
 
+
 # contributed by @aash1999
 class ChannelAttention(nn.Module):
-
     def __init__(self, in_planes, ratio=16):
         """
         Initialize the Channel Attention module.
@@ -918,9 +917,9 @@ class ChannelAttention(nn.Module):
             out = self.sigmoid(avg_out + max_out)
             return out
 
+
 # contributed by @aash1999
 class SpatialAttention(nn.Module):
-
     def __init__(self, kernel_size=7):
         """
         Initialize the Spatial Attention module.
@@ -951,6 +950,7 @@ class SpatialAttention(nn.Module):
             x = torch.cat([avg_out, max_out], dim=1)
             x = self.conv(x)
             return self.sigmoid(x)
+
 
 # contributed by @aash1999
 class CBAM(nn.Module):
@@ -993,9 +993,9 @@ class CBAM(nn.Module):
             out = self.spatial_attention(out) * out
             return x + out if self.add else out
 
+
 # contributed by @aash1999
 class Involution(nn.Module):
-
     def __init__(self, c1, c2, kernel_size, stride):
         """
         Initialize the Involution module.
