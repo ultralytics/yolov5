@@ -13,7 +13,6 @@ class TritonRemoteModel:
     be configured to communicate over GRPC or HTTP. It accepts Torch Tensors
     as input and returns them as outputs.
     """
-
     def __init__(self, url: str):
         """
         Keyword arguments:
