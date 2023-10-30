@@ -234,13 +234,6 @@ def run(
                 LOGGER.info(f'Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models')
 
         # Data
-        print(f"Val: data {data}")
-        import glob
-        print(f"Val: glob")
-        print(glob.glob(""))
-        print(f"Val: glob jpg")
-        print(glob.glob('./*.jpg'))
-
         data = check_dataset(data)  # check
 
     # Configure
