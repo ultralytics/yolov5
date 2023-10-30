@@ -2,13 +2,13 @@ import subprocess
 import json
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, Column, String, Boolean, Date, Integer, Float
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timedelta
 
-from utils.general import LOGGER
+from yolov5.utils.general import LOGGER
 
 class DBConfigSQLAlchemy:
     Base = declarative_base()

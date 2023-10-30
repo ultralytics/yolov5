@@ -109,7 +109,7 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
 
 
 def plot_results_with_masks(file='path/to/results.csv', dir='', best=True):
-    # Plot training results.csv. Usage: from utils.plots import *; plot_results('path/to/results.csv')
+    # Plot training results.csv. Usage: from yolov5.utils.plots import *; plot_results('path/to/results.csv')
     save_dir = Path(file).parent if file else Path(dir)
     fig, ax = plt.subplots(2, 8, figsize=(18, 6), tight_layout=True)
     ax = ax.ravel()

@@ -66,7 +66,7 @@ test-no-images = ["pytest", "pytest-cov", "wurlitzer"]
 
 [[package]]
 name = "cycler"
-version = "0.12.0"
+version = "0.12.1"
 description = "Composable style cycles"
 category = "main"
 optional = false
@@ -99,7 +99,7 @@ typing = ["typing-extensions (>=4.7.1)"]
 
 [[package]]
 name = "fonttools"
-version = "4.43.0"
+version = "4.43.1"
 description = "Tools to manipulate font files"
 category = "main"
 optional = false
@@ -250,17 +250,17 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "markdown"
-version = "3.4.4"
+version = "3.5"
 description = "Python implementation of John Gruber's Markdown."
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 importlib-metadata = {version = ">=4.4", markers = "python_version < \"3.10\""}
 
 [package.extras]
-docs = ["mkdocs (>=1.0)", "mkdocs-nature (>=0.4)", "mdx-gh-links (>=0.2)"]
+docs = ["mkdocs (>=1.5)", "mkdocs-nature (>=0.6)", "mdx-gh-links (>=0.2)", "mkdocstrings", "mkdocs-gen-files", "mkdocs-section-index", "mkdocs-literate-nav"]
 testing = ["coverage", "pyyaml"]
 
 [[package]]
@@ -434,7 +434,7 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "protobuf"
-version = "4.24.3"
+version = "4.24.4"
 description = ""
 category = "main"
 optional = false

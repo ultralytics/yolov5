@@ -4,7 +4,7 @@ from .database_handler import DBConfigSQLAlchemy
 from .database_tables import BatchRunInformation
 from .date_utils import get_current_time
 
-from utils.general import LOGGER
+from yolov5.utils.general import LOGGER
 
 
 def exception_handler(func):

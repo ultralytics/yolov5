@@ -42,14 +42,14 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.common import DetectMultiBackend
-from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
-from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
+from yolov5.models.common import DetectMultiBackend
+from yolov5.utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
+from yolov5.utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, non_max_suppression, print_args, scale_boxes, scale_segments,
                            strip_optimizer)
-from utils.plots import Annotator, colors, save_one_box
-from utils.segment.general import masks2segments, process_mask, process_mask_native
-from utils.torch_utils import select_device, smart_inference_mode
+from yolov5.utils.plots import Annotator, colors, save_one_box
+from yolov5.utils.segment.general import masks2segments, process_mask, process_mask_native
+from yolov5.utils.torch_utils import select_device, smart_inference_mode
 
 
 @smart_inference_mode()
@@ -135,7 +135,7 @@ def run(
             pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32)
 
         # Second-stage classifier (optional)
-        # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
+        # pred = yolov5.utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
         for i, det in enumerate(pred):  # per image

@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from utils.plots import Annotator, colors
+from yolov5.utils.plots import Annotator, colors
 
 try:
     import clearml

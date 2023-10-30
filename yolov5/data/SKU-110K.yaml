@@ -22,7 +22,7 @@ names:
 download: |
   import shutil
   from tqdm import tqdm
-  from utils.general import np, pd, Path, download, xyxy2xywh
+  from yolov5.utils.general import np, pd, Path, download, xyxy2xywh
 
 
   # Download

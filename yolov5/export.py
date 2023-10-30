@@ -67,12 +67,12 @@ if str(ROOT) not in sys.path:
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.experimental import attempt_load
-from models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel
-from utils.dataloaders import LoadImages
-from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
+from yolov5.models.experimental import attempt_load
+from yolov5.models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel
+from yolov5.utils.dataloaders import LoadImages
+from yolov5.utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
                            check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
-from utils.torch_utils import select_device, smart_inference_mode
+from yolov5.utils.torch_utils import select_device, smart_inference_mode
 
 MACOS = platform.system() == 'Darwin'  # macOS environment
 

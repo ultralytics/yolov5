@@ -40,25 +40,25 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-import val as validate  # for end-of-epoch mAP
-from models.experimental import attempt_load
-from models.yolo import Model
-from utils.autoanchor import check_anchors
-from utils.autobatch import check_train_batch_size
-from utils.callbacks import Callbacks
-from utils.dataloaders import create_dataloader
-from utils.downloads import attempt_download, is_url
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
+import yolov5.val as validate  # for end-of-epoch mAP
+from yolov5.models.experimental import attempt_load
+from yolov5.models.yolo import Model
+from yolov5.utils.autoanchor import check_anchors
+from yolov5.utils.autobatch import check_train_batch_size
+from yolov5.utils.callbacks import Callbacks
+from yolov5.utils.dataloaders import create_dataloader
+from yolov5.utils.downloads import attempt_download, is_url
+from yolov5.utils.general import (LOGGER, TQDM_BAR_FORMAT, check_amp, check_dataset, check_file, check_git_info,
                            check_git_status, check_img_size, check_requirements, check_suffix, check_yaml, colorstr,
                            get_latest_run, increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
                            labels_to_image_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer,
                            yaml_save)
-from utils.loggers import Loggers
-from utils.loggers.comet.comet_utils import check_comet_resume
-from utils.loss import ComputeLoss
-from utils.metrics import fitness
-from utils.plots import plot_evolve
-from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
+from yolov5.utils.loggers import Loggers
+from yolov5.utils.loggers.comet.comet_utils import check_comet_resume
+from yolov5.utils.loss import ComputeLoss
+from yolov5.utils.metrics import fitness
+from yolov5.utils.plots import plot_evolve
+from yolov5.utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
                                smart_resume, torch_distributed_zero_first)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html

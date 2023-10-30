@@ -386,7 +386,7 @@ names:
 download: |
   from tqdm import tqdm
 
-  from utils.general import Path, check_requirements, download, np, xyxy2xywhn
+  from yolov5.utils.general import Path, check_requirements, download, np, xyxy2xywhn
 
   check_requirements(('pycocotools>=2.0',))
   from pycocotools.coco import COCO

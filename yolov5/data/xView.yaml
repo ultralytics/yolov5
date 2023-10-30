@@ -87,8 +87,8 @@ download: |
   from PIL import Image
   from tqdm import tqdm
 
-  from utils.dataloaders import autosplit
-  from utils.general import download, xyxy2xywhn
+  from yolov5.utils.dataloaders import autosplit
+  from yolov5.utils.general import download, xyxy2xywhn
 
 
   def convert_labels(fname=Path('xView/xView_train.geojson')):

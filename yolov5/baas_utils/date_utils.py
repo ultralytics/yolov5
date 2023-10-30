@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from utils.general import LOGGER
+from yolov5.utils.general import LOGGER
 
 
 def extract_upload_date(path):
