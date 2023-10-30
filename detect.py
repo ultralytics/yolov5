@@ -2,7 +2,7 @@
 """
 Run YOLOv5 detection inference on images, videos, directories, globs, YouTube, webcam, streams, etc.
 
-Usage - sources:
+Usage - sources: 
     $ python detect.py --weights yolov5s.pt --source 0                               # webcam
                                                      img.jpg                         # image
                                                      vid.mp4                         # video
@@ -51,6 +51,11 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
                            increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh)
 from utils.torch_utils import select_device, smart_inference_mode
 
+# Import necessary libraries for OCR
+import pytesseract
+from pytesseract import Output
+
+# ... (Rest of your imports)
 
 @smart_inference_mode()
 def run(
@@ -197,6 +202,12 @@ def run(
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
+                    # Extract text using OCR
+                    extracted_text = extract_text_from_image(im0, xyxy)
+
+                    # Print or save the extracted text
+                    print(f"License Plate Text: {extracted_text}")
+
             # Stream results
             im0 = annotator.result()
             if view_img:
@@ -237,6 +248,13 @@ def run(
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
+
+
+def extract_text_from_image(image, bbox):
+    x, y, w, h = map(int, bbox)
+    cropped_image = image[y:y + h, x:x + w]
+    extracted_text = pytesseract.image_to_string(cropped_image, config='--psm 6', output_type=Output.STRING)
+    return extracted_text
 
 
 def parse_opt():
