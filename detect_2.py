@@ -34,8 +34,10 @@ import os
 import platform
 import sys
 from pathlib import Path
+
 from paddleocr import PaddleOCR
-ocr=PaddleOCR(use_angle_cls=True,lang='en',show_log=False)
+
+ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
 import torch
 
 FILE = Path(__file__).resolve()
@@ -44,6 +46,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+# Import necessary libraries for OCR
+import pytesseract
+from pytesseract import Output
 from ultralytics.utils.plotting import Annotator, colors, save_one_box
 
 from models.common import DetectMultiBackend
@@ -52,11 +57,8 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
                            increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh)
 from utils.torch_utils import select_device, smart_inference_mode
 
-# Import necessary libraries for OCR
-import pytesseract
-from pytesseract import Output
-
 # ... (Rest of your imports)
+
 
 @smart_inference_mode()
 def run(
@@ -193,7 +195,7 @@ def run(
                         for result in results[0]:
                             text = result[1][0]
                             bounding_box = result[0]
-                            print(f"Text: {text}, Bounding Box: {bounding_box}")
+                            print(f'Text: {text}, Bounding Box: {bounding_box}')
 
                     if save_csv:
                         write_to_csv(p.name, label, confidence_str)

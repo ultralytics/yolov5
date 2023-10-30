@@ -2,7 +2,7 @@
 """
 Run YOLOv5 detection inference on images, videos, directories, globs, YouTube, webcam, streams, etc.
 
-Usage - sources: 
+Usage - sources:
     $ python detect.py --weights yolov5s.pt --source 0                               # webcam
                                                      img.jpg                         # image
                                                      vid.mp4                         # video
@@ -43,6 +43,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+# Import necessary libraries for OCR
+import pytesseract
+from pytesseract import Output
 from ultralytics.utils.plotting import Annotator, colors, save_one_box
 
 from models.common import DetectMultiBackend
@@ -51,11 +54,8 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
                            increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh)
 from utils.torch_utils import select_device, smart_inference_mode
 
-# Import necessary libraries for OCR
-import pytesseract
-from pytesseract import Output
-
 # ... (Rest of your imports)
+
 
 @smart_inference_mode()
 def run(
@@ -206,7 +206,7 @@ def run(
                     extracted_text = extract_text_from_image(im0, xyxy)
 
                     # Print or save the extracted text
-                    print(f"License Plate Text: {extracted_text}")
+                    print(f'License Plate Text: {extracted_text}')
 
             # Stream results
             im0 = annotator.result()

@@ -33,14 +33,14 @@ import csv
 import os
 import platform
 import sys
+import warnings
 from pathlib import Path
+
 from paddleocr import PaddleOCR
 
-import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='ppocr')
 
-warnings.filterwarnings("ignore", category=UserWarning, module="ppocr")
-
-ocr=PaddleOCR(use_angle_cls=True,lang='en',show_log=False)
+ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
 import torch
 
 FILE = Path(__file__).resolve()
@@ -49,6 +49,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+# Import necessary libraries for OCR
+import pytesseract
+from pytesseract import Output
 from ultralytics.utils.plotting import Annotator, colors, save_one_box
 
 from models.common import DetectMultiBackend
@@ -57,11 +60,8 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
                            increment_path, non_max_suppression, print_args, scale_boxes, strip_optimizer, xyxy2xywh)
 from utils.torch_utils import select_device, smart_inference_mode
 
-# Import necessary libraries for OCR
-import pytesseract
-from pytesseract import Output
-
 # ... (Rest of your imports)
+
 
 @smart_inference_mode()
 def run(
@@ -185,7 +185,7 @@ def run(
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 # Write results
-                extracted_info_list=[]
+                extracted_info_list = []
                 for *xyxy, conf, cls in reversed(det):
                     c = int(cls)  # integer class
                     label = names[c] if hide_conf else f'{names[c]}'
@@ -264,6 +264,8 @@ def run(
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
+
+
 def extract_text_from_image(image, bbox):
     x, y, w, h = map(int, bbox)
     cropped_image = image[y:y + h, x:x + w]

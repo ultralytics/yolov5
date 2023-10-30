@@ -130,12 +130,3 @@ cv2.rectangle(image, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 255
 
 # Save or display the image with bounding box
 cv2.imwrite('output_image.jpg', image)
-
-
-
-
-
-
-
-
-
