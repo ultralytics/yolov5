@@ -685,7 +685,6 @@ def parse_opt():
     parser.add_argument('--db-username', type=str, default='', help='database username')
     parser.add_argument('--db-hostname', type=str, default='', help='database hostname')
     parser.add_argument('--db-name', type=str, default='', help='database name')
-    parser.add_argument('--trained-yolo-model', type=str, help='trained yolo model')
     parser.add_argument('--start-time', type=str, help='start time of the Azure ML job')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
