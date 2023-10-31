@@ -23,7 +23,13 @@ class DBConfigSQLAlchemy:
         self.token_expiration_time = None
         self.token_renewal_margin = timedelta(minutes=5)
 
-    def _get_db_access_token(self, client_id):
+    def _get_db_access_token(self):
+        with open('database.json') as f:
+            config = json.load(f)
+
+        # Retrieve values from the JSON
+        client_id = config["client_id"]  # TODO get this from the Managed Identity name in code
+
         # Authenticate using Managed Identity (MSI)
         try:
             command = ["az", "login", "--identity", "--username", client_id]
@@ -45,20 +51,8 @@ class DBConfigSQLAlchemy:
         self.token_expiration_time = token_expiration_time - self.token_renewal_margin
 
     def _get_db_connection_string(self):
-        # Get the connection string for the PostgreSQL database.
-
-        # Production run, load credentials from the JSON file
-        with open('database.json') as f:
-            config = json.load(f)
-
-        # Retrieve values from the JSON
-        client_id = config["client_id"]  # TODO get this from the Managed Identity name in code
-
-        # Get the password using the client_id from a secure source
-        self._get_db_access_token(client_id)
-
+        self._get_db_access_token()
         db_url = f"postgresql://{self.db_username}:{self.access_token}@{self.db_hostname}/{self.db_name}"
-
         return db_url
 
     def _get_session(self):
@@ -83,7 +77,6 @@ class DBConfigSQLAlchemy:
 
     @contextmanager
     def managed_session(self):
-        # Validate if the token is still valid
         self._validate_token_status()
 
         session = self._get_session()
@@ -105,6 +98,5 @@ class DBConfigSQLAlchemy:
 
     def _validate_token_status(self):
         if self.token_expiration_time < datetime.now():
-            # Renew the token
             self._get_db_access_token()
             LOGGER.info("Token for database renewed.")
