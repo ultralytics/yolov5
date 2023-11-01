@@ -67,6 +67,7 @@ from yolov5.utils.general import (
 from yolov5.utils.metrics import ConfusionMatrix, TaggedConfusionMatrix, ap_per_class, box_iou
 from yolov5.utils.plots import output_to_target, plot_images, plot_val_study
 from yolov5.utils.torch_utils import select_device, smart_inference_mode
+from torchvision.utils import save_image
 
 # Use the following repo for local run https://github.com/Computer-Vision-Team-Amsterdam/yolov5-local-docker
 LOCAL_RUN = False
@@ -199,7 +200,8 @@ def run(
         db_username='',
         db_hostname='',
         db_name='',
-        start_time=''):
+        start_time='',
+        no_inverted_colors=False):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -543,13 +545,15 @@ def run(
         # Plot images
         if plots and not skip_evaluation:
             plot_images(im, targets, paths, save_dir / f'{path.stem}_labelled.jpg', names,
-                        conf_thres=conf_thres)  # labels
+                        conf_thres=conf_thres,
+                        no_inverted_colors=no_inverted_colors)  # labels
             plot_images(im,
                         output_to_target(preds),
                         paths,
                         save_dir / f'{path.stem}_pred.jpg',
                         names,
-                        conf_thres=conf_thres)  # pred
+                        conf_thres=conf_thres,
+                        no_inverted_colors=no_inverted_colors)  # pred
 
         callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, preds)
 
@@ -655,6 +659,8 @@ def parse_opt():
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
+    parser.add_argument('--no-inverted-colors', action='store_true', help='Set this to false when plots have negative '
+                                                                           'effect.')
     parser.add_argument('--max-det', type=int, default=300, help='maximum detections per image')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
