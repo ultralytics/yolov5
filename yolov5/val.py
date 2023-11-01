@@ -508,35 +508,34 @@ def run(
             # Filter and iterate over paths with no detection in current batch
             false_paths = [path for path in image_detections if not image_detections[path]]
 
-            # The session will be automatically closed at the end of this block
-            with db_config.managed_session() as session:
-                # Process images with no detection
-                for false_path in false_paths:
-                    image_filename, image_upload_date = extract_upload_date(false_path)
+            # Process images with no detection
+            for false_path in false_paths:
+                image_filename, image_upload_date = extract_upload_date(false_path)
 
-                    # Create an instance of DetectionInformation
-                    detection_info = DetectionInformation(image_customer_name=customer_name,
-                                                          image_upload_date=image_upload_date,
-                                                          image_filename=image_filename,
-                                                          has_detection=False,
-                                                          class_id=None,
-                                                          x_norm=None,
-                                                          y_norm=None,
-                                                          w_norm=None,
-                                                          h_norm=None,
-                                                          image_width=None,
-                                                          image_height=None,
-                                                          run_id=run_id)
+                # Create an instance of DetectionInformation
+                detection_info = DetectionInformation(image_customer_name=customer_name,
+                                                      image_upload_date=image_upload_date,
+                                                      image_filename=image_filename,
+                                                      has_detection=False,
+                                                      class_id=None,
+                                                      x_norm=None,
+                                                      y_norm=None,
+                                                      w_norm=None,
+                                                      h_norm=None,
+                                                      image_width=None,
+                                                      image_height=None,
+                                                      run_id=run_id)
 
+                # Create a new instance of the ImageProcessingStatus model
+                image_processing_status = ImageProcessingStatus(image_filename=image_filename,
+                                                                image_upload_date=image_upload_date,
+                                                                image_customer_name=customer_name,
+                                                                processing_status='processed')
+
+                # The session will be automatically closed at the end of this block
+                with db_config.managed_session() as session:
                     # Add the instance to the session
                     session.add(detection_info)
-
-                    # Create a new instance of the ImageProcessingStatus model
-                    image_processing_status = ImageProcessingStatus(image_filename=image_filename,
-                                                                    image_upload_date=image_upload_date,
-                                                                    image_customer_name=customer_name,
-                                                                    processing_status='processed')
-
                     # Merge the instance into the session (updates if already exists)
                     session.merge(image_processing_status)
 
