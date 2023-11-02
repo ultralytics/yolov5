@@ -7,6 +7,7 @@ import contextlib
 import math
 import os
 from copy import copy
+from enum import Enum
 from pathlib import Path
 from urllib.error import URLError
 
@@ -39,6 +40,41 @@ from yolov5.utils.segment.general import scale_image
 RANK = int(os.getenv('RANK', -1))
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
+
+
+class BoxSize(Enum):
+    SMALL = (0, 5000)
+    MEDIUM = (5000, 10000)
+    # 32 million pixels for a bbox is a sound upper limit since we normally evaluate on 4000x8000 images.
+    # For twice as large images it is still sound. If images are much larger, all these intervals must be adjusted.
+    LARGE = (10000, 32000000)
+
+
+    @staticmethod
+    def print_all_sizes():
+        return ", ".join([f"{size.name}: {size.value[0]} - {size.value[1]}" for size in BoxSize])
+
+    @staticmethod
+    def get_size(area):
+        for size in BoxSize:
+            if size.value[0] < area <= size.value[1]:
+                return size
+        raise ValueError(f"No size category found for the given area: {area}")
+
+
+class BoxColor(Enum):
+    RED = (255, 0, 0)       # RGB
+    ORANGE = (255, 165, 0)  # RGB
+    YELLOW = (255, 255, 0)  # RGB
+
+    @staticmethod
+    def get_color(box_size):
+        if box_size == BoxSize.SMALL:
+            return BoxColor.RED.value
+        elif box_size == BoxSize.MEDIUM:
+            return BoxColor.ORANGE.value
+        elif box_size == BoxSize.LARGE:
+            return BoxColor.YELLOW.value
 
 
 class Colors:
@@ -237,7 +273,7 @@ def output_to_target(output, max_det=300):
 
 
 @threaded
-def plot_images(images, targets, paths=None, fname='images.jpg', names=None, conf_thres=0.25):
+def plot_images(images, targets, paths=None, fname='images.jpg', names=None, conf_thres=0.25, no_inverted_colors=False):
     # Plot image grid with labels
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
@@ -261,6 +297,20 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, con
         im = im.transpose(1, 2, 0)
         mosaic[y:y + h, x:x + w, :] = im
 
+    # There is a bug in YOLOv5 plots where the image colors are sometimes incorrectly inverted based on the image size,
+    # specified by the 'imgsz' flag. This issue seems to occur inconsistently when 'imgsz' is equal or larger than 1024.
+    # In some cases, 'imgsz' can be set to 1024, and the images are correctly plotted in RGB,
+    # but the error still occurs occasionally for imgsz 1024 and below.
+    # As a workaround to address this bug, you can adjust the value of 'no_inverted_colors' flag.
+    # If after inspecting the plotted images they appear with a negative effect, run the script with the flag adjusted.
+
+    # NOTE: Github issue: https://github.com/ultralytics/yolov5/issues/11726
+    # Example:
+    # python val.py --imgsz 1024 --> may lead to negative effect, in that case, re-run with
+    # python val.py --imgsz 1024 --no-inverted-colors
+    if no_inverted_colors:
+        mosaic = 255 - mosaic
+
     # Resize (optional)
     scale = max_size / ns / max(h, w)
     if scale < 1:
@@ -275,7 +325,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, con
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
         if paths:
-            annotator.text((x + 5, y + 5), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
+            annotator.text((x + 5, y + 5), text=BoxSize.print_all_sizes(), txt_color=(220, 220, 220))  # box sizes info
         if len(targets) > 0:
             ti = targets[targets[:, 0] == i]  # image targets
             boxes = xywh2xyxy(ti[:, 2:6]).T
@@ -292,12 +342,15 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, con
             boxes[[0, 2]] += x
             boxes[[1, 3]] += y
             for j, box in enumerate(boxes.T.tolist()):
+                x1, y1, x2, y2 = box
+                area = (x2 - x1) * (y2 - y1)
+                box_size = BoxSize.get_size(area)
+                line_color = BoxColor.get_color(box_size)
                 cls = classes[j]
-                color = colors(cls)
                 cls = names[cls] if names else cls
                 if labels or conf[j] > conf_thres:
                     label = f'{cls}' if labels else f'{cls} {conf[j]:.1f}'
-                    annotator.box_label(box, label, color=color)
+                    annotator.box_label(box, label, color=line_color)
     annotator.im.save(fname)  # save
 
 
