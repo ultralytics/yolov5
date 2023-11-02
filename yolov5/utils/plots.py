@@ -45,7 +45,10 @@ matplotlib.use('Agg')  # for writing to files only
 class BoxSize(Enum):
     SMALL = (0, 5000)
     MEDIUM = (5000, 10000)
+    # 32 million pixels for a bbox is a sound upper limit since we normally evaluate on 4000x8000 images.
+    # For twice as large images it is still sound. If images are much larger, all these intervals must be adjusted.
     LARGE = (10000, 32000000)
+
 
     @staticmethod
     def print_all_sizes():
@@ -301,10 +304,9 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, con
     # As a workaround to address this bug, you can adjust the value of 'no_inverted_colors' flag.
     # If after inspecting the plotted images they appear with a negative effect, run the script with the flag adjusted.
 
+    # NOTE: Github issue: https://github.com/ultralytics/yolov5/issues/11726
     # Example:
-    # python val.py --imgsz 2048 --no-inverted-colors --> plots correct RGB images
-    # python val.py --imgsz 640                       --> plots correct RGB images
-    # python val.py --imgsz 1024                      --> may lead to negative effect, in that case, re-run with
+    # python val.py --imgsz 1024 --> may lead to negative effect, in that case, re-run with
     # python val.py --imgsz 1024 --no-inverted-colors
     if no_inverted_colors:
         mosaic = 255 - mosaic
