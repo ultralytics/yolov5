@@ -29,6 +29,7 @@ class DetectionInformation(DBConfigSQLAlchemy.Base):
     image_width = Column(Integer)
     image_height = Column(Integer)
     run_id = Column(String)
+    conf_score = Column(Float)
 
 
 class BatchRunInformation(DBConfigSQLAlchemy.Base):

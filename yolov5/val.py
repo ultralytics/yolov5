@@ -483,7 +483,8 @@ def run(
                                                                       h_norm=y2,
                                                                       image_width=image_width,
                                                                       image_height=image_height,
-                                                                      run_id=run_id)
+                                                                      run_id=run_id,
+                                                                      conf_score=conf)
 
                                 # Add the instance to the session
                                 session.add(detection_info)
@@ -529,7 +530,8 @@ def run(
                                                       h_norm=None,
                                                       image_width=None,
                                                       image_height=None,
-                                                      run_id=run_id)
+                                                      run_id=run_id,
+                                                      conf_score=None)
 
                 # Create a new instance of the ImageProcessingStatus model
                 image_processing_status = ImageProcessingStatus(image_filename=image_filename,
