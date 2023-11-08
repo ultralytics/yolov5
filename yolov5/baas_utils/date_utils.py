@@ -14,8 +14,7 @@ def extract_upload_date(path):
         raise e
 
     try:
-        image_upload_date = datetime.strptime(date_time_str, "%Y-%m-%d_%H:%M:%S")
-        image_upload_date = image_upload_date.strftime("%Y-%m-%d")
+        image_upload_date = datetime.strptime(date_time_str, "%Y-%m-%d_%H_%M_%S")
     except ValueError as e:
         LOGGER.info(f"Invalid folder structure, can not retrieve date: {date_time_str}")
         raise e

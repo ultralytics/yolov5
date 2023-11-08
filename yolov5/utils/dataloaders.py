@@ -461,10 +461,16 @@ def img2label_paths(img_paths):
     return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
 
 
-def extract_folder_and_filename(path):
-    # Function to extract the last folder and file name from the path
-    folder, filename = os.path.split(path)
-    return os.path.join(os.path.basename(folder), filename)
+def extract_filename_with_subfolder(path):
+    try:
+        # Split the path at the first occurrence of "wd/INPUT"
+        parts = path.split("wd/INPUT", 1)
+        # Split into two parts, skipping the first Azure input storage part
+        filename_subfolder = parts[1].split("/", 1)[-1]
+    except Exception as e:
+        raise e
+
+    return filename_subfolder
 
 
 class LoadImagesAndLabels(Dataset):
@@ -517,13 +523,14 @@ class LoadImagesAndLabels(Dataset):
 
                 else:
                     raise FileNotFoundError(f'{prefix}{p} does not exist')
+
             # images_to_process are all images that the application found in the storage account (paths in the txt file)
             images_to_process = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
 
             # Create a list of images to be processed that are not in the list of processed images
             # processed_images are all the images in the database that have the label "inprogress" or "processed"
             self.im_files = [
-                image for image in images_to_process if extract_folder_and_filename(image) not in processed_images]
+                image for image in images_to_process if extract_filename_with_subfolder(image) not in processed_images]
 
             if not self.im_files:
                 raise Exception(f'{prefix}No (new) images found')

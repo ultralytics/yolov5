@@ -25,7 +25,7 @@ poetry install
 
 #### Tagged validation
 
-To analyze bias in our data, we divided the categories "person" and "license_plate" into smaller groups. This is called "tagged validation." We added tags for gender, age, and skin tone to each label. Each combination of these tags was given a unique number, like 1 for "man/child/dark," 2 for "man/child/medium," and so on.
+To analyze bias in our data, we divided the categories "person" and "license_plate" into smaller groups. This is called "tagged validation". We added tags for gender, age, and skin tone to each label. Each combination of these tags was given a unique number, like 1 for "man/child/dark," 2 for "man/child/medium," and so on.
 
 Then, we included these numbers in our YOLO annotations. This way, we can see how well our model works in different situations by looking at the validation results.
 

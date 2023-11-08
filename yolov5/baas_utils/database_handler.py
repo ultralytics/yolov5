@@ -1,10 +1,11 @@
 import subprocess
 import json
 from contextlib import contextmanager
+import time
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, DatabaseError
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timedelta
 
@@ -22,6 +23,8 @@ class DBConfigSQLAlchemy:
         self.access_token = None
         self.token_expiration_time = None
         self.token_renewal_margin = timedelta(minutes=5)
+        self.retry_count = 3
+        self.retry_delay = 5  # seconds between retries
 
     def _get_db_access_token(self):
         with open('database.json') as f:
@@ -77,16 +80,25 @@ class DBConfigSQLAlchemy:
 
     @contextmanager
     def managed_session(self):
-        self._validate_token_status()
+        for retry in range(self.retry_count):
+            self._validate_token_status()
 
-        session = self._get_session()
-        try:
-            yield session  # This line yields the 'session' to the with block.
-            session.commit()  # Executed when the with block completes
-        except SQLAlchemyError as e:
-            session.rollback()
-            raise e
-        finally:
+            session = self._get_session()
+            try:
+                yield session  # This line yields the 'session' to the with block.
+                session.commit()  # Executed when the with block completes
+                break  # Exit the loop if successful
+            except SQLAlchemyError as e:
+                # Roll back any uncommitted changes within current session to maintain data integrity.
+                session.rollback()
+                raise e
+            except DatabaseError as e:
+                # You can add a sleep here before the next retry
+                if retry < self.retry_count - 1:
+                    LOGGER.info(f"Error with the connection to the database, retry after {self.retry_delay} seconds...")
+                    time.sleep(self.retry_delay)
+                else:
+                    raise e
             session.close()
 
     def close_connection(self):
