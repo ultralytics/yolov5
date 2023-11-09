@@ -233,7 +233,7 @@ def run(
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
     s = ('%22s' + '%11s' * 10) % ('Class', 'Images', 'Instances', 'Box(P', 'R', 'mAP50', 'mAP50-95)', 'Mask(P', 'R',
                                   'mAP50', 'mAP50-95)')
-    dt = Profile(), Profile(), Profile()
+    dt = Profile(device=device), Profile(device=device), Profile(device=device)
     metrics = Metrics()
     loss = torch.zeros(4, device=device)
     jdict, stats = [], []
