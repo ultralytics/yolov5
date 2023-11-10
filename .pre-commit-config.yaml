@@ -11,7 +11,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -22,7 +22,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         name: Upgrade code
@@ -34,7 +34,7 @@ repos:
         name: Sort imports
 
   - repo: https://github.com/google/yapf
-    rev: v0.40.0
+    rev: v0.40.2
     hooks:
       - id: yapf
         name: YAPF formatting
@@ -56,7 +56,7 @@ repos:
         name: PEP8
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.2.6
     hooks:
       - id: codespell
         args:
