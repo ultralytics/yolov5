@@ -5,8 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import yaml
-
-from utils.plots import Annotator, colors
+from ultralytics.utils.plotting import Annotator, colors
 
 try:
     import clearml
