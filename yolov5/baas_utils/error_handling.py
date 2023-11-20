@@ -1,8 +1,9 @@
 import os
 
 from .database_handler import DBConfigSQLAlchemy
-from .database_tables import BatchRunInformation
+from .database_tables import BatchRunInformation, ImageProcessingStatus, DetectionInformation
 from .date_utils import get_current_time
+from sqlalchemy import and_
 
 from yolov5.utils.general import LOGGER
 
@@ -53,6 +54,33 @@ def exception_handler(func):
 
                     # Add the instance to the session
                     session.add(batch_info)
+
+                with db_config.managed_session() as session:
+                    # Subquery to identify rows to be deleted
+                    subquery = session.query(ImageProcessingStatus).join(
+                        DetectionInformation,
+                        and_(
+                            ImageProcessingStatus.image_customer_name == DetectionInformation.image_customer_name,
+                            ImageProcessingStatus.image_upload_date == DetectionInformation.image_upload_date,
+                            ImageProcessingStatus.image_filename == DetectionInformation.image_filename
+                        )
+                    ).filter(
+                        and_(
+                            ImageProcessingStatus.processing_status == "inprogress",
+                            DetectionInformation.run_id == run_id
+                        )
+                    ).subquery()
+
+                    # Perform deletion using the subquery
+                    session.query(ImageProcessingStatus).filter(
+                        and_(
+                            ImageProcessingStatus.image_customer_name == subquery.c.image_customer_name,
+                            ImageProcessingStatus.image_upload_date == subquery.c.image_upload_date,
+                            ImageProcessingStatus.image_filename == subquery.c.image_filename
+                        )
+                    ).delete(synchronize_session=False)
+
+                    LOGGER.info(f"Deleted 'inprogress' rows in ImageProcessingStatus for run_id: {run_id}")
 
             # Re-raise the exception
             raise e
