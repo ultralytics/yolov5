@@ -145,10 +145,8 @@ def set_logging(name=LOGGING_NAME, verbose=True):
                 'propagate': False,}}})
 
 
-# set_logging(LOGGING_NAME)  # run before defining LOGGER
 LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
-print("========= HANDLERS ========")
-print(LOGGER.handlers)
+LOGGER.info(f"Handlers in {__name__}: {LOGGER.handlers}")
 
 
 if platform.system() == 'Windows':
