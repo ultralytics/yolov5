@@ -146,6 +146,7 @@ def set_logging(name=LOGGING_NAME, verbose=True):
 
 
 LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
+LOGGER.info(f"Logger level is: {LOGGER.level}")
 LOGGER.info(f"Handlers in {__name__}: {LOGGER.handlers}")
 
 

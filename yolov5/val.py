@@ -69,7 +69,7 @@ from torchvision.utils import save_image
 
 # Use the following repo for local run https://github.com/Computer-Vision-Team-Amsterdam/yolov5-local-docker
 LOCAL_RUN = False
-
+LOGGER.info(f"Logger handlers in {__name__}: {LOGGER.handlers}")
 
 def is_area_positive(x1, y1, x2, y2):
     if x1 == x2 or y1 == y2:
@@ -441,8 +441,6 @@ def run(
                                               file=save_dir / 'labels' / f'{path.stem}.txt',
                                               json_file=save_dir / 'labels_tagged' / f'{path.stem}.json',
                                               confusion_matrix=confusion_matrix)
-                    LOGGER.info(f'saved jsons at {str(save_dir)} /labels_tagged')
-
                 else:
                     save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
                     # Print results
@@ -509,6 +507,9 @@ def run(
                         im_orig[si],
                 ):
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
+
+        if save_txt and tagged_data:
+            LOGGER.info(f'Saved jsons at {str(save_dir)} /labels_tagged')
 
         if skip_evaluation:
             # Filter and iterate over paths with no detection in current batch
