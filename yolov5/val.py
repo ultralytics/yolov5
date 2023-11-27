@@ -108,7 +108,6 @@ def save_one_txt_and_one_json(predn, save_conf, shape, file, json_file, confusio
 
     with open(json_file, 'w') as fp:
         json.dump(confusion_matrix.get_tagged_dict(), fp)
-    LOGGER.info(f'saved json at {json_file}')
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -442,6 +441,8 @@ def run(
                                               file=save_dir / 'labels' / f'{path.stem}.txt',
                                               json_file=save_dir / 'labels_tagged' / f'{path.stem}.json',
                                               confusion_matrix=confusion_matrix)
+                    LOGGER.info(f'saved jsons at {str(save_dir)} /labels_tagged')
+
                 else:
                     save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
                     # Print results
