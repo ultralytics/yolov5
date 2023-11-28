@@ -69,10 +69,8 @@ from torchvision.utils import save_image
 
 # Use the following repo for local run https://github.com/Computer-Vision-Team-Amsterdam/yolov5-local-docker
 LOCAL_RUN = False
-<<<<<<< HEAD
 LOGGER.info(f"Logger handlers in {__name__}: {LOGGER.handlers}")
-=======
->>>>>>> master
+
 
 def is_area_positive(x1, y1, x2, y2):
     if x1 == x2 or y1 == y2:
