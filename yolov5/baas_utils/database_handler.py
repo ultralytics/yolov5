@@ -38,7 +38,7 @@ class DBConfigSQLAlchemy:
             command = ["az", "login", "--identity", "--username", client_id]
             subprocess.check_call(command)
         except subprocess.CalledProcessError as e:
-            LOGGER.info("Error during 'az login --identity': {e}")
+            LOGGER.error("Error during 'az login --identity': {e}")
             raise e
 
         # Execute Azure CLI command to get the access token
@@ -75,7 +75,7 @@ class DBConfigSQLAlchemy:
 
         except SQLAlchemyError as e:
             # Handle any exceptions that occur during connection creation
-            LOGGER.info(f"Error creating database sessionmaker: {str(e)}")
+            LOGGER.error(f"Error creating database sessionmaker: {str(e)}")
             raise e
 
     @contextmanager
@@ -95,7 +95,7 @@ class DBConfigSQLAlchemy:
             except DatabaseError as e:
                 # You can add a sleep here before the next retry
                 if retry < self.retry_count - 1:
-                    LOGGER.info(f"Error with the connection to the database, retry after {self.retry_delay} seconds...")
+                    LOGGER.error(f"Error with the connection to the database, retry after {self.retry_delay} seconds...")
                     time.sleep(self.retry_delay)
                 else:
                     raise e
@@ -105,7 +105,7 @@ class DBConfigSQLAlchemy:
         try:
             self.engine.dispose()
         except SQLAlchemyError as e:
-            LOGGER.info(f"Error disposing the database engine: {str(e)}")
+            LOGGER.error(f"Error disposing the database engine: {str(e)}")
             raise e
 
     def _validate_token_status(self):
