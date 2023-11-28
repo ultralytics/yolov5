@@ -69,6 +69,8 @@ from torchvision.utils import save_image
 
 # Use the following repo for local run https://github.com/Computer-Vision-Team-Amsterdam/yolov5-local-docker
 LOCAL_RUN = False
+LOGGER.info(f"Logger handlers in {__name__}: {LOGGER.handlers}")
+
 
 def is_area_positive(x1, y1, x2, y2):
     if x1 == x2 or y1 == y2:
@@ -107,7 +109,6 @@ def save_one_txt_and_one_json(predn, save_conf, shape, file, json_file, confusio
 
     with open(json_file, 'w') as fp:
         json.dump(confusion_matrix.get_tagged_dict(), fp)
-    LOGGER.info(f'saved json at {json_file}')
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -510,6 +511,7 @@ def run(
                 with db_config.managed_session() as session:
                     # Merge the instance into the session (updates if already exists)
                     session.merge(image_processing_status)
+
 
         if skip_evaluation:
             # Filter and iterate over paths with no detection in current batch

@@ -29,7 +29,7 @@ def exception_handler(func):
                 try:
                     trained_yolo_model = os.path.split(trained_yolo_model)[-1]
                 except Exception as e:
-                    LOGGER.info(f"Error while getting trained_yolo_model name: {str(e)}")
+                    LOGGER.error(f"Error while getting trained_yolo_model name: {str(e)}")
                     trained_yolo_model = ""
 
                 # Validate if database credentials are provided
