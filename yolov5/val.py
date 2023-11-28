@@ -69,7 +69,10 @@ from torchvision.utils import save_image
 
 # Use the following repo for local run https://github.com/Computer-Vision-Team-Amsterdam/yolov5-local-docker
 LOCAL_RUN = False
+<<<<<<< HEAD
 LOGGER.info(f"Logger handlers in {__name__}: {LOGGER.handlers}")
+=======
+>>>>>>> master
 
 def is_area_positive(x1, y1, x2, y2):
     if x1 == x2 or y1 == y2:
@@ -453,6 +456,10 @@ def run(
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
+            # Get variables to later insert into the database
+            image_filename, image_upload_date = extract_upload_date(paths[si])
+            batch_detection_info = []
+
             if save_blurred_image:
                 pred_clone[:, :4] = scale_boxes(im[si].shape[1:], pred_clone[:, :4], shape, shapes[si][1])
                 for *xyxy, conf, cls in pred_clone.tolist():
@@ -460,56 +467,53 @@ def run(
                     x2, y2 = int(xyxy[2]), int(xyxy[3])
 
                     if is_area_positive(x1, y1, x2, y2):
+                        # The following blurring operation incurs computational overhead during the inference process.
+                        # It applies a blur effect to a specific region within the original image.
                         area_to_blur = im_orig[si][y1:y2, x1:x2]
-                        blurred = cv2.GaussianBlur(area_to_blur, (135, 135), 0)
+                        blurred = cv2.blur(area_to_blur, (50, 50))
                         im_orig[si][y1:y2, x1:x2] = blurred
 
                         if skip_evaluation:
-                            # Get variables to later insert into the database
-                            image_filename, image_upload_date = extract_upload_date(paths[si])
-
                             # The session will be automatically closed at the end of this block
-                            with db_config.managed_session() as session:
-                                # Create an instance of DetectionInformation
-                                detection_info = DetectionInformation(image_customer_name=customer_name,
-                                                                      image_upload_date=image_upload_date,
-                                                                      image_filename=image_filename,
-                                                                      has_detection=True,
-                                                                      class_id=int(cls),
-                                                                      x_norm=x1,
-                                                                      y_norm=y1,
-                                                                      w_norm=x2,
-                                                                      h_norm=y2,
-                                                                      image_width=image_width,
-                                                                      image_height=image_height,
-                                                                      run_id=run_id)
-
-                                # Add the instance to the session
-                                session.add(detection_info)
-
-                                # Create a new instance of the ImageProcessingStatus model
-                                image_processing_status = ImageProcessingStatus(image_filename=image_filename,
-                                                                                image_upload_date=image_upload_date,
-                                                                                image_customer_name=customer_name,
-                                                                                processing_status='processed')
-
-                                # Merge the instance into the session (updates if already exists)
-                                session.merge(image_processing_status)
-                    else:
-                        LOGGER.warning('Area to blur is 0.')
+                            batch_detection_info.append({
+                                'image_customer_name': customer_name,
+                                'image_upload_date': image_upload_date,
+                                'image_filename': image_filename,
+                                'has_detection': True,
+                                'class_id': int(cls),
+                                'x_norm': x1,
+                                'y_norm': y1,
+                                'w_norm': x2,
+                                'h_norm': y2,
+                                'image_width': image_width,
+                                'image_height': image_height,
+                                'run_id': run_id,
+                                'conf_score': conf
+                            })
 
                 folder_path = os.path.dirname(save_path)
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
 
-                if not cv2.imwrite(
-                        save_path,
-                        im_orig[si],
-                ):
+                if not cv2.imwrite(save_path, im_orig[si]):
                     raise Exception(f'Could not write image {os.path.basename(save_path)}')
 
-        if save_txt and tagged_data:
-            LOGGER.info(f'Saved jsons at {str(save_dir)} /labels_tagged')
+            # Batch insertions to the database
+            if skip_evaluation:
+                with db_config.managed_session() as session:
+                    # Bulk insertion for DetectionInformation
+                    if batch_detection_info:
+                        session.bulk_insert_mappings(DetectionInformation, batch_detection_info)
+
+                image_processing_status = ImageProcessingStatus(image_filename=image_filename,
+                                                                image_upload_date=image_upload_date,
+                                                                image_customer_name=customer_name,
+                                                                processing_status='processed')
+
+                with db_config.managed_session() as session:
+                    # Merge the instance into the session (updates if already exists)
+                    session.merge(image_processing_status)
+
 
         if skip_evaluation:
             # Filter and iterate over paths with no detection in current batch
@@ -531,7 +535,8 @@ def run(
                                                       h_norm=None,
                                                       image_width=None,
                                                       image_height=None,
-                                                      run_id=run_id)
+                                                      run_id=run_id,
+                                                      conf_score=None)
 
                 # Create a new instance of the ImageProcessingStatus model
                 image_processing_status = ImageProcessingStatus(image_filename=image_filename,
@@ -629,7 +634,7 @@ def run(
         try:
             trained_yolo_model = os.path.split(weights)[-1]
         except Exception as e:
-            print(f"Error while getting trained_yolo_model name: {str(e)}")
+            LOGGER.error(f"Error while getting trained_yolo_model name: {str(e)}")
             trained_yolo_model = ""
 
         # Perform database operations using the 'session'
