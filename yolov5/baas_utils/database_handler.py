@@ -80,25 +80,16 @@ class DBConfigSQLAlchemy:
 
     @contextmanager
     def managed_session(self):
-        for retry in range(self.retry_count):
-            self._validate_token_status()
+        self._validate_token_status()
+        session = self._get_session()
 
-            session = self._get_session()
-            try:
-                yield session  # This line yields the 'session' to the with block.
-                session.commit()  # Executed when the with block completes
-                break  # Exit the loop if successful
-            except SQLAlchemyError as e:
-                # Roll back any uncommitted changes within current session to maintain data integrity.
-                session.rollback()
-                raise e
-            except DatabaseError as e:
-                # You can add a sleep here before the next retry
-                if retry < self.retry_count - 1:
-                    LOGGER.error(f"Error with the connection to the database, retry after {self.retry_delay} seconds...")
-                    time.sleep(self.retry_delay)
-                else:
-                    raise e
+        try:
+            yield session  # This line yields the 'session' to the with block.
+            session.commit()  # Executed when the with block completes
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise e
+        finally:
             session.close()
 
     def close_connection(self):
