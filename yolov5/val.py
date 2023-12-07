@@ -455,7 +455,13 @@ def run(
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
             # Get variables to later insert into the database
-            image_filename, image_upload_date = extract_upload_date(paths[si])
+            try:
+                image_filename, image_upload_date = extract_upload_date(paths[si])
+            except ValueError as e:
+                if skip_evaluation:
+                    LOGGER.ERROR(e)
+                else:
+                    LOGGER.INFO("Ignore wrong date time format when running performance evaluation pipeline.")
             batch_detection_info = []
 
             if save_blurred_image:
