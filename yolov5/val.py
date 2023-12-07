@@ -459,9 +459,9 @@ def run(
                 image_filename, image_upload_date = extract_upload_date(paths[si])
             except ValueError as e:
                 if skip_evaluation:
-                    LOGGER.ERROR(e)
+                    LOGGER.error(e)
                 else:
-                    LOGGER.INFO("Ignore wrong date time format when running performance evaluation pipeline.")
+                    LOGGER.info("Ignore wrong date time format when running performance evaluation pipeline.")
             batch_detection_info = []
 
             if save_blurred_image:
