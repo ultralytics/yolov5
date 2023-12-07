@@ -1,35 +1,43 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 # Builds ultralytics/yolov5:latest image on DockerHub https://hub.docker.com/r/ultralytics/yolov5
 # Image is CUDA-optimized for YOLOv5 single/multi-GPU training and inference
 
-# Start FROM NVIDIA PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:22.07-py3
-RUN rm -rf /opt/pytorch  # remove 1.2GB dir
+# Start FROM PyTorch image https://hub.docker.com/r/pytorch/pytorch
+FROM pytorch/pytorch:2.0.0-cuda11.7-cudnn8-runtime
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
 
 # Install linux packages
-RUN apt update && apt install --no-install-recommends -y zip htop screen libgl1-mesa-glx
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt update
+RUN TZ=Etc/UTC apt install -y tzdata
+RUN apt install --no-install-recommends -y gcc git zip curl htop libgl1 libglib2.0-0 libpython3-dev gnupg
+# RUN alias python=python3
 
-# Install pip packages
-COPY requirements.txt .
-RUN python -m pip install --upgrade pip wheel
-RUN pip uninstall -y Pillow torchtext  # torch torchvision
-RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook Pillow>=9.1.0 \
-    'opencv-python<4.6.0.66' \
-    --extra-index-url https://download.pytorch.org/whl/cu113
+# Security updates
+# https://security.snyk.io/vuln/SNYK-UBUNTU1804-OPENSSL-3314796
+RUN apt upgrade --no-install-recommends -y openssl
 
 # Create working directory
-RUN mkdir -p /usr/src/app
+RUN rm -rf /usr/src/app && mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy contents
-# COPY . /usr/src/app  (issues as not a .git directory)
-RUN git clone https://github.com/ultralytics/yolov5 /usr/src/app
+COPY . /usr/src/app
+
+# Install pip packages
+COPY requirements.txt .
+RUN python3 -m pip install --upgrade pip wheel
+RUN pip install --no-cache -r requirements.txt albumentations comet gsutil notebook \
+    coremltools onnx onnx-simplifier onnxruntime 'openvino-dev>=2023.0'
+    # tensorflow tensorflowjs \
 
 # Set environment variables
-ENV OMP_NUM_THREADS=8
+ENV OMP_NUM_THREADS=1
+
+# Cleanup
+ENV DEBIAN_FRONTEND teletype
 
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
@@ -49,14 +57,11 @@ ENV OMP_NUM_THREADS=8
 # Kill all image-based
 # sudo docker kill $(sudo docker ps -qa --filter ancestor=ultralytics/yolov5:latest)
 
-# Bash into running container
-# sudo docker exec -it 5a9b5863d93d bash
-
-# Bash into stopped container
-# id=$(sudo docker ps -qa) && sudo docker start $id && sudo docker exec -it $id bash
+# DockerHub tag update
+# t=ultralytics/yolov5:latest tnew=ultralytics/yolov5:v6.2 && sudo docker pull $t && sudo docker tag $t $tnew && sudo docker push $tnew
 
 # Clean up
-# docker system prune -a --volumes
+# sudo docker system prune -a --volumes
 
 # Update Ubuntu drivers
 # https://www.maketecheasier.com/install-nvidia-drivers-ubuntu/

@@ -5,12 +5,12 @@ from pathlib import Path
 
 import numpy as np
 import yaml
-
-from utils.plots import Annotator, colors
+from ultralytics.utils.plotting import Annotator, colors
 
 try:
     import clearml
     from clearml import Dataset, Task
+
     assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     clearml = None
@@ -24,7 +24,7 @@ def construct_dataset(clearml_info_string):
     dataset_root_path = Path(dataset.get_local_copy())
 
     # We'll search for the yaml file definition in the dataset
-    yaml_filenames = list(glob.glob(str(dataset_root_path / "*.yaml")) + glob.glob(str(dataset_root_path / "*.yml")))
+    yaml_filenames = list(glob.glob(str(dataset_root_path / '*.yaml')) + glob.glob(str(dataset_root_path / '*.yml')))
     if len(yaml_filenames) > 1:
         raise ValueError('More than one yaml file was found in the dataset root, cannot determine which one contains '
                          'the dataset definition this way.')
@@ -84,10 +84,11 @@ class ClearmlLogger:
         self.data_dict = None
         if self.clearml:
             self.task = Task.init(
-                project_name='YOLOv5',
-                task_name='training',
+                project_name=opt.project if opt.project != 'runs/train' else 'YOLOv5',
+                task_name=opt.name if opt.name != 'exp' else 'Training',
                 tags=['YOLOv5'],
                 output_uri=True,
+                reuse_last_task_id=opt.exist_ok,
                 auto_connect_frameworks={'pytorch': False}
                 # We disconnect pytorch auto-detection, because we added manual model save points in the code
             )
@@ -95,6 +96,12 @@ class ClearmlLogger:
             # Only the hyperparameters coming from the yaml config file
             # will have to be added manually!
             self.task.connect(hyp, name='Hyperparameters')
+            self.task.connect(opt, name='Args')
+
+            # Make sure the code is easily remotely runnable by setting the docker image to use by the remote agent
+            self.task.set_base_docker('ultralytics/yolov5:latest',
+                                      docker_arguments='--ipc=host -e="CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1"',
+                                      docker_setup_bash_script='pip install clearml')
 
             # Get ClearML Dataset Version if requested
             if opt.data.startswith('clearml://'):
@@ -141,10 +148,10 @@ class ClearmlLogger:
                     color = colors(i)
 
                     class_name = class_names[int(class_nr)]
-                    confidence = round(float(conf) * 100, 2)
-                    label = f"{class_name}: {confidence}%"
+                    confidence_percentage = round(float(conf) * 100, 2)
+                    label = f'{class_name}: {confidence_percentage}%'
 
-                    if confidence > conf_threshold:
+                    if conf > conf_threshold:
                         annotator.rectangle(box.cpu().numpy(), outline=color)
                         annotator.box_label(box.cpu().numpy(), label=label, color=color)
 

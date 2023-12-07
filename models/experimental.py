@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Experimental modules
 """
@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from models.common import Conv
 from utils.downloads import attempt_download
 
 
@@ -80,15 +79,20 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
     for w in weights if isinstance(weights, list) else [weights]:
         ckpt = torch.load(attempt_download(w), map_location='cpu')  # load
         ckpt = (ckpt.get('ema') or ckpt['model']).to(device).float()  # FP32 model
+
+        # Model compatibility updates
         if not hasattr(ckpt, 'stride'):
-            ckpt.stride = torch.tensor([32.])  # compatibility update for ResNet etc.
+            ckpt.stride = torch.tensor([32.])
+        if hasattr(ckpt, 'names') and isinstance(ckpt.names, (list, tuple)):
+            ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
+
         model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # model in eval mode
 
-    # Compatibility updates
+    # Module updates
     for m in model.modules():
         t = type(m)
         if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model):
-            m.inplace = inplace  # torch 1.7.0 compatibility
+            m.inplace = inplace
             if t is Detect and not isinstance(m.anchor_grid, list):
                 delattr(m, 'anchor_grid')
                 setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
