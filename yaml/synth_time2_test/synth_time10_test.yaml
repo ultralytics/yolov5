@@ -1,0 +1,8 @@
+train: lc3_hdr_folds/fold5/images/train
+val: ./datasets/time2/images/val
+# test: lc3_hdr_folds/fold5/images/val
+# test: lc3_hdr_folds/fold5/images/test_hard
+# test: lc3_hdr_folds/fold5/images/test_easy
+test: ./datasets/time10/images/val
+nc: 1
+names: ["split"]

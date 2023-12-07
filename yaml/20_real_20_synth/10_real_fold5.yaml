@@ -1,0 +1,5 @@
+train: ./datasets/20_real_20_synth/fold5/images/train
+val: ./datasets/Real_test/fold5/images/val
+
+nc: 1
+names: ["split"]

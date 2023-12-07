@@ -1,0 +1,8 @@
+train: lc4_hdr_folds/fold1/images/train
+val: lc4_hdr_folds/fold1/images/val
+test: lc4_hdr_folds/fold1/images/val
+# test: lc4_hdr_folds/fold1/images/test_hard
+# test: lc4_hdr_folds/fold1/images/test_easy
+# test: hdr_test_all/fold1/images/test_all
+nc: 1
+names: ["split"]

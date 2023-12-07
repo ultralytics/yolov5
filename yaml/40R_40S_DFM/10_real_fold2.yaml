@@ -1,0 +1,5 @@
+train: ./datasets/40R_40S_DFM/fold2/images/train
+val: ./datasets/real_test_ldr/fold2/images/val
+
+nc: 1
+names: ["split"]

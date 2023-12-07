@@ -1,0 +1,9 @@
+# path: ./datasets/check  # dataset root dir
+train: ./datasets/r5_80_synth_folds_val_change/fold4/images/train  # train images (relative to 'path') 128 images
+val: ./datasets/r5_80_synth_folds_val_change/fold4/images/val  # val images (relative to 'path') 128 images
+# test:  # test images (optional)
+
+# Classes
+nc: 1  # number of classes
+names: ['split']  # class names
+

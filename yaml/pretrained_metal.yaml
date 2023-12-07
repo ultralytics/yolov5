@@ -1,0 +1,5 @@
+train: ./datasets/combined/train/images
+val: ./datasets/combined/valid/images
+
+nc: 1
+names: ["split"]

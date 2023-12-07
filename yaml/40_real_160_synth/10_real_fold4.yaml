@@ -1,0 +1,5 @@
+train: ./datasets/40_real_160_synth/fold4/images/train
+val: ./datasets/Real_test/fold4/images/val
+
+nc: 1
+names: ["split"]

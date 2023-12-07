@@ -1,0 +1,9 @@
+train: datasets/10sample/images/train
+train: datasets/10sample/images/train1
+val: datasets/10sample/images/val
+test: datasets/test/images/test
+# test: lc3_hdr_folds/fold1/images/test_hard
+# test: lc3_hdr_folds/fold1/images/test_easy
+# test: hdr_test_all/fold1/images/test_all
+nc: 1
+names: ["split"]

@@ -5,19 +5,20 @@ Usage:
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True, channels=3, classes=80)
 """
 
-dependencies = ['torch', 'yaml']
-import os
+from pathlib import Path
 
 import torch
 
 from models.yolo import Model
 from utils.general import set_logging
 from utils.google_utils import attempt_download
+from utils.torch_utils import select_device
 
+dependencies = ['torch', 'yaml']
 set_logging()
 
 
-def create(name, pretrained, channels, classes):
+def create(name, pretrained, channels, classes, autoshape):
     """Creates a specified YOLOv5 model
 
     Arguments:
@@ -29,7 +30,7 @@ def create(name, pretrained, channels, classes):
     Returns:
         pytorch model
     """
-    config = os.path.join(os.path.dirname(__file__), 'models', f'{name}.yaml')  # model.yaml path
+    config = Path(__file__).parent / 'models' / f'{name}.yaml'  # model.yaml path
     try:
         model = Model(config, channels, classes)
         if pretrained:
@@ -41,8 +42,10 @@ def create(name, pretrained, channels, classes):
             model.load_state_dict(state_dict, strict=False)  # load
             if len(ckpt['model'].names) == classes:
                 model.names = ckpt['model'].names  # set class names attribute
-            # model = model.autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
-        return model
+            if autoshape:
+                model = model.autoshape()  # for file/URI/PIL/cv2/np inputs and NMS
+        device = select_device('0' if torch.cuda.is_available() else 'cpu')  # default to GPU if available
+        return model.to(device)
 
     except Exception as e:
         help_url = 'https://github.com/ultralytics/yolov5/issues/36'
@@ -50,7 +53,7 @@ def create(name, pretrained, channels, classes):
         raise Exception(s) from e
 
 
-def yolov5s(pretrained=False, channels=3, classes=80):
+def yolov5s(pretrained=True, channels=3, classes=80, autoshape=True):
     """YOLOv5-small model from https://github.com/ultralytics/yolov5
 
     Arguments:
@@ -61,10 +64,10 @@ def yolov5s(pretrained=False, channels=3, classes=80):
     Returns:
         pytorch model
     """
-    return create('yolov5s', pretrained, channels, classes)
+    return create('yolov5s', pretrained, channels, classes, autoshape)
 
 
-def yolov5m(pretrained=False, channels=3, classes=80):
+def yolov5m(pretrained=True, channels=3, classes=80, autoshape=True):
     """YOLOv5-medium model from https://github.com/ultralytics/yolov5
 
     Arguments:
@@ -75,10 +78,10 @@ def yolov5m(pretrained=False, channels=3, classes=80):
     Returns:
         pytorch model
     """
-    return create('yolov5m', pretrained, channels, classes)
+    return create('yolov5m', pretrained, channels, classes, autoshape)
 
 
-def yolov5l(pretrained=False, channels=3, classes=80):
+def yolov5l(pretrained=True, channels=3, classes=80, autoshape=True):
     """YOLOv5-large model from https://github.com/ultralytics/yolov5
 
     Arguments:
@@ -89,10 +92,10 @@ def yolov5l(pretrained=False, channels=3, classes=80):
     Returns:
         pytorch model
     """
-    return create('yolov5l', pretrained, channels, classes)
+    return create('yolov5l', pretrained, channels, classes, autoshape)
 
 
-def yolov5x(pretrained=False, channels=3, classes=80):
+def yolov5x(pretrained=True, channels=3, classes=80, autoshape=True):
     """YOLOv5-xlarge model from https://github.com/ultralytics/yolov5
 
     Arguments:
@@ -103,16 +106,43 @@ def yolov5x(pretrained=False, channels=3, classes=80):
     Returns:
         pytorch model
     """
-    return create('yolov5x', pretrained, channels, classes)
+    return create('yolov5x', pretrained, channels, classes, autoshape)
+
+
+def custom(path_or_model='path/to/model.pt', autoshape=True):
+    """YOLOv5-custom model from https://github.com/ultralytics/yolov5
+
+    Arguments (3 options):
+        path_or_model (str): 'path/to/model.pt'
+        path_or_model (dict): torch.load('path/to/model.pt')
+        path_or_model (nn.Module): torch.load('path/to/model.pt')['model']
+
+    Returns:
+        pytorch model
+    """
+    model = torch.load(path_or_model) if isinstance(path_or_model, str) else path_or_model  # load checkpoint
+    if isinstance(model, dict):
+        model = model['ema' if model.get('ema') else 'model']  # load model
+
+    hub_model = Model(model.yaml).to(next(model.parameters()).device)  # create
+    hub_model.load_state_dict(model.float().state_dict())  # load state_dict
+    hub_model.names = model.names  # class names
+    return hub_model.autoshape() if autoshape else hub_model
 
 
 if __name__ == '__main__':
-    model = create(name='yolov5s', pretrained=True, channels=3, classes=80)  # example
-    model = model.fuse().eval().autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
+    model = create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True)  # pretrained example
+    # model = custom(path_or_model='path/to/model.pt')  # custom example
 
     # Verify inference
+    import numpy as np
     from PIL import Image
 
-    img = Image.open('inference/images/zidane.jpg')
-    y = model(img)
-    print(y[0].shape)
+    imgs = [Image.open('data/images/bus.jpg'),  # PIL
+            'data/images/zidane.jpg',  # filename
+            'https://github.com/ultralytics/yolov5/raw/master/data/images/bus.jpg',  # URI
+            np.zeros((640, 480, 3))]  # numpy
+
+    results = model(imgs)  # batched inference
+    results.print()
+    results.save()
