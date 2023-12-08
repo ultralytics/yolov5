@@ -29,6 +29,7 @@ GitPython = {version = "^3.1.31", source = "PyPI"}
 pre-commit = {version = "^3.2.0", source = "PyPI"}
 toml = {version = "^0.10.2", source = "PyPI"}
 yapf = {version = "^0.32.0", source = "PyPI"}
+sqlalchemy = {version = "1.4.50", source = "PyPI"}
 
 [tool.poetry.dev-dependencies]
 

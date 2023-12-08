@@ -55,7 +55,7 @@ class DBConfigSQLAlchemy:
 
     def _get_db_connection_string(self):
         self._get_db_access_token()
-        db_url = f"postgresql://{self.db_username}:{self.access_token}@{self.db_hostname}/{self.db_name}"
+        db_url = f"postgresql+psycopg2://{self.db_username}:{self.access_token}@{self.db_hostname}/{self.db_name}"
         print("_get_db_connection_string success.")
         return db_url
 
