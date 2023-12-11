@@ -460,6 +460,7 @@ def run(
             except ValueError as e:
                 if skip_evaluation:
                     LOGGER.error(e)
+                    raise e
             batch_detection_info = []
 
             if save_blurred_image:
