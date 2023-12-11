@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError, DatabaseError
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timedelta
 
+from yolov5.utils.general import LOGGER
 
 class DBConfigSQLAlchemy:
     Base = declarative_base()
@@ -37,7 +38,7 @@ class DBConfigSQLAlchemy:
             command = ["az", "login", "--identity", "--username", client_id]
             subprocess.check_call(command)
         except subprocess.CalledProcessError as e:
-            print("Error during 'az login --identity': {e}")
+            LOGGER.error("Error during 'az login --identity': {e}")
             raise e
 
         # Execute Azure CLI command to get the access token
@@ -51,12 +52,10 @@ class DBConfigSQLAlchemy:
         # Convert the expiration time string to a datetime object
         token_expiration_time = datetime.strptime(expires_on_str, "%Y-%m-%d %H:%M:%S.%f")
         self.token_expiration_time = token_expiration_time - self.token_renewal_margin
-        print("Get access token success.")
 
     def _get_db_connection_string(self):
         self._get_db_access_token()
         db_url = f"postgresql+psycopg2://{self.db_username}:{self.access_token}@{self.db_hostname}/{self.db_name}"
-        print("_get_db_connection_string success.")
         return db_url
 
     def _get_session(self):
@@ -72,11 +71,11 @@ class DBConfigSQLAlchemy:
             self.engine = create_engine(db_url)
             self.session_maker = sessionmaker(bind=self.engine, autoflush=False, autocommit=False)
 
-            print(f"Successfully created database sessionmaker.")
+            LOGGER.info(f"Successfully created database sessionmaker.")
 
         except SQLAlchemyError as e:
             # Handle any exceptions that occur during connection creation
-            print(f"Error creating database sessionmaker: {str(e)}")
+            LOGGER.error(f"Error creating database sessionmaker: {str(e)}")
             raise e
 
     @contextmanager
@@ -95,7 +94,7 @@ class DBConfigSQLAlchemy:
             except DatabaseError as e:
                 # You can add a sleep here before the next retry
                 if retry < self.retry_count - 1:
-                    print(f"Error with the connection to the database, retry after {self.retry_delay} seconds...")
+                    LOGGER.error(f"Error with the connection to the database, retry after {self.retry_delay} seconds...")
                     time.sleep(self.retry_delay)
                 else:
                     raise e
@@ -105,10 +104,10 @@ class DBConfigSQLAlchemy:
         try:
             self.engine.dispose()
         except SQLAlchemyError as e:
-            print(f"Error disposing the database engine: {str(e)}")
+            LOGGER.error(f"Error disposing the database engine: {str(e)}")
             raise e
 
     def _validate_token_status(self):
         if self.token_expiration_time < datetime.now():
             self._get_db_access_token()
-            print("Token for database renewed.")
+            LOGGER.error("Token for database renewed.")
