@@ -110,4 +110,4 @@ class DBConfigSQLAlchemy:
     def _validate_token_status(self):
         if self.token_expiration_time < datetime.now():
             self._get_db_access_token()
-            LOGGER.error("Token for database renewed.")
+            LOGGER.info("Token for database renewed.")
