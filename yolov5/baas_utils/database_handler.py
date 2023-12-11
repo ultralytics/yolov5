@@ -55,7 +55,7 @@ class DBConfigSQLAlchemy:
 
     def _get_db_connection_string(self):
         self._get_db_access_token()
-        db_url = f"postgresql://{self.db_username}:{self.access_token}@{self.db_hostname}/{self.db_name}"
+        db_url = f"postgresql+psycopg2://{self.db_username}:{self.access_token}@{self.db_hostname}/{self.db_name}"
         return db_url
 
     def _get_session(self):
@@ -82,7 +82,6 @@ class DBConfigSQLAlchemy:
     def managed_session(self):
         for retry in range(self.retry_count):
             self._validate_token_status()
-
             session = self._get_session()
             try:
                 yield session  # This line yields the 'session' to the with block.
