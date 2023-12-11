@@ -386,11 +386,11 @@ def check_python(minimum='3.8.0'):
     check_version(platform.python_version(), minimum, name='Python ', hard=True)
 
 
-def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False, verbose=False):
+def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False, verbose=False, msg=''):
     # Check version vs. required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
-    s = f'WARNING ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed'  # string
+    s = f'WARNING ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed {msg}'  # string
     if hard:
         assert result, emojis(s)  # assert min requirements met
     if verbose and not result:

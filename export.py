@@ -397,6 +397,11 @@ def export_saved_model(model,
     from models.tf import TFModel
 
     LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
+    check_version(tf.__version__,
+                   '<=2.13.1',
+                    name='tensorflow',
+                    verbose=True,
+                    msg='https://github.com/ultralytics/yolov5/issues/12489')
     f = str(file).replace('.pt', '_saved_model')
     batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
