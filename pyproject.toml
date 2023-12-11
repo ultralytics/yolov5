@@ -1,35 +1,38 @@
 [tool.poetry]
 name = "yolov5"
-version = "0.4.6"
+version = "0.4.7"
 description = ""
 authors = [
-    "Sebastian Davrieux",
-    "Diana Epureanu",
-    "Chris Eijgenstein"
+    "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
+    "Diana Epureanu <d.epureanu@amsterdam.nl>",
+    "Chris Eijgenstein <c.eijgenstein@amsterdam.nl>",
+    "Andrea Lombardo <a.lombardo@amsterdam.nl>"
 ]
 
 [tool.poetry.dependencies]
 python = "~3.8"
+GitPython = {version = "^3.1.31", source = "PyPI"}
+Pillow = {version = "^9.4.0", source = "PyPI"}
+PyYAML = {version = "^6.0", source = "PyPI"}
 matplotlib = {version = "^3.7.1", source = "PyPI"}
 numpy = {version = "^1.24.2", source = "PyPI"}
 opencv-python = {version = "^4.7.0", source = "PyPI"}
-Pillow = {version = "^9.4.0", source = "PyPI"}
+pandas = {version = "^1.5.3", source = "PyPI"}
+pre-commit = {version = "^3.2.0", source = "PyPI"}
 psutil = {version = "^5.9.4", source = "PyPI"}
-PyYAML = {version = "^6.0", source = "PyPI"}
+psycopg2 = {version = "2.9.3", source = "PyPI"}
 requests = {version = "^2.28.2", source = "PyPI"}
 scipy = {version = "^1.10.1", source = "PyPI"}
+seaborn = {version = "^0.12.2", source = "PyPI"}
+sqlalchemy = {version = "1.4.50", source = "PyPI"}
+tensorboard = {version = "^2.12.0", source = "PyPI"}
 thop = {version = "^0.1.1", source = "PyPI"}
 torch = {version = "^1.13.1", source = "PyPI"}
 torchvision = {version = "^0.14.1", source = "PyPI"}
-tqdm = {version = "^4.65.0", source = "PyPI"}
-tensorboard = {version = "^2.12.0", source = "PyPI"}
-pandas = {version = "^1.5.3", source = "PyPI"}
-seaborn = {version = "^0.12.2", source = "PyPI"}
-GitPython = {version = "^3.1.31", source = "PyPI"}
-pre-commit = {version = "^3.2.0", source = "PyPI"}
 toml = {version = "^0.10.2", source = "PyPI"}
+tqdm = {version = "^4.65.0", source = "PyPI"}
 yapf = {version = "^0.32.0", source = "PyPI"}
-sqlalchemy = {version = "1.4.50", source = "PyPI"}
+
 
 [tool.poetry.dev-dependencies]
 
