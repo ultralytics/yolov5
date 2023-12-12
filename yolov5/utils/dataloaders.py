@@ -1069,8 +1069,10 @@ def verify_image_label(args):
                     ImageOps.exif_transpose(Image.open(im_file)).save(im_file, 'JPEG', subsampling=0, quality=100)
                     msg = f'{prefix}WARNING ⚠️ {im_file}: corrupt JPEG restored and saved'
     except Exception as e:
-        # Stop the process immediately when there is an exception loading an image
-        raise e
+        # Ignore the corrupt image
+        nc += 1
+        msg = f'{prefix}WARNING ⚠️ {im_file}: ignoring corrupt image: {e}'
+        return [None, None, None, None, nm, nf, ne, nc, msg]    # Returning None for the corrupt image
 
     try:
         # verify labels

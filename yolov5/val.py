@@ -266,7 +266,7 @@ def run(
 
         if skip_evaluation:
             # Define the processing statuses
-            processing_statuses = ['inprogress', 'processed']
+            processing_statuses = ['processed']
 
             # Perform database operations using the 'session'
             # The session will be automatically closed at the end of this block
@@ -329,7 +329,7 @@ def run(
                                                                     processing_status='inprogress')
 
                     # Add the instance to the session
-                    session.add(image_processing_status)
+                    session.merge(image_processing_status)
 
     seen = 0
     if not tagged_data:
