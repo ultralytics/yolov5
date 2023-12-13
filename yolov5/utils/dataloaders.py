@@ -1072,7 +1072,7 @@ def verify_image_label(args):
         # Ignore the corrupt image
         nc += 1
         msg = f'{prefix}WARNING ⚠️ {im_file}: ignoring corrupt image: {e}'
-        LOGGER.warning(f'WARNING {im_file}: ignoring corrupt image.')
+        LOGGER.warning(msg)
         return [None, None, None, None, nm, nf, ne, nc, msg]    # Returning None for the corrupt image
 
     try:
