@@ -380,7 +380,8 @@ class TFConcat(keras.layers.Layer):
 
 def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    anchors, nc, gd, gw, ch_mul = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('channel_multiple')
+    anchors, nc, gd, gw, ch_mul = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get(
+        'channel_multiple')
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
     if not ch_mul:
