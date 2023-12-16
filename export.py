@@ -443,7 +443,8 @@ def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
 
 
 @try_export
-def export_tflite(keras_model, im, file, int8, per_tensor, data, nms, agnostic_nms, prefix=colorstr('TensorFlow Lite:')):
+def export_tflite(keras_model, im, file, int8, per_tensor, data, nms, agnostic_nms,
+                  prefix=colorstr('TensorFlow Lite:')):
     # YOLOv5 TensorFlow Lite export
     import tensorflow as tf
 
@@ -710,7 +711,7 @@ def run(
         keras=False,  # use Keras
         optimize=False,  # TorchScript: optimize for mobile
         int8=False,  # CoreML/TF INT8 quantization
-        per_tensor=False, # TF per tensor quantization
+        per_tensor=False,  # TF per tensor quantization
         dynamic=False,  # ONNX/TF/TensorRT: dynamic axes
         simplify=False,  # ONNX: simplify model
         opset=12,  # ONNX: opset version
@@ -796,7 +797,14 @@ def run(
         if pb or tfjs:  # pb prerequisite to tfjs
             f[6], _ = export_pb(s_model, file)
         if tflite or edgetpu:
-            f[7], _ = export_tflite(s_model, im, file, int8 or edgetpu, per_tensor, data=data, nms=nms, agnostic_nms=agnostic_nms)
+            f[7], _ = export_tflite(s_model,
+                                    im,
+                                    file,
+                                    int8 or edgetpu,
+                                    per_tensor,
+                                    data=data,
+                                    nms=nms,
+                                    agnostic_nms=agnostic_nms)
             if edgetpu:
                 f[8], _ = export_edgetpu(file)
             add_tflite_metadata(f[8] or f[7], metadata, num_outputs=len(s_model.outputs))
