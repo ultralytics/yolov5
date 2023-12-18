@@ -380,9 +380,12 @@ class TFConcat(keras.layers.Layer):
 
 def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
+    anchors, nc, gd, gw, ch_mul = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get(
+        'channel_multiple')
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
+    if not ch_mul:
+        ch_mul = 8
 
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
     for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
@@ -399,7 +402,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
                 nn.Conv2d, Conv, DWConv, DWConvTranspose2d, Bottleneck, SPP, SPPF, MixConv2d, Focus, CrossConv,
                 BottleneckCSP, C3, C3x]:
             c1, c2 = ch[f], args[0]
-            c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
+            c2 = make_divisible(c2 * gw, ch_mul) if c2 != no else c2
 
             args = [c1, c2, *args[1:]]
             if m in [BottleneckCSP, C3, C3x]:
@@ -414,7 +417,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
             if m is Segment:
-                args[3] = make_divisible(args[3] * gw, 8)
+                args[3] = make_divisible(args[3] * gw, ch_mul)
             args.append(imgsz)
         else:
             c2 = ch[f]
