@@ -1,3 +1,11 @@
+#### Get model optimized for RKNN
+Exporting detect/segment model with optimization for RKNN, please refer here [README_rkopt.md](./README_rkopt.md)
+
+导出适配 RKNPU 的检测/分割模型, 请参考 [README_rkopt.md](./README_rkopt.md) 的说明
+
+---
+<br>
+
 <div align="center">
   <p>
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">

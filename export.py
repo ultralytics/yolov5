@@ -56,6 +56,11 @@ import time
 import warnings
 from pathlib import Path
 
+
+# activate rknn hack
+if '--rknpu' in sys.argv:
+    os.environ['RKNN_model_hack'] = "1"
+
 import pandas as pd
 import torch
 from torch.utils.mobile_optimizer import optimize_for_mobile
@@ -68,7 +73,7 @@ if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
-from models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel
+from models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel, Segment
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
                            check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
@@ -564,11 +569,76 @@ def run(
             m.dynamic = dynamic
             m.export = True
 
+        if os.getenv('RKNN_model_hack', '0') in ['1']:
+            from models.common import Focus
+            from models.common import Conv
+            from models.common_rk_plug_in import surrogate_focus
+            if isinstance(model.model[0], Focus):
+                # For yolo v5 version
+                surrogate_focous = surrogate_focus(int(model.model[0].conv.conv.weight.shape[1]/4),
+                                                model.model[0].conv.conv.weight.shape[0],
+                                                k=tuple(model.model[0].conv.conv.weight.shape[2:4]),
+                                                s=model.model[0].conv.conv.stride,
+                                                p=model.model[0].conv.conv.padding,
+                                                g=model.model[0].conv.conv.groups,
+                                                act=True)
+                surrogate_focous.conv.conv.weight = model.model[0].conv.conv.weight
+                surrogate_focous.conv.conv.bias = model.model[0].conv.conv.bias
+                surrogate_focous.conv.act = model.model[0].conv.act
+                temp_i = model.model[0].i
+                temp_f = model.model[0].f
+
+                model.model[0] = surrogate_focous
+                model.model[0].i = temp_i
+                model.model[0].f = temp_f
+                model.model[0].eval()
+            elif isinstance(model.model[0], Conv) and model.model[0].conv.kernel_size == (6, 6):
+                # For yolo v6 version
+                surrogate_focous = surrogate_focus(model.model[0].conv.weight.shape[1],
+                                                model.model[0].conv.weight.shape[0],
+                                                k=(3,3), # 6/2, 6/2
+                                                s=1,
+                                                p=(1,1), # 2/2, 2/2
+                                                g=model.model[0].conv.groups,
+                                                act=hasattr(model.model[0], 'act'))
+                surrogate_focous.conv.conv.weight[:,:3,:,:] = model.model[0].conv.weight[:,:,::2,::2]
+                surrogate_focous.conv.conv.weight[:,3:6,:,:] = model.model[0].conv.weight[:,:,1::2,::2]
+                surrogate_focous.conv.conv.weight[:,6:9,:,:] = model.model[0].conv.weight[:,:,::2,1::2]
+                surrogate_focous.conv.conv.weight[:,9:,:,:] = model.model[0].conv.weight[:,:,1::2,1::2]
+                surrogate_focous.conv.conv.bias = model.model[0].conv.bias
+                surrogate_focous.conv.act = model.model[0].act
+                temp_i = model.model[0].i
+                temp_f = model.model[0].f
+
+                model.model[0] = surrogate_focous
+                model.model[0].i = temp_i
+                model.model[0].f = temp_f
+                model.model[0].eval()
+
+    if os.getenv('RKNN_model_hack', '0') in ['1']:
+        if isinstance(model.model[-1], Detect):
+            # save anchors
+            print('---> save anchors for RKNN')
+            RK_anchors = model.model[-1].stride.reshape(3,1).repeat(1,3).reshape(-1,1)* model.model[-1].anchors.reshape(9,2)
+            with open('RK_anchors.txt', 'w') as anf:
+                # anf.write(str(model.model[-1].na)+'\n')
+                for _v in RK_anchors.numpy().flatten():
+                    anf.write(str(_v)+'\n')
+            RK_anchors = RK_anchors.tolist()
+            print(RK_anchors)
+
+        if isinstance(model.model[-1], Segment):
+            print("export segment model for RKNPU")
+            model.model[-1]._register_seg_seperate(True)
+        else:
+            print("export detect model for RKNPU")
+            model.model[-1]._register_detect_seperate(True)
+
     for _ in range(2):
         y = model(im)  # dry runs
     if half and not coreml:
         im, model = im.half(), model.half()  # to FP16
-    shape = tuple((y[0] if isinstance(y, tuple) else y).shape)  # model output shape
+    shape = tuple((y[0] if (isinstance(y, tuple) or (isinstance(y, list))) else y).shape)  # model output shape
     metadata = {'stride': int(max(model.stride)), 'names': model.names}  # model metadata
     LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
@@ -652,11 +722,11 @@ def parse_opt(known=False):
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
-    parser.add_argument(
-        '--include',
-        nargs='+',
-        default=['torchscript'],
-        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle')
+    parser.add_argument('--include',
+                        nargs='+',
+                        default=['onnx'],
+                        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+    parser.add_argument('--rknpu', action='store_true', help='RKNN npu platform')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     print_args(vars(opt))
     return opt
@@ -669,4 +739,5 @@ def main(opt):
 
 if __name__ == '__main__':
     opt = parse_opt()
+    del opt.rknpu
     main(opt)
