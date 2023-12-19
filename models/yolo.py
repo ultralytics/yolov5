@@ -35,6 +35,24 @@ except ImportError:
     thop = None
 
 
+# define block, seperate conv channel. 
+# For eacn anchor, frist 85 need sigmoid, the last 32 needn't. Seperate them to get better accuracy.
+class Segment_head_seperate_block(nn.Module):
+    def __init__(self, cls, seg, na, src_conv) -> None:
+        super().__init__()
+        self.conv_cls = nn.Conv2d(src_conv.in_channels, cls*na, 1)
+        self.conv_seg = nn.Conv2d(src_conv.in_channels, seg*na, 1)
+        per_na = cls+seg
+        for i in range(na):
+            self.conv_cls.weight.data[cls*i:cls*(i+1),:,:,:] = src_conv.weight.data[per_na*i:per_na*i+cls,:,:,:]
+            self.conv_cls.bias.data[cls*i:cls*(i+1)] = src_conv.bias.data[per_na*i:per_na*i+cls]
+            self.conv_seg.weight.data[seg*i:seg*(i+1),:,:,:] = src_conv.weight.data[per_na*(i) + cls:per_na*(i+1),:,:,:]
+            self.conv_seg.bias.data[seg*i:seg*(i+1)] = src_conv.bias.data[per_na*(i) + cls:per_na*(i+1)]
+    
+    def forward(self, x):
+        return [self.conv_cls(x).sigmoid(), self.conv_seg(x)]
+        # return [self.conv_cls(x), self.conv_seg(x)]
+
 class Detect(nn.Module):
     # YOLOv5 Detect head for detection models
     stride = None  # strides computed during build
@@ -53,12 +71,41 @@ class Detect(nn.Module):
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
 
+    def _register_seg_seperate(self, export=False):
+        self.seg_seperate = True
+        self.m_replace = nn.ModuleList()
+        self.export = export
+
+        for _mc in self.m:
+            out_channels = _mc.out_channels
+            cls_channel = 5 + self.nc
+            seg_channel = int(out_channels/self.na) - 5 - self.nc
+            self.m_replace.append(Segment_head_seperate_block(cls_channel, seg_channel, self.na, _mc))
+
+    def _register_detect_seperate(self, export=False):
+        self.detect_seperate = True
+        
+
     def forward(self, x):
         z = []  # inference output
         for i in range(self.nl):
-            x[i] = self.m[i](x[i])  # conv
-            bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
-            x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
+            if getattr(self, 'seg_seperate', False):
+                c, s = self.m_replace[i](x[i])
+                if getattr(self, 'export', False):
+                    z.append(c)
+                    z.append(s)
+                    continue
+                bs, _, ny, nx = c.shape
+                c = c.reshape(bs, self.na, -1, ny, nx)
+                s = s.reshape(bs, self.na, -1, ny, nx)
+                x[i] = torch.cat([c, s], 2).permute(0, 1, 3, 4, 2).contiguous()
+            elif getattr(self, 'detect_seperate', False):
+                z.append(torch.sigmoid(self.m[i](x[i])))
+                continue
+            else:
+                x[i] = self.m[i](x[i])  # conv
+                bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
+                x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
                 if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
@@ -76,6 +123,8 @@ class Detect(nn.Module):
                     y = torch.cat((xy, wh, conf), 4)
                 z.append(y.view(bs, self.na * nx * ny, self.no))
 
+        if getattr(self, 'export', False):
+            return z
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
     def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, '1.10.0')):
@@ -103,8 +152,8 @@ class Segment(Detect):
     def forward(self, x):
         p = self.proto(x[0])
         x = self.detect(self, x)
-        return (x, p) if self.training else (x[0], p) if self.export else (x[0], p, x[1])
 
+        return (x, p) if self.training else (*x, p) if self.export else (x[0], p, x[1])
 
 class BaseModel(nn.Module):
     # YOLOv5 base model
