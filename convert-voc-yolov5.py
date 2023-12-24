@@ -19,7 +19,7 @@ def get_args():
     args.add_argument(
         "--raw_data_path",
         type=str,
-        default="resource/shipdata",
+        default="resource/ships",
         help="raw data path",
     )
     return args.parse_args()
