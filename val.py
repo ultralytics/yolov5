@@ -72,7 +72,8 @@ def save_one_json(predn, jdict, path, class_map):
 
 def process_batch(detections, labels, iouv):
     """
-    Return correct prediction matrix
+    Return correct prediction matrix.
+    
     Arguments:
         detections (array[N, 6]), x1, y1, x2, y2, conf, class
         labels (array[M, 5]), class, x1, y1, x2, y2
