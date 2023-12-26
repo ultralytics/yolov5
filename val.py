@@ -258,6 +258,7 @@ def run(
 
             # Save/log
             if save_txt:
+                (save_dir / 'labels').mkdir(parents=True, exist_ok=True)
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
