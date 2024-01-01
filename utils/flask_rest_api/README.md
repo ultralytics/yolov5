@@ -1,8 +1,6 @@
 # Flask REST API
 
-[REST](https://en.wikipedia.org/wiki/Representational_state_transfer) [API](https://en.wikipedia.org/wiki/API)s are
-commonly used to expose Machine Learning (ML)  models to other services. This folder contains an example REST API
-created using Flask to expose the YOLOv5s model from [PyTorch Hub](https://pytorch.org/hub/ultralytics_yolov5/).
+[REST](https://en.wikipedia.org/wiki/Representational_state_transfer) [API](https://en.wikipedia.org/wiki/API)s are commonly used to expose Machine Learning (ML) models to other services. This folder contains an example REST API created using Flask to expose the YOLOv5s model from [PyTorch Hub](https://pytorch.org/hub/ultralytics_yolov5/).
 
 ## Requirements
 
@@ -69,5 +67,4 @@ The model inference results are returned as a JSON response:
 ]
 ```
 
-An example python script to perform inference using [requests](https://docs.python-requests.org/en/master/) is given
-in `example_request.py`
+An example python script to perform inference using [requests](https://docs.python-requests.org/en/master/) is given in `example_request.py`
