@@ -164,8 +164,8 @@ if __name__ == "__main__":
         "https://ultralytics.com/images/zidane.jpg",  # URI
         cv2.imread("data/images/bus.jpg")[:, :, ::-1],  # OpenCV
         Image.open("data/images/bus.jpg"),  # PIL
-        np.zeros((320, 640, 3)),
-    ]  # numpy
+        np.zeros((320, 640, 3)),  # numpy
+    ]
 
     # Inference
     results = model(imgs, size=320)  # batched inference
