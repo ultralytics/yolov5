@@ -1,15 +1,14 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Logging utils
 """
-
+import json
 import os
 import warnings
 from pathlib import Path
 
 import pkg_resources as pkg
 import torch
-from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import LOGGER, colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
@@ -19,6 +18,11 @@ from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb', 'clearml', 'comet')  # *.csv, TensorBoard, Weights & Biases, ClearML
 RANK = int(os.getenv('RANK', -1))
+
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except ImportError:
+    SummaryWriter = lambda *args: None  # None = SummaryWriter(str)
 
 try:
     import wandb
@@ -42,16 +46,28 @@ except (ImportError, AssertionError):
     clearml = None
 
 try:
-    if RANK not in [0, -1]:
-        comet_ml = None
-    else:
+    if RANK in {0, -1}:
         import comet_ml
 
         assert hasattr(comet_ml, '__version__')  # verify package import not local dir
         from utils.loggers.comet import CometLogger
 
-except (ModuleNotFoundError, ImportError, AssertionError):
+    else:
+        comet_ml = None
+except (ImportError, AssertionError):
     comet_ml = None
+
+
+def _json_default(value):
+    """Format `value` for JSON serialization (e.g. unwrap tensors). Fall back to strings."""
+    if isinstance(value, torch.Tensor):
+        try:
+            value = value.item()
+        except ValueError:  # "only one element tensors can be converted to Python scalars"
+            pass
+    if isinstance(value, float):
+        return value
+    return str(value)
 
 
 class Loggers():
@@ -82,16 +98,10 @@ class Loggers():
         for k in LOGGERS:
             setattr(self, k, None)  # init empty logger dictionary
         self.csv = True  # always log to csv
+        self.ndjson_console = ('ndjson_console' in self.include)  # log ndjson to console
+        self.ndjson_file = ('ndjson_file' in self.include)  # log ndjson to file
 
         # Messages
-        # if not wandb:
-        #     prefix = colorstr('Weights & Biases: ')
-        #     s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs in Weights & Biases"
-        #     self.logger.info(s)
-        if not clearml:
-            prefix = colorstr('ClearML: ')
-            s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 in ClearML"
-            self.logger.info(s)
         if not comet_ml:
             prefix = colorstr('Comet: ')
             s = f"{prefix}run 'pip install comet_ml' to automatically track and visualize YOLOv5 🚀 runs in Comet"
@@ -105,14 +115,8 @@ class Loggers():
 
         # W&B
         if wandb and 'wandb' in self.include:
-            wandb_artifact_resume = isinstance(self.opt.resume, str) and self.opt.resume.startswith('wandb-artifact://')
-            run_id = torch.load(self.weights).get('wandb_id') if self.opt.resume and not wandb_artifact_resume else None
             self.opt.hyp = self.hyp  # add hyperparameters
-            self.wandb = WandbLogger(self.opt, run_id)
-            # temp warn. because nested artifacts not supported after 0.12.10
-            # if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.11'):
-            #    s = "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected."
-            #    self.logger.warning(s)
+            self.wandb = WandbLogger(self.opt)
         else:
             self.wandb = None
 
@@ -124,15 +128,15 @@ class Loggers():
                 self.clearml = None
                 prefix = colorstr('ClearML: ')
                 LOGGER.warning(f'{prefix}WARNING ⚠️ ClearML is installed but not configured, skipping ClearML logging.'
-                               f' See https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml#readme')
+                               f' See https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration#readme')
 
         else:
             self.clearml = None
 
         # Comet
         if comet_ml and 'comet' in self.include:
-            if isinstance(self.opt.resume, str) and self.opt.resume.startswith("comet://"):
-                run_id = self.opt.resume.split("/")[-1]
+            if isinstance(self.opt.resume, str) and self.opt.resume.startswith('comet://'):
+                run_id = self.opt.resume.split('/')[-1]
                 self.comet_logger = CometLogger(self.opt, self.hyp, run_id=run_id)
 
             else:
@@ -168,7 +172,7 @@ class Loggers():
             plot_labels(labels, names, self.save_dir)
             paths = self.save_dir.glob('*labels*.jpg')  # training labels
             if self.wandb:
-                self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
+                self.wandb.log({'Labels': [wandb.Image(str(x), caption=x.name) for x in paths]})
             if self.comet_logger:
                 self.comet_logger.on_pretrain_routine_end(paths)
             if self.clearml:
@@ -176,7 +180,7 @@ class Loggers():
                     self.clearml.log_plot(title=path.stem, plot_path=path)
 
     def on_train_batch_end(self, model, ni, imgs, targets, paths, vals):
-        log_dict = dict(zip(self.keys[0:3], vals))
+        log_dict = dict(zip(self.keys[:3], vals))
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
         if self.plots:
@@ -222,10 +226,10 @@ class Loggers():
         # Callback runs on val end
         if self.wandb or self.clearml:
             files = sorted(self.save_dir.glob('val*.jpg'))
-            if self.wandb:
-                self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
-            if self.clearml:
-                self.clearml.log_debug_samples(files, title='Validation')
+        if self.wandb:
+            self.wandb.log({'Validation': [wandb.Image(str(f), caption=f.name) for f in files]})
+        if self.clearml:
+            self.clearml.log_debug_samples(files, title='Validation')
 
         if self.comet_logger:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
@@ -239,6 +243,14 @@ class Loggers():
             s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + self.keys)).rstrip(',') + '\n')  # add header
             with open(file, 'a') as f:
                 f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+        if self.ndjson_console or self.ndjson_file:
+            json_data = json.dumps(dict(epoch=epoch, **x), default=_json_default)
+            if self.ndjson_console:
+                print(json_data)
+            if self.ndjson_file:
+                file = self.save_dir / 'results.ndjson'
+                with open(file, 'a') as f:
+                    print(json_data, file=f)
 
         if self.tb:
             for k, v in x.items():
@@ -252,7 +264,7 @@ class Loggers():
                 for i, name in enumerate(self.best_keys):
                     self.wandb.wandb_run.summary[name] = best_results[i]  # log best results in the summary
             self.wandb.log(x)
-            self.wandb.end_epoch(best_result=best_fitness == fi)
+            self.wandb.end_epoch()
 
         if self.clearml:
             self.clearml.current_epoch_logged_images = set()  # reset epoch image limit
@@ -288,7 +300,7 @@ class Loggers():
 
         if self.wandb:
             self.wandb.log(dict(zip(self.keys[3:10], results)))
-            self.wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
+            self.wandb.log({'Results': [wandb.Image(str(f), caption=f.name) for f in files]})
             # Calling wandb.log. TODO: Refactor this into WandbLogger.log_model
             if not self.opt.evolve:
                 wandb.log_artifact(str(best if best.exists() else last),
@@ -341,7 +353,7 @@ class GenericLogger:
 
         if wandb and 'wandb' in self.include:
             self.wandb = wandb.init(project=web_project_name(str(opt.project)),
-                                    name=None if opt.name == "exp" else opt.name,
+                                    name=None if opt.name == 'exp' else opt.name,
                                     config=opt)
         else:
             self.wandb = None
@@ -407,14 +419,14 @@ class GenericLogger:
     def log_model(self, model_path, epoch=0, metadata={}):
         # Log model to all loggers
         if self.wandb:
-            art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)
+            art = wandb.Artifact(name=f'run_{wandb.run.id}_model', type='model', metadata=metadata)
             art.add_file(str(model_path))
             wandb.log_artifact(art)
         if self.clearml:
             self.clearml.log_model(model_path=model_path, model_name=model_path.stem)
 
     def update_params(self, params):
-        # Update the paramters logged
+        # Update the parameters logged
         if self.wandb:
             wandb.run.config.update(params, allow_val_change=True)
         if self.clearml:

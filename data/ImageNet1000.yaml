@@ -5,11 +5,11 @@
 # parent
 # ├── yolov5
 # └── datasets
-#     └── imagenet  ← downloads here (144 GB)
+#     └── imagenet100  ← downloads here
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: ../datasets/imagenet  # dataset root dir
+path: ../datasets/imagenet1000  # dataset root dir
 train: train  # train images (relative to 'path') 1281167 images
 val: val  # val images (relative to 'path') 50000 images
 test:  # test images (optional)
@@ -1019,4 +1019,4 @@ names:
 
 
 # Download script/URL (optional)
-download: data/scripts/get_imagenet.sh
+download: data/scripts/get_imagenet1000.sh

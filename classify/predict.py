@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Run YOLOv5 classification inference on images, videos, directories, globs, YouTube, webcam, streams, etc.
 
@@ -11,7 +11,7 @@ Usage - sources:
                                                                    list.txt                        # list of images
                                                                    list.streams                    # list of streams
                                                                    'path/*.jpg'                    # glob
-                                                                   'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                                                                   'https://youtu.be/LNwODJXcvt4'  # YouTube
                                                                    'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 
 Usage - formats:
@@ -43,12 +43,13 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from ultralytics.utils.plotting import Annotator
+
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, print_args, strip_optimizer)
-from utils.plots import Annotator
 from utils.torch_utils import select_device, smart_inference_mode
 
 
@@ -105,7 +106,7 @@ def run(
 
     # Run inference
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
-    seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    seen, windows, dt = 0, [], (Profile(device=device), Profile(device=device), Profile(device=device))
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
             im = torch.Tensor(im).to(model.device)
@@ -144,7 +145,7 @@ def run(
             # Write results
             text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
             if save_img or view_img:  # Add bbox to image
-                annotator.text((32, 32), text, txt_color=(255, 255, 255))
+                annotator.text([32, 32], text, txt_color=(255, 255, 255))
             if save_txt:  # Write to file
                 with open(f'{txt_path}.txt', 'a') as f:
                     f.write(text + '\n')
@@ -179,7 +180,7 @@ def run(
                     vid_writer[i].write(im0)
 
         # Print time (inference-only)
-        LOGGER.info(f"{s}{dt[1].dt * 1E3:.1f}ms")
+        LOGGER.info(f'{s}{dt[1].dt * 1E3:.1f}ms')
 
     # Print results
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
@@ -217,10 +218,10 @@ def parse_opt():
 
 
 def main(opt):
-    check_requirements(exclude=('tensorboard', 'thop'))
+    check_requirements(ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
     run(**vars(opt))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)

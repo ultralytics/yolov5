@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 TensorFlow, Keras and TFLite versions of YOLOv5
 Authored by https://github.com/zldrobit in PR https://github.com/ultralytics/yolov5/pull/1127
@@ -310,7 +310,7 @@ class TFDetect(keras.layers.Layer):
                 y = tf.concat([xy, wh, tf.sigmoid(y[..., 4:5 + self.nc]), y[..., 5 + self.nc:]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
-        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1),)
+        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1), )
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -356,7 +356,7 @@ class TFUpsample(keras.layers.Layer):
     # TF version of torch.nn.Upsample()
     def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
         super().__init__()
-        assert scale_factor % 2 == 0, "scale_factor must be multiple of 2"
+        assert scale_factor % 2 == 0, 'scale_factor must be multiple of 2'
         self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * scale_factor, x.shape[2] * scale_factor), mode)
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
         # with default arguments: align_corners=False, half_pixel_centers=False
@@ -371,7 +371,7 @@ class TFConcat(keras.layers.Layer):
     # TF version of torch.concat()
     def __init__(self, dimension=1, w=None):
         super().__init__()
-        assert dimension == 1, "convert only NCHW to NHWC concat"
+        assert dimension == 1, 'convert only NCHW to NHWC concat'
         self.d = 3
 
     def call(self, inputs):
@@ -380,9 +380,12 @@ class TFConcat(keras.layers.Layer):
 
 def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
+    anchors, nc, gd, gw, ch_mul = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get(
+        'channel_multiple')
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
+    if not ch_mul:
+        ch_mul = 8
 
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
     for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
@@ -399,7 +402,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
                 nn.Conv2d, Conv, DWConv, DWConvTranspose2d, Bottleneck, SPP, SPPF, MixConv2d, Focus, CrossConv,
                 BottleneckCSP, C3, C3x]:
             c1, c2 = ch[f], args[0]
-            c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
+            c2 = make_divisible(c2 * gw, ch_mul) if c2 != no else c2
 
             args = [c1, c2, *args[1:]]
             if m in [BottleneckCSP, C3, C3x]:
@@ -414,7 +417,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
             if m is Segment:
-                args[3] = make_divisible(args[3] * gw, 8)
+                args[3] = make_divisible(args[3] * gw, ch_mul)
             args.append(imgsz)
         else:
             c2 = ch[f]
@@ -486,7 +489,7 @@ class TFModel:
                                                             iou_thres,
                                                             conf_thres,
                                                             clip_boxes=False)
-            return (nms,)
+            return (nms, )
         return x  # output [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
@@ -523,17 +526,17 @@ class AgnosticNMS(keras.layers.Layer):
         selected_boxes = tf.gather(boxes, selected_inds)
         padded_boxes = tf.pad(selected_boxes,
                               paddings=[[0, topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
-                              mode="CONSTANT",
+                              mode='CONSTANT',
                               constant_values=0.0)
         selected_scores = tf.gather(scores_inp, selected_inds)
         padded_scores = tf.pad(selected_scores,
                                paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
-                               mode="CONSTANT",
+                               mode='CONSTANT',
                                constant_values=-1.0)
         selected_classes = tf.gather(class_inds, selected_inds)
         padded_classes = tf.pad(selected_classes,
                                 paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
-                                mode="CONSTANT",
+                                mode='CONSTANT',
                                 constant_values=-1.0)
         valid_detections = tf.shape(selected_inds)[0]
         return padded_boxes, padded_scores, padded_classes, valid_detections
@@ -603,6 +606,6 @@ def main(opt):
     run(**vars(opt))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)
