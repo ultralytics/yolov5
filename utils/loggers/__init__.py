@@ -173,10 +173,11 @@ class Loggers():
             paths = self.save_dir.glob('*labels*.jpg')  # training labels
             if self.wandb:
                 self.wandb.log({'Labels': [wandb.Image(str(x), caption=x.name) for x in paths]})
-            # if self.clearml:
-            #    pass  # ClearML saves these images automatically using hooks
             if self.comet_logger:
                 self.comet_logger.on_pretrain_routine_end(paths)
+            if self.clearml:
+                for path in paths:
+                    self.clearml.log_plot(title=path.stem, plot_path=path)
 
     def on_train_batch_end(self, model, ni, imgs, targets, paths, vals):
         log_dict = dict(zip(self.keys[:3], vals))
@@ -255,9 +256,7 @@ class Loggers():
             for k, v in x.items():
                 self.tb.add_scalar(k, v, epoch)
         elif self.clearml:  # log to ClearML if TensorBoard not used
-            for k, v in x.items():
-                title, series = k.split('/')
-                self.clearml.task.get_logger().report_scalar(title, series, v, epoch)
+            self.clearml.log_scalars(x, epoch)
 
         if self.wandb:
             if best_fitness == fi:
@@ -311,9 +310,10 @@ class Loggers():
             self.wandb.finish_run()
 
         if self.clearml and not self.opt.evolve:
-            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
-                                                  name='Best Model',
-                                                  auto_delete_file=False)
+            self.clearml.log_summary(dict(zip(self.keys[3:10], results)))
+            [self.clearml.log_plot(title=f.stem, plot_path=f) for f in files]
+            self.clearml.log_model(str(best if best.exists() else last),
+                                   "Best Model" if best.exists() else "Last Model", epoch)
 
         if self.comet_logger:
             final_results = dict(zip(self.keys[3:10], results))
@@ -325,6 +325,8 @@ class Loggers():
             self.wandb.wandb_run.config.update(params, allow_val_change=True)
         if self.comet_logger:
             self.comet_logger.on_params_update(params)
+        if self.clearml:
+            self.clearml.task.connect(params)
 
 
 class GenericLogger:
@@ -337,7 +339,7 @@ class GenericLogger:
         include:         loggers to include
     """
 
-    def __init__(self, opt, console_logger, include=('tb', 'wandb')):
+    def __init__(self, opt, console_logger, include=('tb', 'wandb', 'clearml')):
         # init default loggers
         self.save_dir = Path(opt.save_dir)
         self.include = include
@@ -356,6 +358,22 @@ class GenericLogger:
         else:
             self.wandb = None
 
+        if clearml and 'clearml' in self.include:
+            try:
+                # Hyp is not available in classification mode
+                if 'hyp' not in opt:
+                    hyp = {}
+                else:
+                    hyp = opt.hyp
+                self.clearml = ClearmlLogger(opt, hyp)
+            except Exception:
+                self.clearml = None
+                prefix = colorstr('ClearML: ')
+                LOGGER.warning(f'{prefix}WARNING ⚠️ ClearML is installed but not configured, skipping ClearML logging.'
+                               f' See https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml#readme')
+        else:
+            self.clearml = None
+
     def log_metrics(self, metrics, epoch):
         # Log metrics dictionary to all loggers
         if self.csv:
@@ -372,6 +390,9 @@ class GenericLogger:
         if self.wandb:
             self.wandb.log(metrics, step=epoch)
 
+        if self.clearml:
+            self.clearml.log_scalars(metrics, epoch)
+
     def log_images(self, files, name='Images', epoch=0):
         # Log images to all loggers
         files = [Path(f) for f in (files if isinstance(files, (tuple, list)) else [files])]  # to Path
@@ -384,6 +405,12 @@ class GenericLogger:
         if self.wandb:
             self.wandb.log({name: [wandb.Image(str(f), caption=f.name) for f in files]}, step=epoch)
 
+        if self.clearml:
+            if name == 'Results':
+                [self.clearml.log_plot(f.stem, f) for f in files]
+            else:
+                self.clearml.log_debug_samples(files, title=name)
+
     def log_graph(self, model, imgsz=(640, 640)):
         # Log model graph to all loggers
         if self.tb:
@@ -395,11 +422,15 @@ class GenericLogger:
             art = wandb.Artifact(name=f'run_{wandb.run.id}_model', type='model', metadata=metadata)
             art.add_file(str(model_path))
             wandb.log_artifact(art)
+        if self.clearml:
+            self.clearml.log_model(model_path=model_path, model_name=model_path.stem)
 
     def update_params(self, params):
         # Update the parameters logged
         if self.wandb:
             wandb.run.config.update(params, allow_val_change=True)
+        if self.clearml:
+            self.clearml.task.connect(params)
 
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
