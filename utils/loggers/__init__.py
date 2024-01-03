@@ -2,7 +2,7 @@
 """
 Logging utils
 """
-
+import json
 import os
 import warnings
 from pathlib import Path
@@ -58,6 +58,18 @@ except (ImportError, AssertionError):
     comet_ml = None
 
 
+def _json_default(value):
+    """Format `value` for JSON serialization (e.g. unwrap tensors). Fall back to strings."""
+    if isinstance(value, torch.Tensor):
+        try:
+            value = value.item()
+        except ValueError:  # "only one element tensors can be converted to Python scalars"
+            pass
+    if isinstance(value, float):
+        return value
+    return str(value)
+
+
 class Loggers():
     # YOLOv5 Loggers class
     def __init__(self, save_dir=None, weights=None, opt=None, hyp=None, logger=None, include=LOGGERS):
@@ -86,6 +98,8 @@ class Loggers():
         for k in LOGGERS:
             setattr(self, k, None)  # init empty logger dictionary
         self.csv = True  # always log to csv
+        self.ndjson_console = ('ndjson_console' in self.include)  # log ndjson to console
+        self.ndjson_file = ('ndjson_file' in self.include)  # log ndjson to file
 
         # Messages
         if not comet_ml:
@@ -228,6 +242,14 @@ class Loggers():
             s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + self.keys)).rstrip(',') + '\n')  # add header
             with open(file, 'a') as f:
                 f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+        if self.ndjson_console or self.ndjson_file:
+            json_data = json.dumps(dict(epoch=epoch, **x), default=_json_default)
+            if self.ndjson_console:
+                print(json_data)
+            if self.ndjson_file:
+                file = self.save_dir / 'results.ndjson'
+                with open(file, 'a') as f:
+                    print(json_data, file=f)
 
         if self.tb:
             for k, v in x.items():
