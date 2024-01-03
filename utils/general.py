@@ -182,9 +182,10 @@ CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
 
 class Profile(contextlib.ContextDecorator):
     # YOLOv5 Profile class. Usage: @Profile() decorator or 'with Profile():' context manager
-    def __init__(self, t=0.0):
+    def __init__(self, t=0.0, device: torch.device = None):
         self.t = t
-        self.cuda = torch.cuda.is_available()
+        self.device = device
+        self.cuda = True if (device and str(device)[:4] == 'cuda') else False
 
     def __enter__(self):
         self.start = self.time()
@@ -196,7 +197,7 @@ class Profile(contextlib.ContextDecorator):
 
     def time(self):
         if self.cuda:
-            torch.cuda.synchronize()
+            torch.cuda.synchronize(self.device)
         return time.time()
 
 

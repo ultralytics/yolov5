@@ -97,7 +97,7 @@ def run(
                                                       workers=workers)
 
     model.eval()
-    pred, targets, loss, dt = [], [], 0, (Profile(), Profile(), Profile())
+    pred, targets, loss, dt = [], [], 0, (Profile(device=device), Profile(device=device), Profile(device=device))
     n = len(dataloader)  # number of batches
     action = 'validating' if dataloader.dataset.root.stem == 'val' else 'testing'
     desc = f'{pbar.desc[:-36]}{action:>36}' if pbar else f'{action}'
