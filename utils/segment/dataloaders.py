@@ -1,7 +1,5 @@
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
-"""
-Dataloaders
-"""
+"""Dataloaders."""
 
 import os
 import random
@@ -17,30 +15,32 @@ from ..general import LOGGER, xyn2xy, xywhn2xyxy, xyxy2xywhn
 from ..torch_utils import torch_distributed_zero_first
 from .augmentations import mixup, random_perspective
 
-RANK = int(os.getenv('RANK', -1))
+RANK = int(os.getenv("RANK", -1))
 
 
-def create_dataloader(path,
-                      imgsz,
-                      batch_size,
-                      stride,
-                      single_cls=False,
-                      hyp=None,
-                      augment=False,
-                      cache=False,
-                      pad=0.0,
-                      rect=False,
-                      rank=-1,
-                      workers=8,
-                      image_weights=False,
-                      quad=False,
-                      prefix='',
-                      shuffle=False,
-                      mask_downsample_ratio=1,
-                      overlap_mask=False,
-                      seed=0):
+def create_dataloader(
+    path,
+    imgsz,
+    batch_size,
+    stride,
+    single_cls=False,
+    hyp=None,
+    augment=False,
+    cache=False,
+    pad=0.0,
+    rect=False,
+    rank=-1,
+    workers=8,
+    image_weights=False,
+    quad=False,
+    prefix="",
+    shuffle=False,
+    mask_downsample_ratio=1,
+    overlap_mask=False,
+    seed=0,
+):
     if rect and shuffle:
-        LOGGER.warning('WARNING ⚠️ --rect is incompatible with DataLoader shuffle, setting shuffle=False')
+        LOGGER.warning("WARNING ⚠️ --rect is incompatible with DataLoader shuffle, setting shuffle=False")
         shuffle = False
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = LoadImagesAndLabelsAndMasks(
@@ -58,7 +58,8 @@ def create_dataloader(path,
             prefix=prefix,
             downsample_ratio=mask_downsample_ratio,
             overlap=overlap_mask,
-            rank=rank)
+            rank=rank,
+        )
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -81,7 +82,6 @@ def create_dataloader(path,
 
 
 class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
-
     def __init__(
         self,
         path,
@@ -96,14 +96,29 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
         stride=32,
         pad=0,
         min_items=0,
-        prefix='',
+        prefix="",
         downsample_ratio=1,
         overlap=False,
         rank=-1,
         seed=0,
     ):
-        super().__init__(path, img_size, batch_size, augment, hyp, rect, image_weights, cache_images, single_cls,
-                         stride, pad, min_items, prefix, rank, seed)
+        super().__init__(
+            path,
+            img_size,
+            batch_size,
+            augment,
+            hyp,
+            rect,
+            image_weights,
+            cache_images,
+            single_cls,
+            stride,
+            pad,
+            min_items,
+            prefix,
+            rank,
+            seed,
+        )
         self.downsample_ratio = downsample_ratio
         self.overlap = overlap
 
@@ -111,7 +126,7 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
         index = self.indices[index]  # linear, shuffled, or image_weights
 
         hyp = self.hyp
-        mosaic = self.mosaic and random.random() < hyp['mosaic']
+        mosaic = self.mosaic and random.random() < hyp["mosaic"]
         masks = []
         if mosaic:
             # Load mosaic
@@ -119,7 +134,7 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
             shapes = None
 
             # MixUp augmentation
-            if random.random() < hyp['mixup']:
+            if random.random() < hyp["mixup"]:
                 img, labels, segments = mixup(img, labels, segments, *self.load_mosaic(random.randint(0, self.n - 1)))
 
         else:
@@ -147,30 +162,36 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
                 labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
 
             if self.augment:
-                img, labels, segments = random_perspective(img,
-                                                           labels,
-                                                           segments=segments,
-                                                           degrees=hyp['degrees'],
-                                                           translate=hyp['translate'],
-                                                           scale=hyp['scale'],
-                                                           shear=hyp['shear'],
-                                                           perspective=hyp['perspective'])
+                img, labels, segments = random_perspective(
+                    img,
+                    labels,
+                    segments=segments,
+                    degrees=hyp["degrees"],
+                    translate=hyp["translate"],
+                    scale=hyp["scale"],
+                    shear=hyp["shear"],
+                    perspective=hyp["perspective"],
+                )
 
         nl = len(labels)  # number of labels
         if nl:
             labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1e-3)
             if self.overlap:
-                masks, sorted_idx = polygons2masks_overlap(img.shape[:2],
-                                                           segments,
-                                                           downsample_ratio=self.downsample_ratio)
+                masks, sorted_idx = polygons2masks_overlap(
+                    img.shape[:2], segments, downsample_ratio=self.downsample_ratio
+                )
                 masks = masks[None]  # (640, 640) -> (1, 640, 640)
                 labels = labels[sorted_idx]
             else:
                 masks = polygons2masks(img.shape[:2], segments, color=1, downsample_ratio=self.downsample_ratio)
 
-        masks = (torch.from_numpy(masks) if len(masks) else torch.zeros(1 if self.overlap else nl, img.shape[0] //
-                                                                        self.downsample_ratio, img.shape[1] //
-                                                                        self.downsample_ratio))
+        masks = (
+            torch.from_numpy(masks)
+            if len(masks)
+            else torch.zeros(
+                1 if self.overlap else nl, img.shape[0] // self.downsample_ratio, img.shape[1] // self.downsample_ratio
+            )
+        )
         # TODO: albumentations support
         if self.augment:
             # Albumentations
@@ -180,17 +201,17 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
             nl = len(labels)  # update after albumentations
 
             # HSV color-space
-            augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
+            augment_hsv(img, hgain=hyp["hsv_h"], sgain=hyp["hsv_s"], vgain=hyp["hsv_v"])
 
             # Flip up-down
-            if random.random() < hyp['flipud']:
+            if random.random() < hyp["flipud"]:
                 img = np.flipud(img)
                 if nl:
                     labels[:, 2] = 1 - labels[:, 2]
                     masks = torch.flip(masks, dims=[1])
 
             # Flip left-right
-            if random.random() < hyp['fliplr']:
+            if random.random() < hyp["fliplr"]:
                 img = np.fliplr(img)
                 if nl:
                     labels[:, 1] = 1 - labels[:, 1]
@@ -254,16 +275,18 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
         # img4, labels4 = replicate(img4, labels4)  # replicate
 
         # Augment
-        img4, labels4, segments4 = copy_paste(img4, labels4, segments4, p=self.hyp['copy_paste'])
-        img4, labels4, segments4 = random_perspective(img4,
-                                                      labels4,
-                                                      segments4,
-                                                      degrees=self.hyp['degrees'],
-                                                      translate=self.hyp['translate'],
-                                                      scale=self.hyp['scale'],
-                                                      shear=self.hyp['shear'],
-                                                      perspective=self.hyp['perspective'],
-                                                      border=self.mosaic_border)  # border to remove
+        img4, labels4, segments4 = copy_paste(img4, labels4, segments4, p=self.hyp["copy_paste"])
+        img4, labels4, segments4 = random_perspective(
+            img4,
+            labels4,
+            segments4,
+            degrees=self.hyp["degrees"],
+            translate=self.hyp["translate"],
+            scale=self.hyp["scale"],
+            shear=self.hyp["shear"],
+            perspective=self.hyp["perspective"],
+            border=self.mosaic_border,
+        )  # border to remove
         return img4, labels4, segments4
 
     @staticmethod
@@ -312,8 +335,10 @@ def polygons2masks(img_size, polygons, color, downsample_ratio=1):
 
 def polygons2masks_overlap(img_size, segments, downsample_ratio=1):
     """Return a (640, 640) overlap mask."""
-    masks = np.zeros((img_size[0] // downsample_ratio, img_size[1] // downsample_ratio),
-                     dtype=np.int32 if len(segments) > 255 else np.uint8)
+    masks = np.zeros(
+        (img_size[0] // downsample_ratio, img_size[1] // downsample_ratio),
+        dtype=np.int32 if len(segments) > 255 else np.uint8,
+    )
     areas = []
     ms = []
     for si in range(len(segments)):
