@@ -17,6 +17,7 @@ jobs:
       - name: Run Ultralytics Formatting
         uses: ultralytics/actions@main
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           python: true
           docstrings: true
           markdown: true
