@@ -1,7 +1,5 @@
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
-"""
-Image augmentation functions
-"""
+"""Image augmentation functions."""
 
 import math
 import random
@@ -22,15 +20,9 @@ def mixup(im, labels, segments, im2, labels2, segments2):
     return im, labels, segments
 
 
-def random_perspective(im,
-                       targets=(),
-                       segments=(),
-                       degrees=10,
-                       translate=.1,
-                       scale=.1,
-                       shear=10,
-                       perspective=0.0,
-                       border=(0, 0)):
+def random_perspective(
+    im, targets=(), segments=(), degrees=10, translate=0.1, scale=0.1, shear=10, perspective=0.0, border=(0, 0)
+):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -62,8 +54,8 @@ def random_perspective(im,
 
     # Translation
     T = np.eye(3)
-    T[0, 2] = (random.uniform(0.5 - translate, 0.5 + translate) * width)  # x translation (pixels)
-    T[1, 2] = (random.uniform(0.5 - translate, 0.5 + translate) * height)  # y translation (pixels)
+    T[0, 2] = random.uniform(0.5 - translate, 0.5 + translate) * width  # x translation (pixels)
+    T[1, 2] = random.uniform(0.5 - translate, 0.5 + translate) * height  # y translation (pixels)
 
     # Combined rotation matrix
     M = T @ S @ R @ P @ C  # order of operations (right to left) is IMPORTANT
@@ -89,7 +81,7 @@ def random_perspective(im,
             xy = np.ones((len(segment), 3))
             xy[:, :2] = segment
             xy = xy @ M.T  # transform
-            xy = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2])  # perspective rescale or affine
+            xy = xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]  # perspective rescale or affine
 
             # clip
             new[i] = segment2box(xy, width, height)
