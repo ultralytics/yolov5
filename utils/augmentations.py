@@ -251,10 +251,14 @@ def copy_paste(im, labels, segments, p=0.5):
                 move_y = y1 - l[2]
                 labels = np.concatenate((labels, [[l[0], *box]]), 0)
                 segments.append(np.concatenate((s[:, 0:1] + move_x, s[:, 1:2] + move_y), 1))
-                cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED) # mask
+                cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED)  # mask
 
-                result = cv2.warpAffine(im_copy, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)) # image translated
-                i = cv2.warpAffine(im_new, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)) .astype(bool) # mask translated
+                result = cv2.warpAffine(
+                    im_copy, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)
+                )  # image translated
+                i = cv2.warpAffine(im_new, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)).astype(
+                    bool
+                )  # mask translated
                 im[i] = result[i]
 
         # cv2.imwrite('debug.jpg', im)  # debug
