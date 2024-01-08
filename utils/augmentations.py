@@ -235,6 +235,7 @@ def copy_paste(im, labels, segments, p=0.5):
     # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
     n = len(segments)
     if p and n:
+        im_copy = im.copy()
         h, w, c = im.shape  # height, width, channels
         for j in random.sample(range(n), k=round(p * n)):
             im_new = np.zeros(im.shape, np.uint8)
@@ -250,10 +251,10 @@ def copy_paste(im, labels, segments, p=0.5):
                 move_y = y1 - l[2]
                 labels = np.concatenate((labels, [[l[0], *box]]), 0)
                 segments.append(np.concatenate((s[:, 0:1] + move_x, s[:, 1:2] + move_y), 1))
-                cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED)
+                cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED) # mask
 
-                result = cv2.warpAffine(im, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h))
-                i = cv2.warpAffine(im_new, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)) .astype(bool)
+                result = cv2.warpAffine(im_copy, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)) # image translated
+                i = cv2.warpAffine(im_new, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)) .astype(bool) # mask translated
                 im[i] = result[i]
 
         # cv2.imwrite('debug.jpg', im)  # debug
