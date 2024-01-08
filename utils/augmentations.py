@@ -236,19 +236,27 @@ def copy_paste(im, labels, segments, p=0.5):
     n = len(segments)
     if p and n:
         h, w, c = im.shape  # height, width, channels
-        im_new = np.zeros(im.shape, np.uint8)
         for j in random.sample(range(n), k=round(p * n)):
+            im_new = np.zeros(im.shape, np.uint8)
             l, s = labels[j], segments[j]
-            box = w - l[3], l[2], w - l[1], l[4]
+            w_box = l[3] - l[1]
+            h_box = l[4] - l[2]
+            x1 = random.randint(0, int(w - w_box))
+            y1 = random.randint(0, int(h - h_box))
+            box = x1, y1, x1 + w_box, y1 + h_box
             ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
             if (ioa < 0.30).all():  # allow 30% obscuration of existing labels
+                move_x = x1 - l[1]
+                move_y = y1 - l[2]
                 labels = np.concatenate((labels, [[l[0], *box]]), 0)
-                segments.append(np.concatenate((w - s[:, 0:1], s[:, 1:2]), 1))
+                segments.append(np.concatenate((s[:, 0:1] + move_x, s[:, 1:2] + move_y), 1))
                 cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED)
 
-        result = cv2.flip(im, 1)  # augment segments (flip left-right)
-        i = cv2.flip(im_new, 1).astype(bool)
-        im[i] = result[i]  # cv2.imwrite('debug.jpg', im)  # debug
+                result = cv2.warpAffine(im, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h))
+                i = cv2.warpAffine(im_new, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)) .astype(bool)
+                im[i] = result[i]
+
+        # cv2.imwrite('debug.jpg', im)  # debug
 
     return im, labels, segments
 
