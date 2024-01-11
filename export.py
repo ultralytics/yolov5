@@ -259,7 +259,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
             Returns:
                 input_tensor: Input data for quantization
             """
-            assert data_item[0].dtype == torch.uint8, 'input image must be uint8 for the quantization preprocessing'
+            assert data_item[0].dtype == torch.uint8, "input image must be uint8 for the quantization preprocessing"
 
             img = data_item[0].numpy().astype(np.float32)  # uint8 to fp16/32
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
