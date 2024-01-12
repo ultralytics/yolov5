@@ -231,35 +231,69 @@ def random_perspective(
     return im, targets
 
 
+def shift_array(arr, shift_x, shift_y, fill_value=0):
+    result = np.empty_like(arr)
+
+    if shift_y > 0:
+        result[:shift_y, :] = fill_value
+        if shift_x > 0:
+            result[:, :shift_x] = fill_value
+            result[shift_y:, shift_x:] = arr[:-shift_y, :-shift_x]
+        elif shift_x < 0:
+            result[:, shift_x:] = fill_value
+            result[shift_y:, :shift_x] = arr[:-shift_y, -shift_x:]
+        else:
+            result[shift_y:, :] = arr[:-shift_y, :]
+    elif shift_y < 0:
+        result[shift_y:, :] = fill_value
+        if shift_x > 0:
+            result[:, :shift_x] = fill_value
+            result[:shift_y, shift_x:] = arr[-shift_y:, :-shift_x]
+        elif shift_x < 0:
+            result[:, shift_x:] = fill_value
+            result[:shift_y, :shift_x] = arr[-shift_y:, -shift_x:]
+        else:
+            result[:shift_y, :] = arr[-shift_y:, :]
+    else:
+        if shift_x > 0:
+            result[:, :shift_x] = fill_value
+            result[:, shift_x:] = arr[:, :-shift_x]
+        elif shift_x < 0:
+            result[:, shift_x:] = fill_value
+            result[:, :shift_x] = arr[:, -shift_x:]
+        else:
+            result[:, :] = arr[:, :]
+    
+    return result
+
+
 def copy_paste(im, labels, segments, p=0.5):
     # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
     n = len(segments)
     if p and n:
-        im_copy = im.copy()
         h, w, c = im.shape  # height, width, channels
+
+        # One random translation for computational efficiency
+        translate_x, translate_y = random.randint(-w, w), random.randint(-h, h)
+
+        im_new = np.zeros(im.shape, np.uint8)
         for j in random.sample(range(n), k=round(p * n)):
-            im_new = np.zeros(im.shape, np.uint8)
             l, s = labels[j], segments[j]
-            w_box = l[3] - l[1]
-            h_box = l[4] - l[2]
-            x1 = random.randint(0, int(w - w_box))
-            y1 = random.randint(0, int(h - h_box))
-            box = x1, y1, x1 + w_box, y1 + h_box
+
+            if l[3] + translate_x > w or l[1] + translate_x < 0 or l[4] + translate_y > h or l[2] + translate_y < 0:
+                # box moved outside of the frame
+                continue
+
+            box = l[1] + translate_x, l[2] + translate_y, l[3] + translate_x, l[4] + translate_y
             ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
             if (ioa < 0.30).all():  # allow 30% obscuration of existing labels
-                move_x = x1 - l[1]
-                move_y = y1 - l[2]
                 labels = np.concatenate((labels, [[l[0], *box]]), 0)
-                segments.append(np.concatenate((s[:, 0:1] + move_x, s[:, 1:2] + move_y), 1))
+                segments.append(np.concatenate((s[:, 0:1] + translate_x, s[:, 1:2] + translate_y), 1))
                 cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED)  # mask
-
-                result = cv2.warpAffine(
-                    im_copy, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)
-                )  # image translated
-                i = cv2.warpAffine(im_new, np.float32([[1, 0, move_x], [0, 1, move_y]]), (w, h)).astype(
-                    bool
-                )  # mask translated
-                im[i] = result[i]
+        
+        result = shift_array(im, translate_x, translate_y)  # image translated
+        i = shift_array(im_new, translate_x, translate_y).astype(bool)  # mask translated
+        im[i] = result[i]
 
         # cv2.imwrite('debug.jpg', im)  # debug
 
