@@ -226,27 +226,18 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
     from openvino.tools import mo  # noqa
 
     LOGGER.info(f"\n{prefix} starting export with openvino {ov.__version__}...")
-    f = str(file).replace(file.suffix, f"_openvino_model{os.sep}")
+    f = str(file).replace(file.suffix, f"_{'int8_' if int8 else ''}openvino_model{os.sep}")
     f_onnx = file.with_suffix(".onnx")
     f_ov = str(Path(f) / file.with_suffix(".xml").name)
+
+    ov_model = mo.convert_model(f_onnx, model_name=file.stem, framework="onnx", compress_to_fp16=half)  # export
+
     if int8:
-        check_requirements("nncf>=2.4.0")  # requires at least version 2.4.0 to use the post-training quantization
+        check_requirements("nncf>=2.5.0")  # requires at least version 2.5.0 to use the post-training quantization
         import nncf
         import numpy as np
-        from openvino.runtime import Core
 
         from utils.dataloaders import create_dataloader
-
-        core = Core()
-        onnx_model = core.read_model(f_onnx)  # export
-
-        def prepare_input_tensor(image: np.ndarray):
-            input_tensor = image.astype(np.float32)  # uint8 to fp16/32
-            input_tensor /= 255.0  # 0 - 255 to 0.0 - 1.0
-
-            if input_tensor.ndim == 3:
-                input_tensor = np.expand_dims(input_tensor, 0)
-            return input_tensor
 
         def gen_dataloader(yaml_path, task="train", imgsz=640, workers=4):
             data_yaml = check_yaml(yaml_path)
@@ -268,15 +259,15 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
             Returns:
                 input_tensor: Input data for quantization
             """
-            img = data_item[0].numpy()
-            input_tensor = prepare_input_tensor(img)
-            return input_tensor
+            assert data_item[0].dtype == torch.uint8, "input image must be uint8 for the quantization preprocessing"
+
+            img = data_item[0].numpy().astype(np.float32)  # uint8 to fp16/32
+            img /= 255.0  # 0 - 255 to 0.0 - 1.0
+            return np.expand_dims(img, 0) if img.ndim == 3 else img
 
         ds = gen_dataloader(data)
         quantization_dataset = nncf.Dataset(ds, transform_fn)
-        ov_model = nncf.quantize(onnx_model, quantization_dataset, preset=nncf.QuantizationPreset.MIXED)
-    else:
-        ov_model = mo.convert_model(f_onnx, model_name=file.stem, framework="onnx", compress_to_fp16=half)  # export
+        ov_model = nncf.quantize(ov_model, quantization_dataset, preset=nncf.QuantizationPreset.MIXED)
 
     ov.serialize(ov_model, f_ov)  # save
     yaml_save(Path(f) / file.with_suffix(".yaml").name, metadata)  # add metadata.yaml
