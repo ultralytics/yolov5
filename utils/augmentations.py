@@ -263,7 +263,7 @@ def shift_array(arr, shift_x, shift_y, fill_value=0):
             result[:, :shift_x] = arr[:, -shift_x:]
         else:
             result[:, :] = arr[:, :]
-    
+
     return result
 
 
@@ -290,7 +290,7 @@ def copy_paste(im, labels, segments, p=0.5):
                 labels = np.concatenate((labels, [[l[0], *box]]), 0)
                 segments.append(np.concatenate((s[:, 0:1] + translate_x, s[:, 1:2] + translate_y), 1))
                 cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (1, 1, 1), cv2.FILLED)  # mask
-        
+
         result = shift_array(im, translate_x, translate_y)  # image translated
         i = shift_array(im_new, translate_x, translate_y).astype(bool)  # mask translated
         im[i] = result[i]
