@@ -225,7 +225,7 @@ def run(
 
             # Stream results
             im0 = annotator.result()
-            im0 = ((im0.astype(np.float32) * (1 - opt.line_alpha)) + (im0s.astype(np.float32) * opt.line_alpha))
+            im0 = (im0.astype(np.float32) * (1 - opt.line_alpha)) + (im0s.astype(np.float32) * opt.line_alpha)
             im0 = im0.astype(np.uint8)
             if view_img:
                 if platform.system() == "Linux" and p not in windows:
