@@ -24,9 +24,7 @@ def is_url(url, check=True):
 def gsutil_getsize(url=""):
     # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
     output = subprocess.check_output(["gsutil", "du", url], shell=True, encoding="utf-8")
-    if output:
-        return int(output.split()[0])
-    return 0
+    return int(output.split()[0]) if output else 0
 
 
 def url_getsize(url="https://ultralytics.com/images/bus.jpg"):

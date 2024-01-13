@@ -859,11 +859,17 @@ class Detections:
     def tolist(self):
         # return a list of Detections objects, i.e. 'for result in results.tolist():'
         r = range(self.n)  # iterable
-        x = [Detections([self.ims[i]], [self.pred[i]], [self.files[i]], self.times, self.names, self.s) for i in r]
-        # for d in x:
-        #    for k in ['ims', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
-        #        setattr(d, k, getattr(d, k)[0])  # pop out of list
-        return x
+        return [
+            Detections(
+                [self.ims[i]],
+                [self.pred[i]],
+                [self.files[i]],
+                self.times,
+                self.names,
+                self.s,
+            )
+            for i in r
+        ]
 
     def print(self):
         LOGGER.info(self.__str__())
