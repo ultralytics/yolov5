@@ -188,7 +188,7 @@ class Profile(contextlib.ContextDecorator):
     def __init__(self, t=0.0, device: torch.device = None):
         self.t = t
         self.device = device
-        self.cuda = True if (device and str(device)[:4] == "cuda") else False
+        self.cuda = bool(device and str(device).startswith("cuda"))
 
     def __enter__(self):
         self.start = self.time()

@@ -65,28 +65,23 @@ class WandbLogger:
         self.max_imgs_to_log = 16
         self.data_dict = None
         if self.wandb:
-            self.wandb_run = (
-                wandb.init(
-                    config=opt,
-                    resume="allow",
-                    project="YOLOv5" if opt.project == "runs/train" else Path(opt.project).stem,
-                    entity=opt.entity,
-                    name=opt.name if opt.name != "exp" else None,
-                    job_type=job_type,
-                    id=run_id,
-                    allow_val_change=True,
-                )
-                if not wandb.run
-                else wandb.run
+            self.wandb_run = wandb.run or wandb.init(
+                config=opt,
+                resume="allow",
+                project="YOLOv5" if opt.project == "runs/train" else Path(opt.project).stem,
+                entity=opt.entity,
+                name=opt.name if opt.name != "exp" else None,
+                job_type=job_type,
+                id=run_id,
+                allow_val_change=True,
             )
 
-        if self.wandb_run:
-            if self.job_type == "Training":
-                if isinstance(opt.data, dict):
-                    # This means another dataset manager has already processed the dataset info (e.g. ClearML)
-                    # and they will have stored the already processed dict in opt.data
-                    self.data_dict = opt.data
-                self.setup_training(opt)
+        if self.wandb_run and self.job_type == "Training":
+            if isinstance(opt.data, dict):
+                # This means another dataset manager has already processed the dataset info (e.g. ClearML)
+                # and they will have stored the already processed dict in opt.data
+                self.data_dict = opt.data
+            self.setup_training(opt)
 
     def setup_training(self, opt):
         """
@@ -133,7 +128,7 @@ class WandbLogger:
         best_model (boolean) -- Boolean representing if the current checkpoint is the best yet.
         """
         model_artifact = wandb.Artifact(
-            "run_" + wandb.run.id + "_model",
+            f"run_{wandb.run.id}_model",
             type="model",
             metadata={
                 "original_url": str(path),
@@ -146,7 +141,13 @@ class WandbLogger:
         )
         model_artifact.add_file(str(path / "last.pt"), name="last.pt")
         wandb.log_artifact(
-            model_artifact, aliases=["latest", "last", "epoch " + str(self.current_epoch), "best" if best_model else ""]
+            model_artifact,
+            aliases=[
+                "latest",
+                "last",
+                f"epoch {str(self.current_epoch)}",
+                "best" if best_model else "",
+            ],
         )
         LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
 

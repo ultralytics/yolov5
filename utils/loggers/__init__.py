@@ -67,9 +67,7 @@ def _json_default(value):
             value = value.item()
         except ValueError:  # "only one element tensors can be converted to Python scalars"
             pass
-    if isinstance(value, float):
-        return value
-    return str(value)
+    return value if isinstance(value, float) else str(value)
 
 
 class Loggers:
@@ -250,12 +248,12 @@ class Loggers:
                 f.write(s + ("%20.5g," * n % tuple([epoch] + vals)).rstrip(",") + "\n")
         if self.ndjson_console or self.ndjson_file:
             json_data = json.dumps(dict(epoch=epoch, **x), default=_json_default)
-            if self.ndjson_console:
-                print(json_data)
-            if self.ndjson_file:
-                file = self.save_dir / "results.ndjson"
-                with open(file, "a") as f:
-                    print(json_data, file=f)
+        if self.ndjson_console:
+            print(json_data)
+        if self.ndjson_file:
+            file = self.save_dir / "results.ndjson"
+            with open(file, "a") as f:
+                print(json_data, file=f)
 
         if self.tb:
             for k, v in x.items():
@@ -370,10 +368,7 @@ class GenericLogger:
         if clearml and "clearml" in self.include:
             try:
                 # Hyp is not available in classification mode
-                if "hyp" not in opt:
-                    hyp = {}
-                else:
-                    hyp = opt.hyp
+                hyp = {} if "hyp" not in opt else opt.hyp
                 self.clearml = ClearmlLogger(opt, hyp)
             except Exception:
                 self.clearml = None
@@ -427,7 +422,9 @@ class GenericLogger:
         if self.tb:
             log_tensorboard_graph(self.tb, model, imgsz)
 
-    def log_model(self, model_path, epoch=0, metadata={}):
+    def log_model(self, model_path, epoch=0, metadata=None):
+        if metadata is None:
+            metadata = {}
         # Log model to all loggers
         if self.wandb:
             art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)

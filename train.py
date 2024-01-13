@@ -682,10 +682,7 @@ def main(opt, callbacks=Callbacks()):
             )
 
         # Delete the items in meta dictionary whose first value is False
-        del_ = []
-        for item in meta.keys():
-            if meta[item][0] is False:
-                del_.append(item)
+        del_ = [item for item, value_ in meta.items() if value_[0] is False]
         hyp_GA = hyp.copy()  # Make a copy of hyp dictionary
         for item in del_:
             del meta[item]  # Remove the item from meta dictionary
@@ -696,9 +693,7 @@ def main(opt, callbacks=Callbacks()):
         upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
 
         # Create gene_ranges list to hold the range of values for each gene in the population
-        gene_ranges = []
-        for i in range(len(upper_limit)):
-            gene_ranges.append((lower_limit[i], upper_limit[i]))
+        gene_ranges = [(lower_limit[i], upper_limit[i]) for i in range(len(upper_limit))]
 
         # Initialize the population with initial_values or random values
         initial_values = []
@@ -723,14 +718,11 @@ def main(opt, callbacks=Callbacks()):
 
         # Generate random values within the search space for the rest of the population
         if initial_values is None:
-            population = [generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size)]
-        else:
-            if pop_size > 1:
-                population = [
-                    generate_individual(gene_ranges, len(hyp_GA)) for i in range(pop_size - len(initial_values))
-                ]
-                for initial_value in initial_values:
-                    population = [initial_value] + population
+            population = [generate_individual(gene_ranges, len(hyp_GA)) for _ in range(pop_size)]
+        elif pop_size > 1:
+            population = [generate_individual(gene_ranges, len(hyp_GA)) for _ in range(pop_size - len(initial_values))]
+            for initial_value in initial_values:
+                population = [initial_value] + population
 
         # Run the genetic algorithm for a fixed number of generations
         list_keys = list(hyp_GA.keys())
@@ -738,10 +730,8 @@ def main(opt, callbacks=Callbacks()):
             if generation >= 1:
                 save_dict = {}
                 for i in range(len(population)):
-                    little_dict = {}
-                    for j in range(len(population[i])):
-                        little_dict[list_keys[j]] = float(population[i][j])
-                    save_dict["gen" + str(generation) + "number" + str(i)] = little_dict
+                    little_dict = {list_keys[j]: float(population[i][j]) for j in range(len(population[i]))}
+                    save_dict[f"gen{str(generation)}number{str(i)}"] = little_dict
 
                 with open(save_dir / "evolve_population.yaml", "w") as outfile:
                     yaml.dump(save_dict, outfile, default_flow_style=False)
@@ -771,7 +761,7 @@ def main(opt, callbacks=Callbacks()):
 
             # Select the fittest individuals for reproduction using adaptive tournament selection
             selected_indices = []
-            for i in range(pop_size - elite_size):
+            for _ in range(pop_size - elite_size):
                 # Adaptive tournament size
                 tournament_size = max(
                     max(2, tournament_size_min),
@@ -788,7 +778,7 @@ def main(opt, callbacks=Callbacks()):
             selected_indices.extend(elite_indices)
             # Create the next generation through crossover and mutation
             next_generation = []
-            for i in range(pop_size):
+            for _ in range(pop_size):
                 parent1_index = selected_indices[random.randint(0, pop_size - 1)]
                 parent2_index = selected_indices[random.randint(0, pop_size - 1)]
                 # Adaptive crossover rate
