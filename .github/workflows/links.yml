@@ -35,6 +35,7 @@ jobs:
           max_attempts: 3
           command: |
             lychee \
+            --scheme 'https' \
             --accept 403,429,500,502,999 \
             --exclude-loopback \
             --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
@@ -52,6 +53,7 @@ jobs:
           max_attempts: 3
           command: |
             lychee \
+            --scheme 'https' \
             --accept 429,999 \
             --exclude-loopback \
             --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
