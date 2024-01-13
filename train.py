@@ -693,9 +693,7 @@ def main(opt, callbacks=Callbacks()):
         upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
 
         # Create gene_ranges list to hold the range of values for each gene in the population
-        gene_ranges = [
-            (lower_limit[i], upper_limit[i]) for i in range(len(upper_limit))
-        ]
+        gene_ranges = [(lower_limit[i], upper_limit[i]) for i in range(len(upper_limit))]
 
         # Initialize the population with initial_values or random values
         initial_values = []
@@ -720,15 +718,9 @@ def main(opt, callbacks=Callbacks()):
 
         # Generate random values within the search space for the rest of the population
         if initial_values is None:
-            population = [
-                generate_individual(gene_ranges, len(hyp_GA))
-                for _ in range(pop_size)
-            ]
+            population = [generate_individual(gene_ranges, len(hyp_GA)) for _ in range(pop_size)]
         elif pop_size > 1:
-            population = [
-                generate_individual(gene_ranges, len(hyp_GA))
-                for _ in range(pop_size - len(initial_values))
-            ]
+            population = [generate_individual(gene_ranges, len(hyp_GA)) for _ in range(pop_size - len(initial_values))]
             for initial_value in initial_values:
                 population = [initial_value] + population
 
@@ -738,10 +730,7 @@ def main(opt, callbacks=Callbacks()):
             if generation >= 1:
                 save_dict = {}
                 for i in range(len(population)):
-                    little_dict = {
-                        list_keys[j]: float(population[i][j])
-                        for j in range(len(population[i]))
-                    }
+                    little_dict = {list_keys[j]: float(population[i][j]) for j in range(len(population[i]))}
                     save_dict[f"gen{str(generation)}number{str(i)}"] = little_dict
 
                 with open(save_dir / "evolve_population.yaml", "w") as outfile:

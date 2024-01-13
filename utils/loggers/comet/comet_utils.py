@@ -142,7 +142,7 @@ def check_comet_resume(opt):
         experiment = api.get(experiment_path)
         set_opt_parameters(opt, experiment)
         download_model_checkpoint(opt, experiment)
-    
+
         return True
 
     return None
