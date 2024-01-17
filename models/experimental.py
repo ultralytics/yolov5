@@ -1,7 +1,5 @@
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
-"""
-Experimental modules
-"""
+"""Experimental modules."""
 import math
 
 import numpy as np
@@ -38,7 +36,7 @@ class MixConv2d(nn.Module):
         super().__init__()
         n = len(k)  # number of convolutions
         if equal_ch:  # equal c_ per group
-            i = torch.linspace(0, n - 1E-6, c2).floor()  # c2 indices
+            i = torch.linspace(0, n - 1e-6, c2).floor()  # c2 indices
             c_ = [(i == g).sum() for g in range(n)]  # intermediate channels
         else:  # equal weight.numel() per group
             b = [c2] + [0] * n
@@ -48,8 +46,9 @@ class MixConv2d(nn.Module):
             a[0] = 1
             c_ = np.linalg.lstsq(a, b, rcond=None)[0].round()  # solve for equal weight indices, ax = b
 
-        self.m = nn.ModuleList([
-            nn.Conv2d(c1, int(c_), k, s, k // 2, groups=math.gcd(c1, int(c_)), bias=False) for k, c_ in zip(k, c_)])
+        self.m = nn.ModuleList(
+            [nn.Conv2d(c1, int(c_), k, s, k // 2, groups=math.gcd(c1, int(c_)), bias=False) for k, c_ in zip(k, c_)]
+        )
         self.bn = nn.BatchNorm2d(c2)
         self.act = nn.SiLU()
 
@@ -76,16 +75,16 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
 
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
-        ckpt = torch.load(attempt_download(w), map_location='cpu')  # load
-        ckpt = (ckpt.get('ema') or ckpt['model']).to(device).float()  # FP32 model
+        ckpt = torch.load(attempt_download(w), map_location="cpu")  # load
+        ckpt = (ckpt.get("ema") or ckpt["model"]).to(device).float()  # FP32 model
 
         # Model compatibility updates
-        if not hasattr(ckpt, 'stride'):
-            ckpt.stride = torch.tensor([32.])
-        if hasattr(ckpt, 'names') and isinstance(ckpt.names, (list, tuple)):
+        if not hasattr(ckpt, "stride"):
+            ckpt.stride = torch.tensor([32.0])
+        if hasattr(ckpt, "names") and isinstance(ckpt.names, (list, tuple)):
             ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
 
-        model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # model in eval mode
+        model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, "fuse") else ckpt.eval())  # model in eval mode
 
     # Module updates
     for m in model.modules():
@@ -93,9 +92,9 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
         if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model):
             m.inplace = inplace
             if t is Detect and not isinstance(m.anchor_grid, list):
-                delattr(m, 'anchor_grid')
-                setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
-        elif t is nn.Upsample and not hasattr(m, 'recompute_scale_factor'):
+                delattr(m, "anchor_grid")
+                setattr(m, "anchor_grid", [torch.zeros(1)] * m.nl)
+        elif t is nn.Upsample and not hasattr(m, "recompute_scale_factor"):
             m.recompute_scale_factor = None  # torch 1.11.0 compatibility
 
     # Return model
@@ -103,9 +102,9 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
         return model[-1]
 
     # Return detection ensemble
-    print(f'Ensemble created with {weights}\n')
-    for k in 'names', 'nc', 'yaml':
+    print(f"Ensemble created with {weights}\n")
+    for k in "names", "nc", "yaml":
         setattr(model, k, getattr(model[0], k))
     model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride
-    assert all(model[0].nc == m.nc for m in model), f'Models have different class counts: {[m.nc for m in model]}'
+    assert all(model[0].nc == m.nc for m in model), f"Models have different class counts: {[m.nc for m in model]}"
     return model
