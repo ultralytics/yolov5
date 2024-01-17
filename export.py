@@ -546,7 +546,7 @@ def export_tfjs(file, int8, prefix=colorstr("TensorFlow.js:")):
         "--quantize_uint8" if int8 else "",
         "--output_node_names=Identity,Identity_1,Identity_2,Identity_3",
         str(f_pb),
-        str(f),
+        f,
     ]
     subprocess.run([arg for arg in args if arg], check=True)
 

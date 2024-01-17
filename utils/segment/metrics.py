@@ -35,7 +35,7 @@ def ap_per_class_box_and_mask(
         tp_m, conf, pred_cls, target_cls, plot=plot, save_dir=save_dir, names=names, prefix="Mask"
     )[2:]
 
-    results = {
+    return {
         "boxes": {
             "p": results_boxes[0],
             "r": results_boxes[1],
@@ -51,7 +51,6 @@ def ap_per_class_box_and_mask(
             "ap_class": results_masks[4],
         },
     }
-    return results
 
 
 class Metric:
