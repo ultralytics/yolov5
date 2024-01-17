@@ -4,7 +4,7 @@
 # Base ------------------------------------------------------------------------
 gitpython>=3.1.30
 matplotlib>=3.3
-numpy>=1.22.2
+numpy>=1.23.5
 opencv-python>=4.1.1
 Pillow>=10.0.1
 psutil  # system resources
@@ -15,7 +15,7 @@ thop>=0.1.1  # FLOPs computation
 torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
 tqdm>=4.64.0
-ultralytics>=8.0.147
+ultralytics>=8.0.232
 dill>=0.3.7
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
@@ -35,7 +35,7 @@ seaborn>=0.11.0
 # nvidia-pyindex  # TensorRT export
 # nvidia-tensorrt  # TensorRT export
 # scikit-learn<=1.1.2  # CoreML quantization
-# tensorflow>=2.4.0  # TF exports (-cpu, -aarch64, -macos)
+# tensorflow>=2.4.0,<=2.13.1  # TF exports (-cpu, -aarch64, -macos)
 # tensorflowjs>=3.9.0  # TF.js export
 # openvino-dev>=2023.0  # OpenVINO export
 
