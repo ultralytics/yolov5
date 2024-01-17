@@ -4,7 +4,7 @@
 # Base ------------------------------------------------------------------------
 gitpython>=3.1.30
 matplotlib>=3.3
-numpy>=1.22.2
+numpy>=1.23.5
 opencv-python>=4.1.1
 Pillow>=10.0.1
 psutil  # system resources
