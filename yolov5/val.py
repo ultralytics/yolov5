@@ -464,6 +464,7 @@ def run(
             batch_detection_info = []
 
             if save_blurred_image:
+                print("I enter the save_blurred_image even if I have no detections.")
                 pred_clone[:, :4] = scale_boxes(im[si].shape[1:], pred_clone[:, :4], shape, shapes[si][1])
                 for *xyxy, conf, cls in pred_clone.tolist():
                     x1, y1 = int(xyxy[0]), int(xyxy[1])
@@ -516,7 +517,6 @@ def run(
                 with db_config.managed_session() as session:
                     # Merge the instance into the session (updates if already exists)
                     session.merge(image_processing_status)
-
 
         if skip_evaluation:
             # Filter and iterate over paths with no detection in current batch
