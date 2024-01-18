@@ -404,12 +404,20 @@ def run(
             relative_path_in_azure_mounted_folder = Path('/'.join(p.parts[p.parts.index('wd') +
                                                                           2:])) if is_wd_path else None
             save_path = str(save_dir / (relative_path_in_azure_mounted_folder if is_wd_path else p.name))
+            folder_path = os.path.dirname(save_path)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
 
             if npr == 0:
                 if nl and not skip_evaluation:
                     stats.append((correct, *torch.zeros((2, 0), device=device), labels[:, 0]))
                     if plots:
                         confusion_matrix.process_batch(detections=None, labels=labels[:, 0])
+                # Save images without detections
+                if save_blurred_image:
+                    if not cv2.imwrite(save_path, im_orig[si]):
+                        raise Exception(f'Could not write image {os.path.basename(save_path)}')
+
             else:
                 # Predictions
                 if single_cls:
@@ -492,10 +500,6 @@ def run(
                                     'run_id': run_id,
                                     'conf_score': conf
                                 })
-
-                    folder_path = os.path.dirname(save_path)
-                    if not os.path.exists(folder_path):
-                        os.makedirs(folder_path)
 
                     if not cv2.imwrite(save_path, im_orig[si]):
                         raise Exception(f'Could not write image {os.path.basename(save_path)}')
