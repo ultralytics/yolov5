@@ -39,6 +39,7 @@ from pathlib import Path
 
 # pathlib.PosixPath = pathlib.WindowsPath # uncomment if you are using windows
 import torch
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
