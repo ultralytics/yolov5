@@ -34,7 +34,8 @@ import os
 import platform
 import sys
 from pathlib import Path
-
+import pathlib # added for Windows compatibility
+pathlib.PosixPath = pathlib.WindowsPath # and fix "NotImplementedError: cannot instantiate 'PosixPath' on your system" error
 import torch
 
 FILE = Path(__file__).resolve()
