@@ -533,7 +533,7 @@ class LoadImagesAndLabels(Dataset):
                 image for image in images_to_process if extract_filename_with_subfolder(image) not in processed_images]
 
             if not self.im_files:
-                raise Exception(f'{prefix}No (new) images found')
+                LOGGER.warning(f'{prefix} No (new) images found')
 
         except Exception as e:
             raise Exception(f'{prefix}Error loading data from {path}: {e}\n{HELP_URL}') from e
