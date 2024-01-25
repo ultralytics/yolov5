@@ -232,6 +232,7 @@ def random_perspective(
 
 
 def shift_array(arr, shift_x, shift_y, fill_value=0):
+    # Shifts the array by shift_x columns and shift_y rows and fills the new cells with fill_value
     result = np.empty_like(arr)
 
     if shift_y > 0:
