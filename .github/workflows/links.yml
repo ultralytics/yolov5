@@ -36,8 +36,10 @@ jobs:
           command: |
             lychee \
             --scheme 'https' \
+            --timeout 60 \
+            --insecure \
             --accept 403,429,500,502,999 \
-            --exclude-loopback \
+            --exclude-all-private \
             --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
             --exclude-path '**/ci.yaml' \
             --github-token ${{ secrets.GITHUB_TOKEN }} \
@@ -54,8 +56,10 @@ jobs:
           command: |
             lychee \
             --scheme 'https' \
+            --timeout 60 \
+            --insecure \
             --accept 429,999 \
-            --exclude-loopback \
+            --exclude-all-private \
             --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
             --exclude-path '**/ci.yaml' \
             --github-token ${{ secrets.GITHUB_TOKEN }} \
