@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Echlon Object Detection</title>
+</head>
+<body>
+    <header class="app-header">
+        <h1>Echelon Object Detection and Streaming</h1>
+    </header>
+
+    <div class="button-container">
+        <button id="startButton" onclick="startStream()">Start Stream</button>
+        <button id="stopButton" onclick="stopStream()">Stop Stream</button>
+    </div>
+    
+    
+    <select id="videoDropdown">
+        <option value="">Select a Video</option>
+    </select>
+    
+    <button class="playButton" style="display:none;">PLAY</button>
+    <button class="detectionButton" style="display:none;">DETECTION</button>
+    <div id="videoPlayer"></div>
+    <!-- <div class="video-container">
+        <video id="videoPlayer" controls width="640" height="480">
+            Your browser does not support the video tag.
+        </video>
+    </div> -->
+
+    <img id="videoStream" alt="Video Stream">
+
+
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
