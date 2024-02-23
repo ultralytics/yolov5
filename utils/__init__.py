@@ -22,7 +22,9 @@ class TryExcept(contextlib.ContextDecorator):
         pass
 
     def __exit__(self, exc_type, value, traceback):
-        """Context manager exit method that prints an error message with emojis if an exception occurred, always returns True."""
+        """Context manager exit method that prints an error message with emojis if an exception occurred, always returns
+        True.
+        """
         if value:
             print(emojis(f"{self.msg}{': ' if self.msg else ''}{value}"))
         return True
@@ -30,6 +32,7 @@ class TryExcept(contextlib.ContextDecorator):
 
 def threaded(func):
     """Decorator @threaded to run a function in a separate thread, returning the thread instance."""
+
     def wrapper(*args, **kwargs):
         thread = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=True)
         thread.start()
@@ -39,7 +42,8 @@ def threaded(func):
 
 
 def join_threads(verbose=False):
-    """Joins all daemon threads, optionally printing their names if verbose is True.
+    """
+    Joins all daemon threads, optionally printing their names if verbose is True.
 
     Example: atexit.register(lambda: join_threads())
     """
