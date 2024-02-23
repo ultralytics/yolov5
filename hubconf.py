@@ -89,52 +89,72 @@ def custom(path="path/to/model.pt", autoshape=True, _verbose=True, device=None):
 
 
 def yolov5n(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Instantiates the YOLOv5-nano model with options for pretraining, input channels, class count, autoshaping, verbosity, and device."""
+    """Instantiates the YOLOv5-nano model with options for pretraining, input channels, class count, autoshaping,
+    verbosity, and device.
+    """
     return _create("yolov5n", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5s(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Creates YOLOv5-small model with options for pretraining, input channels, class count, autoshaping, verbosity, and device."""
+    """Creates YOLOv5-small model with options for pretraining, input channels, class count, autoshaping, verbosity, and
+    device.
+    """
     return _create("yolov5s", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5m(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Instantiates the YOLOv5-medium model with customizable pretraining, channel count, class count, autoshaping, verbosity, and device."""
+    """Instantiates the YOLOv5-medium model with customizable pretraining, channel count, class count, autoshaping,
+    verbosity, and device.
+    """
     return _create("yolov5m", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5l(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Creates YOLOv5-large model with options for pretraining, channels, classes, autoshaping, verbosity, and device selection."""
+    """Creates YOLOv5-large model with options for pretraining, channels, classes, autoshaping, verbosity, and device
+    selection.
+    """
     return _create("yolov5l", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5x(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Instantiates the YOLOv5-xlarge model with customizable pretraining, channel count, class count, autoshaping, verbosity, and device."""
+    """Instantiates the YOLOv5-xlarge model with customizable pretraining, channel count, class count, autoshaping,
+    verbosity, and device.
+    """
     return _create("yolov5x", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5n6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Creates YOLOv5-nano-P6 model with options for pretraining, channels, classes, autoshaping, verbosity, and device."""
+    """Creates YOLOv5-nano-P6 model with options for pretraining, channels, classes, autoshaping, verbosity, and
+    device.
+    """
     return _create("yolov5n6", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5s6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Instantiate YOLOv5-small-P6 model with options for pretraining, input channels, number of classes, autoshaping, verbosity, and device selection."""
+    """Instantiate YOLOv5-small-P6 model with options for pretraining, input channels, number of classes, autoshaping,
+    verbosity, and device selection.
+    """
     return _create("yolov5s6", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5m6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Creates YOLOv5-medium-P6 model with options for pretraining, channel count, class count, autoshaping, verbosity, and device."""
+    """Creates YOLOv5-medium-P6 model with options for pretraining, channel count, class count, autoshaping, verbosity,
+    and device.
+    """
     return _create("yolov5m6", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5l6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Instantiates the YOLOv5-large-P6 model with customizable pretraining, channel and class counts, autoshaping, verbosity, and device selection."""
+    """Instantiates the YOLOv5-large-P6 model with customizable pretraining, channel and class counts, autoshaping,
+    verbosity, and device selection.
+    """
     return _create("yolov5l6", pretrained, channels, classes, autoshape, _verbose, device)
 
 
 def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Creates YOLOv5-xlarge-P6 model with options for pretraining, channels, classes, autoshaping, verbosity, and device."""
+    """Creates YOLOv5-xlarge-P6 model with options for pretraining, channels, classes, autoshaping, verbosity, and
+    device.
+    """
     return _create("yolov5x6", pretrained, channels, classes, autoshape, _verbose, device)
 
 

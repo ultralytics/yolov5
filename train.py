@@ -825,7 +825,8 @@ def generate_individual(input_ranges, individual_length):
 
 
 def run(**kwargs):
-    """Executes YOLOv5 training with given options, overriding with any kwargs provided.
+    """
+    Executes YOLOv5 training with given options, overriding with any kwargs provided.
 
     Example: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
     """

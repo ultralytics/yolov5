@@ -149,7 +149,9 @@ def try_export(inner_func):
 
 @try_export
 def export_torchscript(model, im, file, optimize, prefix=colorstr("TorchScript:")):
-    """Exports YOLOv5 model to TorchScript format, optionally optimized for mobile, with image shape and stride metadata."""
+    """Exports YOLOv5 model to TorchScript format, optionally optimized for mobile, with image shape and stride
+    metadata.
+    """
     LOGGER.info(f"\n{prefix} starting export with torch {torch.__version__}...")
     f = file.with_suffix(".torchscript")
 
@@ -278,7 +280,9 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
 
 @try_export
 def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):
-    """Exports a YOLOv5 model to PaddlePaddle format using X2Paddle, saving to `save_dir` and adding a metadata.yaml file."""
+    """Exports a YOLOv5 model to PaddlePaddle format using X2Paddle, saving to `save_dir` and adding a metadata.yaml
+    file.
+    """
     check_requirements(("paddlepaddle", "x2paddle"))
     import x2paddle
     from x2paddle.convert import pytorch2paddle
@@ -318,7 +322,11 @@ def export_coreml(model, im, file, int8, half, nms, prefix=colorstr("CoreML:")):
 
 @try_export
 def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose=False, prefix=colorstr("TensorRT:")):
-    """Exports a YOLOv5 model to TensorRT engine format, requiring GPU and TensorRT>=7.0.0. https://developer.nvidia.com/tensorrt"""
+    """
+    Exports a YOLOv5 model to TensorRT engine format, requiring GPU and TensorRT>=7.0.0.
+
+    https://developer.nvidia.com/tensorrt
+    """
     assert im.device.type != "cpu", "export running on CPU but must be on GPU, i.e. `python export.py --device 0`"
     try:
         import tensorrt as trt
@@ -495,7 +503,11 @@ def export_tflite(
 
 @try_export
 def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
-    """Exports a YOLOv5 model to Edge TPU compatible TFLite format; requires Linux and Edge TPU compiler. https://coral.ai/docs/edgetpu/models-intro/"""
+    """
+    Exports a YOLOv5 model to Edge TPU compatible TFLite format; requires Linux and Edge TPU compiler.
+
+    https://coral.ai/docs/edgetpu/models-intro/
+    """
     cmd = "edgetpu_compiler --version"
     help_url = "https://coral.ai/docs/edgetpu/compiler/"
     assert platform.system() == "Linux", f"export only supported on Linux. See {help_url}"
@@ -570,7 +582,11 @@ def export_tfjs(file, int8, prefix=colorstr("TensorFlow.js:")):
 
 
 def add_tflite_metadata(file, metadata, num_outputs):
-    """Adds TFLite metadata to a model file, supporting multiple outputs, as specified by TensorFlow guidelines. https://www.tensorflow.org/lite/models/convert/metadata"""
+    """
+    Adds TFLite metadata to a model file, supporting multiple outputs, as specified by TensorFlow guidelines.
+
+    https://www.tensorflow.org/lite/models/convert/metadata
+    """
     with contextlib.suppress(ImportError):
         # check_requirements('tflite_support')
         from tflite_support import flatbuffers
@@ -603,7 +619,9 @@ def add_tflite_metadata(file, metadata, num_outputs):
 
 
 def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:")):
-    """Converts a PyTorch YOLOv5 model to CoreML format with NMS, handling different input/output shapes and saving the model."""
+    """Converts a PyTorch YOLOv5 model to CoreML format with NMS, handling different input/output shapes and saving the
+    model.
+    """
     import coremltools as ct
     from PIL import Image
 

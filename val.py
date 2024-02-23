@@ -72,9 +72,11 @@ def save_one_txt(predn, save_conf, shape, file):
 
 
 def save_one_json(predn, jdict, path, class_map):
-    """Saves one JSON detection result with image ID, category ID, bounding box, and score.
+    """
+    Saves one JSON detection result with image ID, category ID, bounding box, and score.
 
-    Example: {"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}"""
+    Example: {"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}
+    """
     image_id = int(path.stem) if path.stem.isnumeric() else path.stem
     box = xyxy2xywh(predn[:, :4])  # xywh
     box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
@@ -394,7 +396,9 @@ def parse_opt():
 
 
 def main(opt):
-    """Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided options."""
+    """Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided
+    options.
+    """
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
 
     if opt.task in ("train", "val", "test"):  # run normally
