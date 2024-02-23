@@ -10,9 +10,11 @@ class SiLU(nn.Module):
     # SiLU activation https://arxiv.org/pdf/1606.08415.pdf
     @staticmethod
     def forward(x):
-        """Applies the Sigmoid-weighted Linear Unit (SiLU) activation function.
+        """
+        Applies the Sigmoid-weighted Linear Unit (SiLU) activation function.
 
-        https://arxiv.org/pdf/1606.08415.pdf."""
+        https://arxiv.org/pdf/1606.08415.pdf.
+        """
         return x * torch.sigmoid(x)
 
 
@@ -20,14 +22,17 @@ class Hardswish(nn.Module):
     # Hard-SiLU activation
     @staticmethod
     def forward(x):
-        """Applies the Hardswish activation function, compatible with TorchScript, CoreML, and ONNX.
+        """
+        Applies the Hardswish activation function, compatible with TorchScript, CoreML, and ONNX.
 
-        Equivalent to x * F.hardsigmoid(x)"""
+        Equivalent to x * F.hardsigmoid(x)
+        """
         return x * F.hardtanh(x + 3, 0.0, 6.0) / 6.0  # for TorchScript, CoreML and ONNX
 
 
 class Mish(nn.Module):
     """Mish activation https://github.com/digantamisra98/Mish."""
+
     @staticmethod
     def forward(x):
         """Applies the Mish activation function, a smooth alternative to ReLU."""
@@ -64,9 +69,11 @@ class FReLU(nn.Module):
         self.bn = nn.BatchNorm2d(c1)
 
     def forward(self, x):
-        """Applies FReLU activation with max operation between input and BN-convolved input.
+        """
+        Applies FReLU activation with max operation between input and BN-convolved input.
 
-        https://arxiv.org/abs/2007.11824"""
+        https://arxiv.org/abs/2007.11824
+        """
         return torch.max(x, self.bn(self.conv(x)))
 
 
