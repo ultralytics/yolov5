@@ -12,7 +12,9 @@ from .general import crop_mask
 class ComputeLoss:
     # Compute losses
     def __init__(self, model, autobalance=False, overlap=False):
-        """Initializes the compute loss function for YOLOv5 models with options for autobalancing and overlap handling."""
+        """Initializes the compute loss function for YOLOv5 models with options for autobalancing and overlap
+        handling.
+        """
         self.sort_obj_iou = False
         self.overlap = overlap
         device = next(model.parameters()).device  # get model device
@@ -116,7 +118,9 @@ class ComputeLoss:
         return (crop_mask(loss, xyxy).mean(dim=(1, 2)) / area).mean()
 
     def build_targets(self, p, targets):
-        """Prepares YOLOv5 targets for loss computation; inputs targets (image, class, x, y, w, h), output target classes/boxes."""
+        """Prepares YOLOv5 targets for loss computation; inputs targets (image, class, x, y, w, h), output target
+        classes/boxes.
+        """
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
         tcls, tbox, indices, anch, tidxs, xywhn = [], [], [], [], [], []
         gain = torch.ones(8, device=self.device)  # normalized to gridspace gain

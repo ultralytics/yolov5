@@ -25,7 +25,9 @@ COMET_PROJECT_NAME = config.get_string(os.getenv("COMET_PROJECT_NAME"), "comet.p
 
 
 def get_args(known=False):
-    """Parses command-line arguments for YOLOv5 training, supporting configuration of weights, data paths, hyperparameters, and more."""
+    """Parses command-line arguments for YOLOv5 training, supporting configuration of weights, data paths,
+    hyperparameters, and more.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="initial weights path")
     parser.add_argument("--cfg", type=str, default="", help="model.yaml path")
