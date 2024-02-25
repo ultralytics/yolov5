@@ -270,7 +270,7 @@ def plot_val_study(file="", dir="", x=None):
     Plots validation study results from 'study*.txt' files in a directory or a specific file, comparing model
     performance and speed.
 
-    Example:  from utils.plots import *; plot_val_study()
+    Example: from utils.plots import *; plot_val_study()
     """
     save_dir = Path(file).parent if file else Path(dir)
     plot2 = False  # plot additional results
