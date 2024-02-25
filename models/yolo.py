@@ -138,7 +138,9 @@ class Segment(Detect):
         self.detect = Detect.forward
 
     def forward(self, x):
-        """Processes input through the network, returning detections and prototypes; adjusts output based on training/export mode."""
+        """Processes input through the network, returning detections and prototypes; adjusts output based on
+        training/export mode.
+        """
         p = self.proto(x[0])
         x = self.detect(self, x)
         return (x, p) if self.training else (x[0], p) if self.export else (x[0], p, x[1])
@@ -146,8 +148,11 @@ class Segment(Detect):
 
 class BaseModel(nn.Module):
     """YOLOv5 base model."""
+
     def forward(self, x, profile=False, visualize=False):
-        """Executes a single-scale inference or training pass on the YOLOv5 base model, with options for profiling and visualization."""
+        """Executes a single-scale inference or training pass on the YOLOv5 base model, with options for profiling and
+        visualization.
+        """
         return self._forward_once(x, profile, visualize)  # single-scale inference, train
 
     def _forward_once(self, x, profile=False, visualize=False):
@@ -192,7 +197,9 @@ class BaseModel(nn.Module):
         model_info(self, verbose, img_size)
 
     def _apply(self, fn):
-        """Applies transformations like to(), cpu(), cuda(), half() to model tensors excluding parameters or registered buffers."""
+        """Applies transformations like to(), cpu(), cuda(), half() to model tensors excluding parameters or registered
+        buffers.
+        """
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(m, (Detect, Segment)):
@@ -284,7 +291,9 @@ class DetectionModel(BaseModel):
         return p
 
     def _clip_augmented(self, y):
-        """Clips augmented inference tails for YOLOv5 models, affecting first and last tensors based on grid points and layer counts."""
+        """Clips augmented inference tails for YOLOv5 models, affecting first and last tensors based on grid points and
+        layer counts.
+        """
         nl = self.model[-1].nl  # number of detection layers (P3-P5)
         g = sum(4**x for x in range(nl))  # grid points
         e = 1  # exclude layer count
@@ -324,7 +333,9 @@ class ClassificationModel(BaseModel):
         self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
     def _from_detection_model(self, model, nc=1000, cutoff=10):
-        """Creates a classification model from a YOLOv5 detection model, slicing at `cutoff` and adding a classification layer."""
+        """Creates a classification model from a YOLOv5 detection model, slicing at `cutoff` and adding a classification
+        layer.
+        """
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:cutoff]  # backbone
