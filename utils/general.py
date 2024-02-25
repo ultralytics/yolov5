@@ -168,7 +168,9 @@ if platform.system() == "Windows":
 
 
 def user_config_dir(dir="Ultralytics", env_var="YOLOV5_CONFIG_DIR"):
-    """Returns user configuration directory path, preferring environment variable `YOLOV5_CONFIG_DIR` if set, else OS-specific."""
+    """Returns user configuration directory path, preferring environment variable `YOLOV5_CONFIG_DIR` if set, else OS-
+    specific.
+    """
     env = os.getenv(env_var)
     if env:
         path = Path(env)  # use environment variable
@@ -271,7 +273,11 @@ def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
 
 
 def init_seeds(seed=0, deterministic=False):
-    """Initializes RNG seeds and sets deterministic options if specified. See https://pytorch.org/docs/stable/notes/randomness.html"""
+    """
+    Initializes RNG seeds and sets deterministic options if specified.
+
+    See https://pytorch.org/docs/stable/notes/randomness.html
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -286,7 +292,9 @@ def init_seeds(seed=0, deterministic=False):
 
 
 def intersect_dicts(da, db, exclude=()):
-    """Returns intersection of `da` and `db` dicts with matching keys and shapes, excluding `exclude` keys; uses `da` values."""
+    """Returns intersection of `da` and `db` dicts with matching keys and shapes, excluding `exclude` keys; uses `da`
+    values.
+    """
     return {k: v for k, v in da.items() if k in db and all(x not in k for x in exclude) and v.shape == db[k].shape}
 
 
@@ -327,7 +335,9 @@ def file_size(path):
 
 
 def check_online():
-    """Checks internet connectivity by attempting to create a connection to "1.1.1.1" on port 443, retries once if the first attempt fails."""
+    """Checks internet connectivity by attempting to create a connection to "1.1.1.1" on port 443, retries once if the
+    first attempt fails.
+    """
     import socket
 
     def run_once():
@@ -353,7 +363,9 @@ def git_describe(path=ROOT):  # path must be a directory
 @TryExcept()
 @WorkingDirectory(ROOT)
 def check_git_status(repo="ultralytics/yolov5", branch="master"):
-    """Checks if YOLOv5 code is up-to-date with the repository, advising 'git pull' if behind; errors return informative messages."""
+    """Checks if YOLOv5 code is up-to-date with the repository, advising 'git pull' if behind; errors return informative
+    messages.
+    """
     url = f"https://github.com/{repo}"
     msg = f", for updates see {url}"
     s = colorstr("github: ")  # string
@@ -599,13 +611,17 @@ def yaml_load(file="data.yaml"):
 
 
 def yaml_save(file="data.yaml", data={}):
-    """Safely saves `data` to a YAML file specified by `file`, converting `Path` objects to strings; `data` is a dictionary."""
+    """Safely saves `data` to a YAML file specified by `file`, converting `Path` objects to strings; `data` is a
+    dictionary.
+    """
     with open(file, "w") as f:
         yaml.safe_dump({k: str(v) if isinstance(v, Path) else v for k, v in data.items()}, f, sort_keys=False)
 
 
 def unzip_file(file, path=None, exclude=(".DS_Store", "__MACOSX")):
-    """Unzips `file` to `path` (default: file's parent), excluding filenames containing any in `exclude` (`.DS_Store`, `__MACOSX`)."""
+    """Unzips `file` to `path` (default: file's parent), excluding filenames containing any in `exclude` (`.DS_Store`,
+    `__MACOSX`).
+    """
     if path is None:
         path = Path(file).parent  # default path
     with ZipFile(file) as zipObj:
@@ -615,13 +631,18 @@ def unzip_file(file, path=None, exclude=(".DS_Store", "__MACOSX")):
 
 
 def url2file(url):
-    """Converts a URL string to a valid filename by stripping protocol, domain, and any query parameters. Example https://url.com/file.txt?auth -> file.txt"""
+    """
+    Converts a URL string to a valid filename by stripping protocol, domain, and any query parameters.
+
+    Example https://url.com/file.txt?auth -> file.txt
+    """
     url = str(Path(url)).replace(":/", "://")  # Pathlib turns :// -> :/
     return Path(urllib.parse.unquote(url)).name.split("?")[0]  # '%2F' to '/', split https://url.com/file.txt?auth
 
 
 def download(url, dir=".", unzip=True, delete=True, curl=False, threads=1, retry=3):
     """Downloads and optionally unzips files concurrently, supporting retries and curl fallback."""
+
     def download_one(url, dir):
         # Download 1 file
         success = True
@@ -674,17 +695,27 @@ def make_divisible(x, divisor):
 
 
 def clean_str(s):
-    """Cleans a string by replacing special characters with underscore, e.g., `clean_str('#example!')` returns '_example_'."""
+    """Cleans a string by replacing special characters with underscore, e.g., `clean_str('#example!')` returns
+    '_example_'.
+    """
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 
 def one_cycle(y1=0.0, y2=1.0, steps=100):
-    """Generates a lambda for a sinusoidal ramp from y1 to y2 over 'steps'. See https://arxiv.org/pdf/1812.01187.pdf for details."""
+    """
+    Generates a lambda for a sinusoidal ramp from y1 to y2 over 'steps'.
+
+    See https://arxiv.org/pdf/1812.01187.pdf for details.
+    """
     return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
 
 
 def colorstr(*input):
-    """Colors a string using ANSI escape codes, e.g., colorstr('blue', 'hello world'). See https://en.wikipedia.org/wiki/ANSI_escape_code."""
+    """
+    Colors a string using ANSI escape codes, e.g., colorstr('blue', 'hello world').
+
+    See https://en.wikipedia.org/wiki/ANSI_escape_code.
+    """
     *args, string = input if len(input) > 1 else ("blue", "bold", input[0])  # color arguments, string
     colors = {
         "black": "\033[30m",  # basic colors
@@ -1184,7 +1215,9 @@ def apply_classifier(x, model, img, im0):
 
 
 def increment_path(path, exist_ok=False, sep="", mkdir=False):
-    """Generates an incremented file or directory path if it exists, with optional mkdir; args: path, exist_ok=False, sep="", mkdir=False.
+    """
+    Generates an incremented file or directory path if it exists, with optional mkdir; args: path, exist_ok=False,
+    sep="", mkdir=False.
 
     Example: runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc
     """
@@ -1217,7 +1250,9 @@ imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
 def imread(filename, flags=cv2.IMREAD_COLOR):
-    """Reads an image from a file and returns it as a numpy array, using OpenCV's imdecode to support multilanguage paths."""
+    """Reads an image from a file and returns it as a numpy array, using OpenCV's imdecode to support multilanguage
+    paths.
+    """
     return cv2.imdecode(np.fromfile(filename, np.uint8), flags)
 
 
