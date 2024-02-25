@@ -75,7 +75,9 @@ class FReLU(nn.Module):
 
 
 class AconC(nn.Module):
-    """ACON activation (activate or not) function.
+    """
+    ACON activation (activate or not) function.
+
     AconC: (p1*x-p2*x) * sigmoid(beta*(p1*x-p2*x)) + p2*x, beta is a learnable parameter
     See "Activate or Not: Learning Customized Activation" https://arxiv.org/pdf/2009.04759.pdf.
     """
@@ -94,7 +96,9 @@ class AconC(nn.Module):
 
 
 class MetaAconC(nn.Module):
-    """ACON activation (activate or not) function.
+    """
+    ACON activation (activate or not) function.
+
     AconC: (p1*x-p2*x) * sigmoid(beta*(p1*x-p2*x)) + p2*x, beta is a learnable parameter
     See "Activate or Not: Learning Customized Activation" https://arxiv.org/pdf/2009.04759.pdf.
     """
