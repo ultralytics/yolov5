@@ -55,7 +55,8 @@ class Albumentations:
 
 
 def normalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD, inplace=False):
-    """Applies ImageNet normalization to RGB images in BCHW format, modifying them in-place if specified.
+    """
+    Applies ImageNet normalization to RGB images in BCHW format, modifying them in-place if specified.
 
     Example: y = (x - mean) / std
     """
@@ -97,7 +98,11 @@ def hist_equalize(im, clahe=True, bgr=False):
 
 
 def replicate(im, labels):
-    """Replicates half of the smallest object labels in an image for data augmentation. Returns augmented image and labels."""
+    """
+    Replicates half of the smallest object labels in an image for data augmentation.
+
+    Returns augmented image and labels.
+    """
     h, w = im.shape[:2]
     boxes = labels[:, 1:].astype(int)
     x1, y1, x2, y2 = boxes.T
@@ -237,7 +242,11 @@ def random_perspective(
 
 
 def copy_paste(im, labels, segments, p=0.5):
-    """Applies Copy-Paste augmentation by flipping and merging segments and labels on an image. Details at https://arxiv.org/abs/2012.07177."""
+    """
+    Applies Copy-Paste augmentation by flipping and merging segments and labels on an image.
+
+    Details at https://arxiv.org/abs/2012.07177.
+    """
     n = len(segments)
     if p and n:
         h, w, c = im.shape  # height, width, channels
@@ -259,7 +268,11 @@ def copy_paste(im, labels, segments, p=0.5):
 
 
 def cutout(im, labels, p=0.5):
-    """Applies cutout augmentation to an image with optional label adjustment, using random masks of varying sizes. Details at https://arxiv.org/abs/1708.04552."""
+    """
+    Applies cutout augmentation to an image with optional label adjustment, using random masks of varying sizes.
+
+    Details at https://arxiv.org/abs/1708.04552.
+    """
     if random.random() < p:
         h, w = im.shape[:2]
         scales = [0.5] * 1 + [0.25] * 2 + [0.125] * 4 + [0.0625] * 8 + [0.03125] * 16  # image size fraction
@@ -286,7 +299,11 @@ def cutout(im, labels, p=0.5):
 
 
 def mixup(im, labels, im2, labels2):
-    """Applies MixUp augmentation by blending images and labels. See https://arxiv.org/pdf/1710.09412.pdf for details."""
+    """
+    Applies MixUp augmentation by blending images and labels.
+
+    See https://arxiv.org/pdf/1710.09412.pdf for details.
+    """
     r = np.random.beta(32.0, 32.0)  # mixup ratio, alpha=beta=32.0
     im = (im * r + im2 * (1 - r)).astype(np.uint8)
     labels = np.concatenate((labels, labels2), 0)
@@ -355,7 +372,9 @@ def classify_transforms(size=224):
 class LetterBox:
     # YOLOv5 LetterBox class for image preprocessing, i.e. T.Compose([LetterBox(size), ToTensor()])
     def __init__(self, size=(640, 640), auto=False, stride=32):
-        """Initializes a LetterBox object for YOLOv5 image preprocessing with optional auto sizing and stride adjustment."""
+        """Initializes a LetterBox object for YOLOv5 image preprocessing with optional auto sizing and stride
+        adjustment.
+        """
         super().__init__()
         self.h, self.w = (size, size) if isinstance(size, int) else size
         self.auto = auto  # pass max size integer, automatically solve for short side using stride
