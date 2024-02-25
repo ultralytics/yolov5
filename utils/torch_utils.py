@@ -35,6 +35,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):
     """Applies torch.inference_mode() if torch>=1.9.0, else torch.no_grad() as a decorator for functions."""
+
     def decorate(fn):
         return (torch.inference_mode if torch_1_9 else torch.no_grad)()(fn)
 
@@ -42,7 +43,9 @@ def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):
 
 
 def smartCrossEntropyLoss(label_smoothing=0.0):
-    """Returns a CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower versions."""
+    """Returns a CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower
+    versions.
+    """
     if check_version(torch.__version__, "1.10.0"):
         return nn.CrossEntropyLoss(label_smoothing=label_smoothing)
     if label_smoothing > 0:
@@ -87,7 +90,9 @@ def reshape_classifier_output(model, n=1000):
 
 @contextmanager
 def torch_distributed_zero_first(local_rank: int):
-    """Context manager ensuring ordered operations in distributed training by making all processes wait for the leading process."""
+    """Context manager ensuring ordered operations in distributed training by making all processes wait for the leading
+    process.
+    """
     if local_rank not in [-1, 0]:
         dist.barrier(device_ids=[local_rank])
     yield
@@ -213,7 +218,9 @@ def de_parallel(model):
 
 
 def initialize_weights(model):
-    """Initializes weights of Conv2d, BatchNorm2d, and activations (Hardswish, LeakyReLU, ReLU, ReLU6, SiLU) in the model."""
+    """Initializes weights of Conv2d, BatchNorm2d, and activations (Hardswish, LeakyReLU, ReLU, ReLU6, SiLU) in the
+    model.
+    """
     for m in model.modules():
         t = type(m)
         if t is nn.Conv2d:
@@ -231,7 +238,9 @@ def find_modules(model, mclass=nn.Conv2d):
 
 
 def sparsity(model):
-    """Calculates and returns the global sparsity of a model as the ratio of zero-valued parameters to total parameters."""
+    """Calculates and returns the global sparsity of a model as the ratio of zero-valued parameters to total
+    parameters.
+    """
     a, b = 0, 0
     for p in model.parameters():
         a += p.numel()
@@ -251,7 +260,11 @@ def prune(model, amount=0.3):
 
 
 def fuse_conv_and_bn(conv, bn):
-    """Fuses Conv2d and BatchNorm2d layers into a single Conv2d layer. See https://tehnokv.com/posts/fusing-batchnorm-and-conv/."""
+    """
+    Fuses Conv2d and BatchNorm2d layers into a single Conv2d layer.
+
+    See https://tehnokv.com/posts/fusing-batchnorm-and-conv/.
+    """
     fusedconv = (
         nn.Conv2d(
             conv.in_channels,
@@ -281,7 +294,8 @@ def fuse_conv_and_bn(conv, bn):
 
 
 def model_info(model, verbose=False, imgsz=640):
-    """Prints model summary including layers, parameters, gradients, and FLOPs; imgsz may be int or list.
+    """
+    Prints model summary including layers, parameters, gradients, and FLOPs; imgsz may be int or list.
 
     Example: img_size=640 or img_size=[640, 320]
     """
@@ -332,7 +346,11 @@ def copy_attr(a, b, include=(), exclude=()):
 
 
 def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):
-    """Initializes YOLOv5 smart optimizer with 3 parameter groups for different decay configurations. Groups are 0) weights with decay, 1) weights no decay, 2) biases no decay."""
+    """
+    Initializes YOLOv5 smart optimizer with 3 parameter groups for different decay configurations.
+
+    Groups are 0) weights with decay, 1) weights no decay, 2) biases no decay.
+    """
     g = [], [], []  # optimizer parameter groups
     bn = tuple(v for k, v in nn.__dict__.items() if "Norm" in k)  # normalization layers, i.e. BatchNorm2d()
     for v in model.modules():
@@ -432,7 +450,9 @@ class ModelEMA:
     """
 
     def __init__(self, model, decay=0.9999, tau=2000, updates=0):
-        """Initializes EMA with model parameters, decay rate, tau for decay adjustment, and update count; sets model to evaluation mode."""
+        """Initializes EMA with model parameters, decay rate, tau for decay adjustment, and update count; sets model to
+        evaluation mode.
+        """
         self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / tau))  # decay exponential ramp (to help early epochs)
@@ -452,5 +472,7 @@ class ModelEMA:
         # assert v.dtype == msd[k].dtype == torch.float32, f'{k}: EMA {v.dtype} and model {msd[k].dtype} must be FP32'
 
     def update_attr(self, model, include=(), exclude=("process_group", "reducer")):
-        """Updates EMA attributes by copying specified attributes from model to EMA, excluding certain attributes by default."""
+        """Updates EMA attributes by copying specified attributes from model to EMA, excluding certain attributes by
+        default.
+        """
         copy_attr(self.ema, model, include, exclude)
