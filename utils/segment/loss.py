@@ -44,6 +44,7 @@ class ComputeLoss:
         self.device = device
 
     def __call__(self, preds, targets, masks):  # predictions, targets, model
+        """Evaluates YOLOv5 model's loss for given predictions, targets, and masks; returns total loss components."""
         p, proto = preds
         bs, nm, mask_h, mask_w = proto.shape  # batch size, number of masks, mask height, mask width
         lcls = torch.zeros(1, device=self.device)
