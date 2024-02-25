@@ -71,18 +71,18 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # suppress verbose TF compiler warning
 
 
 def is_ascii(s=""):
-    # Is string composed of all ASCII (no UTF) characters? (note str().isascii() introduced in python 3.7)
+    """Checks if input string `s` contains only ASCII characters; returns `True` if so, otherwise `False`."""
     s = str(s)  # convert list, tuple, None, etc. to str
     return len(s.encode().decode("ascii", "ignore")) == len(s)
 
 
 def is_chinese(s="人工智能"):
-    # Is string composed of any Chinese characters?
+    """Determines if a string `s` contains any Chinese characters; returns `True` if so, otherwise `False`."""
     return bool(re.search("[\u4e00-\u9fff]", str(s)))
 
 
 def is_colab():
-    # Is environment a Google Colab instance?
+    """Checks if the current environment is a Google Colab instance; returns `True` for Colab, otherwise `False`."""
     return "google.colab" in sys.modules
 
 
@@ -101,7 +101,7 @@ def is_jupyter():
 
 
 def is_kaggle():
-    # Is environment a Kaggle Notebook?
+    """Checks if the current environment is a Kaggle Notebook by validating environment variables."""
     return os.environ.get("PWD") == "/kaggle/working" and os.environ.get("KAGGLE_URL_BASE") == "https://www.kaggle.com"
 
 
@@ -117,7 +117,7 @@ def is_docker() -> bool:
 
 
 def is_writeable(dir, test=False):
-    # Return True if directory has write permissions, test opening a file with write permissions if test=True
+    """Checks if a directory is writable, optionally testing by creating a temporary file if `test=True`."""
     if not test:
         return os.access(dir, os.W_OK)  # possible issues on Windows
     file = Path(dir) / "tmp.txt"
@@ -134,7 +134,7 @@ LOGGING_NAME = "yolov5"
 
 
 def set_logging(name=LOGGING_NAME, verbose=True):
-    # sets up logging for the given name
+    """Configures logging with specified verbosity; `name` sets the logger's name, `verbose` controls logging level."""
     rank = int(os.getenv("RANK", -1))  # rank in world for Multi-GPU trainings
     level = logging.INFO if verbose and rank in {-1, 0} else logging.ERROR
     logging.config.dictConfig(
@@ -168,7 +168,9 @@ if platform.system() == "Windows":
 
 
 def user_config_dir(dir="Ultralytics", env_var="YOLOV5_CONFIG_DIR"):
-    # Return path of user configuration directory. Prefer environment variable if exists. Make dir if required.
+    """Returns user configuration directory path, preferring environment variable `YOLOV5_CONFIG_DIR` if set, else OS-
+    specific.
+    """
     env = os.getenv(env_var)
     if env:
         path = Path(env)  # use environment variable
@@ -186,19 +188,23 @@ CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
 class Profile(contextlib.ContextDecorator):
     # YOLOv5 Profile class. Usage: @Profile() decorator or 'with Profile():' context manager
     def __init__(self, t=0.0, device: torch.device = None):
+        """Initializes a profiling context for YOLOv5 with optional timing threshold and device specification."""
         self.t = t
         self.device = device
         self.cuda = bool(device and str(device).startswith("cuda"))
 
     def __enter__(self):
+        """Initializes timing at the start of a profiling context block for performance measurement."""
         self.start = self.time()
         return self
 
     def __exit__(self, type, value, traceback):
+        """Concludes timing, updating duration for profiling upon exiting a context block."""
         self.dt = self.time() - self.start  # delta-time
         self.t += self.dt  # accumulate dt
 
     def time(self):
+        """Measures and returns the current time, synchronizing CUDA operations if `cuda` is True."""
         if self.cuda:
             torch.cuda.synchronize(self.device)
         return time.time()
@@ -207,19 +213,23 @@ class Profile(contextlib.ContextDecorator):
 class Timeout(contextlib.ContextDecorator):
     # YOLOv5 Timeout class. Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
     def __init__(self, seconds, *, timeout_msg="", suppress_timeout_errors=True):
+        """Initializes a timeout context/decorator with defined seconds, optional message, and error suppression."""
         self.seconds = int(seconds)
         self.timeout_message = timeout_msg
         self.suppress = bool(suppress_timeout_errors)
 
     def _timeout_handler(self, signum, frame):
+        """Raises a TimeoutError with a custom message when a timeout event occurs."""
         raise TimeoutError(self.timeout_message)
 
     def __enter__(self):
+        """Initializes timeout mechanism on non-Windows platforms, starting a countdown to raise TimeoutError."""
         if platform.system() != "Windows":  # not supported on Windows
             signal.signal(signal.SIGALRM, self._timeout_handler)  # Set handler for SIGALRM
             signal.alarm(self.seconds)  # start countdown for SIGALRM to be raised
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """Disables active alarm on non-Windows systems and optionally suppresses TimeoutError if set."""
         if platform.system() != "Windows":
             signal.alarm(0)  # Cancel SIGALRM if it's scheduled
             if self.suppress and exc_type is TimeoutError:  # Suppress TimeoutError
@@ -229,23 +239,26 @@ class Timeout(contextlib.ContextDecorator):
 class WorkingDirectory(contextlib.ContextDecorator):
     # Usage: @WorkingDirectory(dir) decorator or 'with WorkingDirectory(dir):' context manager
     def __init__(self, new_dir):
+        """Initializes a context manager/decorator to temporarily change the working directory."""
         self.dir = new_dir  # new dir
         self.cwd = Path.cwd().resolve()  # current dir
 
     def __enter__(self):
+        """Temporarily changes the working directory within a 'with' statement context."""
         os.chdir(self.dir)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """Restores the original working directory upon exiting a 'with' statement context."""
         os.chdir(self.cwd)
 
 
 def methods(instance):
-    # Get class/instance methods
+    """Returns list of method names for a class/instance excluding dunder methods."""
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
 def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
-    # Print function arguments (optional args dict)
+    """Logs the arguments of the calling function, with options to include the filename and function name."""
     x = inspect.currentframe().f_back  # previous frame
     file, _, func, _, _ = inspect.getframeinfo(x)
     if args is None:  # get args automatically
@@ -260,7 +273,11 @@ def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
 
 
 def init_seeds(seed=0, deterministic=False):
-    # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
+    """
+    Initializes RNG seeds and sets deterministic options if specified.
+
+    See https://pytorch.org/docs/stable/notes/randomness.html
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -275,36 +292,38 @@ def init_seeds(seed=0, deterministic=False):
 
 
 def intersect_dicts(da, db, exclude=()):
-    # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
+    """Returns intersection of `da` and `db` dicts with matching keys and shapes, excluding `exclude` keys; uses `da`
+    values.
+    """
     return {k: v for k, v in da.items() if k in db and all(x not in k for x in exclude) and v.shape == db[k].shape}
 
 
 def get_default_args(func):
-    # Get func() default arguments
+    """Returns a dict of `func` default arguments by inspecting its signature."""
     signature = inspect.signature(func)
     return {k: v.default for k, v in signature.parameters.items() if v.default is not inspect.Parameter.empty}
 
 
 def get_latest_run(search_dir="."):
-    # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
+    """Returns the path to the most recent 'last.pt' file in /runs to resume from, searches in `search_dir`."""
     last_list = glob.glob(f"{search_dir}/**/last*.pt", recursive=True)
     return max(last_list, key=os.path.getctime) if last_list else ""
 
 
 def file_age(path=__file__):
-    # Return days since last file update
+    """Calculates and returns the age of a file in days based on its last modification time."""
     dt = datetime.now() - datetime.fromtimestamp(Path(path).stat().st_mtime)  # delta
     return dt.days  # + dt.seconds / 86400  # fractional days
 
 
 def file_date(path=__file__):
-    # Return human-readable file modification date, i.e. '2021-3-26'
+    """Returns a human-readable file modification date in 'YYYY-M-D' format, given a file path."""
     t = datetime.fromtimestamp(Path(path).stat().st_mtime)
     return f"{t.year}-{t.month}-{t.day}"
 
 
 def file_size(path):
-    # Return file/dir size (MB)
+    """Returns file or directory size in megabytes (MB) for a given path, where directories are recursively summed."""
     mb = 1 << 20  # bytes to MiB (1024 ** 2)
     path = Path(path)
     if path.is_file():
@@ -316,7 +335,9 @@ def file_size(path):
 
 
 def check_online():
-    # Check internet connectivity
+    """Checks internet connectivity by attempting to create a connection to "1.1.1.1" on port 443, retries once if the
+    first attempt fails.
+    """
     import socket
 
     def run_once():
@@ -342,7 +363,9 @@ def git_describe(path=ROOT):  # path must be a directory
 @TryExcept()
 @WorkingDirectory(ROOT)
 def check_git_status(repo="ultralytics/yolov5", branch="master"):
-    # YOLOv5 status check, recommend 'git pull' if code is out of date
+    """Checks if YOLOv5 code is up-to-date with the repository, advising 'git pull' if behind; errors return informative
+    messages.
+    """
     url = f"https://github.com/{repo}"
     msg = f", for updates see {url}"
     s = colorstr("github: ")  # string
@@ -369,7 +392,7 @@ def check_git_status(repo="ultralytics/yolov5", branch="master"):
 
 @WorkingDirectory(ROOT)
 def check_git_info(path="."):
-    # YOLOv5 git info check, return {remote, branch, commit}
+    """Checks YOLOv5 git info, returning a dict with remote URL, branch name, and commit hash."""
     check_requirements("gitpython")
     import git
 
@@ -387,12 +410,12 @@ def check_git_info(path="."):
 
 
 def check_python(minimum="3.8.0"):
-    # Check current python version vs. required python version
+    """Checks if current Python version meets the minimum required version, exits if not."""
     check_version(platform.python_version(), minimum, name="Python ", hard=True)
 
 
 def check_version(current="0.0.0", minimum="0.0.0", name="version ", pinned=False, hard=False, verbose=False):
-    # Check version vs. required version
+    """Checks if the current version meets the minimum required version, exits or warns based on parameters."""
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
     s = f"WARNING ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed"  # string
@@ -404,7 +427,7 @@ def check_version(current="0.0.0", minimum="0.0.0", name="version ", pinned=Fals
 
 
 def check_img_size(imgsz, s=32, floor=0):
-    # Verify image size is a multiple of stride s in each dimension
+    """Adjusts image size to be divisible by stride `s`, supports int or list/tuple input, returns adjusted size."""
     if isinstance(imgsz, int):  # integer i.e. img_size=640
         new_size = max(make_divisible(imgsz, int(s)), floor)
     else:  # list i.e. img_size=[640, 480]
@@ -416,7 +439,7 @@ def check_img_size(imgsz, s=32, floor=0):
 
 
 def check_imshow(warn=False):
-    # Check if environment supports image displays
+    """Checks environment support for image display; warns on failure if `warn=True`."""
     try:
         assert not is_jupyter()
         assert not is_docker()
@@ -432,7 +455,7 @@ def check_imshow(warn=False):
 
 
 def check_suffix(file="yolov5s.pt", suffix=(".pt",), msg=""):
-    # Check file(s) for acceptable suffix
+    """Validates if a file or files have an acceptable suffix, raising an error if not."""
     if file and suffix:
         if isinstance(suffix, str):
             suffix = [suffix]
@@ -443,12 +466,12 @@ def check_suffix(file="yolov5s.pt", suffix=(".pt",), msg=""):
 
 
 def check_yaml(file, suffix=(".yaml", ".yml")):
-    # Search/download YAML file (if necessary) and return path, checking suffix
+    """Searches/downloads a YAML file, verifies its suffix (.yaml or .yml), and returns the file path."""
     return check_file(file, suffix)
 
 
 def check_file(file, suffix=""):
-    # Search/download file (if necessary) and return path
+    """Searches/downloads a file, checks its suffix (if provided), and returns the file path."""
     check_suffix(file, suffix)  # optional
     file = str(file)  # convert to str()
     if os.path.isfile(file) or not file:  # exists
@@ -478,7 +501,7 @@ def check_file(file, suffix=""):
 
 
 def check_font(font=FONT, progress=False):
-    # Download font to CONFIG_DIR if necessary
+    """Ensures specified font exists or downloads it from Ultralytics assets, optionally displaying progress."""
     font = Path(font)
     file = CONFIG_DIR / font.name
     if not font.exists() and not file.exists():
@@ -488,7 +511,7 @@ def check_font(font=FONT, progress=False):
 
 
 def check_dataset(data, autodownload=True):
-    # Download, check and/or unzip dataset if not found locally
+    """Validates and/or auto-downloads a dataset, returning its configuration as a dictionary."""
 
     # Download (optional)
     extract_dir = ""
@@ -554,7 +577,7 @@ def check_dataset(data, autodownload=True):
 
 
 def check_amp(model):
-    # Check PyTorch Automatic Mixed Precision (AMP) functionality. Return True on correct operation
+    """Checks PyTorch AMP functionality for a model, returns True if AMP operates correctly, otherwise False."""
     from models.common import AutoShape, DetectMultiBackend
 
     def amp_allclose(model, im):
@@ -582,19 +605,23 @@ def check_amp(model):
 
 
 def yaml_load(file="data.yaml"):
-    # Single-line safe yaml loading
+    """Safely loads and returns the contents of a YAML file specified by `file` argument."""
     with open(file, errors="ignore") as f:
         return yaml.safe_load(f)
 
 
 def yaml_save(file="data.yaml", data={}):
-    # Single-line safe yaml saving
+    """Safely saves `data` to a YAML file specified by `file`, converting `Path` objects to strings; `data` is a
+    dictionary.
+    """
     with open(file, "w") as f:
         yaml.safe_dump({k: str(v) if isinstance(v, Path) else v for k, v in data.items()}, f, sort_keys=False)
 
 
 def unzip_file(file, path=None, exclude=(".DS_Store", "__MACOSX")):
-    # Unzip a *.zip file to path/, excluding files containing strings in exclude list
+    """Unzips `file` to `path` (default: file's parent), excluding filenames containing any in `exclude` (`.DS_Store`,
+    `__MACOSX`).
+    """
     if path is None:
         path = Path(file).parent  # default path
     with ZipFile(file) as zipObj:
@@ -604,13 +631,18 @@ def unzip_file(file, path=None, exclude=(".DS_Store", "__MACOSX")):
 
 
 def url2file(url):
-    # Convert URL to filename, i.e. https://url.com/file.txt?auth -> file.txt
+    """
+    Converts a URL string to a valid filename by stripping protocol, domain, and any query parameters.
+
+    Example https://url.com/file.txt?auth -> file.txt
+    """
     url = str(Path(url)).replace(":/", "://")  # Pathlib turns :// -> :/
     return Path(urllib.parse.unquote(url)).name.split("?")[0]  # '%2F' to '/', split https://url.com/file.txt?auth
 
 
 def download(url, dir=".", unzip=True, delete=True, curl=False, threads=1, retry=3):
-    # Multithreaded file download and unzip function, used in data.yaml for autodownload
+    """Downloads and optionally unzips files concurrently, supporting retries and curl fallback."""
+
     def download_one(url, dir):
         # Download 1 file
         success = True
@@ -656,24 +688,34 @@ def download(url, dir=".", unzip=True, delete=True, curl=False, threads=1, retry
 
 
 def make_divisible(x, divisor):
-    # Returns nearest x divisible by divisor
+    """Adjusts `x` to be divisible by `divisor`, returning the nearest greater or equal value."""
     if isinstance(divisor, torch.Tensor):
         divisor = int(divisor.max())  # to int
     return math.ceil(x / divisor) * divisor
 
 
 def clean_str(s):
-    # Cleans a string by replacing special characters with underscore _
+    """Cleans a string by replacing special characters with underscore, e.g., `clean_str('#example!')` returns
+    '_example_'.
+    """
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 
 def one_cycle(y1=0.0, y2=1.0, steps=100):
-    # lambda function for sinusoidal ramp from y1 to y2 https://arxiv.org/pdf/1812.01187.pdf
+    """
+    Generates a lambda for a sinusoidal ramp from y1 to y2 over 'steps'.
+
+    See https://arxiv.org/pdf/1812.01187.pdf for details.
+    """
     return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
 
 
 def colorstr(*input):
-    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
+    """
+    Colors a string using ANSI escape codes, e.g., colorstr('blue', 'hello world').
+
+    See https://en.wikipedia.org/wiki/ANSI_escape_code.
+    """
     *args, string = input if len(input) > 1 else ("blue", "bold", input[0])  # color arguments, string
     colors = {
         "black": "\033[30m",  # basic colors
@@ -700,7 +742,7 @@ def colorstr(*input):
 
 
 def labels_to_class_weights(labels, nc=80):
-    # Get class weights (inverse frequency) from training labels
+    """Calculates class weights from labels to handle class imbalance in training; input shape: (n, 5)."""
     if labels[0] is None:  # no labels loaded
         return torch.Tensor()
 
@@ -719,7 +761,7 @@ def labels_to_class_weights(labels, nc=80):
 
 
 def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
-    # Produces image weights based on class_weights and image contents
+    """Calculates image weights from labels using class weights for weighted sampling."""
     # Usage: index = random.choices(range(n), weights=image_weights, k=1)  # weighted image sample
     class_counts = np.array([np.bincount(x[:, 0].astype(int), minlength=nc) for x in labels])
     return (class_weights.reshape(1, nc) * class_counts).sum(1)
@@ -816,7 +858,7 @@ def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
 
 
 def xyxy2xywh(x):
-    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
+    """Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right."""
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[..., 0] = (x[..., 0] + x[..., 2]) / 2  # x center
     y[..., 1] = (x[..., 1] + x[..., 3]) / 2  # y center
@@ -826,7 +868,7 @@ def xyxy2xywh(x):
 
 
 def xywh2xyxy(x):
-    # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    """Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right."""
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[..., 0] = x[..., 0] - x[..., 2] / 2  # top left x
     y[..., 1] = x[..., 1] - x[..., 3] / 2  # top left y
@@ -836,7 +878,7 @@ def xywh2xyxy(x):
 
 
 def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
-    # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    """Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right."""
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[..., 0] = w * (x[..., 0] - x[..., 2] / 2) + padw  # top left x
     y[..., 1] = h * (x[..., 1] - x[..., 3] / 2) + padh  # top left y
@@ -846,7 +888,7 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
 
 
 def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
-    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where xy1=top-left, xy2=bottom-right
+    """Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where xy1=top-left, xy2=bottom-right."""
     if clip:
         clip_boxes(x, (h - eps, w - eps))  # warning: inplace clip
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -858,7 +900,7 @@ def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
 
 
 def xyn2xy(x, w=640, h=640, padw=0, padh=0):
-    # Convert normalized segments into pixel segments, shape (n,2)
+    """Convert normalized segments into pixel segments, shape (n,2)."""
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[..., 0] = w * x[..., 0] + padw  # top left x
     y[..., 1] = h * x[..., 1] + padh  # top left y
@@ -866,7 +908,7 @@ def xyn2xy(x, w=640, h=640, padw=0, padh=0):
 
 
 def segment2box(segment, width=640, height=640):
-    # Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)
+    """Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)."""
     x, y = segment.T  # segment xy
     inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
     (
@@ -877,7 +919,7 @@ def segment2box(segment, width=640, height=640):
 
 
 def segments2boxes(segments):
-    # Convert segment labels to box labels, i.e. (cls, xy1, xy2, ...) to (cls, xywh)
+    """Convert segment labels to box labels, i.e. (cls, xy1, xy2, ...) to (cls, xywh)."""
     boxes = []
     for s in segments:
         x, y = s.T  # segment xy
@@ -886,7 +928,7 @@ def segments2boxes(segments):
 
 
 def resample_segments(segments, n=1000):
-    # Up-sample an (n,2) segment
+    """Resamples an (n,2) segment to a fixed number of points for consistent representation."""
     for i, s in enumerate(segments):
         s = np.concatenate((s, s[0:1, :]), axis=0)
         x = np.linspace(0, len(s) - 1, n)
@@ -896,7 +938,7 @@ def resample_segments(segments, n=1000):
 
 
 def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None):
-    # Rescale boxes (xyxy) from img1_shape to img0_shape
+    """Rescales (xyxy) bounding boxes from img1_shape to img0_shape, optionally using provided `ratio_pad`."""
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
         pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
@@ -912,7 +954,7 @@ def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None):
 
 
 def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=False):
-    # Rescale coords (xyxy) from img1_shape to img0_shape
+    """Rescales segment coordinates from img1_shape to img0_shape, optionally normalizing them with custom padding."""
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
         pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
@@ -931,7 +973,7 @@ def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=F
 
 
 def clip_boxes(boxes, shape):
-    # Clip boxes (xyxy) to image shape (height, width)
+    """Clips bounding box coordinates (xyxy) to fit within the specified image shape (height, width)."""
     if isinstance(boxes, torch.Tensor):  # faster individually
         boxes[..., 0].clamp_(0, shape[1])  # x1
         boxes[..., 1].clamp_(0, shape[0])  # y1
@@ -943,7 +985,7 @@ def clip_boxes(boxes, shape):
 
 
 def clip_segments(segments, shape):
-    # Clip segments (xy1,xy2,...) to image shape (height, width)
+    """Clips segment coordinates (xy1, xy2, ...) to an image's boundaries given its shape (height, width)."""
     if isinstance(segments, torch.Tensor):  # faster individually
         segments[:, 0].clamp_(0, shape[1])  # x
         segments[:, 1].clamp_(0, shape[0])  # y
@@ -1083,6 +1125,7 @@ def strip_optimizer(f="best.pt", s=""):  # from utils.general import *; strip_op
 
 
 def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr("evolve: ")):
+    """Logs evolution results and saves to CSV and YAML in `save_dir`, optionally syncs with `bucket`."""
     evolve_csv = save_dir / "evolve.csv"
     evolve_yaml = save_dir / "hyp_evolve.yaml"
     keys = tuple(keys) + tuple(hyp.keys())  # [results + hyps]
@@ -1137,7 +1180,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr("evolve
 
 
 def apply_classifier(x, model, img, im0):
-    # Apply a second stage classifier to YOLO outputs
+    """Applies second-stage classifier to YOLO outputs, filtering detections by class match."""
     # Example model = torchvision.models.__dict__['efficientnet_b0'](pretrained=True).to(device).eval()
     im0 = [im0] if isinstance(im0, np.ndarray) else im0
     for i, d in enumerate(x):  # per image
@@ -1172,7 +1215,12 @@ def apply_classifier(x, model, img, im0):
 
 
 def increment_path(path, exist_ok=False, sep="", mkdir=False):
-    # Increment file or directory path, i.e. runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc.
+    """
+    Generates an incremented file or directory path if it exists, with optional mkdir; args: path, exist_ok=False,
+    sep="", mkdir=False.
+
+    Example: runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc
+    """
     path = Path(path)  # os-agnostic
     if path.exists() and not exist_ok:
         path, suffix = (path.with_suffix(""), path.suffix) if path.is_file() else (path, "")
@@ -1202,10 +1250,14 @@ imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
 def imread(filename, flags=cv2.IMREAD_COLOR):
+    """Reads an image from a file and returns it as a numpy array, using OpenCV's imdecode to support multilanguage
+    paths.
+    """
     return cv2.imdecode(np.fromfile(filename, np.uint8), flags)
 
 
 def imwrite(filename, img):
+    """Writes an image to a file, returns True on success and False on failure, supports multilanguage paths."""
     try:
         cv2.imencode(Path(filename).suffix, img)[1].tofile(filename)
         return True
@@ -1214,6 +1266,7 @@ def imwrite(filename, img):
 
 
 def imshow(path, im):
+    """Displays an image using Unicode path, requires encoded path and image matrix as input."""
     imshow_(path.encode("unicode_escape").decode(), im)
 
 

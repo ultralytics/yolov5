@@ -8,7 +8,7 @@ class Callbacks:
     """Handles all registered callbacks for YOLOv5 Hooks."""
 
     def __init__(self):
-        # Define the available callbacks
+        """Initializes a Callbacks object to manage registered YOLOv5 training event hooks."""
         self._callbacks = {
             "on_pretrain_routine_start": [],
             "on_pretrain_routine_end": [],

@@ -25,6 +25,9 @@ COMET_PROJECT_NAME = config.get_string(os.getenv("COMET_PROJECT_NAME"), "comet.p
 
 
 def get_args(known=False):
+    """Parses command-line arguments for YOLOv5 training, supporting configuration of weights, data paths,
+    hyperparameters, and more.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="initial weights path")
     parser.add_argument("--cfg", type=str, default="", help="model.yaml path")
@@ -83,6 +86,7 @@ def get_args(known=False):
 
 
 def run(parameters, opt):
+    """Executes YOLOv5 training with given hyperparameters and options, setting up device and training directories."""
     hyp_dict = {k: v for k, v in parameters.items() if k not in ["epochs", "batch_size"]}
 
     opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))

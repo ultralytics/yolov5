@@ -88,6 +88,7 @@ class Detect(nn.Module):
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
 
     def forward(self, x):
+        """Processes input through YOLOv5 layers, altering shape for detection: `x(bs, 3, ny, nx, 85)`."""
         z = []  # inference output
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
@@ -113,6 +114,7 @@ class Detect(nn.Module):
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
     def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, "1.10.0")):
+        """Generates a mesh grid for anchor boxes with optional compatibility for torch versions < 1.10."""
         d = self.anchors[i].device
         t = self.anchors[i].dtype
         shape = 1, self.na, ny, nx, 2  # grid shape
@@ -126,6 +128,7 @@ class Detect(nn.Module):
 class Segment(Detect):
     # YOLOv5 Segment head for segmentation models
     def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), inplace=True):
+        """Initializes YOLOv5 Segment head with options for mask count, protos, and channel adjustments."""
         super().__init__(nc, anchors, ch, inplace)
         self.nm = nm  # number of masks
         self.npr = npr  # number of protos
@@ -135,17 +138,25 @@ class Segment(Detect):
         self.detect = Detect.forward
 
     def forward(self, x):
+        """Processes input through the network, returning detections and prototypes; adjusts output based on
+        training/export mode.
+        """
         p = self.proto(x[0])
         x = self.detect(self, x)
         return (x, p) if self.training else (x[0], p) if self.export else (x[0], p, x[1])
 
 
 class BaseModel(nn.Module):
-    # YOLOv5 base model
+    """YOLOv5 base model."""
+
     def forward(self, x, profile=False, visualize=False):
+        """Executes a single-scale inference or training pass on the YOLOv5 base model, with options for profiling and
+        visualization.
+        """
         return self._forward_once(x, profile, visualize)  # single-scale inference, train
 
     def _forward_once(self, x, profile=False, visualize=False):
+        """Performs a forward pass on the YOLOv5 model, enabling profiling and feature visualization options."""
         y, dt = [], []  # outputs
         for m in self.model:
             if m.f != -1:  # if not from previous layer
@@ -159,6 +170,7 @@ class BaseModel(nn.Module):
         return x
 
     def _profile_one_layer(self, m, x, dt):
+        """Profiles a single layer's performance by computing GFLOPs, execution time, and parameters."""
         c = m == self.model[-1]  # is final layer, copy input as inplace fix
         o = thop.profile(m, inputs=(x.copy() if c else x,), verbose=False)[0] / 1e9 * 2 if thop else 0  # FLOPs
         t = time_sync()
@@ -185,7 +197,9 @@ class BaseModel(nn.Module):
         model_info(self, verbose, img_size)
 
     def _apply(self, fn):
-        # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
+        """Applies transformations like to(), cpu(), cuda(), half() to model tensors excluding parameters or registered
+        buffers.
+        """
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(m, (Detect, Segment)):
@@ -239,11 +253,13 @@ class DetectionModel(BaseModel):
         LOGGER.info("")
 
     def forward(self, x, augment=False, profile=False, visualize=False):
+        """Performs single-scale or augmented inference and may include profiling or visualization."""
         if augment:
             return self._forward_augment(x)  # augmented inference, None
         return self._forward_once(x, profile, visualize)  # single-scale inference, train
 
     def _forward_augment(self, x):
+        """Performs augmented inference across different scales and flips, returning combined detections."""
         img_size = x.shape[-2:]  # height, width
         s = [1, 0.83, 0.67]  # scales
         f = [None, 3, None]  # flips (2-ud, 3-lr)
@@ -258,7 +274,7 @@ class DetectionModel(BaseModel):
         return torch.cat(y, 1), None  # augmented inference, train
 
     def _descale_pred(self, p, flips, scale, img_size):
-        # de-scale predictions following augmented inference (inverse operation)
+        """De-scales predictions from augmented inference, adjusting for flips and image size."""
         if self.inplace:
             p[..., :4] /= scale  # de-scale
             if flips == 2:
@@ -275,7 +291,9 @@ class DetectionModel(BaseModel):
         return p
 
     def _clip_augmented(self, y):
-        # Clip YOLOv5 augmented inference tails
+        """Clips augmented inference tails for YOLOv5 models, affecting first and last tensors based on grid points and
+        layer counts.
+        """
         nl = self.model[-1].nl  # number of detection layers (P3-P5)
         g = sum(4**x for x in range(nl))  # grid points
         e = 1  # exclude layer count
@@ -304,6 +322,7 @@ Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibilit
 class SegmentationModel(DetectionModel):
     # YOLOv5 segmentation model
     def __init__(self, cfg="yolov5s-seg.yaml", ch=3, nc=None, anchors=None):
+        """Initializes a YOLOv5 segmentation model with configurable params: cfg (str) for configuration, ch (int) for channels, nc (int) for num classes, anchors (list)."""
         super().__init__(cfg, ch, nc, anchors)
 
 
@@ -314,7 +333,9 @@ class ClassificationModel(BaseModel):
         self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
     def _from_detection_model(self, model, nc=1000, cutoff=10):
-        # Create a YOLOv5 classification model from a YOLOv5 detection model
+        """Creates a classification model from a YOLOv5 detection model, slicing at `cutoff` and adding a classification
+        layer.
+        """
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:cutoff]  # backbone
@@ -329,7 +350,7 @@ class ClassificationModel(BaseModel):
         self.nc = nc
 
     def _from_yaml(self, cfg):
-        # Create a YOLOv5 classification model from a *.yaml file
+        """Creates a YOLOv5 classification model from a specified *.yaml configuration file."""
         self.model = None
 
 

@@ -19,6 +19,7 @@ class Sum(nn.Module):
             self.w = nn.Parameter(-torch.arange(1.0, n) / 2, requires_grad=True)  # layer weights
 
     def forward(self, x):
+        """Processes input through a customizable weighted sum of `n` inputs, optionally applying learned weights."""
         y = x[0]  # no weight
         if self.weight:
             w = torch.sigmoid(self.w) * 2
@@ -53,15 +54,21 @@ class MixConv2d(nn.Module):
         self.act = nn.SiLU()
 
     def forward(self, x):
+        """Performs forward pass by applying SiLU activation on batch-normalized concatenated convolutional layer
+        outputs.
+        """
         return self.act(self.bn(torch.cat([m(x) for m in self.m], 1)))
 
 
 class Ensemble(nn.ModuleList):
-    # Ensemble of models
+    """Ensemble of models."""
+
     def __init__(self):
+        """Initializes an ensemble of models to be used for aggregated predictions."""
         super().__init__()
 
     def forward(self, x, augment=False, profile=False, visualize=False):
+        """Performs forward pass aggregating outputs from an ensemble of models.."""
         y = [module(x, augment, profile, visualize)[0] for module in self]
         # y = torch.stack(y).max(0)[0]  # max ensemble
         # y = torch.stack(y).mean(0)  # mean ensemble
@@ -70,7 +77,11 @@ class Ensemble(nn.ModuleList):
 
 
 def attempt_load(weights, device=None, inplace=True, fuse=True):
-    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
+    """
+    Loads and fuses an ensemble or single YOLOv5 model from weights, handling device placement and model adjustments.
+
+    Example inputs: weights=[a,b,c] or a single model weights=[a] or weights=a.
+    """
     from models.yolo import Detect, Model
 
     model = Ensemble()
