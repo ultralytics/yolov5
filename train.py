@@ -101,7 +101,12 @@ GIT_INFO = check_git_info()
 
 
 def train(hyp, opt, device, callbacks):
-    """Trains YOLOv5 model with given hyperparameters, options, and device, managing datasets, model architecture, loss computation, and optimizer steps. `hyp` argument is path/to/hyp.yaml or hyp dictionary."""
+    """
+    Trains YOLOv5 model with given hyperparameters, options, and device, managing datasets, model architecture, loss
+    computation, and optimizer steps.
+
+    `hyp` argument is path/to/hyp.yaml or hyp dictionary.
+    """
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = (
         Path(opt.save_dir),
         opt.epochs,

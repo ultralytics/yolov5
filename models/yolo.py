@@ -308,7 +308,11 @@ class DetectionModel(BaseModel):
         return y
 
     def _initialize_biases(self, cf=None):
-        """Initializes biases for YOLOv5's Detect() module, optionally using class frequencies (cf). For details see https://arxiv.org/abs/1708.02002 section 3.3."""
+        """
+        Initializes biases for YOLOv5's Detect() module, optionally using class frequencies (cf).
+
+        For details see https://arxiv.org/abs/1708.02002 section 3.3.
+        """
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
         for mi, s in zip(m.m, m.stride):  # from
@@ -333,7 +337,9 @@ class SegmentationModel(DetectionModel):
 class ClassificationModel(BaseModel):
     # YOLOv5 classification model
     def __init__(self, cfg=None, model=None, nc=1000, cutoff=10):
-        """Initializes YOLOv5 model with config file `cfg`, input channels `ch`, number of classes `nc`, and `cuttoff` index."""
+        """Initializes YOLOv5 model with config file `cfg`, input channels `ch`, number of classes `nc`, and `cuttoff`
+        index.
+        """
         super().__init__()
         self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 

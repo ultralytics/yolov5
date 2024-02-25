@@ -1061,7 +1061,12 @@ def flatten_recursive(path=DATASETS_DIR / "coco128"):
 
 
 def extract_boxes(path=DATASETS_DIR / "coco128"):
-    """Converts a detection dataset to a classification dataset, creating a directory for each class and extracting bounding boxes. Example: from utils.dataloaders import *; extract_boxes()"""
+    """
+    Converts a detection dataset to a classification dataset, creating a directory for each class and extracting
+    bounding boxes.
+
+    Example: from utils.dataloaders import *; extract_boxes()
+    """
     path = Path(path)  # images dir
     shutil.rmtree(path / "classification") if (path / "classification").is_dir() else None  # remove existing
     files = list(path.rglob("*.*"))
