@@ -171,7 +171,9 @@ class Metrics:
         return self.metric_box.class_result(i) + self.metric_mask.class_result(i)
 
     def get_maps(self, nc):
-        """Calculates and returns the sum of mean average precisions (mAPs) for both box and mask metrics for `nc` classes."""
+        """Calculates and returns the sum of mean average precisions (mAPs) for both box and mask metrics for `nc`
+        classes.
+        """
         return self.metric_box.get_maps(nc) + self.metric_mask.get_maps(nc)
 
     @property

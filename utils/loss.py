@@ -16,13 +16,17 @@ def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#iss
 class BCEBlurWithLogitsLoss(nn.Module):
     # BCEwithLogitLoss() with reduced missing label effects.
     def __init__(self, alpha=0.05):
-        """Initializes a modified BCEWithLogitsLoss with reduced missing label effects, taking optional alpha smoothing parameter."""
+        """Initializes a modified BCEWithLogitsLoss with reduced missing label effects, taking optional alpha smoothing
+        parameter.
+        """
         super().__init__()
         self.loss_fcn = nn.BCEWithLogitsLoss(reduction="none")  # must be nn.BCEWithLogitsLoss()
         self.alpha = alpha
 
     def forward(self, pred, true):
-        """Computes modified BCE loss for YOLOv5 with reduced missing label effects, taking pred and true tensors, returns mean loss."""
+        """Computes modified BCE loss for YOLOv5 with reduced missing label effects, taking pred and true tensors,
+        returns mean loss.
+        """
         loss = self.loss_fcn(pred, true)
         pred = torch.sigmoid(pred)  # prob from logits
         dx = pred - true  # reduce only missing label effects
@@ -35,7 +39,9 @@ class BCEBlurWithLogitsLoss(nn.Module):
 class FocalLoss(nn.Module):
     # Wraps focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
     def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
-        """Initializes FocalLoss with specified loss function, gamma, and alpha values; modifies loss reduction to 'none'."""
+        """Initializes FocalLoss with specified loss function, gamma, and alpha values; modifies loss reduction to
+        'none'.
+        """
         super().__init__()
         self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
         self.gamma = gamma
@@ -76,7 +82,9 @@ class QFocalLoss(nn.Module):
         self.loss_fcn.reduction = "none"  # required to apply FL to each element
 
     def forward(self, pred, true):
-        """Computes the focal loss between `pred` and `true` using BCEWithLogitsLoss, adjusting for imbalance with `gamma` and `alpha`."""
+        """Computes the focal loss between `pred` and `true` using BCEWithLogitsLoss, adjusting for imbalance with
+        `gamma` and `alpha`.
+        """
         loss = self.loss_fcn(pred, true)
 
         pred_prob = torch.sigmoid(pred)  # prob from logits
@@ -180,7 +188,9 @@ class ComputeLoss:
         return (lbox + lobj + lcls) * bs, torch.cat((lbox, lobj, lcls)).detach()
 
     def build_targets(self, p, targets):
-        """Prepares model targets from input targets (image,class,x,y,w,h) for loss computation, returning class, box, indices, and anchors."""
+        """Prepares model targets from input targets (image,class,x,y,w,h) for loss computation, returning class, box,
+        indices, and anchors.
+        """
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
         tcls, tbox, indices, anch = [], [], [], []
         gain = torch.ones(7, device=self.device)  # normalized to gridspace gain
