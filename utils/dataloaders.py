@@ -118,7 +118,11 @@ def exif_transpose(image):
 
 
 def seed_worker(worker_id):
-    """Sets the seed for a dataloader worker to ensure reproducibility, based on PyTorch's randomness notes. See https://pytorch.org/docs/stable/notes/randomness.html#dataloader."""
+    """
+    Sets the seed for a dataloader worker to ensure reproducibility, based on PyTorch's randomness notes.
+
+    See https://pytorch.org/docs/stable/notes/randomness.html#dataloader.
+    """
     worker_seed = torch.initial_seed() % 2**32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
@@ -218,7 +222,9 @@ class InfiniteDataLoader(dataloader.DataLoader):
     """
 
     def __init__(self, *args, **kwargs):
-        """Initializes an InfiniteDataLoader that reuses workers with standard DataLoader syntax, augmenting with a repeating sampler."""
+        """Initializes an InfiniteDataLoader that reuses workers with standard DataLoader syntax, augmenting with a
+        repeating sampler.
+        """
         super().__init__(*args, **kwargs)
         object.__setattr__(self, "batch_sampler", _RepeatSampler(self.batch_sampler))
         self.iterator = super().__iter__()
@@ -254,7 +260,9 @@ class _RepeatSampler:
 class LoadScreenshots:
     # YOLOv5 screenshot dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
-        """Initializes a screenshot dataloader for YOLOv5 with specified source region, image size, stride, auto, and transforms.
+        """
+        Initializes a screenshot dataloader for YOLOv5 with specified source region, image size, stride, auto, and
+        transforms.
 
         Source = [screen_number left top width height] (pixels)
         """
@@ -290,7 +298,9 @@ class LoadScreenshots:
         return self
 
     def __next__(self):
-        """Captures and returns the next screen frame as a BGR numpy array, cropping to only the first three channels from BGRA."""
+        """Captures and returns the next screen frame as a BGR numpy array, cropping to only the first three channels
+        from BGRA.
+        """
         im0 = np.array(self.sct.grab(self.monitor))[:, :, :3]  # [:, :, :3] BGRA to BGR
         s = f"screen {self.screen} (LTWH): {self.left},{self.top},{self.width},{self.height}: "
 
@@ -306,6 +316,7 @@ class LoadScreenshots:
 
 class LoadImages:
     """YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`"""
+
     def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         """Initializes YOLOv5 loader for images/videos, supporting glob patterns, directories, and lists of paths."""
         if isinstance(path, str) and Path(path).suffix == ".txt":  # *.txt file with img/vid/dir on each line
@@ -391,7 +402,9 @@ class LoadImages:
         return path, im, im0, self.cap, s
 
     def _new_video(self, path):
-        """Initializes a new video capture object with path, frame count adjusted by stride, and orientation metadata."""
+        """Initializes a new video capture object with path, frame count adjusted by stride, and orientation
+        metadata.
+        """
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT) / self.vid_stride)
@@ -416,7 +429,9 @@ class LoadImages:
 class LoadStreams:
     # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
     def __init__(self, sources="file.streams", img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
-        """Initializes a stream loader for processing video streams with YOLOv5, supporting various sources including YouTube."""
+        """Initializes a stream loader for processing video streams with YOLOv5, supporting various sources including
+        YouTube.
+        """
         torch.backends.cudnn.benchmark = True  # faster for fixed-size inference
         self.mode = "stream"
         self.img_size = img_size
@@ -483,7 +498,9 @@ class LoadStreams:
         return self
 
     def __next__(self):
-        """Iterates over video frames or images, halting on thread stop or 'q' key press, raising `StopIteration` when done."""
+        """Iterates over video frames or images, halting on thread stop or 'q' key press, raising `StopIteration` when
+        done.
+        """
         self.count += 1
         if not all(x.is_alive() for x in self.threads) or cv2.waitKey(1) == ord("q"):  # q to quit
             cv2.destroyAllWindows()
@@ -505,7 +522,9 @@ class LoadStreams:
 
 
 def img2label_paths(img_paths):
-    """Generates label file paths from corresponding image file paths by replacing `/images/` with `/labels/` and extension with `.txt`."""
+    """Generates label file paths from corresponding image file paths by replacing `/images/` with `/labels/` and
+    extension with `.txt`.
+    """
     sa, sb = f"{os.sep}images{os.sep}", f"{os.sep}labels{os.sep}"  # /images/, /labels/ substrings
     return [sb.join(x.rsplit(sa, 1)).rsplit(".", 1)[0] + ".txt" for x in img_paths]
 
@@ -820,7 +839,8 @@ class LoadImagesAndLabels(Dataset):
         return torch.from_numpy(img), labels_out, self.im_files[index], shapes
 
     def load_image(self, i):
-        """Loads an image by index, returning the image, its original dimensions, and resized dimensions.
+        """
+        Loads an image by index, returning the image, its original dimensions, and resized dimensions.
 
         Returns (im, original hw, resized hw)
         """
@@ -910,7 +930,9 @@ class LoadImagesAndLabels(Dataset):
         return img4, labels4
 
     def load_mosaic9(self, index):
-        """Loads 1 image + 8 random images into a 9-image mosaic for augmented YOLOv5 training, returning labels and segments."""
+        """Loads 1 image + 8 random images into a 9-image mosaic for augmented YOLOv5 training, returning labels and
+        segments.
+        """
         labels9, segments9 = [], []
         s = self.img_size
         indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
@@ -1027,7 +1049,9 @@ class LoadImagesAndLabels(Dataset):
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def flatten_recursive(path=DATASETS_DIR / "coco128"):
-    """Flattens a directory by copying all files from subdirectories to a new top-level directory, preserving filenames."""
+    """Flattens a directory by copying all files from subdirectories to a new top-level directory, preserving
+    filenames.
+    """
     new_path = Path(f"{str(path)}_flat")
     if os.path.exists(new_path):
         shutil.rmtree(new_path)  # delete output folder
@@ -1165,7 +1189,9 @@ class HUBDatasetStats:
     """
 
     def __init__(self, path="coco128.yaml", autodownload=False):
-        """Initializes HUBDatasetStats with optional auto-download for datasets, given a path to dataset YAML or ZIP file."""
+        """Initializes HUBDatasetStats with optional auto-download for datasets, given a path to dataset YAML or ZIP
+        file.
+        """
         zipped, data_dir, yaml_path = self._unzip(Path(path))
         try:
             with open(check_yaml(yaml_path), errors="ignore") as f:
@@ -1184,7 +1210,9 @@ class HUBDatasetStats:
 
     @staticmethod
     def _find_yaml(dir):
-        """Finds and returns the path to a single '.yaml' file in the specified directory, preferring files that match the directory name."""
+        """Finds and returns the path to a single '.yaml' file in the specified directory, preferring files that match
+        the directory name.
+        """
         files = list(dir.glob("*.yaml")) or list(dir.rglob("*.yaml"))  # try root level first and then recursive
         assert files, f"No *.yaml file found in {dir}"
         if len(files) > 1:
@@ -1223,6 +1251,7 @@ class HUBDatasetStats:
 
     def get_json(self, save=False, verbose=False):
         """Generates dataset JSON for Ultralytics HUB, optionally saves or prints it; save=bool, verbose=bool."""
+
         def _round(labels):
             # Update labels to integer class and 6 decimal place floats
             return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
@@ -1259,7 +1288,9 @@ class HUBDatasetStats:
         return self.stats
 
     def process_images(self):
-        """Compresses images for Ultralytics HUB across 'train', 'val', 'test' splits and saves to specified directory."""
+        """Compresses images for Ultralytics HUB across 'train', 'val', 'test' splits and saves to specified
+        directory.
+        """
         for split in "train", "val", "test":
             if self.data.get(split) is None:
                 continue
@@ -1283,7 +1314,9 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
     """
 
     def __init__(self, root, augment, imgsz, cache=False):
-        """Initializes YOLOv5 Classification Dataset with optional caching, augmentations, and transforms for image classification."""
+        """Initializes YOLOv5 Classification Dataset with optional caching, augmentations, and transforms for image
+        classification.
+        """
         super().__init__(root=root)
         self.torch_transforms = classify_transforms(imgsz)
         self.album_transforms = classify_albumentations(augment, imgsz) if augment else None
