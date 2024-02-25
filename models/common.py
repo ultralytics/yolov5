@@ -101,9 +101,11 @@ class DWConvTranspose2d(nn.ConvTranspose2d):
 class TransformerLayer(nn.Module):
     # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
     def __init__(self, c, num_heads):
-        """Initializes a transformer layer, sans LayerNorm for performance, with multihead attention and linear layers.
+        """
+        Initializes a transformer layer, sans LayerNorm for performance, with multihead attention and linear layers.
 
-        See  as described in https://arxiv.org/abs/2010.11929."""
+        See  as described in https://arxiv.org/abs/2010.11929.
+        """
         super().__init__()
         self.q = nn.Linear(c, c, bias=False)
         self.k = nn.Linear(c, c, bias=False)
@@ -122,7 +124,9 @@ class TransformerLayer(nn.Module):
 class TransformerBlock(nn.Module):
     # Vision Transformer https://arxiv.org/abs/2010.11929
     def __init__(self, c1, c2, num_heads, num_layers):
-        """Initializes a Transformer block for vision tasks, adapting dimensions if necessary and stacking specified layers."""
+        """Initializes a Transformer block for vision tasks, adapting dimensions if necessary and stacking specified
+        layers.
+        """
         super().__init__()
         self.conv = None
         if c1 != c2:
@@ -132,7 +136,9 @@ class TransformerBlock(nn.Module):
         self.c2 = c2
 
     def forward(self, x):
-        """Processes input through an optional convolution, followed by Transformer layers and position embeddings for object detection."""
+        """Processes input through an optional convolution, followed by Transformer layers and position embeddings for
+        object detection.
+        """
         if self.conv is not None:
             x = self.conv(x)
         b, _, w, h = x.shape
@@ -150,7 +156,9 @@ class Bottleneck(nn.Module):
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        """Processes input through two convolutions, optionally adds shortcut if channel dimensions match; input is a tensor."""
+        """Processes input through two convolutions, optionally adds shortcut if channel dimensions match; input is a
+        tensor.
+        """
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
@@ -168,7 +176,9 @@ class BottleneckCSP(nn.Module):
         self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
 
     def forward(self, x):
-        """Performs forward pass by applying layers, activation, and concatenation on input x, returning feature-enhanced output."""
+        """Performs forward pass by applying layers, activation, and concatenation on input x, returning feature-
+        enhanced output.
+        """
         y1 = self.cv3(self.m(self.cv1(x)))
         y2 = self.cv2(x)
         return self.cv4(self.act(self.bn(torch.cat((y1, y2), 1))))
@@ -177,7 +187,9 @@ class BottleneckCSP(nn.Module):
 class CrossConv(nn.Module):
     # Cross Convolution Downsample
     def __init__(self, c1, c2, k=3, s=1, g=1, e=1.0, shortcut=False):
-        """Initializes CrossConv with downsampling, expanding, and optionally shortcutting; `c1` input, `c2` output channels.
+        """
+        Initializes CrossConv with downsampling, expanding, and optionally shortcutting; `c1` input, `c2` output
+        channels.
 
         Inputs are ch_in, ch_out, kernel, stride, groups, expansion, shortcut.
         """
@@ -210,7 +222,9 @@ class C3(nn.Module):
 class C3x(C3):
     # C3 module with cross-convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
-        """Initializes C3x module with cross-convolutions, extending C3 with customizable channel dimensions, groups, and expansion."""
+        """Initializes C3x module with cross-convolutions, extending C3 with customizable channel dimensions, groups,
+        and expansion.
+        """
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
         self.m = nn.Sequential(*(CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)))
@@ -219,7 +233,9 @@ class C3x(C3):
 class C3TR(C3):
     # C3 module with TransformerBlock()
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
-        """Initializes C3 module with TransformerBlock for enhanced feature extraction, accepts channel sizes, shortcut config, group, and expansion."""
+        """Initializes C3 module with TransformerBlock for enhanced feature extraction, accepts channel sizes, shortcut
+        config, group, and expansion.
+        """
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
         self.m = TransformerBlock(c_, c_, 4, n)
@@ -228,7 +244,9 @@ class C3TR(C3):
 class C3SPP(C3):
     # C3 module with SPP()
     def __init__(self, c1, c2, k=(5, 9, 13), n=1, shortcut=True, g=1, e=0.5):
-        """Initializes a C3 module with SPP layer for advanced spatial feature extraction, given channel sizes, kernel sizes, shortcut, group, and expansion ratio."""
+        """Initializes a C3 module with SPP layer for advanced spatial feature extraction, given channel sizes, kernel
+        sizes, shortcut, group, and expansion ratio.
+        """
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
         self.m = SPP(c_, c_, k)
@@ -254,7 +272,9 @@ class SPP(nn.Module):
         self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k])
 
     def forward(self, x):
-        """Applies convolution and max pooling layers to the input tensor `x`, concatenates results, and returns output tensor."""
+        """Applies convolution and max pooling layers to the input tensor `x`, concatenates results, and returns output
+        tensor.
+        """
         x = self.cv1(x)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")  # suppress torch 1.9.0 max_pool2d() warning
@@ -328,12 +348,16 @@ class GhostBottleneck(nn.Module):
 class Contract(nn.Module):
     # Contract width-height into channels, i.e. x(1,64,80,80) to x(1,256,40,40)
     def __init__(self, gain=2):
-        """Initializes a layer to contract spatial dimensions (width-height) into channels, e.g., input shape (1,64,80,80) to (1,256,40,40)."""
+        """Initializes a layer to contract spatial dimensions (width-height) into channels, e.g., input shape
+        (1,64,80,80) to (1,256,40,40).
+        """
         super().__init__()
         self.gain = gain
 
     def forward(self, x):
-        """Processes input tensor to expand channel dimensions by contracting spatial dimensions, yielding output shape `(b, c*s*s, h//s, w//s)`."""
+        """Processes input tensor to expand channel dimensions by contracting spatial dimensions, yielding output shape
+        `(b, c*s*s, h//s, w//s)`.
+        """
         b, c, h, w = x.size()  # assert (h / s == 0) and (W / s == 0), 'Indivisible gain'
         s = self.gain
         x = x.view(b, c, h // s, s, w // s, s)  # x(1,64,40,2,40,2)
@@ -344,14 +368,19 @@ class Contract(nn.Module):
 class Expand(nn.Module):
     # Expand channels into width-height, i.e. x(1,64,80,80) to x(1,16,160,160)
     def __init__(self, gain=2):
-        """Initializes the Expand module to increase spatial dimensions by redistributing channels, with an optional gain factor.
+        """
+        Initializes the Expand module to increase spatial dimensions by redistributing channels, with an optional gain
+        factor.
 
-        Example: x(1,64,80,80) to x(1,16,160,160)."""
+        Example: x(1,64,80,80) to x(1,16,160,160).
+        """
         super().__init__()
         self.gain = gain
 
     def forward(self, x):
-        """Processes input tensor x to expand spatial dimensions by redistributing channels, requiring C / gain^2 == 0."""
+        """Processes input tensor x to expand spatial dimensions by redistributing channels, requiring C / gain^2 ==
+        0.
+        """
         b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
         x = x.view(b, s, s, c // s**2, h, w)  # x(1,2,2,16,80,80)
@@ -367,7 +396,9 @@ class Concat(nn.Module):
         self.d = dimension
 
     def forward(self, x):
-        """Concatenates a list of tensors along a specified dimension; `x` is a list of tensors, `dimension` is an int."""
+        """Concatenates a list of tensors along a specified dimension; `x` is a list of tensors, `dimension` is an
+        int.
+        """
         return torch.cat(x, self.d)
 
 
@@ -670,7 +701,8 @@ class DetectMultiBackend(nn.Module):
 
     @staticmethod
     def _model_type(p="path/to/model.pt"):
-        """Determines model type from file path or URL, supporting various export formats.
+        """
+        Determines model type from file path or URL, supporting various export formats.
 
         Example: path='path/to/model.onnx' -> type=onnx
         """
@@ -721,7 +753,11 @@ class AutoShape(nn.Module):
             m.export = True  # do not output loss values
 
     def _apply(self, fn):
-        """Applies to(), cpu(), cuda(), half() etc. to model tensors excluding parameters or registered buffers."""
+        """
+        Applies to(), cpu(), cuda(), half() etc.
+
+        to model tensors excluding parameters or registered buffers.
+        """
         self = super()._apply(fn)
         if self.pt:
             m = self.model.model.model[-1] if self.dmb else self.model.model[-1]  # Detect()
@@ -733,7 +769,9 @@ class AutoShape(nn.Module):
 
     @smart_inference_mode()
     def forward(self, ims, size=640, augment=False, profile=False):
-        """Performs inference on inputs with optional augment & profiling.
+        """
+        Performs inference on inputs with optional augment & profiling.
+
         Supports various formats including file, URI, OpenCV, PIL, numpy, torch.
         """
         # For size(height=640, width=1280), RGB images example inputs are:
@@ -877,16 +915,28 @@ class Detections:
 
     @TryExcept("Showing images is not supported in this environment")
     def show(self, labels=True):
-        """Displays detection results with optional labels. Usage: show(labels=True)"""
+        """
+        Displays detection results with optional labels.
+
+        Usage: show(labels=True)
+        """
         self._run(show=True, labels=labels)  # show results
 
     def save(self, labels=True, save_dir="runs/detect/exp", exist_ok=False):
-        """Saves detection results with optional labels to a specified directory. Usage: save(labels=True, save_dir='runs/detect/exp', exist_ok=False)"""
+        """
+        Saves detection results with optional labels to a specified directory.
+
+        Usage: save(labels=True, save_dir='runs/detect/exp', exist_ok=False)
+        """
         save_dir = increment_path(save_dir, exist_ok, mkdir=True)  # increment save_dir
         self._run(save=True, labels=labels, save_dir=save_dir)  # save results
 
     def crop(self, save=True, save_dir="runs/detect/exp", exist_ok=False):
-        """Crops detection results, optionally saves them to a directory. Args: save (bool), save_dir (str), exist_ok (bool)."""
+        """
+        Crops detection results, optionally saves them to a directory.
+
+        Args: save (bool), save_dir (str), exist_ok (bool).
+        """
         save_dir = increment_path(save_dir, exist_ok, mkdir=True) if save else None
         return self._run(crop=True, save=save, save_dir=save_dir)  # crop results
 
@@ -896,7 +946,8 @@ class Detections:
         return self.ims
 
     def pandas(self):
-        """Returns detections as pandas DataFrames for various box formats (xyxy, xyxyn, xywh, xywhn).
+        """
+        Returns detections as pandas DataFrames for various box formats (xyxy, xyxyn, xywh, xywhn).
 
         Example: print(results.pandas().xyxy[0]).
         """
@@ -909,7 +960,8 @@ class Detections:
         return new
 
     def tolist(self):
-        """Converts a Detections object into a list of individual detection results for iteration.
+        """
+        Converts a Detections object into a list of individual detection results for iteration.
 
         Example: for result in results.tolist():
         """
