@@ -352,7 +352,11 @@ def check_online():
 
 
 def git_describe(path=ROOT):
-    """Returns a human-readable git description of the repository at `path`, or an empty string on failure. Example output is 'fv5.0-5-g3e25f1e'. See https://git-scm.com/docs/git-describe."""
+    """
+    Returns a human-readable git description of the repository at `path`, or an empty string on failure.
+
+    Example output is 'fv5.0-5-g3e25f1e'. See https://git-scm.com/docs/git-describe.
+    """
     try:
         assert (Path(path) / ".git").is_dir()
         return check_output(f"git -C {path} describe --tags --long --always", shell=True).decode()[:-1]
@@ -768,7 +772,11 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
 
 
 def coco80_to_coco91_class():
-    """Converts COCO 80-class index to COCO 91-class index used in the paper. Reference: https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/"""
+    """
+    Converts COCO 80-class index to COCO 91-class index used in the paper.
+
+    Reference: https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
+    """
     # a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
     # b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
     # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)]  # darknet to coco
@@ -1109,7 +1117,12 @@ def non_max_suppression(
 
 
 def strip_optimizer(f="best.pt", s=""):
-    """Strips optimizer and optionally saves checkpoint to finalize training; arguments are file path 'f' and save path 's'. Example: from utils.general import *; strip_optimizer()"""
+    """
+    Strips optimizer and optionally saves checkpoint to finalize training; arguments are file path 'f' and save path
+    's'.
+
+    Example: from utils.general import *; strip_optimizer()
+    """
     x = torch.load(f, map_location=torch.device("cpu"))
     if x.get("ema"):
         x["model"] = x["ema"]  # replace model with ema

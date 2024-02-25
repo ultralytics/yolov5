@@ -227,7 +227,12 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=""):
 
 
 def plot_val_txt():
-    """Plots 2D and 1D histograms of bounding box centers from 'val.txt' using matplotlib, saving as 'hist2d.png' and 'hist1d.png'. Example: from utils.plots import *; plot_val()"""
+    """
+    Plots 2D and 1D histograms of bounding box centers from 'val.txt' using matplotlib, saving as 'hist2d.png' and
+    'hist1d.png'.
+
+    Example: from utils.plots import *; plot_val()
+    """
     x = np.loadtxt("val.txt", dtype=np.float32)
     box = xyxy2xywh(x[:, :4])
     cx, cy = box[:, 0], box[:, 1]
@@ -244,7 +249,11 @@ def plot_val_txt():
 
 
 def plot_targets_txt():
-    """Plots histograms of object detection targets from 'targets.txt', saving the figure as 'targets.jpg'. Example: from utils.plots import *; plot_targets_txt()"""
+    """
+    Plots histograms of object detection targets from 'targets.txt', saving the figure as 'targets.jpg'.
+
+    Example: from utils.plots import *; plot_targets_txt()
+    """
     x = np.loadtxt("targets.txt", dtype=np.float32).T
     s = ["x targets", "y targets", "width targets", "height targets"]
     fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
@@ -257,7 +266,12 @@ def plot_targets_txt():
 
 
 def plot_val_study(file="", dir="", x=None):
-    """Plots validation study results from 'study*.txt' files in a directory or a specific file, comparing model performance and speed. Example:  from utils.plots import *; plot_val_study()"""
+    """
+    Plots validation study results from 'study*.txt' files in a directory or a specific file, comparing model
+    performance and speed.
+
+    Example:  from utils.plots import *; plot_val_study()
+    """
     save_dir = Path(file).parent if file else Path(dir)
     plot2 = False  # plot additional results
     if plot2:
@@ -383,7 +397,11 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
 
 
 def plot_evolve(evolve_csv="path/to/evolve.csv"):
-    """Plots hyperparameter evolution results from a given CSV, saving the plot and displaying best results. Example: from utils.plots import *; plot_evolve()"""
+    """
+    Plots hyperparameter evolution results from a given CSV, saving the plot and displaying best results.
+
+    Example: from utils.plots import *; plot_evolve()
+    """
     evolve_csv = Path(evolve_csv)
     data = pd.read_csv(evolve_csv)
     keys = [x.strip() for x in data.columns]
