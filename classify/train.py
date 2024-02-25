@@ -307,7 +307,9 @@ def train(opt, device):
 
 
 def parse_opt(known=False):
-    """Parses command line arguments for YOLOv5 training including model path, dataset, epochs, and more, returning parsed arguments."""
+    """Parses command line arguments for YOLOv5 training including model path, dataset, epochs, and more, returning
+    parsed arguments.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="yolov5s-cls.pt", help="initial weights path")
     parser.add_argument("--data", type=str, default="imagenette160", help="cifar10, cifar100, mnist, imagenet, ...")
@@ -359,9 +361,11 @@ def main(opt):
 
 
 def run(**kwargs):
-    """Executes YOLOv5 model training or inference with specified parameters, returning updated options.
+    """
+    Executes YOLOv5 model training or inference with specified parameters, returning updated options.
 
-    Example: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')"""
+    Example: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')
+    """
     opt = parse_opt(True)
     for k, v in kwargs.items():
         setattr(opt, k, v)
