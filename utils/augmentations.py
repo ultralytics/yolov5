@@ -311,7 +311,12 @@ def mixup(im, labels, im2, labels2):
 
 
 def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):
-    """Filters bounding box candidates by minimum width-height threshold `wh_thr` (pixels), aspect ratio threshold `ar_thr`, and area ratio threshold `area_thr`.  box1(4,n) is before augmentation, box2(4,n) is after augmentation."""
+    """
+    Filters bounding box candidates by minimum width-height threshold `wh_thr` (pixels), aspect ratio threshold
+    `ar_thr`, and area ratio threshold `area_thr`.
+
+    box1(4,n) is before augmentation, box2(4,n) is after augmentation.
+    """
     w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
     ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio
@@ -381,7 +386,11 @@ class LetterBox:
         self.stride = stride  # used with auto
 
     def __call__(self, im):
-        """Resizes and pads input image `im` (HWC format) to specified dimensions, maintaining aspect ratio. im = np.array HWC"""
+        """
+        Resizes and pads input image `im` (HWC format) to specified dimensions, maintaining aspect ratio.
+
+        im = np.array HWC
+        """
         imh, imw = im.shape[:2]
         r = min(self.h / imh, self.w / imw)  # ratio of new/old
         h, w = round(imh * r), round(imw * r)  # resized image
@@ -400,7 +409,11 @@ class CenterCrop:
         self.h, self.w = (size, size) if isinstance(size, int) else size
 
     def __call__(self, im):
-        """Applies center crop to the input image and resizes it to a specified size, maintaining aspect ratio. im = np.array HWC"""
+        """
+        Applies center crop to the input image and resizes it to a specified size, maintaining aspect ratio.
+
+        im = np.array HWC
+        """
         imh, imw = im.shape[:2]
         m = min(imh, imw)  # min dimension
         top, left = (imh - m) // 2, (imw - m) // 2
@@ -415,7 +428,12 @@ class ToTensor:
         self.half = half
 
     def __call__(self, im):
-        """Converts BGR np.array image from HWC to RGB CHW format, and normalizes to [0, 1], with support for FP16 if `half=True`. im = np.array HWC in BGR order"""
+        """
+        Converts BGR np.array image from HWC to RGB CHW format, and normalizes to [0, 1], with support for FP16 if
+        `half=True`.
+
+        im = np.array HWC in BGR order
+        """
         im = np.ascontiguousarray(im.transpose((2, 0, 1))[::-1])  # HWC to CHW -> BGR to RGB -> contiguous
         im = torch.from_numpy(im)  # to torch
         im = im.half() if self.half else im.float()  # uint8 to fp16/32

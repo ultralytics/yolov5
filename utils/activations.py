@@ -60,6 +60,7 @@ class MemoryEfficientMish(nn.Module):
 
 class FReLU(nn.Module):
     """FReLU activation https://arxiv.org/abs/2007.11824."""
+
     def __init__(self, c1, k=3):  # ch_in, kernel
         """Initializes FReLU activation with channel `c1` and kernel size `k`."""
         super().__init__()

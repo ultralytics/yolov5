@@ -96,7 +96,11 @@ GIT_INFO = check_git_info()
 
 
 def train(hyp, opt, device, callbacks):
-    """Trains the YOLOv5 model on a dataset, managing hyperparameters, model optimization, logging, and validation. `hyp` is path/to/hyp.yaml or hyp dictionary."""
+    """
+    Trains the YOLOv5 model on a dataset, managing hyperparameters, model optimization, logging, and validation.
+
+    `hyp` is path/to/hyp.yaml or hyp dictionary.
+    """
     (
         save_dir,
         epochs,
