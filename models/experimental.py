@@ -54,12 +54,15 @@ class MixConv2d(nn.Module):
         self.act = nn.SiLU()
 
     def forward(self, x):
-        """Performs forward pass by applying SiLU activation on batch-normalized concatenated convolutional layer outputs."""
+        """Performs forward pass by applying SiLU activation on batch-normalized concatenated convolutional layer
+        outputs.
+        """
         return self.act(self.bn(torch.cat([m(x) for m in self.m], 1)))
 
 
 class Ensemble(nn.ModuleList):
     """Ensemble of models."""
+
     def __init__(self):
         """Initializes an ensemble of models to be used for aggregated predictions."""
         super().__init__()
@@ -74,7 +77,8 @@ class Ensemble(nn.ModuleList):
 
 
 def attempt_load(weights, device=None, inplace=True, fuse=True):
-    """Loads and fuses an ensemble or single YOLOv5 model from weights, handling device placement and model adjustments.
+    """
+    Loads and fuses an ensemble or single YOLOv5 model from weights, handling device placement and model adjustments.
 
     Example inputs: weights=[a,b,c] or a single model weights=[a] or weights=a.
     """
