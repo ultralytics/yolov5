@@ -57,8 +57,12 @@ from utils.general import (
 from utils.torch_utils import copy_attr, smart_inference_mode
 
 
-def autopad(k, p=None, d=1):  # kernel, padding, dilation
-    # Pad to 'same' shape outputs
+def autopad(k, p=None, d=1):
+    """
+    Pads kernel to 'same' output shape, adjusting for optional dilation; returns padding size.
+
+    `k`: kernel, `p`: padding, `d`: dilation.
+    """
     if d > 1:
         k = d * (k - 1) + 1 if isinstance(k, int) else [d * (x - 1) + 1 for x in k]  # actual kernel-size
     if p is None:
@@ -88,13 +92,19 @@ class Conv(nn.Module):
 
 class DWConv(Conv):
     # Depth-wise convolution
-    def __init__(self, c1, c2, k=1, s=1, d=1, act=True):  # ch_in, ch_out, kernel, stride, dilation, activation
+    def __init__(self, c1, c2, k=1, s=1, d=1, act=True):
+        """Initializes a depth-wise convolution layer with optional activation; args: input channels (c1), output
+        channels (c2), kernel size (k), stride (s), dilation (d), and activation flag (act).
+        """
         super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), d=d, act=act)
 
 
 class DWConvTranspose2d(nn.ConvTranspose2d):
     # Depth-wise transpose convolution
-    def __init__(self, c1, c2, k=1, s=1, p1=0, p2=0):  # ch_in, ch_out, kernel, stride, padding, padding_out
+    def __init__(self, c1, c2, k=1, s=1, p1=0, p2=0):
+        """Initializes a depth-wise transpose convolutional layer for YOLOv5; args: input channels (c1), output channels
+        (c2), kernel size (k), stride (s), input padding (p1), output padding (p2).
+        """
         super().__init__(c1, c2, k, s, p1, p2, groups=math.gcd(c1, c2))
 
 
@@ -148,7 +158,10 @@ class TransformerBlock(nn.Module):
 
 class Bottleneck(nn.Module):
     # Standard bottleneck
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):
+        """Initializes a standard bottleneck layer with optional shortcut and group convolution, supporting channel
+        expansion.
+        """
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -164,7 +177,10 @@ class Bottleneck(nn.Module):
 
 class BottleneckCSP(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
+        """Initializes CSP bottleneck with optional shortcuts; args: ch_in, ch_out, number of repeats, shortcut bool,
+        groups, expansion.
+        """
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -206,7 +222,10 @@ class CrossConv(nn.Module):
 
 class C3(nn.Module):
     # CSP Bottleneck with 3 convolutions
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
+        """Initializes C3 module with options for channel count, bottleneck repetition, shortcut usage, group
+        convolutions, and expansion.
+        """
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -283,7 +302,13 @@ class SPP(nn.Module):
 
 class SPPF(nn.Module):
     # Spatial Pyramid Pooling - Fast (SPPF) layer for YOLOv5 by Glenn Jocher
-    def __init__(self, c1, c2, k=5):  # equivalent to SPP(k=(5, 9, 13))
+    def __init__(self, c1, c2, k=5):
+        """
+        Initializes YOLOv5 SPPF layer with given channels and kernel size for YOLOv5 model, combining convolution and
+        max pooling.
+
+        Equivalent to SPP(k=(5, 9, 13)).
+        """
         super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -302,19 +327,26 @@ class SPPF(nn.Module):
 
 class Focus(nn.Module):
     # Focus wh information into c-space
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):
+        """Initializes Focus module to concentrate width-height info into channel space with configurable convolution
+        parameters.
+        """
         super().__init__()
         self.conv = Conv(c1 * 4, c2, k, s, p, g, act=act)
         # self.contract = Contract(gain=2)
 
-    def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
+    def forward(self, x):
+        """Processes input through Focus mechanism, reshaping (b,c,w,h) to (b,4c,w/2,h/2) then applies convolution."""
         return self.conv(torch.cat((x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]), 1))
         # return self.conv(self.contract(x))
 
 
 class GhostConv(nn.Module):
     # Ghost Convolution https://github.com/huawei-noah/ghostnet
-    def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
+    def __init__(self, c1, c2, k=1, s=1, g=1, act=True):
+        """Initializes GhostConv with in/out channels, kernel size, stride, groups, and activation; halves out channels
+        for efficiency.
+        """
         super().__init__()
         c_ = c2 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, k, s, None, g, act=act)
@@ -328,7 +360,8 @@ class GhostConv(nn.Module):
 
 class GhostBottleneck(nn.Module):
     # Ghost Bottleneck https://github.com/huawei-noah/ghostnet
-    def __init__(self, c1, c2, k=3, s=1):  # ch_in, ch_out, kernel, stride
+    def __init__(self, c1, c2, k=3, s=1):
+        """Initializes GhostBottleneck with ch_in `c1`, ch_out `c2`, kernel size `k`, stride `s`; see https://github.com/huawei-noah/ghostnet."""
         super().__init__()
         c_ = c2 // 2
         self.conv = nn.Sequential(
@@ -982,10 +1015,14 @@ class Detections:
         """Logs the string representation of the current object's state via the LOGGER."""
         LOGGER.info(self.__str__())
 
-    def __len__(self):  # override len(results)
+    def __len__(self):
+        """Returns the number of results stored, overrides the default len(results)."""
         return self.n
 
-    def __str__(self):  # override print(results)
+    def __str__(self):
+        """Returns a string representation of the model's results, suitable for printing, overrides default
+        print(results).
+        """
         return self._run(pprint=True)  # print results
 
     def __repr__(self):
@@ -995,7 +1032,8 @@ class Detections:
 
 class Proto(nn.Module):
     # YOLOv5 mask Proto module for segmentation models
-    def __init__(self, c1, c_=256, c2=32):  # ch_in, number of protos, number of masks
+    def __init__(self, c1, c_=256, c2=32):
+        """Initializes YOLOv5 Proto module for segmentation with input, proto, and mask channels configuration."""
         super().__init__()
         self.cv1 = Conv(c1, c_, k=3)
         self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
