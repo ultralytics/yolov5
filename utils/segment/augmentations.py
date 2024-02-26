@@ -12,7 +12,11 @@ from ..general import resample_segments, segment2box
 
 
 def mixup(im, labels, segments, im2, labels2, segments2):
-    # Applies MixUp augmentation https://arxiv.org/pdf/1710.09412.pdf
+    """
+    Applies MixUp augmentation blending two images, labels, and segments with a random ratio.
+
+    See https://arxiv.org/pdf/1710.09412.pdf
+    """
     r = np.random.beta(32.0, 32.0)  # mixup ratio, alpha=beta=32.0
     im = (im * r + im2 * (1 - r)).astype(np.uint8)
     labels = np.concatenate((labels, labels2), 0)

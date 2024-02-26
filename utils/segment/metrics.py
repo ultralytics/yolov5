@@ -7,7 +7,7 @@ from ..metrics import ap_per_class
 
 
 def fitness(x):
-    # Model fitness as a weighted combination of metrics
+    """Evaluates model fitness by a weighted sum of 8 metrics, `x`: [N,8] array, weights: [0.1, 0.9] for mAP and F1."""
     w = [0.0, 0.0, 0.1, 0.9, 0.0, 0.0, 0.1, 0.9]
     return (x[:, :8] * w).sum(1)
 
@@ -128,6 +128,7 @@ class Metric:
         return (self.p[i], self.r[i], self.ap50[i], self.ap[i])
 
     def get_maps(self, nc):
+        """Calculates and returns mean Average Precision (mAP) for each class given number of classes `nc`."""
         maps = np.zeros(nc) + self.map
         for i, c in enumerate(self.ap_class_index):
             maps[c] = self.ap[i]
@@ -162,17 +163,22 @@ class Metrics:
         self.metric_mask.update(list(results["masks"].values()))
 
     def mean_results(self):
+        """Computes and returns the mean results for both box and mask metrics by summing their individual means."""
         return self.metric_box.mean_results() + self.metric_mask.mean_results()
 
     def class_result(self, i):
+        """Returns the sum of box and mask metric results for a specified class index `i`."""
         return self.metric_box.class_result(i) + self.metric_mask.class_result(i)
 
     def get_maps(self, nc):
+        """Calculates and returns the sum of mean average precisions (mAPs) for both box and mask metrics for `nc`
+        classes.
+        """
         return self.metric_box.get_maps(nc) + self.metric_mask.get_maps(nc)
 
     @property
     def ap_class_index(self):
-        # boxes and masks have the same ap_class_index
+        """Returns the class index for average precision, shared by both box and mask metrics."""
         return self.metric_box.ap_class_index
 
 

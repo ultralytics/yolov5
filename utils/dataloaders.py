@@ -73,7 +73,7 @@ for orientation in ExifTags.TAGS.keys():
 
 
 def get_hash(paths):
-    # Returns a single hash value of a list of paths (files or dirs)
+    """Generates a single SHA256 hash for a list of file or directory paths by combining their sizes and paths."""
     size = sum(os.path.getsize(p) for p in paths if os.path.exists(p))  # sizes
     h = hashlib.sha256(str(size).encode())  # hash sizes
     h.update("".join(paths).encode())  # hash paths
@@ -81,7 +81,7 @@ def get_hash(paths):
 
 
 def exif_size(img):
-    # Returns exif-corrected PIL size
+    """Returns corrected PIL image size (width, height) considering EXIF orientation."""
     s = img.size  # (width, height)
     with contextlib.suppress(Exception):
         rotation = dict(img._getexif().items())[orientation]
@@ -118,7 +118,11 @@ def exif_transpose(image):
 
 
 def seed_worker(worker_id):
-    # Set dataloader worker seed https://pytorch.org/docs/stable/notes/randomness.html#dataloader
+    """
+    Sets the seed for a dataloader worker to ensure reproducibility, based on PyTorch's randomness notes.
+
+    See https://pytorch.org/docs/stable/notes/randomness.html#dataloader.
+    """
     worker_seed = torch.initial_seed() % 2**32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
@@ -128,7 +132,7 @@ def seed_worker(worker_id):
 # https://github.com/pytorch/pytorch/blob/master/torch/utils/data/distributed.py
 class SmartDistributedSampler(distributed.DistributedSampler):
     def __iter__(self):
-        # deterministically shuffle based on epoch and seed
+        """Yields indices for distributed data sampling, shuffled deterministically based on epoch and seed."""
         g = torch.Generator()
         g.manual_seed(self.seed + self.epoch)
 
@@ -218,14 +222,19 @@ class InfiniteDataLoader(dataloader.DataLoader):
     """
 
     def __init__(self, *args, **kwargs):
+        """Initializes an InfiniteDataLoader that reuses workers with standard DataLoader syntax, augmenting with a
+        repeating sampler.
+        """
         super().__init__(*args, **kwargs)
         object.__setattr__(self, "batch_sampler", _RepeatSampler(self.batch_sampler))
         self.iterator = super().__iter__()
 
     def __len__(self):
+        """Returns the length of the batch sampler's sampler in the InfiniteDataLoader."""
         return len(self.batch_sampler.sampler)
 
     def __iter__(self):
+        """Yields batches of data indefinitely in a loop by resetting the sampler when exhausted."""
         for _ in range(len(self)):
             yield next(self.iterator)
 
@@ -239,9 +248,11 @@ class _RepeatSampler:
     """
 
     def __init__(self, sampler):
+        """Initializes a perpetual sampler wrapping a provided `Sampler` instance for endless data iteration."""
         self.sampler = sampler
 
     def __iter__(self):
+        """Returns an infinite iterator over the dataset by repeatedly yielding from the given sampler."""
         while True:
             yield from iter(self.sampler)
 
@@ -249,7 +260,12 @@ class _RepeatSampler:
 class LoadScreenshots:
     # YOLOv5 screenshot dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
-        # source = [screen_number left top width height] (pixels)
+        """
+        Initializes a screenshot dataloader for YOLOv5 with specified source region, image size, stride, auto, and
+        transforms.
+
+        Source = [screen_number left top width height] (pixels)
+        """
         check_requirements("mss")
         import mss
 
@@ -278,10 +294,13 @@ class LoadScreenshots:
         self.monitor = {"left": self.left, "top": self.top, "width": self.width, "height": self.height}
 
     def __iter__(self):
+        """Iterates over itself, enabling use in loops and iterable contexts."""
         return self
 
     def __next__(self):
-        # mss screen capture: get raw pixels from the screen as np array
+        """Captures and returns the next screen frame as a BGR numpy array, cropping to only the first three channels
+        from BGRA.
+        """
         im0 = np.array(self.sct.grab(self.monitor))[:, :, :3]  # [:, :, :3] BGRA to BGR
         s = f"screen {self.screen} (LTWH): {self.left},{self.top},{self.width},{self.height}: "
 
@@ -296,8 +315,10 @@ class LoadScreenshots:
 
 
 class LoadImages:
-    # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
+    """YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`"""
+
     def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
+        """Initializes YOLOv5 loader for images/videos, supporting glob patterns, directories, and lists of paths."""
         if isinstance(path, str) and Path(path).suffix == ".txt":  # *.txt file with img/vid/dir on each line
             path = Path(path).read_text().rsplit()
         files = []
@@ -335,10 +356,12 @@ class LoadImages:
         )
 
     def __iter__(self):
+        """Initializes iterator by resetting count and returns the iterator object itself."""
         self.count = 0
         return self
 
     def __next__(self):
+        """Advances to the next file in the dataset, raising StopIteration if at the end."""
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
@@ -379,7 +402,9 @@ class LoadImages:
         return path, im, im0, self.cap, s
 
     def _new_video(self, path):
-        # Create a new video capture object
+        """Initializes a new video capture object with path, frame count adjusted by stride, and orientation
+        metadata.
+        """
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT) / self.vid_stride)
@@ -387,7 +412,7 @@ class LoadImages:
         # self.cap.set(cv2.CAP_PROP_ORIENTATION_AUTO, 0)  # disable https://github.com/ultralytics/yolov5/issues/8493
 
     def _cv2_rotate(self, im):
-        # Rotate a cv2 video manually
+        """Rotates a cv2 image based on its orientation; supports 0, 90, and 180 degrees rotations."""
         if self.orientation == 0:
             return cv2.rotate(im, cv2.ROTATE_90_CLOCKWISE)
         elif self.orientation == 180:
@@ -397,12 +422,16 @@ class LoadImages:
         return im
 
     def __len__(self):
+        """Returns the number of files in the dataset."""
         return self.nf  # number of files
 
 
 class LoadStreams:
     # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
     def __init__(self, sources="file.streams", img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
+        """Initializes a stream loader for processing video streams with YOLOv5, supporting various sources including
+        YouTube.
+        """
         torch.backends.cudnn.benchmark = True  # faster for fixed-size inference
         self.mode = "stream"
         self.img_size = img_size
@@ -448,7 +477,7 @@ class LoadStreams:
             LOGGER.warning("WARNING ⚠️ Stream shapes differ. For optimal performance supply similarly-shaped streams.")
 
     def update(self, i, cap, stream):
-        # Read stream `i` frames in daemon thread
+        """Reads frames from stream `i`, updating imgs array; handles stream reopening on signal loss."""
         n, f = 0, self.frames[i]  # frame number, frame array
         while cap.isOpened() and n < f:
             n += 1
@@ -464,10 +493,14 @@ class LoadStreams:
             time.sleep(0.0)  # wait time
 
     def __iter__(self):
+        """Resets and returns the iterator for iterating over video frames or images in a dataset."""
         self.count = -1
         return self
 
     def __next__(self):
+        """Iterates over video frames or images, halting on thread stop or 'q' key press, raising `StopIteration` when
+        done.
+        """
         self.count += 1
         if not all(x.is_alive() for x in self.threads) or cv2.waitKey(1) == ord("q"):  # q to quit
             cv2.destroyAllWindows()
@@ -484,11 +517,14 @@ class LoadStreams:
         return self.sources, im, im0, None, ""
 
     def __len__(self):
+        """Returns the number of sources in the dataset, supporting up to 32 streams at 30 FPS over 30 years."""
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
 
 def img2label_paths(img_paths):
-    # Define label paths as a function of image paths
+    """Generates label file paths from corresponding image file paths by replacing `/images/` with `/labels/` and
+    extension with `.txt`.
+    """
     sa, sb = f"{os.sep}images{os.sep}", f"{os.sep}labels{os.sep}"  # /images/, /labels/ substrings
     return [sb.join(x.rsplit(sa, 1)).rsplit(".", 1)[0] + ".txt" for x in img_paths]
 
@@ -657,7 +693,7 @@ class LoadImagesAndLabels(Dataset):
             pbar.close()
 
     def check_cache_ram(self, safety_margin=0.1, prefix=""):
-        # Check image caching requirements vs available memory
+        """Checks if available RAM is sufficient for caching images, adjusting for a safety margin."""
         b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
         n = min(self.n, 30)  # extrapolate from 30 random images
         for _ in range(n):
@@ -676,7 +712,7 @@ class LoadImagesAndLabels(Dataset):
         return cache
 
     def cache_labels(self, path=Path("./labels.cache"), prefix=""):
-        # Cache dataset labels, check images and read shapes
+        """Caches dataset labels, verifies images, reads shapes, and tracks dataset integrity."""
         x = {}  # dict
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
         desc = f"{prefix}Scanning {path.parent / path.stem}..."
@@ -716,6 +752,7 @@ class LoadImagesAndLabels(Dataset):
         return x
 
     def __len__(self):
+        """Returns the number of images in the dataset."""
         return len(self.im_files)
 
     # def __iter__(self):
@@ -725,6 +762,7 @@ class LoadImagesAndLabels(Dataset):
     #     return self
 
     def __getitem__(self, index):
+        """Fetches the dataset item at the given index, considering linear, shuffled, or weighted sampling."""
         index = self.indices[index]  # linear, shuffled, or image_weights
 
         hyp = self.hyp
@@ -801,7 +839,11 @@ class LoadImagesAndLabels(Dataset):
         return torch.from_numpy(img), labels_out, self.im_files[index], shapes
 
     def load_image(self, i):
-        # Loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
+        """
+        Loads an image by index, returning the image, its original dimensions, and resized dimensions.
+
+        Returns (im, original hw, resized hw)
+        """
         im, f, fn = (
             self.ims[i],
             self.im_files[i],
@@ -822,13 +864,13 @@ class LoadImagesAndLabels(Dataset):
         return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
 
     def cache_images_to_disk(self, i):
-        # Saves an image as an *.npy file for faster loading
+        """Saves an image to disk as an *.npy file for quicker loading, identified by index `i`."""
         f = self.npy_files[i]
         if not f.exists():
             np.save(f.as_posix(), cv2.imread(self.im_files[i]))
 
     def load_mosaic(self, index):
-        # YOLOv5 4-mosaic loader. Loads 1 image + 3 random images into a 4-image mosaic
+        """Loads a 4-image mosaic for YOLOv5, combining 1 selected and 3 random images, with labels and segments."""
         labels4, segments4 = [], []
         s = self.img_size
         yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border)  # mosaic center x, y
@@ -888,7 +930,9 @@ class LoadImagesAndLabels(Dataset):
         return img4, labels4
 
     def load_mosaic9(self, index):
-        # YOLOv5 9-mosaic loader. Loads 1 image + 8 random images into a 9-image mosaic
+        """Loads 1 image + 8 random images into a 9-image mosaic for augmented YOLOv5 training, returning labels and
+        segments.
+        """
         labels9, segments9 = [], []
         s = self.img_size
         indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
@@ -968,6 +1012,7 @@ class LoadImagesAndLabels(Dataset):
 
     @staticmethod
     def collate_fn(batch):
+        """Batches images, labels, paths, and shapes, assigning unique indices to targets in merged label tensor."""
         im, label, path, shapes = zip(*batch)  # transposed
         for i, lb in enumerate(label):
             lb[:, 0] = i  # add target image index for build_targets()
@@ -975,6 +1020,7 @@ class LoadImagesAndLabels(Dataset):
 
     @staticmethod
     def collate_fn4(batch):
+        """Bundles a batch's data by quartering the number of shapes and paths, preparing it for model input."""
         im, label, path, shapes = zip(*batch)  # transposed
         n = len(shapes) // 4
         im4, label4, path4, shapes4 = [], [], path[:n], shapes[:n]
@@ -1003,7 +1049,9 @@ class LoadImagesAndLabels(Dataset):
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def flatten_recursive(path=DATASETS_DIR / "coco128"):
-    # Flatten a recursive directory by bringing all files to top level
+    """Flattens a directory by copying all files from subdirectories to a new top-level directory, preserving
+    filenames.
+    """
     new_path = Path(f"{str(path)}_flat")
     if os.path.exists(new_path):
         shutil.rmtree(new_path)  # delete output folder
@@ -1073,7 +1121,7 @@ def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), ann
 
 
 def verify_image_label(args):
-    # Verify one image-label pair
+    """Verifies a single image-label pair, ensuring image format, size, and legal label values."""
     im_file, lb_file, prefix = args
     nm, nf, ne, nc, msg, segments = 0, 0, 0, 0, "", []  # number (missing, found, empty, corrupt), message, segments
     try:
@@ -1141,7 +1189,9 @@ class HUBDatasetStats:
     """
 
     def __init__(self, path="coco128.yaml", autodownload=False):
-        # Initialize class
+        """Initializes HUBDatasetStats with optional auto-download for datasets, given a path to dataset YAML or ZIP
+        file.
+        """
         zipped, data_dir, yaml_path = self._unzip(Path(path))
         try:
             with open(check_yaml(yaml_path), errors="ignore") as f:
@@ -1160,7 +1210,9 @@ class HUBDatasetStats:
 
     @staticmethod
     def _find_yaml(dir):
-        # Return data.yaml file
+        """Finds and returns the path to a single '.yaml' file in the specified directory, preferring files that match
+        the directory name.
+        """
         files = list(dir.glob("*.yaml")) or list(dir.rglob("*.yaml"))  # try root level first and then recursive
         assert files, f"No *.yaml file found in {dir}"
         if len(files) > 1:
@@ -1170,7 +1222,7 @@ class HUBDatasetStats:
         return files[0]
 
     def _unzip(self, path):
-        # Unzip data.zip
+        """Unzips a .zip file at 'path', returning success status, unzipped directory, and path to YAML file within."""
         if not str(path).endswith(".zip"):  # path is data.yaml
             return False, None, path
         assert Path(path).is_file(), f"Error unzipping {path}, file not found"
@@ -1180,7 +1232,7 @@ class HUBDatasetStats:
         return True, str(dir), self._find_yaml(dir)  # zipped, data_dir, yaml_path
 
     def _hub_ops(self, f, max_dim=1920):
-        # HUB ops for 1 image 'f': resize and save at reduced quality in /dataset-hub for web/app viewing
+        """Resizes and saves an image at reduced quality for web/app viewing, supporting both PIL and OpenCV."""
         f_new = self.im_dir / Path(f).name  # dataset-hub image filename
         try:  # use PIL
             im = Image.open(f)
@@ -1198,7 +1250,8 @@ class HUBDatasetStats:
             cv2.imwrite(str(f_new), im)
 
     def get_json(self, save=False, verbose=False):
-        # Return dataset JSON for Ultralytics HUB
+        """Generates dataset JSON for Ultralytics HUB, optionally saves or prints it; save=bool, verbose=bool."""
+
         def _round(labels):
             # Update labels to integer class and 6 decimal place floats
             return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
@@ -1235,7 +1288,9 @@ class HUBDatasetStats:
         return self.stats
 
     def process_images(self):
-        # Compress images for Ultralytics HUB
+        """Compresses images for Ultralytics HUB across 'train', 'val', 'test' splits and saves to specified
+        directory.
+        """
         for split in "train", "val", "test":
             if self.data.get(split) is None:
                 continue
@@ -1259,6 +1314,9 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
     """
 
     def __init__(self, root, augment, imgsz, cache=False):
+        """Initializes YOLOv5 Classification Dataset with optional caching, augmentations, and transforms for image
+        classification.
+        """
         super().__init__(root=root)
         self.torch_transforms = classify_transforms(imgsz)
         self.album_transforms = classify_albumentations(augment, imgsz) if augment else None
@@ -1267,6 +1325,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         self.samples = [list(x) + [Path(x[0]).with_suffix(".npy"), None] for x in self.samples]  # file, index, npy, im
 
     def __getitem__(self, i):
+        """Fetches and transforms an image sample by index, supporting RAM/disk caching and Augmentations."""
         f, j, fn, im = self.samples[i]  # filename, index, filename.with_suffix('.npy'), image
         if self.cache_ram and im is None:
             im = self.samples[i][3] = cv2.imread(f)
