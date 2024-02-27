@@ -190,15 +190,25 @@ class TFFocus(keras.layers.Layer):
         super().__init__()
         self.conv = TFConv(c1 * 4, c2, k, s, p, g, act, w.conv)
 
-    def call(self, inputs):  # x(b,w,h,c) -> y(b,w/2,h/2,4c)
-        # inputs = inputs / 255  # normalize 0-255 to 0-1
+    def call(self, inputs):
+        """
+        Performs pixel shuffling and convolution on input tensor, downsampling by 2 and expanding channels by 4.
+
+        Example x(b,w,h,c) -> y(b,w/2,h/2,4c).
+        """
         inputs = [inputs[:, ::2, ::2, :], inputs[:, 1::2, ::2, :], inputs[:, ::2, 1::2, :], inputs[:, 1::2, 1::2, :]]
         return self.conv(tf.concat(inputs, 3))
 
 
 class TFBottleneck(keras.layers.Layer):
     # Standard bottleneck
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, w=None):  # ch_in, ch_out, shortcut, groups, expansion
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, w=None):
+        """
+        Initializes a standard bottleneck layer for TensorFlow models, expanding and contracting channels with optional
+        shortcut.
+
+        Arguments are ch_in, ch_out, shortcut, groups, expansion.
+        """
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
@@ -364,7 +374,10 @@ class TFSPPF(keras.layers.Layer):
 
 class TFDetect(keras.layers.Layer):
     # TF YOLOv5 Detect layer
-    def __init__(self, nc=80, anchors=(), ch=(), imgsz=(640, 640), w=None):  # detection layer
+    def __init__(self, nc=80, anchors=(), ch=(), imgsz=(640, 640), w=None):
+        """Initializes YOLOv5 detection layer for TensorFlow with configurable classes, anchors, channels, and image
+        size.
+        """
         super().__init__()
         self.stride = tf.convert_to_tensor(w.stride.numpy(), dtype=tf.float32)
         self.nc = nc  # number of classes
@@ -454,7 +467,13 @@ class TFProto(keras.layers.Layer):
 
 class TFUpsample(keras.layers.Layer):
     # TF version of torch.nn.Upsample()
-    def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
+    def __init__(self, size, scale_factor, mode, w=None):
+        """
+        Initializes a TensorFlow upsampling layer with specified size, scale_factor, and mode, ensuring scale_factor is
+        even.
+
+        Warning: all arguments needed including 'w'
+        """
         super().__init__()
         assert scale_factor % 2 == 0, "scale_factor must be multiple of 2"
         self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * scale_factor, x.shape[2] * scale_factor), mode)
@@ -481,7 +500,8 @@ class TFConcat(keras.layers.Layer):
         return tf.concat(inputs, self.d)
 
 
-def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
+def parse_model(d, ch, model, imgsz):
+    """Parses a model definition dict `d` to create YOLOv5 model layers, including dynamic channel adjustments."""
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
     anchors, nc, gd, gw, ch_mul = (
         d["anchors"],
@@ -562,7 +582,10 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
 
 class TFModel:
     # TF YOLOv5 model
-    def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, model=None, imgsz=(640, 640)):  # model, channels, classes
+    def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, model=None, imgsz=(640, 640)):
+        """Initializes TF YOLOv5 model with specified configuration, channels, classes, model instance, and input
+        size.
+        """
         super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -640,7 +663,10 @@ class AgnosticNMS(keras.layers.Layer):
         )
 
     @staticmethod
-    def _nms(x, topk_all=100, iou_thres=0.45, conf_thres=0.25):  # agnostic NMS
+    def _nms(x, topk_all=100, iou_thres=0.45, conf_thres=0.25):
+        """Performs agnostic non-maximum suppression (NMS) on detected objects, filtering based on IoU and confidence
+        thresholds.
+        """
         boxes, classes, scores = x
         class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
         scores_inp = tf.reduce_max(scores, -1)

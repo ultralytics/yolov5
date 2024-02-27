@@ -1060,8 +1060,13 @@ def flatten_recursive(path=DATASETS_DIR / "coco128"):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
-def extract_boxes(path=DATASETS_DIR / "coco128"):  # from utils.dataloaders import *; extract_boxes()
-    # Convert detection dataset into classification dataset, with one directory per class
+def extract_boxes(path=DATASETS_DIR / "coco128"):
+    """
+    Converts a detection dataset to a classification dataset, creating a directory for each class and extracting
+    bounding boxes.
+
+    Example: from utils.dataloaders import *; extract_boxes()
+    """
     path = Path(path)  # images dir
     shutil.rmtree(path / "classification") if (path / "classification").is_dir() else None  # remove existing
     files = list(path.rglob("*.*"))
@@ -1253,7 +1258,7 @@ class HUBDatasetStats:
         """Generates dataset JSON for Ultralytics HUB, optionally saves or prints it; save=bool, verbose=bool."""
 
         def _round(labels):
-            # Update labels to integer class and 6 decimal place floats
+            """Rounds class labels to integers and coordinates to 4 decimal places for improved label accuracy."""
             return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
 
         for split in "train", "val", "test":

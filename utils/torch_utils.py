@@ -325,7 +325,9 @@ def model_info(model, verbose=False, imgsz=640):
 
 
 def scale_img(img, ratio=1.0, same_shape=False, gs=32):  # img(16,3,256,416)
-    # Scales img(bs,3,y,x) by ratio constrained to gs-multiple
+    """Scales an image tensor `img` of shape (bs,3,y,x) by `ratio`, optionally maintaining the original shape, padded to
+    multiples of `gs`.
+    """
     if ratio == 1.0:
         return img
     h, w = img.shape[2:]

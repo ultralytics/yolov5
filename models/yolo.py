@@ -75,7 +75,8 @@ class Detect(nn.Module):
     dynamic = False  # force grid reconstruction
     export = False  # export mode
 
-    def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=80, anchors=(), ch=(), inplace=True):
+        """Initializes YOLOv5 detection layer with specified classes, anchors, channels, and inplace operations."""
         super().__init__()
         self.nc = nc  # number of classes
         self.no = nc + 5  # number of outputs per anchor
@@ -183,7 +184,8 @@ class BaseModel(nn.Module):
         if c:
             LOGGER.info(f"{sum(dt):10.2f} {'-':>10s} {'-':>10s}  Total")
 
-    def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
+    def fuse(self):
+        """Fuses Conv2d() and BatchNorm2d() layers in the model to improve inference speed."""
         LOGGER.info("Fusing layers... ")
         for m in self.model.modules():
             if isinstance(m, (Conv, DWConv)) and hasattr(m, "bn"):
@@ -193,7 +195,8 @@ class BaseModel(nn.Module):
         self.info()
         return self
 
-    def info(self, verbose=False, img_size=640):  # print model information
+    def info(self, verbose=False, img_size=640):
+        """Prints model information given verbosity and image size, e.g., `info(verbose=True, img_size=640)`."""
         model_info(self, verbose, img_size)
 
     def _apply(self, fn):
@@ -212,7 +215,8 @@ class BaseModel(nn.Module):
 
 class DetectionModel(BaseModel):
     # YOLOv5 detection model
-    def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, anchors=None):  # model, input channels, number of classes
+    def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, anchors=None):
+        """Initializes YOLOv5 model with configuration file, input channels, number of classes, and custom anchors."""
         super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -303,8 +307,12 @@ class DetectionModel(BaseModel):
         y[-1] = y[-1][:, i:]  # small
         return y
 
-    def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
-        # https://arxiv.org/abs/1708.02002 section 3.3
+    def _initialize_biases(self, cf=None):
+        """
+        Initializes biases for YOLOv5's Detect() module, optionally using class frequencies (cf).
+
+        For details see https://arxiv.org/abs/1708.02002 section 3.3.
+        """
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
         for mi, s in zip(m.m, m.stride):  # from
@@ -328,7 +336,10 @@ class SegmentationModel(DetectionModel):
 
 class ClassificationModel(BaseModel):
     # YOLOv5 classification model
-    def __init__(self, cfg=None, model=None, nc=1000, cutoff=10):  # yaml, model, number of classes, cutoff index
+    def __init__(self, cfg=None, model=None, nc=1000, cutoff=10):
+        """Initializes YOLOv5 model with config file `cfg`, input channels `ch`, number of classes `nc`, and `cuttoff`
+        index.
+        """
         super().__init__()
         self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
@@ -354,8 +365,8 @@ class ClassificationModel(BaseModel):
         self.model = None
 
 
-def parse_model(d, ch):  # model_dict, input_channels(3)
-    # Parse a YOLOv5 model.yaml dictionary
+def parse_model(d, ch):
+    """Parses a YOLOv5 model from a dict `d`, configuring layers based on input channels `ch` and model architecture."""
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
     anchors, nc, gd, gw, act, ch_mul = (
         d["anchors"],

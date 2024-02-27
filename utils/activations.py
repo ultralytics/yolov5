@@ -59,8 +59,10 @@ class MemoryEfficientMish(nn.Module):
 
 
 class FReLU(nn.Module):
-    # FReLU activation https://arxiv.org/abs/2007.11824
+    """FReLU activation https://arxiv.org/abs/2007.11824."""
+
     def __init__(self, c1, k=3):  # ch_in, kernel
+        """Initializes FReLU activation with channel `c1` and kernel size `k`."""
         super().__init__()
         self.conv = nn.Conv2d(c1, c1, k, 1, 1, groups=c1, bias=False)
         self.bn = nn.BatchNorm2d(c1)
@@ -103,7 +105,8 @@ class MetaAconC(nn.Module):
     See "Activate or Not: Learning Customized Activation" https://arxiv.org/pdf/2009.04759.pdf.
     """
 
-    def __init__(self, c1, k=1, s=1, r=16):  # ch_in, kernel, stride, r
+    def __init__(self, c1, k=1, s=1, r=16):
+        """Initializes MetaAconC with params: channel_in (c1), kernel size (k=1), stride (s=1), reduction (r=16)."""
         super().__init__()
         c2 = max(r, c1 // r)
         self.p1 = nn.Parameter(torch.randn(1, c1, 1, 1))

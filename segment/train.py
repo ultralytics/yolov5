@@ -95,7 +95,12 @@ WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
 GIT_INFO = check_git_info()
 
 
-def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
+def train(hyp, opt, device, callbacks):
+    """
+    Trains the YOLOv5 model on a dataset, managing hyperparameters, model optimization, logging, and validation.
+
+    `hyp` is path/to/hyp.yaml or hyp dictionary.
+    """
     (
         save_dir,
         epochs,
