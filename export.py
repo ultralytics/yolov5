@@ -742,9 +742,9 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
     model = ct.models.MLModel(pipeline.spec)
     model.input_description["image"] = "Input image"
     model.input_description["iouThreshold"] = f"(optional) IOU Threshold override (default: {nms.iouThreshold})"
-    model.input_description[
-        "confidenceThreshold"
-    ] = f"(optional) Confidence Threshold override (default: {nms.confidenceThreshold})"
+    model.input_description["confidenceThreshold"] = (
+        f"(optional) Confidence Threshold override (default: {nms.confidenceThreshold})"
+    )
     model.output_description["confidence"] = 'Boxes × Class confidence (see user-defined metadata "classes")'
     model.output_description["coordinates"] = "Boxes × [x, y, width, height] (relative to image size)"
     model.save(f)  # pipelined
