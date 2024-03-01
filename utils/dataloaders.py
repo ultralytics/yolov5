@@ -1085,7 +1085,7 @@ def extract_boxes(path=DATASETS_DIR / "coco128"):
 
                 for j, x in enumerate(lb):
                     c = int(x[0])  # class
-                    f = (path / "classifier") / f"{c}" / f"{path.stem}_{im_file.stem}_{j}.jpg"  # new filename
+                    f = (path / "classification") / f"{c}" / f"{path.stem}_{im_file.stem}_{j}.jpg"  # new filename
                     if not f.parent.is_dir():
                         f.parent.mkdir(parents=True)
 
