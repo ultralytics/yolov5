@@ -1,5 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """Logging utils."""
+
 import json
 import os
 import warnings
