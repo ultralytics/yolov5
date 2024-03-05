@@ -38,7 +38,7 @@ import pathlib
 
 import torch
 
-# PosixPath on Windows
+# Updating PosixPath on Windows for compatibility
 if sys.platform == "win32":
     temp = pathlib.PosixPath
     pathlib.PosixPath = pathlib.WindowsPath
