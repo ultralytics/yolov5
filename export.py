@@ -407,16 +407,6 @@ def export_saved_model(
     except Exception:
         check_requirements(f"tensorflow{'' if torch.cuda.is_available() else '-macos' if MACOS else '-cpu'}<=2.15.1")
 
-
-
-
-
-
-
-
-
-
-        
         import tensorflow as tf
     from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
