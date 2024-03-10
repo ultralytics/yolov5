@@ -29,7 +29,7 @@ jobs:
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip wheel
-          pip install -r requirements.txt coremltools openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt coremltools openvino-dev "tensorflow-cpu<2.15.1" --extra-index-url https://download.pytorch.org/whl/cpu
           yolo checks
           pip list
       - name: Benchmark DetectionModel
