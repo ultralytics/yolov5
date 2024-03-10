@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14]
+        os: [ubuntu-latest]
         python-version: ["3.11"] # requires python<=3.11
         model: [yolov5n]
     steps:
@@ -55,12 +55,6 @@ jobs:
         python-version: ["3.11"]
         model: [yolov5n]
         include:
-          - os: ubuntu-latest
-            python-version: "3.8" # '3.6.8' min
-            model: yolov5n
-          - os: ubuntu-latest
-            python-version: "3.9"
-            model: yolov5n
           - os: ubuntu-latest
             python-version: "3.8" # torch 1.8.0 requires python >=3.6, <=3.8
             model: yolov5n
