@@ -7,26 +7,32 @@ import threading
 
 
 def emojis(str=""):
-    # Return platform-dependent emoji-safe version of string
+    """Returns an emoji-safe version of a string, stripped of emojis on Windows platforms."""
     return str.encode().decode("ascii", "ignore") if platform.system() == "Windows" else str
 
 
 class TryExcept(contextlib.ContextDecorator):
     # YOLOv5 TryExcept class. Usage: @TryExcept() decorator or 'with TryExcept():' context manager
     def __init__(self, msg=""):
+        """Initializes TryExcept with an optional message, used as a decorator or context manager for error handling."""
         self.msg = msg
 
     def __enter__(self):
+        """Enter the runtime context related to this object for error handling with an optional message."""
         pass
 
     def __exit__(self, exc_type, value, traceback):
+        """Context manager exit method that prints an error message with emojis if an exception occurred, always returns
+        True.
+        """
         if value:
             print(emojis(f"{self.msg}{': ' if self.msg else ''}{value}"))
         return True
 
 
 def threaded(func):
-    # Multi-threads a target function and returns thread. Usage: @threaded decorator
+    """Decorator @threaded to run a function in a separate thread, returning the thread instance."""
+
     def wrapper(*args, **kwargs):
         thread = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=True)
         thread.start()
@@ -36,7 +42,11 @@ def threaded(func):
 
 
 def join_threads(verbose=False):
-    # Join all daemon threads, i.e. atexit.register(lambda: join_threads())
+    """
+    Joins all daemon threads, optionally printing their names if verbose is True.
+
+    Example: atexit.register(lambda: join_threads())
+    """
     main_thread = threading.current_thread()
     for t in threading.enumerate():
         if t is not main_thread:
@@ -46,7 +56,7 @@ def join_threads(verbose=False):
 
 
 def notebook_init(verbose=True):
-    # Check system software and hardware
+    """Initializes notebook environment by checking requirements, cleaning up, and displaying system info."""
     print("Checking setup...")
 
     import os
