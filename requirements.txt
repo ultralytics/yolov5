@@ -47,3 +47,4 @@ setuptools>=65.5.1 # Snyk vulnerability fix
 # mss  # screenshots
 # albumentations>=1.0.3
 # pycocotools>=2.0.6  # COCO mAP
+wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
