@@ -16,6 +16,7 @@ torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
 tqdm>=4.64.0
 ultralytics>=8.0.232
+dill>=0.3.7
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
 # Logging ---------------------------------------------------------------------
