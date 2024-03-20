@@ -301,30 +301,33 @@ class SPP(nn.Module):
 
 
 class SPPF(nn.Module):
-    # Spatial Pyramid Pooling - Fast (SPPF) layer for YOLOv5 by Glenn Jocher
-    def __init__(self, c1, c2, k=5):
+    # Spatial Pyramid Pooling - Fast (SPPF) layer, optimized with an iterative loop
+    def __init__(self, c1, c2, k=5, levels=3):
         """
-        Initializes YOLOv5 SPPF layer with given channels and kernel size for YOLOv5 model, combining convolution and
-        max pooling.
+        Initializes YOLOv5 Optimized SPPF layer with given channels and kernel size for YOLOv5 model, 
+        combining convolution and max pooling with an iterative loop.
 
-        Equivalent to SPP(k=(5, 9, 13)).
+        param levels: Number of max pooling levels.
         """
         super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = Conv(c_ * 4, c2, 1, 1)
+        self.cv2 = Conv(c_ * (levels + 1), c2, 1, 1)
         self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
+        self.levels = levels
 
     def forward(self, x):
-        """Processes input through a series of convolutions and max pooling operations for feature extraction."""
+        """Processes input through a series of convolutions and iterative max pooling operations for feature extraction."""
         x = self.cv1(x)
+        outputs = [x]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")  # suppress torch 1.9.0 max_pool2d() warning
-            y1 = self.m(x)
-            y2 = self.m(y1)
-            return self.cv2(torch.cat((x, y1, y2, self.m(y2)), 1))
-
-
+            for _ in range(self.levels):
+                x = self.m(x)
+                outputs.append(x)
+            return self.cv2(torch.cat(outputs, 1))
+        
+        
 class Focus(nn.Module):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):
