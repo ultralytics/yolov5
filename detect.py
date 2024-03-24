@@ -35,6 +35,7 @@ import platform
 import sys
 from pathlib import Path
 
+import numpy as np
 import torch
 
 FILE = Path(__file__).resolve()
@@ -91,6 +92,7 @@ def run(
     name="exp",  # save results to project/name
     exist_ok=False,  # existing project/name ok, do not increment
     line_thickness=3,  # bounding box thickness (pixels)
+    line_alpha=0.5,  # bounding box transparency (opacity 0.0-1.0)
     hide_labels=False,  # hide labels
     hide_conf=False,  # hide confidences
     half=False,  # use FP16 half-precision inference
@@ -224,6 +226,8 @@ def run(
 
             # Stream results
             im0 = annotator.result()
+            im0 = (im0.astype(np.float32) * (1 - opt.line_alpha)) + (im0s.astype(np.float32) * opt.line_alpha)
+            im0 = im0.astype(np.uint8)
             if view_img:
                 if platform.system() == "Linux" and p not in windows:
                     windows.append(p)
@@ -290,6 +294,7 @@ def parse_opt():
     parser.add_argument("--name", default="exp", help="save results to project/name")
     parser.add_argument("--exist-ok", action="store_true", help="existing project/name ok, do not increment")
     parser.add_argument("--line-thickness", default=3, type=int, help="bounding box thickness (pixels)")
+    parser.add_argument("--line-alpha", default=0.5, type=float, help="bounding box transparency (opacity 0.0-1.0)")
     parser.add_argument("--hide-labels", default=False, action="store_true", help="hide labels")
     parser.add_argument("--hide-conf", default=False, action="store_true", help="hide confidences")
     parser.add_argument("--half", action="store_true", help="use FP16 half-precision inference")
