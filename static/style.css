@@ -1,0 +1,144 @@
+body {
+    margin: 1;
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    height: 60vh;
+    background-color: #ffffff;
+}
+
+img {
+    width: 30%;
+    height: auto;
+}
+
+.app-header {
+    background-color: rgb(255, 255, 255); /* Change the background color as needed */
+    color: rgb(0, 0, 0); /* Change the text color as needed */
+    text-align: center;
+    padding: 20px;
+    position: absolute;
+    top: 20px; /* Adjust the distance from the top */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+  }
+  
+  .app-header h1 {
+    margin: 0;
+    font-size: 2em; /* Adjust the font size as needed */
+  }
+
+  .button-container {
+    text-align: center;
+    margin-bottom: 20px;
+    position: absolute;
+    top: 150px; /* Adjust the distance from the top */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+}
+
+#startButton {
+    background-color: #4CAF50; /* Green color */
+    color: white;
+    padding: 10px 20px; /* Adjust padding as needed */
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+#stopButton {
+    background-color: #FF0000; /* Red color */
+    color: white;
+    padding: 10px 20px; /* Adjust padding as needed */
+    border: none;
+    
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+#videoDropdown{
+    width: 10%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    position: absolute;
+    top: 225px; /* Adjust the distance from the top */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+}
+
+.button-active {
+    background-color: #4CAF50; /* Green */
+    color: white;
+    
+    /* Add more styles as needed, such as positioning */
+}
+
+.button-inactive {
+    background-color: #ccc; /* Gray */
+    color: #666;
+    /* Add more styles as needed */
+}
+
+.playButton{
+    background-color: #29ca8c; /* Green color */
+    color: white;
+    width: 100px;
+    height: 50px;
+    cursor: pointer;
+    border-radius: 3px;
+    display: grid;
+    place-content: center;
+    position: absolute;
+    top: 285px; /* Adjust the distance from the top */
+    left: 46%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+}
+
+.detectionButton{
+    background-color: #0004ff; /* Green color */
+    color: white;
+    width: 100px;
+    height: 50px;
+    cursor: pointer;
+    border-radius: 3px;
+    display: grid;
+    place-content: center;
+    position: absolute;
+    top: 285px; /* Adjust the distance from the top */
+    left: 54%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+
+}
+.loader {
+    pointer-events: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 3px solid transparent; /* Light grey */
+    border-top-color: #ffffff; /* Blue */
+    animation: an1 1s ease infinite;
+}
+  
+@keyframes an1 {
+    0% { transform: rotate(0turn); }
+    100% { transform: rotate(1turn); }
+}
+
+#vi {
+    position: relative;
+    top: 150px; /* Adjust the distance from the top */
+    left: -10%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+    width: 40%;
+    height: auto;
+}
