@@ -1,0 +1,37 @@
+path: C:/Users/Rib_e/Desktop/yolov5/Sign
+train: C:/Users/Rib_e/Desktop/yolov5/Sign/train
+val: C:/Users/Rib_e/Desktop/yolov5/Sign/valid
+
+nc: 26 # Nombre de classes pour les lettres de l'alphabet
+
+names: [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+  ] # Liste des noms de classes pour les lettres de l'alphabet en langue des signes américaine
+
+batch_size: 16 # Taille du lot pour l'entraînement
+epochs: 50 # Nombre d'époques d'entraînement

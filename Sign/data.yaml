@@ -1,0 +1,41 @@
+train: C:/Users/Rib_e/Desktop/yolov5/Sign/train/images
+val: C:/Users/Rib_e/Desktop/yolov5/Sign/valid/images
+test: C:/Users/Rib_e/Desktop/yolov5/Sign/test/images
+
+nc: 26
+names:
+  [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+  ]
+
+roboflow:
+  workspace: david-lee-d0rhs
+  project: american-sign-language-letters
+  version: 6
+  license: Public Domain
+  url: https://universe.roboflow.com/david-lee-d0rhs/american-sign-language-letters/dataset/6

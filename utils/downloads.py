@@ -8,7 +8,8 @@ from pathlib import Path
 
 import requests
 import torch
-
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def is_url(url, check=True):
     """Determines if a string is a URL and optionally checks its existence online, returning a boolean."""
