@@ -51,6 +51,7 @@ from utils.general import LOGGER, make_divisible, print_args
 class TFBN(keras.layers.Layer):
     # TensorFlow BatchNormalization wrapper
     def __init__(self, w=None):
+        """Initializes a TensorFlow BatchNormalization layer with optional pretrained weights."""
         super().__init__()
         self.bn = keras.layers.BatchNormalization(
             beta_initializer=keras.initializers.Constant(w.bias.numpy()),
@@ -61,12 +62,19 @@ class TFBN(keras.layers.Layer):
         )
 
     def call(self, inputs):
+        """Applies batch normalization to the inputs."""
         return self.bn(inputs)
 
 
 class TFPad(keras.layers.Layer):
     # Pad inputs in spatial dimensions 1 and 2
     def __init__(self, pad):
+        """
+        Initializes a padding layer for spatial dimensions 1 and 2 with specified padding, supporting both int and tuple
+        inputs.
+
+        Inputs are
+        """
         super().__init__()
         if isinstance(pad, int):
             self.pad = tf.constant([[0, 0], [pad, pad], [pad, pad], [0, 0]])
@@ -74,13 +82,19 @@ class TFPad(keras.layers.Layer):
             self.pad = tf.constant([[0, 0], [pad[0], pad[0]], [pad[1], pad[1]], [0, 0]])
 
     def call(self, inputs):
+        """Pads input tensor with zeros using specified padding, suitable for int and tuple pad dimensions."""
         return tf.pad(inputs, self.pad, mode="constant", constant_values=0)
 
 
 class TFConv(keras.layers.Layer):
     # Standard convolution
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
-        # ch_in, ch_out, weights, kernel, stride, padding, groups
+        """
+        Initializes a standard convolution layer with optional batch normalization and activation; supports only
+        group=1.
+
+        Inputs are ch_in, ch_out, weights, kernel, stride, padding, groups.
+        """
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
@@ -99,13 +113,19 @@ class TFConv(keras.layers.Layer):
         self.act = activations(w.act) if act else tf.identity
 
     def call(self, inputs):
+        """Applies convolution, batch normalization, and activation function to input tensors."""
         return self.act(self.bn(self.conv(inputs)))
 
 
 class TFDWConv(keras.layers.Layer):
     # Depthwise convolution
     def __init__(self, c1, c2, k=1, s=1, p=None, act=True, w=None):
-        # ch_in, ch_out, weights, kernel, stride, padding, groups
+        """
+        Initializes a depthwise convolution layer with optional batch normalization and activation for TensorFlow
+        models.
+
+        Input are ch_in, ch_out, weights, kernel, stride, padding, groups.
+        """
         super().__init__()
         assert c2 % c1 == 0, f"TFDWConv() output={c2} must be a multiple of input={c1} channels"
         conv = keras.layers.DepthwiseConv2D(
@@ -122,13 +142,18 @@ class TFDWConv(keras.layers.Layer):
         self.act = activations(w.act) if act else tf.identity
 
     def call(self, inputs):
+        """Applies convolution, batch normalization, and activation function to input tensors."""
         return self.act(self.bn(self.conv(inputs)))
 
 
 class TFDWConvTranspose2d(keras.layers.Layer):
     # Depthwise ConvTranspose2d
     def __init__(self, c1, c2, k=1, s=1, p1=0, p2=0, w=None):
-        # ch_in, ch_out, weights, kernel, stride, padding, groups
+        """
+        Initializes depthwise ConvTranspose2D layer with specific channel, kernel, stride, and padding settings.
+
+        Inputs are ch_in, ch_out, weights, kernel, stride, padding, groups.
+        """
         super().__init__()
         assert c1 == c2, f"TFDWConv() output={c2} must be equal to input={c1} channels"
         assert k == 4 and p1 == 1, "TFDWConv() only valid for k=4 and p1=1"
@@ -149,25 +174,41 @@ class TFDWConvTranspose2d(keras.layers.Layer):
         ]
 
     def call(self, inputs):
+        """Processes input through parallel convolutions and concatenates results, trimming border pixels."""
         return tf.concat([m(x) for m, x in zip(self.conv, tf.split(inputs, self.c1, 3))], 3)[:, 1:-1, 1:-1]
 
 
 class TFFocus(keras.layers.Layer):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
-        # ch_in, ch_out, kernel, stride, padding, groups
+        """
+        Initializes TFFocus layer to focus width and height information into channel space with custom convolution
+        parameters.
+
+        Inputs are ch_in, ch_out, kernel, stride, padding, groups.
+        """
         super().__init__()
         self.conv = TFConv(c1 * 4, c2, k, s, p, g, act, w.conv)
 
-    def call(self, inputs):  # x(b,w,h,c) -> y(b,w/2,h/2,4c)
-        # inputs = inputs / 255  # normalize 0-255 to 0-1
+    def call(self, inputs):
+        """
+        Performs pixel shuffling and convolution on input tensor, downsampling by 2 and expanding channels by 4.
+
+        Example x(b,w,h,c) -> y(b,w/2,h/2,4c).
+        """
         inputs = [inputs[:, ::2, ::2, :], inputs[:, 1::2, ::2, :], inputs[:, ::2, 1::2, :], inputs[:, 1::2, 1::2, :]]
         return self.conv(tf.concat(inputs, 3))
 
 
 class TFBottleneck(keras.layers.Layer):
     # Standard bottleneck
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, w=None):  # ch_in, ch_out, shortcut, groups, expansion
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, w=None):
+        """
+        Initializes a standard bottleneck layer for TensorFlow models, expanding and contracting channels with optional
+        shortcut.
+
+        Arguments are ch_in, ch_out, shortcut, groups, expansion.
+        """
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
@@ -175,12 +216,16 @@ class TFBottleneck(keras.layers.Layer):
         self.add = shortcut and c1 == c2
 
     def call(self, inputs):
+        """Performs forward pass; if shortcut is True & input/output channels match, adds input to the convolution
+        result.
+        """
         return inputs + self.cv2(self.cv1(inputs)) if self.add else self.cv2(self.cv1(inputs))
 
 
 class TFCrossConv(keras.layers.Layer):
     # Cross Convolution
     def __init__(self, c1, c2, k=3, s=1, g=1, e=1.0, shortcut=False, w=None):
+        """Initializes cross convolution layer with optional expansion, grouping, and shortcut addition capabilities."""
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, (1, k), (1, s), w=w.cv1)
@@ -188,12 +233,16 @@ class TFCrossConv(keras.layers.Layer):
         self.add = shortcut and c1 == c2
 
     def call(self, inputs):
+        """Passes input through two convolutions optionally adding the input if channel dimensions match."""
         return inputs + self.cv2(self.cv1(inputs)) if self.add else self.cv2(self.cv1(inputs))
 
 
 class TFConv2d(keras.layers.Layer):
     # Substitution for PyTorch nn.Conv2D
     def __init__(self, c1, c2, k, s=1, g=1, bias=True, w=None):
+        """Initializes a TensorFlow 2D convolution layer, mimicking PyTorch's nn.Conv2D functionality for given filter
+        sizes and stride.
+        """
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         self.conv = keras.layers.Conv2D(
@@ -207,13 +256,19 @@ class TFConv2d(keras.layers.Layer):
         )
 
     def call(self, inputs):
+        """Applies a convolution operation to the inputs and returns the result."""
         return self.conv(inputs)
 
 
 class TFBottleneckCSP(keras.layers.Layer):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
-        # ch_in, ch_out, number, shortcut, groups, expansion
+        """
+        Initializes CSP bottleneck layer with specified channel sizes, count, shortcut option, groups, and expansion
+        ratio.
+
+        Inputs are ch_in, ch_out, number, shortcut, groups, expansion.
+        """
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
@@ -225,6 +280,9 @@ class TFBottleneckCSP(keras.layers.Layer):
         self.m = keras.Sequential([TFBottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
 
     def call(self, inputs):
+        """Processes input through the model layers, concatenates, normalizes, activates, and reduces the output
+        dimensions.
+        """
         y1 = self.cv3(self.m(self.cv1(inputs)))
         y2 = self.cv2(inputs)
         return self.cv4(self.act(self.bn(tf.concat((y1, y2), axis=3))))
@@ -233,7 +291,11 @@ class TFBottleneckCSP(keras.layers.Layer):
 class TFC3(keras.layers.Layer):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
-        # ch_in, ch_out, number, shortcut, groups, expansion
+        """
+        Initializes CSP Bottleneck with 3 convolutions, supporting optional shortcuts and group convolutions.
+
+        Inputs are ch_in, ch_out, number, shortcut, groups, expansion.
+        """
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
@@ -242,13 +304,22 @@ class TFC3(keras.layers.Layer):
         self.m = keras.Sequential([TFBottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
 
     def call(self, inputs):
+        """
+        Processes input through a sequence of transformations for object detection (YOLOv5).
+
+        See https://github.com/ultralytics/yolov5.
+        """
         return self.cv3(tf.concat((self.m(self.cv1(inputs)), self.cv2(inputs)), axis=3))
 
 
 class TFC3x(keras.layers.Layer):
     # 3 module with cross-convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
-        # ch_in, ch_out, number, shortcut, groups, expansion
+        """
+        Initializes layer with cross-convolutions for enhanced feature extraction in object detection models.
+
+        Inputs are ch_in, ch_out, number, shortcut, groups, expansion.
+        """
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
@@ -259,12 +330,14 @@ class TFC3x(keras.layers.Layer):
         )
 
     def call(self, inputs):
+        """Processes input through cascaded convolutions and merges features, returning the final tensor output."""
         return self.cv3(tf.concat((self.m(self.cv1(inputs)), self.cv2(inputs)), axis=3))
 
 
 class TFSPP(keras.layers.Layer):
     # Spatial pyramid pooling layer used in YOLOv3-SPP
     def __init__(self, c1, c2, k=(5, 9, 13), w=None):
+        """Initializes a YOLOv3-SPP layer with specific input/output channels and kernel sizes for pooling."""
         super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
@@ -272,6 +345,7 @@ class TFSPP(keras.layers.Layer):
         self.m = [keras.layers.MaxPool2D(pool_size=x, strides=1, padding="SAME") for x in k]
 
     def call(self, inputs):
+        """Processes input through two TFConv layers and concatenates with max-pooled outputs at intermediate stage."""
         x = self.cv1(inputs)
         return self.cv2(tf.concat([x] + [m(x) for m in self.m], 3))
 
@@ -279,6 +353,9 @@ class TFSPP(keras.layers.Layer):
 class TFSPPF(keras.layers.Layer):
     # Spatial pyramid pooling-Fast layer
     def __init__(self, c1, c2, k=5, w=None):
+        """Initializes a fast spatial pyramid pooling layer with customizable in/out channels, kernel size, and
+        weights.
+        """
         super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
@@ -286,6 +363,9 @@ class TFSPPF(keras.layers.Layer):
         self.m = keras.layers.MaxPool2D(pool_size=k, strides=1, padding="SAME")
 
     def call(self, inputs):
+        """Executes the model's forward pass, concatenating input features with three max-pooled versions before final
+        convolution.
+        """
         x = self.cv1(inputs)
         y1 = self.m(x)
         y2 = self.m(y1)
@@ -294,7 +374,10 @@ class TFSPPF(keras.layers.Layer):
 
 class TFDetect(keras.layers.Layer):
     # TF YOLOv5 Detect layer
-    def __init__(self, nc=80, anchors=(), ch=(), imgsz=(640, 640), w=None):  # detection layer
+    def __init__(self, nc=80, anchors=(), ch=(), imgsz=(640, 640), w=None):
+        """Initializes YOLOv5 detection layer for TensorFlow with configurable classes, anchors, channels, and image
+        size.
+        """
         super().__init__()
         self.stride = tf.convert_to_tensor(w.stride.numpy(), dtype=tf.float32)
         self.nc = nc  # number of classes
@@ -312,6 +395,7 @@ class TFDetect(keras.layers.Layer):
             self.grid[i] = self._make_grid(nx, ny)
 
     def call(self, inputs):
+        """Performs forward pass through the model layers to predict object bounding boxes and classifications."""
         z = []  # inference output
         x = []
         for i in range(self.nl):
@@ -336,7 +420,7 @@ class TFDetect(keras.layers.Layer):
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
-        # yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
+        """Generates a 2D grid of coordinates in (x, y) format with shape [1, 1, ny*nx, 2]."""
         # return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
         xv, yv = tf.meshgrid(tf.range(nx), tf.range(ny))
         return tf.cast(tf.reshape(tf.stack([xv, yv], 2), [1, 1, ny * nx, 2]), dtype=tf.float32)
@@ -345,6 +429,9 @@ class TFDetect(keras.layers.Layer):
 class TFSegment(TFDetect):
     # YOLOv5 Segment head for segmentation models
     def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), imgsz=(640, 640), w=None):
+        """Initializes YOLOv5 Segment head with specified channel depths, anchors, and input size for segmentation
+        models.
+        """
         super().__init__(nc, anchors, ch, imgsz, w)
         self.nm = nm  # number of masks
         self.npr = npr  # number of protos
@@ -354,6 +441,7 @@ class TFSegment(TFDetect):
         self.detect = TFDetect.call
 
     def call(self, x):
+        """Applies detection and proto layers on input, returning detections and optionally protos if training."""
         p = self.proto(x[0])
         # p = TFUpsample(None, scale_factor=4, mode='nearest')(self.proto(x[0]))  # (optional) full-size protos
         p = tf.transpose(p, [0, 3, 1, 2])  # from shape(1,160,160,32) to shape(1,32,160,160)
@@ -363,6 +451,9 @@ class TFSegment(TFDetect):
 
 class TFProto(keras.layers.Layer):
     def __init__(self, c1, c_=256, c2=32, w=None):
+        """Initializes TFProto layer with convolutional and upsampling layers for feature extraction and
+        transformation.
+        """
         super().__init__()
         self.cv1 = TFConv(c1, c_, k=3, w=w.cv1)
         self.upsample = TFUpsample(None, scale_factor=2, mode="nearest")
@@ -370,12 +461,19 @@ class TFProto(keras.layers.Layer):
         self.cv3 = TFConv(c_, c2, w=w.cv3)
 
     def call(self, inputs):
+        """Performs forward pass through the model, applying convolutions and upscaling on input tensor."""
         return self.cv3(self.cv2(self.upsample(self.cv1(inputs))))
 
 
 class TFUpsample(keras.layers.Layer):
     # TF version of torch.nn.Upsample()
-    def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
+    def __init__(self, size, scale_factor, mode, w=None):
+        """
+        Initializes a TensorFlow upsampling layer with specified size, scale_factor, and mode, ensuring scale_factor is
+        even.
+
+        Warning: all arguments needed including 'w'
+        """
         super().__init__()
         assert scale_factor % 2 == 0, "scale_factor must be multiple of 2"
         self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * scale_factor, x.shape[2] * scale_factor), mode)
@@ -385,21 +483,25 @@ class TFUpsample(keras.layers.Layer):
         #                                                            size=(x.shape[1] * 2, x.shape[2] * 2))
 
     def call(self, inputs):
+        """Applies upsample operation to inputs using nearest neighbor interpolation."""
         return self.upsample(inputs)
 
 
 class TFConcat(keras.layers.Layer):
     # TF version of torch.concat()
     def __init__(self, dimension=1, w=None):
+        """Initializes a TensorFlow layer for NCHW to NHWC concatenation, requiring dimension=1."""
         super().__init__()
         assert dimension == 1, "convert only NCHW to NHWC concat"
         self.d = 3
 
     def call(self, inputs):
+        """Concatenates a list of tensors along the last dimension, used for NCHW to NHWC conversion."""
         return tf.concat(inputs, self.d)
 
 
-def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
+def parse_model(d, ch, model, imgsz):
+    """Parses a model definition dict `d` to create YOLOv5 model layers, including dynamic channel adjustments."""
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
     anchors, nc, gd, gw, ch_mul = (
         d["anchors"],
@@ -480,7 +582,10 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
 
 class TFModel:
     # TF YOLOv5 model
-    def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, model=None, imgsz=(640, 640)):  # model, channels, classes
+    def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, model=None, imgsz=(640, 640)):
+        """Initializes TF YOLOv5 model with specified configuration, channels, classes, model instance, and input
+        size.
+        """
         super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -539,7 +644,9 @@ class TFModel:
 
     @staticmethod
     def _xywh2xyxy(xywh):
-        # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+        """Converts bounding box format from [x, y, w, h] to [x1, y1, x2, y2], where xy1=top-left and xy2=bottom-
+        right.
+        """
         x, y, w, h = tf.split(xywh, num_or_size_splits=4, axis=-1)
         return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
 
@@ -547,7 +654,7 @@ class TFModel:
 class AgnosticNMS(keras.layers.Layer):
     # TF Agnostic NMS
     def call(self, input, topk_all, iou_thres, conf_thres):
-        # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
+        """Performs agnostic NMS on input tensors using given thresholds and top-K selection."""
         return tf.map_fn(
             lambda x: self._nms(x, topk_all, iou_thres, conf_thres),
             input,
@@ -556,7 +663,10 @@ class AgnosticNMS(keras.layers.Layer):
         )
 
     @staticmethod
-    def _nms(x, topk_all=100, iou_thres=0.45, conf_thres=0.25):  # agnostic NMS
+    def _nms(x, topk_all=100, iou_thres=0.45, conf_thres=0.25):
+        """Performs agnostic non-maximum suppression (NMS) on detected objects, filtering based on IoU and confidence
+        thresholds.
+        """
         boxes, classes, scores = x
         class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
         scores_inp = tf.reduce_max(scores, -1)
@@ -589,7 +699,7 @@ class AgnosticNMS(keras.layers.Layer):
 
 
 def activations(act=nn.SiLU):
-    # Returns TF activation from input PyTorch activation
+    """Converts PyTorch activations to TensorFlow equivalents, supporting LeakyReLU, Hardswish, and SiLU/Swish."""
     if isinstance(act, nn.LeakyReLU):
         return lambda x: keras.activations.relu(x, alpha=0.1)
     elif isinstance(act, nn.Hardswish):
@@ -601,7 +711,9 @@ def activations(act=nn.SiLU):
 
 
 def representative_dataset_gen(dataset, ncalib=100):
-    # Representative dataset generator for use with converter.representative_dataset, returns a generator of np arrays
+    """Generates a representative dataset for calibration by yielding transformed numpy arrays from the input
+    dataset.
+    """
     for n, (path, img, im0s, vid_cap, string) in enumerate(dataset):
         im = np.transpose(img, [1, 2, 0])
         im = np.expand_dims(im, axis=0).astype(np.float32)
@@ -637,6 +749,9 @@ def run(
 
 
 def parse_opt():
+    """Parses and returns command-line options for model inference, including weights path, image size, batch size, and
+    dynamic batching.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="weights path")
     parser.add_argument("--imgsz", "--img", "--img-size", nargs="+", type=int, default=[640], help="inference size h,w")
@@ -649,6 +764,7 @@ def parse_opt():
 
 
 def main(opt):
+    """Executes the YOLOv5 model run function with parsed command line options."""
     run(**vars(opt))
 
 

@@ -149,6 +149,7 @@ def test(
 
 
 def parse_opt():
+    """Parses command-line arguments for YOLOv5 model inference configuration."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="weights path")
     parser.add_argument("--imgsz", "--img", "--img-size", type=int, default=640, help="inference size (pixels)")
@@ -166,6 +167,7 @@ def parse_opt():
 
 
 def main(opt):
+    """Executes a test run if `opt.test` is True, otherwise starts training or inference with provided options."""
     test(**vars(opt)) if opt.test else run(**vars(opt))
 
 
