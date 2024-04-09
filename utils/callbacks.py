@@ -5,10 +5,10 @@ import threading
 
 
 class Callbacks:
-    """" Handles all registered callbacks for YOLOv5 Hooks."""
+    """Handles all registered callbacks for YOLOv5 Hooks."""
 
     def __init__(self):
-        # Define the available callbacks
+        """Initializes a Callbacks object to manage registered YOLOv5 training event hooks."""
         self._callbacks = {
             "on_pretrain_routine_start": [],
             "on_pretrain_routine_end": [],
@@ -47,7 +47,7 @@ class Callbacks:
 
     def get_registered_actions(self, hook=None):
         """
-        " Returns all the registered actions by callback hook.
+        Returns all the registered actions by callback hook.
 
         Args:
             hook: The name of the hook to check, defaults to all
