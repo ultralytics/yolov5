@@ -257,6 +257,9 @@ def run(
 
 
 def parse_opt():
+    """Parses command-line options for YOLOv5 inference including model paths, data sources, inference settings, and
+    output preferences.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s-seg.pt", help="model path(s)")
     parser.add_argument("--source", type=str, default=ROOT / "data/images", help="file/dir/URL/glob/screen/0(webcam)")
@@ -293,6 +296,7 @@ def parse_opt():
 
 
 def main(opt):
+    """Executes YOLOv5 model inference with given options, checking for requirements before launching."""
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
     run(**vars(opt))
 
