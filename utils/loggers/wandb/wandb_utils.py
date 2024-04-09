@@ -152,6 +152,7 @@ class WandbLogger:
         LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
 
     def val_one_image(self, pred, predn, path, names, im):
+        """Evaluates model prediction for a single image, returning metrics and visualizations."""
         pass
 
     def log(self, log_dict):

@@ -20,6 +20,7 @@ IMAGENET_STD = 0.229, 0.224, 0.225  # RGB standard deviation
 class Albumentations:
     # YOLOv5 Albumentations class (optional, only used if package is installed)
     def __init__(self, size=640):
+        """Initializes Albumentations class for optional data augmentation in YOLOv5 with specified input size."""
         self.transform = None
         prefix = colorstr("albumentations: ")
         try:
@@ -46,6 +47,7 @@ class Albumentations:
             LOGGER.info(f"{prefix}{e}")
 
     def __call__(self, im, labels, p=1.0):
+        """Applies transformations to an image and labels with probability `p`, returning updated image and labels."""
         if self.transform and random.random() < p:
             new = self.transform(image=im, bboxes=labels[:, 1:], class_labels=labels[:, 0])  # transformed
             im, labels = new["image"], np.array([[c, *b] for c, b in zip(new["class_labels"], new["bboxes"])])
@@ -53,19 +55,23 @@ class Albumentations:
 
 
 def normalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD, inplace=False):
-    # Denormalize RGB images x per ImageNet stats in BCHW format, i.e. = (x - mean) / std
+    """
+    Applies ImageNet normalization to RGB images in BCHW format, modifying them in-place if specified.
+
+    Example: y = (x - mean) / std
+    """
     return TF.normalize(x, mean, std, inplace=inplace)
 
 
 def denormalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD):
-    # Denormalize RGB images x per ImageNet stats in BCHW format, i.e. = x * std + mean
+    """Reverses ImageNet normalization for BCHW format RGB images by applying `x = x * std + mean`."""
     for i in range(3):
         x[:, i] = x[:, i] * std[i] + mean[i]
     return x
 
 
 def augment_hsv(im, hgain=0.5, sgain=0.5, vgain=0.5):
-    # HSV color-space augmentation
+    """Applies HSV color-space augmentation to an image with random gains for hue, saturation, and value."""
     if hgain or sgain or vgain:
         r = np.random.uniform(-1, 1, 3) * [hgain, sgain, vgain] + 1  # random gains
         hue, sat, val = cv2.split(cv2.cvtColor(im, cv2.COLOR_BGR2HSV))
@@ -81,7 +87,7 @@ def augment_hsv(im, hgain=0.5, sgain=0.5, vgain=0.5):
 
 
 def hist_equalize(im, clahe=True, bgr=False):
-    # Equalize histogram on BGR image 'im' with im.shape(n,m,3) and range 0-255
+    """Equalizes image histogram, with optional CLAHE, for BGR or RGB image with shape (n,m,3) and range 0-255."""
     yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV if bgr else cv2.COLOR_RGB2YUV)
     if clahe:
         c = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -92,7 +98,11 @@ def hist_equalize(im, clahe=True, bgr=False):
 
 
 def replicate(im, labels):
-    # Replicate labels
+    """
+    Replicates half of the smallest object labels in an image for data augmentation.
+
+    Returns augmented image and labels.
+    """
     h, w = im.shape[:2]
     boxes = labels[:, 1:].astype(int)
     x1, y1, x2, y2 = boxes.T
@@ -109,7 +119,7 @@ def replicate(im, labels):
 
 
 def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
-    # Resize and pad image while meeting stride-multiple constraints
+    """Resizes and pads image to new_shape with stride-multiple constraints, returns resized image, ratio, padding."""
     shape = im.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
         new_shape = (new_shape, new_shape)
@@ -232,7 +242,11 @@ def random_perspective(
 
 
 def copy_paste(im, labels, segments, p=0.5):
-    # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
+    """
+    Applies Copy-Paste augmentation by flipping and merging segments and labels on an image.
+
+    Details at https://arxiv.org/abs/2012.07177.
+    """
     n = len(segments)
     if p and n:
         h, w, c = im.shape  # height, width, channels
@@ -254,7 +268,11 @@ def copy_paste(im, labels, segments, p=0.5):
 
 
 def cutout(im, labels, p=0.5):
-    # Applies image cutout augmentation https://arxiv.org/abs/1708.04552
+    """
+    Applies cutout augmentation to an image with optional label adjustment, using random masks of varying sizes.
+
+    Details at https://arxiv.org/abs/1708.04552.
+    """
     if random.random() < p:
         h, w = im.shape[:2]
         scales = [0.5] * 1 + [0.25] * 2 + [0.125] * 4 + [0.0625] * 8 + [0.03125] * 16  # image size fraction
@@ -281,15 +299,24 @@ def cutout(im, labels, p=0.5):
 
 
 def mixup(im, labels, im2, labels2):
-    # Applies MixUp augmentation https://arxiv.org/pdf/1710.09412.pdf
+    """
+    Applies MixUp augmentation by blending images and labels.
+
+    See https://arxiv.org/pdf/1710.09412.pdf for details.
+    """
     r = np.random.beta(32.0, 32.0)  # mixup ratio, alpha=beta=32.0
     im = (im * r + im2 * (1 - r)).astype(np.uint8)
     labels = np.concatenate((labels, labels2), 0)
     return im, labels
 
 
-def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  # box1(4,n), box2(4,n)
-    # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
+def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):
+    """
+    Filters bounding box candidates by minimum width-height threshold `wh_thr` (pixels), aspect ratio threshold
+    `ar_thr`, and area ratio threshold `area_thr`.
+
+    box1(4,n) is before augmentation, box2(4,n) is after augmentation.
+    """
     w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
     ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio
@@ -341,7 +368,7 @@ def classify_albumentations(
 
 
 def classify_transforms(size=224):
-    # Transforms to apply if albumentations not installed
+    """Applies a series of transformations including center crop, ToTensor, and normalization for classification."""
     assert isinstance(size, int), f"ERROR: classify_transforms size {size} must be integer, not (list, tuple)"
     # T.Compose([T.ToTensor(), T.Resize(size), T.CenterCrop(size), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
     return T.Compose([CenterCrop(size), ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
@@ -350,12 +377,20 @@ def classify_transforms(size=224):
 class LetterBox:
     # YOLOv5 LetterBox class for image preprocessing, i.e. T.Compose([LetterBox(size), ToTensor()])
     def __init__(self, size=(640, 640), auto=False, stride=32):
+        """Initializes a LetterBox object for YOLOv5 image preprocessing with optional auto sizing and stride
+        adjustment.
+        """
         super().__init__()
         self.h, self.w = (size, size) if isinstance(size, int) else size
         self.auto = auto  # pass max size integer, automatically solve for short side using stride
         self.stride = stride  # used with auto
 
-    def __call__(self, im):  # im = np.array HWC
+    def __call__(self, im):
+        """
+        Resizes and pads input image `im` (HWC format) to specified dimensions, maintaining aspect ratio.
+
+        im = np.array HWC
+        """
         imh, imw = im.shape[:2]
         r = min(self.h / imh, self.w / imw)  # ratio of new/old
         h, w = round(imh * r), round(imw * r)  # resized image
@@ -369,10 +404,16 @@ class LetterBox:
 class CenterCrop:
     # YOLOv5 CenterCrop class for image preprocessing, i.e. T.Compose([CenterCrop(size), ToTensor()])
     def __init__(self, size=640):
+        """Initializes CenterCrop for image preprocessing, accepting single int or tuple for size, defaults to 640."""
         super().__init__()
         self.h, self.w = (size, size) if isinstance(size, int) else size
 
-    def __call__(self, im):  # im = np.array HWC
+    def __call__(self, im):
+        """
+        Applies center crop to the input image and resizes it to a specified size, maintaining aspect ratio.
+
+        im = np.array HWC
+        """
         imh, imw = im.shape[:2]
         m = min(imh, imw)  # min dimension
         top, left = (imh - m) // 2, (imw - m) // 2
@@ -382,10 +423,17 @@ class CenterCrop:
 class ToTensor:
     # YOLOv5 ToTensor class for image preprocessing, i.e. T.Compose([LetterBox(size), ToTensor()])
     def __init__(self, half=False):
+        """Initializes ToTensor for YOLOv5 image preprocessing, with optional half precision (half=True for FP16)."""
         super().__init__()
         self.half = half
 
-    def __call__(self, im):  # im = np.array HWC in BGR order
+    def __call__(self, im):
+        """
+        Converts BGR np.array image from HWC to RGB CHW format, and normalizes to [0, 1], with support for FP16 if
+        `half=True`.
+
+        im = np.array HWC in BGR order
+        """
         im = np.ascontiguousarray(im.transpose((2, 0, 1))[::-1])  # HWC to CHW -> BGR to RGB -> contiguous
         im = torch.from_numpy(im)  # to torch
         im = im.half() if self.half else im.float()  # uint8 to fp16/32
