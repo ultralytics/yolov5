@@ -15,7 +15,7 @@ PREFIX = colorstr("AutoAnchor: ")
 
 
 def check_anchor_order(m):
-    # Check anchor order against stride order for YOLOv5 Detect() module m, and correct if necessary
+    """Checks and corrects anchor order against stride in YOLOv5 Detect() module if necessary."""
     a = m.anchors.prod(-1).mean(-1).view(-1)  # mean anchor area per output layer
     da = a[-1] - a[0]  # delta a
     ds = m.stride[-1] - m.stride[0]  # delta s
@@ -26,7 +26,7 @@ def check_anchor_order(m):
 
 @TryExcept(f"{PREFIX}ERROR")
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
-    # Check anchor fit to data, recompute if necessary
+    """Evaluates anchor fit to dataset and adjusts if necessary, supporting customizable threshold and image size."""
     m = model.module.model[-1] if hasattr(model, "module") else model.model[-1]  # Detect()
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
     scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
