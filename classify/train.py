@@ -76,6 +76,7 @@ GIT_INFO = check_git_info()
 
 
 def train(opt, device):
+    """Trains a YOLOv5 model, managing datasets, model optimization, logging, and saving checkpoints."""
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
     save_dir, data, bs, epochs, nw, imgsz, pretrained = (
         opt.save_dir,
@@ -306,6 +307,9 @@ def train(opt, device):
 
 
 def parse_opt(known=False):
+    """Parses command line arguments for YOLOv5 training including model path, dataset, epochs, and more, returning
+    parsed arguments.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="yolov5s-cls.pt", help="initial weights path")
     parser.add_argument("--data", type=str, default="imagenette160", help="cifar10, cifar100, mnist, imagenet, ...")
@@ -333,7 +337,7 @@ def parse_opt(known=False):
 
 
 def main(opt):
-    # Checks
+    """Executes YOLOv5 training with given options, handling device setup and DDP mode; includes pre-training checks."""
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
@@ -357,7 +361,11 @@ def main(opt):
 
 
 def run(**kwargs):
-    # Usage: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')
+    """
+    Executes YOLOv5 model training or inference with specified parameters, returning updated options.
+
+    Example: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')
+    """
     opt = parse_opt(True)
     for k, v in kwargs.items():
         setattr(opt, k, v)

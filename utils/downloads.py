@@ -11,7 +11,7 @@ import torch
 
 
 def is_url(url, check=True):
-    # Check if string is URL and check if URL exists
+    """Determines if a string is a URL and optionally checks its existence online, returning a boolean."""
     try:
         url = str(url)
         result = urllib.parse.urlparse(url)
@@ -22,13 +22,17 @@ def is_url(url, check=True):
 
 
 def gsutil_getsize(url=""):
-    # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
+    """
+    Returns the size in bytes of a file at a Google Cloud Storage URL using `gsutil du`.
+
+    Returns 0 if the command fails or output is empty.
+    """
     output = subprocess.check_output(["gsutil", "du", url], shell=True, encoding="utf-8")
     return int(output.split()[0]) if output else 0
 
 
 def url_getsize(url="https://ultralytics.com/images/bus.jpg"):
-    # Return downloadable file size in bytes
+    """Returns the size in bytes of a downloadable file at a given URL; defaults to -1 if not found."""
     response = requests.head(url, allow_redirects=True)
     return int(response.headers.get("content-length", -1))
 
@@ -54,7 +58,11 @@ def curl_download(url, filename, *, silent: bool = False) -> bool:
 
 
 def safe_download(file, url, url2=None, min_bytes=1e0, error_msg=""):
-    # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
+    """
+    Downloads a file from a URL (or alternate URL) to a specified path if file is above a minimum size.
+
+    Removes incomplete downloads.
+    """
     from utils.general import LOGGER
 
     file = Path(file)
@@ -78,7 +86,9 @@ def safe_download(file, url, url2=None, min_bytes=1e0, error_msg=""):
 
 
 def attempt_download(file, repo="ultralytics/yolov5", release="v7.0"):
-    # Attempt file download from GitHub release assets if not found locally. release = 'latest', 'v7.0', etc.
+    """Downloads a file from GitHub release assets or via direct URL if not found locally, supporting backup
+    versions.
+    """
     from utils.general import LOGGER
 
     def github_assets(repository, version="latest"):
