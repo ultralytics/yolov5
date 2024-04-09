@@ -71,6 +71,7 @@ class TritonRemoteModel:
         return result[0] if len(result) == 1 else result
 
     def _create_inputs(self, *args, **kwargs):
+        """Creates input tensors from args or kwargs, not both; raises error if none or both are provided."""
         args_len, kwargs_len = len(args), len(kwargs)
         if not args_len and not kwargs_len:
             raise RuntimeError("No inputs provided.")

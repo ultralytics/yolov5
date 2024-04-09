@@ -5,11 +5,11 @@ name: YOLOv5 CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
   schedule:
-    - cron: '0 0 * * *'  # runs at 00:00 UTC every day
+    - cron: "0 0 * * *" # runs at 00:00 UTC every day
 
 jobs:
   Benchmarks:
@@ -17,19 +17,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest ]
-        python-version: [ '3.11' ]  # requires python<=3.10
-        model: [ yolov5n ]
+        os: [ubuntu-latest]
+        python-version: ["3.11"] # requires python<=3.11
+        model: [yolov5n]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip' # caching pip dependencies
+          cache: "pip" # caching pip dependencies
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip wheel
-          pip install -r requirements.txt coremltools openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt coremltools openvino-dev "tensorflow-cpu<2.15.1" --extra-index-url https://download.pytorch.org/whl/cpu
           yolo checks
           pip list
       - name: Benchmark DetectionModel
@@ -51,26 +51,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]  # macos-latest bug https://github.com/ultralytics/yolov5/pull/9049
-        python-version: [ '3.11' ]
-        model: [ yolov5n ]
+        os: [ubuntu-latest, windows-latest, macos-14] # macos-latest bug https://github.com/ultralytics/yolov5/pull/9049
+        python-version: ["3.11"]
+        model: [yolov5n]
         include:
           - os: ubuntu-latest
-            python-version: '3.8'  # '3.6.8' min
+            python-version: "3.8" # torch 1.8.0 requires python >=3.6, <=3.8
             model: yolov5n
-          - os: ubuntu-latest
-            python-version: '3.9'
-            model: yolov5n
-          - os: ubuntu-latest
-            python-version: '3.8'  # torch 1.8.0 requires python >=3.6, <=3.8
-            model: yolov5n
-            torch: '1.8.0'  # min torch version CI https://pypi.org/project/torchvision/
+            torch: "1.8.0" # min torch version CI https://pypi.org/project/torchvision/
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip' # caching pip dependencies
+          cache: "pip" # caching pip dependencies
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip wheel
@@ -79,13 +73,13 @@ jobs:
           else
               pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
           fi
-        shell: bash  # for Windows compatibility
+        shell: bash # for Windows compatibility
       - name: Check environment
         run: |
           yolo checks
           pip list
       - name: Test detection
-        shell: bash  # for Windows compatibility
+        shell: bash # for Windows compatibility
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
           m=${{ matrix.model }}  # official weights
@@ -111,7 +105,7 @@ jobs:
               torch.jit.trace(model, [im])
           EOF
       - name: Test segmentation
-        shell: bash  # for Windows compatibility
+        shell: bash # for Windows compatibility
         run: |
           m=${{ matrix.model }}-seg  # official weights
           b=runs/train-seg/exp/weights/best  # best.pt checkpoint
@@ -125,7 +119,7 @@ jobs:
             done
           done
       - name: Test classification
-        shell: bash  # for Windows compatibility
+        shell: bash # for Windows compatibility
         run: |
           m=${{ matrix.model }}-cls.pt  # official weights
           b=runs/train-cls/exp/weights/best.pt  # best.pt checkpoint
@@ -147,7 +141,7 @@ jobs:
     steps:
       - name: Check for failure and notify
         if: (needs.Benchmarks.result == 'failure' || needs.Tests.result == 'failure' || needs.Benchmarks.result == 'cancelled' || needs.Tests.result == 'cancelled') && github.repository == 'ultralytics/yolov5' && (github.event_name == 'schedule' || github.event_name == 'push')
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
             {"text": "<!channel> GitHub Actions error for ${{ github.workflow }} ❌\n\n\n*Repository:* https://github.com/${{ github.repository }}\n*Action:* https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\n*Author:* ${{ github.actor }}\n*Event:* ${{ github.event_name }}\n"}
