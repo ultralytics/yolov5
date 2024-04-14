@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - main
+      - master
   
 jobs:
   Merge:
@@ -19,7 +20,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: main
     - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
@@ -50,9 +50,9 @@ jobs:
                     # Merge main into the PR branch
                     success = pr.update_branch()
                     assert success, "Branch update failed"
-                    print(f"Merged 'main' into PR #{pr.number} ({pr.head.ref}) successfully.")
+                    print(f"Merged 'master' into PR #{pr.number} ({pr.head.ref}) successfully.")
                 except Exception as e:
-                    print(f"Could not merge 'main' into PR #{pr.number} ({pr.head.ref}): {e}")
+                    print(f"Could not merge 'master' into PR #{pr.number} ({pr.head.ref}): {e}")
       env:
         GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         GITHUB_REPOSITORY: ${{ github.repository }}
