@@ -1,8 +1,8 @@
-version: '3.9'
+#version: '3.9'
 services:
   models-bee-detector:
-    image: local/models-bee-detector
-    # build: .
+    # image: local/models-bee-detector
+    build: .
     command:
       ddtrace-run python3 /app/server.py
     environment:
@@ -14,10 +14,10 @@ services:
     ports:
       - 8700:8700
       - 8126:8126
-    # volumes:
-    #   - .:/app/
+    volumes:
+      - ./weights:/weights
     restart: always
-    network_mode: bridge
+    # network_mode: bridge
     networks:
       - gratheon
 networks:

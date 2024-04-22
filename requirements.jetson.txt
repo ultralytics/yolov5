@@ -1,0 +1,31 @@
+# YOLOv5 requirements
+# Usage: pip install -r requirements.txt
+
+# Base ------------------------------------------------------------------------
+gitpython
+ipython  # interactive notebook
+matplotlib>=3.2.2
+numpy>=1.18.5
+opencv-python>=4.1.1
+Pillow>=7.1.2
+psutil  # system resources
+PyYAML>=5.3.1
+requests>=2.23.0
+scipy>=1.4.1
+thop>=0.1.1  # FLOPs computation
+# torch>=1.7.0  # see https://pytorch.org/get-started/locally (recommended)
+# torchvision>=0.8.1
+tqdm>=4.64.0
+# protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
+
+# Logging ---------------------------------------------------------------------
+tensorboard>=2.4.1
+# clearml>=1.2.0
+# comet
+
+# Plotting --------------------------------------------------------------------
+pandas>=1.1.4
+seaborn>=0.11.0
+
+# Tracing
+ddtrace==2.0.2
