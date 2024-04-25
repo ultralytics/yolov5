@@ -4,3 +4,4 @@ try:
     print("setNumThreads is available.")
 except AttributeError:
     print("setNumThreads is not available in the installed cv2 module.")
+ 
