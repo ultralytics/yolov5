@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip" # caching pip dependencies
+          cache: "pip" # cache pip dependencies
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip wheel
