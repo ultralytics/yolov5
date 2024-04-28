@@ -24,7 +24,7 @@ build-backend = "setuptools.build_meta"
 
 # Project settings -----------------------------------------------------------------------------------------------------
 [project]
-version = 7.0.0
+version = "7.0.0"
 name = "YOLOv5"
 description = "Ultralytics YOLOv5 for SOTA object detection, instance segmentation and image classification."
 readme = "README.md"
