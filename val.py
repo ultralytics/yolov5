@@ -214,7 +214,12 @@ def run(
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    s = ''.join([f"{el:>11}" if idx>0 else f"{el:>22}" for idx, el in enumerate(["Class", "Images", "Instances", "P", "R", "mAP50", "mAP50-95"])])
+    s = "".join(
+        [
+            f"{el:>11}" if idx > 0 else f"{el:>22}"
+            for idx, el in enumerate(["Class", "Images", "Instances", "P", "R", "mAP50", "mAP50-95"])
+        ]
+    )
     tp, fp, p, r, f1, mp, mr, map50, ap50, map = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     dt = Profile(device=device), Profile(device=device), Profile(device=device)  # profiling times
     loss = torch.zeros(3, device=device)

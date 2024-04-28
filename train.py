@@ -349,7 +349,12 @@ def train(hyp, opt, device, callbacks):
         if RANK != -1:
             train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
-        LOGGER.info('\n' + ''.join([f"{el:>11}" for el in ["Epoch", "GPU_mem", "box_loss", "obj_loss", "cls_loss", "Instances", "Size"]]))
+        LOGGER.info(
+            "\n"
+            + "".join(
+                [f"{el:>11}" for el in ["Epoch", "GPU_mem", "box_loss", "obj_loss", "cls_loss", "Instances", "Size"]]
+            )
+        )
         if RANK in {-1, 0}:
             pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
         optimizer.zero_grad()
