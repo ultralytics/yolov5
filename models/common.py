@@ -304,8 +304,8 @@ class SPPF(nn.Module):
     # Spatial Pyramid Pooling - Fast (SPPF) layer, optimized with an iterative loop
     def __init__(self, c1, c2, k=5, levels=3):
         """
-        Initializes YOLOv5 Optimized SPPF layer with given channels and kernel size for YOLOv5 model, 
-        combining convolution and max pooling with an iterative loop.
+        Initializes YOLOv5 Optimized SPPF layer with given channels and kernel size for YOLOv5 model, combining
+        convolution and max pooling with an iterative loop.
 
         param levels: Number of max pooling levels.
         """
@@ -317,7 +317,9 @@ class SPPF(nn.Module):
         self.levels = levels
 
     def forward(self, x):
-        """Processes input through a series of convolutions and iterative max pooling operations for feature extraction."""
+        """Processes input through a series of convolutions and iterative max pooling operations for feature
+        extraction.
+        """
         x = self.cv1(x)
         outputs = [x]
         with warnings.catch_warnings():
@@ -326,8 +328,8 @@ class SPPF(nn.Module):
                 x = self.m(x)
                 outputs.append(x)
             return self.cv2(torch.cat(outputs, 1))
-        
-        
+
+
 class Focus(nn.Module):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):
