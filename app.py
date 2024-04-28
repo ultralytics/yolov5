@@ -1,12 +1,11 @@
-from flask import Flask, render_template, Response, jsonify
-from flask import Flask, render_template, send_from_directory
-import cv2
 import os
-import numpy as np
-from datetime import datetime
-import time
-from flask import jsonify
 import subprocess
+import time
+from datetime import datetime
+
+import cv2
+import numpy as np
+from flask import Flask, Response, jsonify, render_template, send_from_directory
 
 # from flask_wtf import FlaskForm
 # from wtforms import FileField, SubmitField
