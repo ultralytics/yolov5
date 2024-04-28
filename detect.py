@@ -31,10 +31,10 @@ Usage - formats:
 import argparse
 import csv
 import os
+import pathlib
 import platform
 import sys
 from pathlib import Path
-import pathlib
 
 import torch
 
