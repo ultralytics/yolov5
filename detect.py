@@ -110,7 +110,7 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / "images").mkdir(parents=True, exist_ok=True) if save_txt else None
     img_save_path = save_dir / "images" if save_txt else save_dir
-    # Images and lables will be saved in different directories if save_txt is true
+    # Images and labels will be saved in different directories if save_txt is true
     (save_dir / "labels" if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Load model
