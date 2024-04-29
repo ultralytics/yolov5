@@ -1,5 +1,5 @@
-import onnxruntime as ort
 import numpy as np
+import onnxruntime as ort
 
 ort_session = ort.InferenceSession("alexnet.onnx")
 

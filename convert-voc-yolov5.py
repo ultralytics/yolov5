@@ -1,7 +1,8 @@
-import os
 import argparse
+import os
 import shutil
 from xml.etree import ElementTree as ET
+
 import cv2
 
 SUPPORTED_DATASET = ["VOC", "COCO"]
@@ -66,9 +67,7 @@ def convert_voc_to_yolov5(raw_data_path: str, output_path: str):
             if not annotaion_file_name.endswith(".xml"):
                 continue
             annotaion_file = os.path.join(class_dir, annotaion_file_name)
-            image_file = os.path.join(
-                rawimage_dir, class_name, annotaion_file_name.replace(".xml", ".jpg")
-            )
+            image_file = os.path.join(rawimage_dir, class_name, annotaion_file_name.replace(".xml", ".jpg"))
             if not os.path.exists(image_file):
                 continue
 
@@ -103,28 +102,24 @@ def convert_voc_to_yolov5(raw_data_path: str, output_path: str):
                     h = ymax - ymin
                     object_list.append([name_id, x_center, y_center, w, h])
                 # write to txt file
-                label_file = os.path.join(
-                    label_dir, annotaion_file_name.replace(".xml", ".txt")
-                )
+                label_file = os.path.join(label_dir, annotaion_file_name.replace(".xml", ".txt"))
 
                 image_file_name = os.path.basename(image_file)
                 image_file_link = os.path.join(image_dir, image_file_name)
                 print(image_file, image_file_link)
-                
+
                 if len(object_list) > 0:
                     with open(label_file, "a") as f:
                         for obj in object_list:
                             f.write(f"{obj[0]} {obj[1]} {obj[2]} {obj[3]} {obj[4]}\n")
                     train_list.append(image_file_link)
                 # create soft link for image
-                
+
                 shutil.copyfile(image_file, image_file_link)
 
             if len(object_list) > 0:
                 # visual bounding box
-                visual_file = os.path.join(
-                    visual_dir, annotaion_file_name.replace(".xml", ".jpg")
-                )
+                visual_file = os.path.join(visual_dir, annotaion_file_name.replace(".xml", ".jpg"))
 
                 img = cv2.imread(image_file)
                 for obj in object_list:
