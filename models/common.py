@@ -521,6 +521,7 @@ class DetectMultiBackend(nn.Module):
             Binding = namedtuple("Binding", ("name", "dtype", "shape", "data", "ptr"))
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, "rb") as f, trt.Runtime(logger) as runtime:
+                trt.init_libnvinfer_plugins(None, "")
                 model = runtime.deserialize_cuda_engine(f.read())
             context = model.create_execution_context()
             bindings = OrderedDict()
