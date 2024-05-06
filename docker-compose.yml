@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 services:
   models-bee-detector:
     build:
@@ -10,7 +10,6 @@ services:
       - ENV_ID=prod
       - DD_SERVICE=models-bee-detector
       - DD_ENV=prod
-      - DD_LOGS_INJECTION=true
       - DD_PROFILING_ENABLED=true
     ports:
       - 8700:8700
