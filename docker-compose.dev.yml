@@ -1,4 +1,4 @@
-version: '3.9'
+#version: '3.9'
 services:
   models-bee-detector:
     build:
@@ -17,7 +17,7 @@ services:
     volumes:
       - .:/app/
     restart: always
-    network_mode: bridge
+    # network_mode: bridge
     networks:
       - gratheon
 networks:

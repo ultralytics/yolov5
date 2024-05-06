@@ -1,4 +1,5 @@
-FROM ubuntu:22.04
+FROM dustynv/l4t-pytorch:r36.2.0
+# FROM ubuntu:22.04
 
 ENV NODE_VERSION=16.16.0
 RUN apt-get update && apt-get install -y curl python3 pip ffmpeg libsm6 libxext6
@@ -8,9 +9,9 @@ WORKDIR /app
 USER root
 
 COPY . /app/
-RUN cd /app && pip install -r requirements.txt
+RUN cd /app && pip install -r requirements.jetson.txt
+RUN ls /app/weights
 
 EXPOSE 8700
-# COPY . /app/
 
 # CMD ["python3", "/app/server.py"]

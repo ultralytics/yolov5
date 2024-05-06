@@ -61,9 +61,17 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 new_filename = reqdir + filename
                 os.rename(tmp_file_path, new_filename)
 
+            # check ENV_ID
+            weights = "/app/weights/best.pt"
+            device = "cpu"
+
+            if os.getenv("ENV_ID") == "dev":
+                weights = "/weights/best.pt"
+                device = "0"
+
             run(
-                weights="/app/weights/best.pt",
-                device="cpu",
+                weights=weights,
+                device=device,
                 source=new_filename,
                 project=reqdir,
                 save_txt=True,

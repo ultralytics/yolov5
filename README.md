@@ -8,6 +8,15 @@ Microservice that detects bees
 https://github.com/mattnudi/bee-detection
 https://universe.roboflow.com/matt-nudi/honey-bee-detection-model-zgjnb
 
+## Usage
+```
+# webcam
+python detect.py --weights yolov5s.pt --source 0
+
+# video file
+python detect.py --weights yolov5s.pt --source file.mp4
+```
+
 
 ## Ultralytics yolo v5 license
 YOLOv5 is available under two different licenses:
