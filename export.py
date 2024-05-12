@@ -48,8 +48,6 @@ import argparse
 import contextlib
 import json
 import os
-
-os.environ["TORCH_CPP_LOG_LEVEL"] = "ERROR"
 import platform
 import re
 import subprocess
