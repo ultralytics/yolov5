@@ -48,7 +48,6 @@ import argparse
 import contextlib
 import json
 import os
-
 import platform
 import re
 import subprocess
