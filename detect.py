@@ -82,7 +82,7 @@ def run(
     save_conf=False,  # save confidences in --save-txt labels
     save_crop=False,  # save cropped prediction boxes
     nosave=False,  # do not save images/videos
-    savepositives=False, # save only positive detections
+    savepositives=False,  # save only positive detections
     classes=None,  # filter by class: --class 0, or --class 0 2 3
     agnostic_nms=False,  # class-agnostic NMS
     augment=False,  # augmented inference
@@ -234,7 +234,7 @@ def run(
                 cv2.waitKey(1)  # 1 millisecond
 
             # Save results (image with detections)
-            if save_img and ( (savepositives and len(det) ) or not savepositives ):
+            if save_img and ((savepositives and len(det)) or not savepositives):
                 if dataset.mode == "image":
                     cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
