@@ -179,7 +179,7 @@ def train(hyp, opt, device, callbacks):
     if single_cls and len(data_dict["names"]) != 1:
         LOGGER.warning(
             "WARNING ⚠️ Please check the dataset to ensure that when --single-cls is enabled, "
-            "the number of classes in the dataset is 1."
+            "the number of classes in the dataset is 1." 
         )
         names = {0: "item"}  # combine all classes into a single class
     else:
