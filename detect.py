@@ -37,6 +37,57 @@ from pathlib import Path
 
 import torch
 
+from gtts import gTTS
+
+
+
+def detect(opt):
+    source, weights, conf, save_txt_path = opt.source, opt.weights, opt.conf, opt.save_txt_path
+
+    # 모델 로드
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path=weights)
+
+    # 이미지 로드 및 추론 수행
+    results = model(source)
+
+    # 결과를 pandas 데이터프레임으로 변환
+    results_df = results.pandas().xyxy[0]
+
+    # 데이터프레임의 클래스 컬럼 추출
+    classes = results_df['name'].tolist()
+
+    # 클래스 정보를 텍스트 파일로 저장
+    with open(save_txt_path, 'w') as f:
+        for cls in classes:
+            f.write(f"{cls}\n")
+
+    # 콘솔에 출력
+    print("Detected Classes:")
+    for cls in classes:
+        print(cls)
+
+    # TTS를 사용하여 클래스 이름들을 음성으로 변환
+    if classes:
+        text_to_speak = 'Detected classes are: ' + ', '.join(classes)
+        tts = gTTS(text=text_to_speak, lang='en')
+        tts.save("detected_classes.mp3")
+        os.system("mpg321 detected_classes.mp3")  # mpg321 설치 필요 (리눅스의 경우)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', type=str, default='./runs/train/HongRyeon_yolov5s_results/weights/best.pt', help='model.pt path')
+    parser.add_argument('--source', type=str, default='/HongRyeon_test01.jpg', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--conf', type=float, default=0.5, help='object confidence threshold')
+    parser.add_argument('--save_txt_path', type=str, default='detected_classes.txt', help='path to save detected classes txt file')
+    opt = parser.parse_args()
+
+    with torch.no_grad():
+        detect(opt)
+
+
+
+
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
