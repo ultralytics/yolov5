@@ -746,7 +746,7 @@ def run(**kwargs):
     """
     Executes YOLOv5 training with given parameters, altering options programmatically; returns updated options.
 
-    Example: mport train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
+    Example: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
     """
     opt = parse_opt(True)
     for k, v in kwargs.items():
