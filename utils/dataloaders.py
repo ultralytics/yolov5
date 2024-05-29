@@ -136,7 +136,7 @@ class SmartDistributedSampler(distributed.DistributedSampler):
         g = torch.Generator()
         g.manual_seed(self.seed + self.epoch)
 
-        # determine the the eventual size (n) of self.indices (DDP indices)
+        # determine the eventual size (n) of self.indices (DDP indices)
         n = int((len(self.dataset) - self.rank - 1) / self.num_replicas) + 1  # num_replicas == WORLD_SIZE
         idx = torch.randperm(n, generator=g)
         if not self.shuffle:
