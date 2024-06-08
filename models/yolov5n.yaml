@@ -1,5 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
-
+# Ultralytics YOLOv5 🚀, AGPL-3.0 license
 # Parameters
 nc: 80 # number of classes
 depth_multiple: 0.33 # model depth multiple
