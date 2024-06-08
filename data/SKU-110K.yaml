@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
+# Ultralytics YOLOv5 🚀, AGPL-3.0 license
 # SKU-110K retail items dataset https://github.com/eg4000/SKU110K_CVPR19 by Trax Retail
 # Example usage: python train.py --data SKU-110K.yaml
 # parent
