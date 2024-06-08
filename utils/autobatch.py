@@ -1,5 +1,4 @@
 # Ultralytics YOLOv5 🚀, AGPL-3.0 license
-
 """Auto-batch utils."""
 
 from copy import deepcopy

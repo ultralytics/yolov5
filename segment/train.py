@@ -1,5 +1,4 @@
 # Ultralytics YOLOv5 🚀, AGPL-3.0 license
-
 """
 Train a YOLOv5 segment model on a segment dataset Models and datasets download automatically from the latest YOLOv5
 release.

@@ -1,5 +1,4 @@
 # Ultralytics YOLOv5 🚀, AGPL-3.0 license
-
 """PyTorch utils."""
 
 import math

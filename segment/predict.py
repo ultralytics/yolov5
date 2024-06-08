@@ -1,5 +1,4 @@
 # Ultralytics YOLOv5 🚀, AGPL-3.0 license
-
 """
 Run YOLOv5 segmentation inference on images, videos, directories, streams, etc.
 

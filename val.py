@@ -1,5 +1,4 @@
 # Ultralytics YOLOv5 🚀, AGPL-3.0 license
-
 """
 Validate a trained YOLOv5 detection model on a detection dataset.
 

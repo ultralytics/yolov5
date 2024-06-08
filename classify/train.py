@@ -1,5 +1,4 @@
 # Ultralytics YOLOv5 🚀, AGPL-3.0 license
-
 """
 Train a YOLOv5 classifier model on a classification dataset.
 
