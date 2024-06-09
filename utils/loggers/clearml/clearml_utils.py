@@ -47,10 +47,11 @@ def construct_dataset(clearml_info_string):
         {"train", "test", "val", "nc", "names"}
     ), "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
 
-    data_dict = {}
-    data_dict["train"] = (
-        str((dataset_root_path / dataset_definition["train"]).resolve()) if dataset_definition["train"] else None
-    )
+    data_dict = {
+        "train": (
+            str((dataset_root_path / dataset_definition["train"]).resolve()) if dataset_definition["train"] else None
+        )
+    }
     data_dict["test"] = (
         str((dataset_root_path / dataset_definition["test"]).resolve()) if dataset_definition["test"] else None
     )
