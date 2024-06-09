@@ -616,10 +616,12 @@ def yaml_load(file="data.yaml"):
         return yaml.safe_load(f)
 
 
-def yaml_save(file="data.yaml", data={}):
+def yaml_save(file="data.yaml", data=None):
     """Safely saves `data` to a YAML file specified by `file`, converting `Path` objects to strings; `data` is a
     dictionary.
     """
+    if data is None:
+        data = {}
     with open(file, "w") as f:
         yaml.safe_dump({k: str(v) if isinstance(v, Path) else v for k, v in data.items()}, f, sort_keys=False)
 
