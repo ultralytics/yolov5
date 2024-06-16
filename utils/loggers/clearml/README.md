@@ -16,15 +16,9 @@
 
 🔭 Turn your newly trained <b>YOLOv5 model into an API</b> with just a few commands using ClearML Serving
 
-<br />
 And so much more. It's up to you how many of these tools you want to use, you can stick to the experiment manager, or chain them all together into an impressive pipeline!
-<br />
-<br />
 
 ![ClearML scalars dashboard](https://github.com/thepycoder/clearml_screenshots/raw/main/experiment_manager_with_compare.gif)
-
-<br />
-<br />
 
 ## 🦾 Setting Things Up
 
@@ -45,8 +39,6 @@ Either sign up for free to the [ClearML Hosted Service](https://cutt.ly/yolov5-t
     ```
 
 That's it! You're done 😎
-
-<br />
 
 ## 🚀 Training YOLOv5 With ClearML
 
@@ -88,8 +80,6 @@ This will capture:
 That's a lot right? 🤯 Now, we can visualize all of this information in the ClearML UI to get an overview of our training progress. Add custom columns to the table view (such as e.g. mAP_0.5) so you can easily sort on the best performing model. Or select multiple experiments and directly compare them!
 
 There even more we can do with all of this information, like hyperparameter optimization and remote execution, so keep reading if you want to see how that works!
-
-<br />
 
 ## 🔗 Dataset Version Management
 
@@ -156,8 +146,6 @@ Now that you have a ClearML dataset, you can very simply use it to train custom 
 ```bash
 python train.py --img 640 --batch 16 --epochs 3 --data clearml://<your_dataset_id> --weights yolov5s.pt --cache
 ```
-
-<br />
 
 ## 👀 Hyperparameter Optimization
 
