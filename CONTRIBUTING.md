@@ -27,7 +27,7 @@ The button is in the top-right corner.
 
 <p align="center"><img width="800" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122260844-06f46280-ced4-11eb-9eec-b8a24be519ca.png"></p>
   
-  
+
 ### 3. Make Changes
 
 Change the `matplotlib` version from `3.2.2` to `3.3`.
@@ -76,3 +76,4 @@ If you believe your problem meets all of the above criteria, please close this i
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [AGPL-3.0 license](https://choosealicense.com/licenses/agpl-3.0/)
+
