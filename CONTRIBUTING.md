@@ -20,12 +20,14 @@ Select `requirements.txt` to update by clicking on it in GitHub.
 
 <p align="center"><img width="800" alt="PR_step1" src="https://user-images.githubusercontent.com/26833433/122260847-08be2600-ced4-11eb-828b-8287ace4136c.png"></p>
 
+
 ### 2. Click 'Edit this file'
 
 The button is in the top-right corner.
 
 <p align="center"><img width="800" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122260844-06f46280-ced4-11eb-9eec-b8a24be519ca.png"></p>
-
+  
+  
 ### 3. Make Changes
 
 Change the `matplotlib` version from `3.2.2` to `3.3`.
