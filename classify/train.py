@@ -177,6 +177,7 @@ def train(opt, device):
 
     # Scheduler
     lrf = 0.01  # final lr (fraction of lr0)
+
     # lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
     def lf(x):
         return (1 - x / epochs) * (1 - lrf) + lrf  # linear
