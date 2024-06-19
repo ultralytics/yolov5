@@ -23,6 +23,7 @@ try:
 except ImportError:
 
     def SummaryWriter(*args):
+        """Fall back to SummaryWriter returning None if TensorBoard is not installed."""
         return None  # None = SummaryWriter(str)
 
 
