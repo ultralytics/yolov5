@@ -228,7 +228,7 @@ YOLOv5 超级容易上手，简单易学。我们优先考虑现实世界的结�
 | [YOLOv5s6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5s6.pt)           | 1280                  | 44.8                 | 63.7              | 385                               | 8.2                                | 3.6                             | 12.6               | 16.8                   |
 | [YOLOv5m6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5m6.pt)           | 1280                  | 51.3                 | 69.3              | 887                               | 11.1                               | 6.8                             | 35.7               | 50.0                   |
 | [YOLOv5l6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5l6.pt)           | 1280                  | 53.7                 | 71.3              | 1784                              | 15.8                               | 10.5                            | 76.8               | 111.4                  |
-| [YOLOv5x6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5x6.pt)<br>+[TTA] | 1280<br>1536          | 55.0<br>**55.8**     | 72.7<br>**72.7**  | 3136<br>-                         | 26.2<br>-                          | 19.4<br>-                       | 140.7<br>-         | 209.8<br>-             |
+| [YOLOv5x6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5x6.pt)<br>+[TTA] | 1280<br>1536          | 55.0<br>**55.8**     | 72.7<br>**72.7**  | 3136<br>-                       | 26.2<br>-                        | 19.4<br>-                     | 140.7<br>-       | 209.8<br>-           |
 
 <details>
   <summary>笔记</summary>
@@ -358,8 +358,8 @@ YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) 带来对�
 - **准确性**都在单模型单尺度上计算，数据集使用 [ImageNet-1k](https://www.image-net.org/index.php) 。<br>复现命令 `python classify/val.py --data ../datasets/imagenet --img 224`
 - **推理速度**是使用 100 个推理图像进行平均得到，测试环境使用谷歌 [Colab Pro](https://colab.research.google.com/signup) V100 高 RAM 实例。<br>复现命令 `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`
 - **模型导出**到 FP32 的 ONNX 和 FP16 的 TensorRT 使用 `export.py` 。<br>复现命令 `python export.py --weights yolov5s-cls.pt --include engine onnx --imgsz 224`
-  </details>
-  </details>
+</details>
+</details>
 
 <details>
   <summary>分类训练示例 &nbsp;<a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/classify/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></summary>
