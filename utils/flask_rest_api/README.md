@@ -28,42 +28,42 @@ The model inference results are returned as a JSON response:
 
 ```json
 [
-  {
-    "class": 0,
-    "confidence": 0.8900438547,
-    "height": 0.9318675399,
-    "name": "person",
-    "width": 0.3264600933,
-    "xcenter": 0.7438579798,
-    "ycenter": 0.5207948685
-  },
-  {
-    "class": 0,
-    "confidence": 0.8440024257,
-    "height": 0.7155083418,
-    "name": "person",
-    "width": 0.6546785235,
-    "xcenter": 0.427829951,
-    "ycenter": 0.6334488392
-  },
-  {
-    "class": 27,
-    "confidence": 0.3771208823,
-    "height": 0.3902671337,
-    "name": "tie",
-    "width": 0.0696444362,
-    "xcenter": 0.3675483763,
-    "ycenter": 0.7991207838
-  },
-  {
-    "class": 27,
-    "confidence": 0.3527112305,
-    "height": 0.1540903747,
-    "name": "tie",
-    "width": 0.0336618312,
-    "xcenter": 0.7814827561,
-    "ycenter": 0.5065554976
-  }
+    {
+        "class": 0,
+        "confidence": 0.8900438547,
+        "height": 0.9318675399,
+        "name": "person",
+        "width": 0.3264600933,
+        "xcenter": 0.7438579798,
+        "ycenter": 0.5207948685
+    },
+    {
+        "class": 0,
+        "confidence": 0.8440024257,
+        "height": 0.7155083418,
+        "name": "person",
+        "width": 0.6546785235,
+        "xcenter": 0.427829951,
+        "ycenter": 0.6334488392
+    },
+    {
+        "class": 27,
+        "confidence": 0.3771208823,
+        "height": 0.3902671337,
+        "name": "tie",
+        "width": 0.0696444362,
+        "xcenter": 0.3675483763,
+        "ycenter": 0.7991207838
+    },
+    {
+        "class": 27,
+        "confidence": 0.3527112305,
+        "height": 0.1540903747,
+        "name": "tie",
+        "width": 0.0336618312,
+        "xcenter": 0.7814827561,
+        "ycenter": 0.5065554976
+    }
 ]
 ```
 
