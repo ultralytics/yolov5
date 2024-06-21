@@ -1,16 +1,17 @@
+import argparse
+import math
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
-import numpy as np
-from typing import List, Tuple, Optional
-import math
-import argparse
+
 
 def autopad(k, p=None):
     if p is None:
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]
     return p
+
 
 class Conv(nn.Module):
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):
@@ -21,6 +22,7 @@ class Conv(nn.Module):
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
+
 
 class Bottleneck(nn.Module):
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):
@@ -33,6 +35,7 @@ class Bottleneck(nn.Module):
     def forward(self, x):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
+
 class C3(nn.Module):
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
         super().__init__()
@@ -44,6 +47,7 @@ class C3(nn.Module):
 
     def forward(self, x):
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
+
 
 class SPPF(nn.Module):
     def __init__(self, c1, c2, k=5):
@@ -59,6 +63,7 @@ class SPPF(nn.Module):
         y2 = self.m(y1)
         return self.cv2(torch.cat([x, y1, y2, self.m(y2)], 1))
 
+
 class Detect(nn.Module):
     stride = None
     onnx_dynamic = False
@@ -71,8 +76,8 @@ class Detect(nn.Module):
         self.na = len(anchors[0]) // 2
         self.grid = [torch.zeros(1)] * self.nl
         a = torch.tensor(anchors).float().view(self.nl, -1, 2)
-        self.register_buffer('anchors', a)
-        self.register_buffer('anchor_grid', a.clone().view(self.nl, 1, -1, 1, 1, 2))
+        self.register_buffer("anchors", a)
+        self.register_buffer("anchor_grid", a.clone().view(self.nl, 1, -1, 1, 1, 2))
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)
 
     def forward(self, x):
@@ -87,7 +92,7 @@ class Detect(nn.Module):
                     self.grid[i] = self._make_grid(nx, ny).to(x[i].device)
 
                 y = x[i].sigmoid()
-                y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]
+                y[..., 0:2] = (y[..., 0:2] * 2.0 - 0.5 + self.grid[i]) * self.stride[i]
                 y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]
                 z.append(y.view(bs, -1, self.no))
 
@@ -97,6 +102,7 @@ class Detect(nn.Module):
     def _make_grid(nx=20, ny=20):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
+
 
 class Model(nn.Module):
     def __init__(self, nc=80):
@@ -116,26 +122,31 @@ class Model(nn.Module):
             C3(512, 512, 1),
             SPPF(512, 512),
             Conv(512, 256, 1, 1),
-            nn.Upsample(None, 2, 'nearest'),
+            nn.Upsample(None, 2, "nearest"),
             C3(512, 256, 1, False),
             Conv(256, 128, 1, 1),
-            nn.Upsample(None, 2, 'nearest'),
+            nn.Upsample(None, 2, "nearest"),
             C3(256, 128, 1, False),
             Conv(128, 128, 3, 2),
             C3(256, 256, 1, False),
             Conv(256, 256, 3, 2),
             C3(512, 512, 1, False),
-            Detect(nc, [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]], [128, 256, 512])
+            Detect(
+                nc,
+                [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]],
+                [128, 256, 512],
+            ),
         )
 
-        self.stride = torch.tensor([8., 16., 32.])
+        self.stride = torch.tensor([8.0, 16.0, 32.0])
         self.model[-1].stride = self.stride
 
     def forward(self, x):
         return self.model(x)
 
+
 class YOLOLoss(nn.Module):
-    def __init__(self, nc=80, anchors=(), reduction='mean', device='cpu'):
+    def __init__(self, nc=80, anchors=(), reduction="mean", device="cpu"):
         super(YOLOLoss, self).__init__()
         self.nc = nc
         self.nl = len(anchors)
@@ -151,7 +162,11 @@ class YOLOLoss(nn.Module):
         self.obj_gain = 1.0
 
     def forward(self, p, targets):
-        lcls, lbox, lobj = torch.zeros(1, device=targets.device), torch.zeros(1, device=targets.device), torch.zeros(1, device=targets.device)
+        lcls, lbox, lobj = (
+            torch.zeros(1, device=targets.device),
+            torch.zeros(1, device=targets.device),
+            torch.zeros(1, device=targets.device),
+        )
         tcls, tbox, indices, anchors = self.build_targets(p, targets)
 
         for i, pi in enumerate(p):
@@ -161,7 +176,7 @@ class YOLOLoss(nn.Module):
             n = b.shape[0]
             if n:
                 ps = pi[b, a, gj, gi]
-                pxy = ps[:, :2].sigmoid() * 2. - 0.5
+                pxy = ps[:, :2].sigmoid() * 2.0 - 0.5
                 pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
                 pbox = torch.cat((pxy, pwh), 1)
                 iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)
@@ -192,9 +207,12 @@ class YOLOLoss(nn.Module):
         targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)
 
         g = 0.5
-        off = torch.tensor([[0, 0],
-                            [1, 0], [0, 1], [-1, 0], [0, -1],
-                            [1, 1], [1, -1], [-1, 1], [-1, -1]], device=targets.device).float() * g
+        off = (
+            torch.tensor(
+                [[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]], device=targets.device
+            ).float()
+            * g
+        )
 
         for i in range(self.nl):
             anchors = self.anchors[i]
@@ -203,13 +221,13 @@ class YOLOLoss(nn.Module):
             t = targets * gain
             if nt:
                 r = t[:, :, 4:6] / anchors[:, None]
-                j = torch.max(r, 1. / r).max(2)[0] < 4
+                j = torch.max(r, 1.0 / r).max(2)[0] < 4
                 t = t[j]
 
                 gxy = t[:, 2:4]
                 gxi = gain[[2, 3]] - gxy
-                j, k = ((gxy % 1. < g) & (gxy > 1.)).T
-                l, m = ((gxi % 1. < g) & (gxi > 1.)).T
+                j, k = ((gxy % 1.0 < g) & (gxy > 1.0)).T
+                l, m = ((gxi % 1.0 < g) & (gxi > 1.0)).T
                 j = torch.stack((torch.ones_like(j), j, k, l, m))
                 t = t.repeat((5, 1, 1))[j]
                 offsets = (torch.zeros_like(gxy)[None] + off[:, None])[j]
@@ -231,6 +249,7 @@ class YOLOLoss(nn.Module):
 
         return tcls, tbox, indices, anch
 
+
 def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
     box2 = box2.T
 
@@ -243,8 +262,9 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
         b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
         b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
 
-    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
-            (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
+    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * (
+        torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)
+    ).clamp(0)
 
     w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
     w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
@@ -257,13 +277,12 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
     ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)
 
     if CIoU or DIoU:
-        c2 = cw ** 2 + ch ** 2 + eps
-        rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
-                (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4
+        c2 = cw**2 + ch**2 + eps
+        rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4
         if DIoU:
             return iou - rho2 / c2
         elif CIoU:
-            v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+            v = (4 / math.pi**2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
             with torch.no_grad():
                 alpha = v / (v - iou + (1 + eps))
             return iou - (rho2 / c2 + v * alpha)
@@ -273,13 +292,16 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
 
     return iou
 
-def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False, max_det=300):
+
+def non_max_suppression(
+    prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False, max_det=300
+):
     nc = prediction.shape[2] - 5
     xc = prediction[..., 4] > conf_thres
 
     # Checks
-    assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
-    assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
+    assert 0 <= conf_thres <= 1, f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
+    assert 0 <= iou_thres <= 1, f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
 
     # Settings
     min_wh, max_wh = 2, 4096
@@ -322,7 +344,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
         i = torchvision.ops.nms(boxes, scores, iou_thres)
         if i.shape[0] > max_det:
             i = i[:max_det]
-        if merge and (1 < n < 3E3):
+        if merge and (1 < n < 3e3):
             iou = box_iou(boxes[i], boxes) > iou_thres
             weights = iou * scores[None]
             x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(1, keepdim=True)
@@ -331,10 +353,11 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
         output[xi] = x[i]
         if (time.time() - t) > time_limit:
-            print(f'WARNING: NMS time limit {time_limit}s exceeded')
+            print(f"WARNING: NMS time limit {time_limit}s exceeded")
             break
 
     return output
+
 
 def xywh2xyxy(x):
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -344,22 +367,32 @@ def xywh2xyxy(x):
     y[:, 3] = x[:, 1] + x[:, 3] / 2
     return y
 
+
 class DataLoader:
     def __init__(self, path, img_size=640, batch_size=16):
         self.path = path
         self.img_size = img_size
         self.batch_size = batch_size
         self.augment = True
-        self.hyp = {'hsv_h': 0.015, 'hsv_s': 0.7, 'hsv_v': 0.4, 'degrees': 0, 'translate': 0.1, 'scale': 0.5, 'shear': 0.0}
+        self.hyp = {
+            "hsv_h": 0.015,
+            "hsv_s": 0.7,
+            "hsv_v": 0.4,
+            "degrees": 0,
+            "translate": 0.1,
+            "scale": 0.5,
+            "shear": 0.0,
+        }
         # Load data from path and prepare it
 
     def __iter__(self):
         # Yield batches of data
         pass
 
+
 def train(model, dataloader, optimizer, epochs):
     device = next(model.parameters()).device
-    criterion = YOLOLoss(model.nc, model.model[-1].anchors, reduction='mean', device=device)
+    criterion = YOLOLoss(model.nc, model.model[-1].anchors, reduction="mean", device=device)
 
     for epoch in range(epochs):
         model.train()
@@ -377,28 +410,30 @@ def train(model, dataloader, optimizer, epochs):
             if batch_i % 10 == 0:
                 print(f"Epoch {epoch}/{epochs}, Batch {batch_i}/{len(dataloader)}, Loss: {loss.item():.4f}")
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', type=int, default=640, help='train, test image sizes')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument("--data", type=str, default="data/coco128.yaml", help="data.yaml path")
+    parser.add_argument("--epochs", type=int, default=300)
+    parser.add_argument("--batch-size", type=int, default=16, help="total batch size for all GPUs")
+    parser.add_argument("--img-size", type=int, default=640, help="train, test image sizes")
+    parser.add_argument("--device", default="", help="cuda device, i.e. 0 or 0,1,2,3 or cpu")
     opt = parser.parse_args()
 
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     # Initialize model
     model = Model(nc=80).to(device)
-    
+
     # Initialize optimizer
     optimizer = optim.Adam(model.parameters(), lr=0.01)
-    
+
     # Initialize dataloader
     dataloader = DataLoader(opt.data, img_size=opt.img_size, batch_size=opt.batch_size)
-    
+
     # Train the model
     train(model, dataloader, optimizer, opt.epochs)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
