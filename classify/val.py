@@ -68,6 +68,7 @@ def run(
     criterion=None,
     pbar=None,
 ):
+    """Validates a YOLOv5 classification model on a dataset, computing metrics like top1 and top5 accuracy."""
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
