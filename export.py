@@ -407,6 +407,9 @@ def export_saved_model(
     keras=False,
     prefix=colorstr("TensorFlow SavedModel:"),
 ):
+    """Exports a YOLOv5 model to TensorFlow SavedModel format, supporting dynamic axes and non-maximum suppression
+    (NMS).
+    """
     # YOLOv5 TensorFlow SavedModel export
     try:
         import tensorflow as tf
@@ -477,6 +480,7 @@ def export_tflite(
     keras_model, im, file, int8, per_tensor, data, nms, agnostic_nms, prefix=colorstr("TensorFlow Lite:")
 ):
     # YOLOv5 TensorFlow Lite export
+    """Exports YOLOv5 model to TensorFlow Lite format with optional FP16, INT8, and NMS support."""
     import tensorflow as tf
 
     LOGGER.info(f"\n{prefix} starting export with tensorflow {tf.__version__}...")
@@ -784,6 +788,7 @@ def run(
     iou_thres=0.45,  # TF.js NMS: IoU threshold
     conf_thres=0.25,  # TF.js NMS: confidence threshold
 ):
+    """Exports YOLOv5 model to specified formats including ONNX, TensorRT, CoreML, and TensorFlow; see https://github.com/ultralytics/yolov5."""
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
     fmts = tuple(export_formats()["Argument"][1:])  # --include arguments
