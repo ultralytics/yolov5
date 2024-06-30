@@ -141,6 +141,7 @@ def run(
     dnn=False,
     vid_stride=1,
 ):
+    """Runs YOLOv5 detection inference on various sources like images, videos, directories, streams, etc."""
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
