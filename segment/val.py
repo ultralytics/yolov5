@@ -184,6 +184,9 @@ def run(
     compute_loss=None,
     callbacks=Callbacks(),
 ):
+    """Validates a YOLOv5 segmentation model on specified dataset, producing metrics, plots, and optional JSON
+    output.
+    """
     if save_json:
         check_requirements("pycocotools>=2.0.6")
         process = process_mask_native  # more accurate
