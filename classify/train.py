@@ -180,6 +180,7 @@ def train(opt, device):
 
     # lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
     def lf(x):
+        """Linear learning rate scheduler function, scaling learning rate from initial value to `lrf` over `epochs`."""
         return (1 - x / epochs) * (1 - lrf) + lrf  # linear
 
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
