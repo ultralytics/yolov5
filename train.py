@@ -226,6 +226,7 @@ def train(hyp, opt, device, callbacks):
     else:
 
         def lf(x):
+            """Linear learning rate scheduler function with decay calculated by epoch proportion."""
             return (1 - x / epochs) * (1.0 - hyp["lrf"]) + hyp["lrf"]  # linear
 
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
