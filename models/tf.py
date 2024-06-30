@@ -612,6 +612,7 @@ class TFModel:
         iou_thres=0.45,
         conf_thres=0.25,
     ):
+        """Runs inference on input data, with an option for TensorFlow NMS."""
         y = []  # outputs
         x = inputs
         for m in self.model.layers:
@@ -730,6 +731,7 @@ def run(
     dynamic=False,  # dynamic batch size
 ):
     # PyTorch model
+    """Exports YOLOv5 model from PyTorch to TensorFlow and Keras formats, performing inference for validation."""
     im = torch.zeros((batch_size, 3, *imgsz))  # BCHW image
     model = attempt_load(weights, device=torch.device("cpu"), inplace=True, fuse=False)
     _ = model(im)  # inference
