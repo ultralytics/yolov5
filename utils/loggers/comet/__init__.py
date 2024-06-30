@@ -67,6 +67,9 @@ class CometLogger:
     """Log metrics, parameters, source code, models and much more with Comet."""
 
     def __init__(self, opt, hyp, run_id=None, job_type="Training", **experiment_kwargs) -> None:
+        """Initializes CometLogger with given options, hyperparameters, run ID, job type, and additional experiment
+        arguments.
+        """
         self.job_type = job_type
         self.opt = opt
         self.hyp = hyp
