@@ -91,6 +91,7 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
     from pycocotools.mask import encode
 
     def single_encode(x):
+        """Encodes binary mask arrays into RLE (Run-Length Encoding) format for JSON serialization."""
         rle = encode(np.asarray(x[:, :, None], order="F", dtype="uint8"))[0]
         rle["counts"] = rle["counts"].decode("utf-8")
         return rle
