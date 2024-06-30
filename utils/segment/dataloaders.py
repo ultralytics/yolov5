@@ -39,6 +39,7 @@ def create_dataloader(
     overlap_mask=False,
     seed=0,
 ):
+    """Creates a dataloader for training, validating, or testing YOLO models with various dataset options."""
     if rect and shuffle:
         LOGGER.warning("WARNING ⚠️ --rect is incompatible with DataLoader shuffle, setting shuffle=False")
         shuffle = False
@@ -102,6 +103,7 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
         rank=-1,
         seed=0,
     ):
+        """Initializes the dataset with image, label, and mask loading capabilities for training/testing."""
         super().__init__(
             path,
             img_size,
