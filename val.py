@@ -148,6 +148,7 @@ def run(
     callbacks=Callbacks(),
     compute_loss=None,
 ):
+    """Evaluates model on a dataset and logs performance metrics, results are saved to specific directories."""
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
