@@ -60,6 +60,7 @@ def run(
     pt_only=False,  # test PyTorch only
     hard_fail=False,  # throw error on benchmark failure
 ):
+    """Run YOLOv5 benchmarks on multiple export formats and log results for model performance evaluation."""
     y, t = [], time.time()
     device = select_device(device)
     model_type = type(attempt_load(weights, fuse=False))  # DetectionModel, SegmentationModel, etc.
@@ -124,6 +125,7 @@ def test(
     pt_only=False,  # test PyTorch only
     hard_fail=False,  # throw error on benchmark failure
 ):
+    """Run YOLOv5 export tests for all supported formats and log the results, including inference speed and mAP."""
     y, t = [], time.time()
     device = select_device(device)
     for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
