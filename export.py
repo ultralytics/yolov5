@@ -134,6 +134,7 @@ def try_export(inner_func):
     inner_args = get_default_args(inner_func)
 
     def outer_func(*args, **kwargs):
+        """Logs success/failure and execution details of model export functions wrapped with @try_export decorator."""
         prefix = inner_args["prefix"]
         try:
             with Profile() as dt:
@@ -224,7 +225,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
 
 @try_export
 def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:")):
-    # YOLOv5 OpenVINO export
+    """Exports a YOLOv5 model to OpenVINO format with optional FP16 and INT8 quantization; see https://pypi.org/project/openvino-dev/."""
     check_requirements("openvino-dev>=2023.0")  # requires openvino-dev: https://pypi.org/project/openvino-dev/
     import openvino.runtime as ov  # noqa
     from openvino.tools import mo  # noqa
@@ -244,6 +245,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
         from utils.dataloaders import create_dataloader
 
         def gen_dataloader(yaml_path, task="train", imgsz=640, workers=4):
+            """Generates a DataLoader for model training or validation based on the given YAML dataset configuration."""
             data_yaml = check_yaml(yaml_path)
             data = check_dataset(data_yaml)
             dataloader = create_dataloader(

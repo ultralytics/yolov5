@@ -33,6 +33,7 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
     wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes * scale, dataset.labels)])).float()  # wh
 
     def metric(k):  # compute metric
+        """Computes ratio metric, anchors above threshold, and best possible recall for YOLOv5 anchor evaluation."""
         r = wh[:, None] / k[None]
         x = torch.min(r, 1 / r).min(2)[0]  # ratio metric
         best = x.max(1)[0]  # best_x
@@ -86,16 +87,19 @@ def kmean_anchors(dataset="./data/coco128.yaml", n=9, img_size=640, thr=4.0, gen
     thr = 1 / thr
 
     def metric(k, wh):  # compute metrics
+        """Computes ratio metric, anchors above threshold, and best possible recall for YOLOv5 anchor evaluation."""
         r = wh[:, None] / k[None]
         x = torch.min(r, 1 / r).min(2)[0]  # ratio metric
         # x = wh_iou(wh, torch.tensor(k))  # iou metric
         return x, x.max(1)[0]  # x, best_x
 
     def anchor_fitness(k):  # mutation fitness
+        """Evaluates fitness of YOLOv5 anchors by computing recall and ratio metrics for an anchor evolution process."""
         _, best = metric(torch.tensor(k, dtype=torch.float32), wh)
         return (best * (best > thr).float()).mean()  # fitness
 
     def print_results(k, verbose=True):
+        """Sorts and logs kmeans-evolved anchor metrics and best possible recall values for YOLOv5 anchor evaluation."""
         k = k[np.argsort(k.prod(1))]  # sort small to large
         x, best = metric(k, wh0)
         bpr, aat = (best > thr).float().mean(), (x > thr).float().mean() * n  # best possible recall, anch > thr
