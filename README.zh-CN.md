@@ -143,7 +143,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 <summary>教程</summary>
 
 - [训练自定义数据](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data) 🚀 推荐
-- [获得最佳训练结果的技巧](https://docs.ultralytics.com/yolov5/tutorials/tips_for_best_training_results) ☘️
+- [获得最佳训练结果的技巧](https://docs.ultralytics.com/guides/model-training-tips/) ☘️
 - [多GPU训练](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training)
 - [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) 🌟 新
 - [TFLite，ONNX，CoreML，TensorRT导出](https://docs.ultralytics.com/yolov5/tutorials/model_export) 🚀
