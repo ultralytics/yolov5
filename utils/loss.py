@@ -308,7 +308,7 @@ class ComputeLoss:
         Args:
             p (list[Tensor]): List of tensors containing the model's layer predictions. Each tensor is expected to be
                 of shape (batch_size, num_anchors, grid_height, grid_width, num_predictions_per_grid_cell).
-            targets (Tensor): Tensor containing the taget annotations. Expected to be of shape (num_targets, 6) where each
+            targets (Tensor): Tensor containing the target annotations. Expected to be of shape (num_targets, 6) where each
                 row represents (image_index, class_label, x_center, y_center, width, height).
 
         Returns:
