@@ -27,8 +27,29 @@ COMET_PROJECT_NAME = config.get_string(os.getenv("COMET_PROJECT_NAME"), "comet.p
 
 
 def get_args(known=False):
-    """Parses command-line arguments for YOLOv5 training, supporting configuration of weights, data paths,
-    hyperparameters, and more.
+    """
+    Parses command-line arguments for YOLOv5 training, supporting configuration of weights, data paths, hyperparameters,
+    and more.
+
+    Args:
+        known (bool, optional): Parses arguments from the known list if True, otherwise from sys.argv. Default is False.
+
+    Returns:
+        argparse.Namespace: An argparse.Namespace object containing parsed arguments and their values.
+
+    Notes:
+        This function supports various command-line arguments to configure different aspects of the YOLOv5 training
+        process, including weights, dataset paths, hyperparameters, optimization techniques, and other training parameters.
+
+    ```python
+    import sys
+    from pathlib import Path
+    from your_module import get_args
+
+    if __name__ == "__main__":
+        args = get_args()
+        print(args.weights)
+    ```
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="initial weights path")
@@ -88,7 +109,40 @@ def get_args(known=False):
 
 
 def run(parameters, opt):
-    """Executes YOLOv5 training with given hyperparameters and options, setting up device and training directories."""
+    """
+    Executes YOLOv5 training with given hyperparameters and options, including setting up the device and training
+    directories.
+
+    Args:
+        parameters (dict): Dictionary containing hyperparameter names and values for training configuration.
+        opt (argparse.Namespace): Parsed command-line options encapsulated in an argparse Namespace object, which includes
+                                  various settings such as `project`, `name`, `exist_ok`, and device-specific configurations.
+
+    Returns:
+        None
+
+    Example:
+        ```python
+        from ultralytics import run, get_args
+        args = get_args()
+        params = {
+            "batch_size": 16,
+            "epochs": 100,
+            "lr0": 0.01,
+            "momentum": 0.937,
+            # other hyperparameters...
+        }
+        run(params, args)
+        ```
+
+    Note:
+        - Ensure that the command-line arguments are parsed before invoking the `run` function.
+        - The function will create a new directory within the specified project path based on the `name` parameter, either
+          incrementally or overwriting, as determined by the `exist_ok` flag.
+
+        - Make sure the device configurations are correctly specified to leverage GPU capabilities for enhanced training
+          performance.
+    """
     hyp_dict = {k: v for k, v in parameters.items() if k not in ["epochs", "batch_size"]}
 
     opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))

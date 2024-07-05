@@ -14,8 +14,43 @@ from .general import crop_mask
 class ComputeLoss:
     # Compute losses
     def __init__(self, model, autobalance=False, overlap=False):
-        """Initializes the compute loss function for YOLOv5 models with options for autobalancing and overlap
-        handling.
+        """
+        Initializes the ComputeLoss class for YOLOv5 models with options for autobalancing and overlap handling.
+
+        Args:
+            model (torch.nn.Module): The YOLOv5 model whose loss is being computed.
+            autobalance (bool, optional): Flag indicating whether to apply autobalancing of losses between output layers
+                                          based on stride size (default is False).
+            overlap (bool, optional): Flag indicating whether to consider overlapping bounding boxes in the loss computation
+                                      (default is False).
+
+        Attributes:
+            sort_obj_iou (bool): Whether to sort objects by Intersection over Union (IoU).
+            overlap (bool): Indicates if overlap handling is enabled.
+            cp (torch.Tensor): Class-positive label smoothing targets.
+            cn (torch.Tensor): Class-negative label smoothing targets.
+            balance (list[float]): Balancing factors for different model strides.
+            ssi (int): Stride 16 index if autobalance is enabled.
+            BCEcls (nn.Module): Binary Cross-Entropy loss module for class predictions.
+            BCEobj (nn.Module): Binary Cross-Entropy loss module for objectness predictions.
+            gr (float): Gradient scaling factor.
+            hyp (dict): Hyperparameters used for loss computation.
+            autobalance (bool): Indicates if autobalancing is enabled.
+            na (int): Number of anchors in the model.
+            nc (int): Number of classes in the model.
+            nl (int): Number of detection layers in the model.
+            nm (int): Number of mask outputs in the model.
+            anchors (torch.Tensor): Anchor boxes used in the model.
+
+        Notes:
+            - Class label smoothing is applied to improve generalization.
+            - Focal loss is used to address class imbalance.
+
+        Example:
+            ```python
+            model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+            compute_loss = ComputeLoss(model, autobalance=True, overlap=True)
+            ```
         """
         self.sort_obj_iou = False
         self.overlap = overlap
@@ -46,7 +81,24 @@ class ComputeLoss:
         self.device = device
 
     def __call__(self, preds, targets, masks):  # predictions, targets, model
-        """Evaluates YOLOv5 model's loss for given predictions, targets, and masks; returns total loss components."""
+        """
+        Computes the total YOLOv5 model loss based on predictions, targets, and masks.
+
+        Args:
+            preds (tuple[Tensor, Tensor]): A tuple containing the prediction tensors from the model.
+                - `p` (Tensor): Layer-wise predictions which include bounding boxes, objectness scores, and classifications.
+                - `proto` (Tensor): Proto mask used for segmentation.
+            targets (Tensor): Ground truth targets containing bounding boxes and class labels.
+            masks (Tensor): Ground truth masks for segmentation, used for the mask loss.
+
+        Returns:
+            tuple[Tensor, Tensor, Tensor, Tensor, list]: A tuple containing:
+                - `lbox` (Tensor): Computed loss for bounding box regression.
+                - `lobj` (Tensor): Computed loss for objectness.
+                - `lcls` (Tensor): Computed loss for classification.
+                - `lseg` (Tensor): Computed loss for segmentation masks.
+                - `losses` (list): List containing individual loss components as (lbox, lobj, lcls, lseg).
+        """
         p, proto = preds
         bs, nm, mask_h, mask_w = proto.shape  # batch size, number of masks, mask height, mask width
         lcls = torch.zeros(1, device=self.device)
@@ -115,14 +167,65 @@ class ComputeLoss:
         return loss * bs, torch.cat((lbox, lseg, lobj, lcls)).detach()
 
     def single_mask_loss(self, gt_mask, pred, proto, xyxy, area):
-        """Calculates and normalizes single mask loss for YOLOv5 between predicted and ground truth masks."""
+        """
+        Calculates and normalizes single mask loss for YOLOv5 between predicted and ground truth masks.
+
+        Args:
+            gt_mask (torch.Tensor): Ground truth mask tensor of shape (n, H, W).
+            pred (torch.Tensor): Predicted mask tensor of shape (n, nm), where nm is the number of masks.
+            proto (torch.Tensor): Prototype masks tensor of shape (nm, H, W).
+            xyxy (torch.Tensor): Tensor of bounding box coordinates with shape (n, 4).
+            area (torch.Tensor): Tensor of mask areas with shape (n,).
+
+        Returns:
+            torch.Tensor: Calculated mask loss (scalar) normalized by the area of ground truth mask regions.
+
+        Notes:
+            This method multiplies `pred` with `proto` to generate the predicted mask and computes the binary cross-entropy
+            loss with the `gt_mask`. The loss is then normalized by the corresponding mask area. This operation is performed
+            for each instance in the batch, allowing backpropagation to optimize mask predictions effectively.
+
+        Examples:
+        ```python
+        # Example usage
+        gt_mask = torch.randn(10, 80, 80)  # Ground truth mask for 10 instances
+        pred = torch.randn(10, 32)         # Predicted mask logits for 10 instances
+        proto = torch.randn(32, 80, 80)    # Prototype masks
+        xyxy = torch.tensor([[0, 0, 20, 20]] * 10)  # Bounding box coordinates for 10 instances
+        area = torch.tensor([400.0] * 10)  # Area for each of the 10 instances
+
+        loss_fn = ComputeLoss(model)
+        loss = loss_fn.single_mask_loss(gt_mask, pred, proto, xyxy, area)
+        print(loss)
+        ```
+        """
         pred_mask = (pred @ proto.view(self.nm, -1)).view(-1, *proto.shape[1:])  # (n,32) @ (32,80,80) -> (n,80,80)
         loss = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
         return (crop_mask(loss, xyxy).mean(dim=(1, 2)) / area).mean()
 
     def build_targets(self, p, targets):
-        """Prepares YOLOv5 targets for loss computation; inputs targets (image, class, x, y, w, h), output target
-        classes/boxes.
+        """
+        Builds targets for YOLOv5 loss computation by processing input targets to match prediction shapes and anchors.
+
+        Args:
+            p (list[torch.Tensor]): List of torch tensors representing predicted feature maps from the model. Each tensor
+                corresponds to a specific feature scale.
+            targets (torch.Tensor): Ground truth targets with shape (num_targets, 6), where each row represents [image_idx,
+                class, x, y, w, h] normalized between 0-1.
+
+        Returns:
+            tuple: A tuple containing the following elements:
+                - tcls (list[torch.Tensor]): List of tensors representing target class indices for each feature map layer.
+                - tbox (list[torch.Tensor]): List of tensors representing target bounding boxes for each feature map layer.
+                - indices (list[tuple]): List of tuples indexing selected anchors in each feature map layer.
+                - anch (list[torch.Tensor]): List of anchor tensors corresponding to selected indices for each layer.
+                - tidxs (list[torch.Tensor]): List of target indices for selecting masks.
+                - xywhn (list[torch.Tensor]): List of normalized target box positions [x, y, w, h] for each layer.
+
+        Notes:
+            This function plays a critical role in aligning targets with predicted outputs, facilitating the computation of
+            losses for object detection and segmentation. The function considers multiple anchors and scales, applying
+            geometric transformations and ensuring that targets are matched with appropriate prediction layers and anchors.
         """
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
         tcls, tbox, indices, anch, tidxs, xywhn = [], [], [], [], [], []

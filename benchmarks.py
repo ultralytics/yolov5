@@ -60,7 +60,40 @@ def run(
     pt_only=False,  # test PyTorch only
     hard_fail=False,  # throw error on benchmark failure
 ):
-    """Run YOLOv5 benchmarks on multiple export formats and log results for model performance evaluation."""
+    """
+    Run YOLOv5 benchmarks on multiple export formats and log results for model performance evaluation.
+
+    Args:
+        weights (Path | str): Path to the model weights file (default: ROOT / "yolov5s.pt").
+        imgsz (int): Inference size in pixels (default: 640).
+        batch_size (int): Batch size for inference (default: 1).
+        data (Path | str): Path to the dataset.yaml file (default: ROOT / "data/coco128.yaml").
+        device (str): CUDA device, e.g., '0' or '0,1,2,3' or 'cpu' (default: None).
+        half (bool): Use FP16 half-precision inference (default: False).
+        test (bool): Test export formats only (default: False).
+        pt_only (bool): Test only the PyTorch export format (default: False).
+        hard_fail (bool): Raise an error on benchmark failure (default: False).
+
+    Returns:
+        pd.DataFrame: DataFrame containing benchmark results with the following columns:
+            - Format: Export format name.
+            - Size (MB): Model size in megabytes.
+            - mAP50-95: Mean average precision across multiple IoU thresholds.
+            - Inference time (ms): Time taken for inference in milliseconds.
+
+    Notes:
+        - Ensure required dependencies are installed using:
+          ```
+          $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu
+          $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow
+          $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
+          ```
+
+    Example:
+        ```python
+        $ python benchmarks.py --weights yolov5s.pt --img 640
+        ```
+    """
     y, t = [], time.time()
     device = select_device(device)
     model_type = type(attempt_load(weights, fuse=False))  # DetectionModel, SegmentationModel, etc.
@@ -125,7 +158,29 @@ def test(
     pt_only=False,  # test PyTorch only
     hard_fail=False,  # throw error on benchmark failure
 ):
-    """Run YOLOv5 export tests for all supported formats and log the results, including inference speed and mAP."""
+    """
+    Run YOLOv5 export tests for all supported formats and log the results, including inference speed and mAP.
+
+    Args:
+        weights (pathlib.Path | str): Path to the model weights file, typically a .pt file for PyTorch, i.e. 'yolov5s.pt'.
+        imgsz (int): Inference size in pixels. Default is 640.
+        batch_size (int): Batch size for inference. Default is 1.
+        data (pathlib.Path | str): Path to the dataset configuration YAML file. Default is 'data/coco128.yaml'.
+        device (str): Device to run inference on, i.e., '0', '0,1,2,3' for CUDA-enabled GPUs or 'cpu' for CPU. Default is ''.
+        half (bool): Whether to use FP16 half-precision inference. Default is False.
+        test (bool): If True, test exports only without inference. Default is False.
+        pt_only (bool): If True, test exports for PyTorch format only. Default is False.
+        hard_fail (bool): If True, raise an error on benchmark failure. Default is False.
+
+    Returns:
+        pandas.DataFrame: A DataFrame logging the results, including columns for export format, export success, mAP score,
+                          and inference time (ms), if available.
+
+    Notes:
+        - Ensure all required dependencies are installed as outlined in the repository's [requirements](https://github.com/ultralytics/ultralytics#requirements).
+        - Edge TPU and TensorFlow.js export formats are not supported.
+        - CoreML inference is only supported on macOS 10.13 or later.
+    """
     y, t = [], time.time()
     device = select_device(device)
     for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
@@ -151,7 +206,32 @@ def test(
 
 
 def parse_opt():
-    """Parses command-line arguments for YOLOv5 model inference configuration."""
+    """
+    Parses command-line arguments for YOLOv5 model inference configuration.
+
+    Args:
+        weights (str): The path to the weights file. Defaults to 'ROOT / "yolov5s.pt"'.
+        imgsz (int): Inference size in pixels. Defaults to 640.
+        batch_size (int): Batch size. Defaults to 1.
+        data (str): Path to the dataset YAML file. Defaults to 'ROOT / "data/coco128.yaml"'.
+        device (str): CUDA device, e.g., '0' or '0,1,2,3' or 'cpu'. Defaults to an empty string (auto-select).
+        half (bool): Use FP16 half-precision inference. Defaults to False.
+        test (bool): Test exports only. Defaults to False.
+        pt_only (bool): Test PyTorch only. Defaults to False.
+        hard_fail (bool | str): Throw an error on benchmark failure or specify a minimum metric floor. Defaults to False.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments.
+
+    Notes:
+        This function completes by calling 'print_args(vars(opt))' to display the command-line arguments.
+
+    Examples:
+        Typical usage examples include:
+        ```python
+        opt = parse_opt()
+        ```
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="weights path")
     parser.add_argument("--imgsz", "--img", "--img-size", type=int, default=640, help="inference size (pixels)")
@@ -169,7 +249,39 @@ def parse_opt():
 
 
 def main(opt):
-    """Executes a test run if `opt.test` is True, otherwise starts training or inference with provided options."""
+    """
+    Executes YOLOv5 benchmark tests or main model inference and training routines based on user-defined options.
+
+    Args:
+        opt (argparse.Namespace): Parsed command-line arguments that include options for weights, image size, batch size,
+                                  dataset configuration, device, and other inference settings. Configurations:
+                                  - weights (str): Path to the weights file. Default is 'yolov5s.pt'.
+                                  - imgsz (int): Inference image size in pixels. Default is 640.
+                                  - batch_size (int): Number of images to process in a batch. Default is 1.
+                                  - data (str): Path to the dataset configuration YAML file. Default is 'data/coco128.yaml'.
+                                  - device (str): Device to run inference on, e.g., 'cpu' or '0' for GPU. Default is ''.
+                                  - half (bool): Use FP16 half-precision inference. Default is False.
+                                  - test (bool): If True, run export validation tests only. Default is False.
+                                  - pt_only (bool): If True, benchmark PyTorch format only. Default is False.
+                                  - hard_fail (bool | str): If True, exceptions on benchmark failures or specify a minimum
+                                                             performance threshold for metrics. Default is False.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing benchmark results with columns for format, size in MB, mAP50-95, and inference
+                      time in milliseconds if any benchmarking is done; otherwise, logs other results based on opt settings.
+
+    Notes:
+        Supported export formats include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow SavedModel,
+        TensorFlow GraphDef, TensorFlow Lite, TensorFlow Edge TPU, and TensorFlow.js.
+        For more details, refer to the official YOLOv5 repository: https://github.com/ultralytics/ultralytics.
+
+    Example:
+        ```
+        if __name__ == "__main__":
+            opt = parse_opt()
+            main(opt)
+        ```
+    """
     test(**vars(opt)) if opt.test else run(**vars(opt))
 
 

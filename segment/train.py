@@ -97,9 +97,35 @@ GIT_INFO = check_git_info()
 
 def train(hyp, opt, device, callbacks):
     """
-    Trains the YOLOv5 model on a dataset, managing hyperparameters, model optimization, logging, and validation.
-
-    `hyp` is path/to/hyp.yaml or hyp dictionary.
+    Trains the YOLOv5 model on a segmented dataset, managing hyperparameters, model optimization, logging, and validation.
+    
+    This function handles the complete lifecycle of the training process including data loading, model initialization, 
+    hyperparameter tuning, gradient optimization, and validation.
+    
+    Args:
+        hyp (dict | str): Hyperparameters for training. Can be a dictionary or a path to a YAML file containing hyperparameters.
+        opt (argparse.Namespace): Parsed command line arguments for various options including epochs, batch size, weights, etc.
+        device (torch.device): Torch device where the model will be trained, e.g., 'cpu' or 'cuda'.
+        callbacks (utils.callbacks.Callbacks): Callback functions to handle certain events during training (e.g., logging).
+    
+    Returns:
+        None
+    
+    Notes:
+        Single-GPU training:
+            ```python
+            $ python segment/train.py --data coco128-seg.yaml --weights yolov5s-seg.pt --img 640
+            $ python segment/train.py --data coco128-seg.yaml --weights '' --cfg yolov5s-seg.yaml --img 640
+            ```
+        Multi-GPU DDP training:
+            ```python
+            $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train.py --data coco128-seg.yaml --weights yolov5s-seg.pt --img 640 --device 0,1,2,3
+            ```
+    
+    Links:
+        - Models: https://github.com/ultralytics/yolov5/tree/master/models
+        - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
+        - Training Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
     """
     (
         save_dir,
@@ -543,8 +569,24 @@ def train(hyp, opt, device, callbacks):
 def parse_opt(known=False):
     """
     Parses command line arguments for training configurations, returning parsed arguments.
-
-    Supports both known and unknown args.
+    
+    Args:
+      known (bool): If True, only known arguments will be parsed. Default is False.
+    
+    Returns:
+      argparse.Namespace: Parsed arguments namespace.
+    
+    Notes:
+      This function is used to parse the command line inputs for YOLOv5 training parameters. The parsed arguments include 
+      configurations for model weights, datasets, hyperparameters, image sizes, and various other training-specific options. 
+      Developers can leverage this utility to customize the training pipeline by specifying the appropriate arguments 
+      at runtime.
+    
+    Example:
+      ```python
+      opt = parse_opt()
+      print(opt.weights)  # Displays the path to initial weights
+      ```
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s-seg.pt", help="initial weights path")
@@ -590,7 +632,36 @@ def parse_opt(known=False):
 
 
 def main(opt, callbacks=Callbacks()):
-    """Initializes training or evolution of YOLOv5 models based on provided configuration and options."""
+    """
+    Initializes training or evolution of YOLOv5 models based on provided configuration and options.
+    
+    Args:
+      opt (argparse.Namespace): Parsed command line arguments for training configurations.
+      callbacks (Callbacks): Object of Callbacks which consists of set of callback functions.
+    
+    Returns:
+      None
+    
+    Notes:
+      Training follows both single-GPU and multi-GPU distributed training strategies.
+      If `--evolve` flag is set, hyperparameter evolution process is initialized for optimization.
+    
+    Usage:
+      Single-GPU training:
+      ```sh
+      python segment/train.py --data coco128-seg.yaml --weights yolov5s-seg.pt --img 640
+      ```
+    
+      Multi-GPU DDP training:
+      ```sh
+      python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train.py --data coco128-seg.yaml --weights yolov5s-seg.pt --img 640 --device 0,1,2,3
+      ```
+    
+    Links:
+      Models: https://github.com/ultralytics/yolov5/tree/master/models
+      Datasets: https://github.com/ultralytics/yolov5/tree/master/data
+      Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+    """
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
@@ -748,9 +819,29 @@ def main(opt, callbacks=Callbacks()):
 
 def run(**kwargs):
     """
-    Executes YOLOv5 training with given parameters, altering options programmatically; returns updated options.
-
-    Example: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
+    run
+    """
+    Executes YOLOv5 training with given parameters, altering options programmatically, and returns updated options.
+    
+    Usage example:
+        import train
+        train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
+    
+    Parameters:
+        **kwargs: dict
+            A dictionary of keyword arguments where keys are the names of parameters for YOLOv5 training, and values are 
+            their corresponding values. It allows programmatically setting the training configurations such as dataset 
+            path, image size, and model weights.
+    
+    Returns:
+        argparse.Namespace
+            The parsed and updated command-line arguments after incorporating the provided keyword arguments.
+    
+    Notes:
+        - Make sure all required dependencies are installed and system requirements (like GPU availability) are met for 
+          optimal performance.
+        - Consult YOLOv5 documentation for comprehensive details on each configuration option.
+        - Consult https://github.com/ultralytics/yolov5 for more details.
     """
     opt = parse_opt(True)
     for k, v in kwargs.items():

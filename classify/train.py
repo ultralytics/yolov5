@@ -76,7 +76,48 @@ GIT_INFO = check_git_info()
 
 
 def train(opt, device):
-    """Trains a YOLOv5 model, managing datasets, model optimization, logging, and saving checkpoints."""
+    """
+    Trains a YOLOv5 model, managing datasets, model optimization, logging, and saving checkpoints.
+
+    Args:
+        opt (argparse.Namespace): Command-line arguments for training configuration. Includes hyperparameters
+                                  and paths (model, data, epochs, batch_size, img_size, etc.).
+        device (torch.device): Device on which to perform training, such as CPU or CUDA-enabled GPU.
+
+    Returns:
+        None
+
+    Notes:
+        For single-GPU training, use the following command:
+        ```bash
+        $ python classify/train.py --model yolov5s-cls.pt --data imagenette160 --epochs 5 --img 224
+        ```
+
+        For multi-GPU DDP training, use:
+        ```bash
+        $ python -m torch.distributed.run --nproc_per_node 4 --master_port 2022 classify/train.py --model yolov5s-cls.pt --data imagenet --epochs 5 --img 224 --device 0,1,2,3
+        ```
+
+        Supported datasets can be specified with `--data`:
+        - mnist
+        - fashion-mnist
+        - cifar10
+        - cifar100
+        - imagenette
+        - imagewoof
+        - imagenet
+        - Path to a custom dataset
+
+        YOLOv5 classification models can be specified with `--model`:
+        - yolov5n-cls.pt
+        - yolov5s-cls.pt
+        - yolov5m-cls.pt
+        - yolov5l-cls.pt
+        - yolov5x-cls.pt
+
+        Torchvision models can also be specified via `--model` (e.g., resnet50, efficientnet_b0).
+        See available models: https://pytorch.org/vision/stable/models.html
+    """
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
     save_dir, data, bs, epochs, nw, imgsz, pretrained = (
         opt.save_dir,
@@ -311,8 +352,22 @@ def train(opt, device):
 
 
 def parse_opt(known=False):
-    """Parses command line arguments for YOLOv5 training including model path, dataset, epochs, and more, returning
-    parsed arguments.
+    """
+    Parses command line arguments for YOLOv5 training including model path, dataset, epochs, and more, returning parsed
+    arguments.
+
+    Args:
+      known (bool): Whether to parse known arguments only. Defaults to False.
+
+    Returns:
+      argparse.Namespace: Parsed arguments as a namespace.
+
+    Example:
+      ```python
+      opts = parse_opt()
+      print(opts.model)
+      # Output: yolov5s-cls.pt
+      ```
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="yolov5s-cls.pt", help="initial weights path")
@@ -341,7 +396,53 @@ def parse_opt(known=False):
 
 
 def main(opt):
-    """Executes YOLOv5 training with given options, handling device setup and DDP mode; includes pre-training checks."""
+    """
+    Executes YOLOv5 training with given options, handling device setup and DDP mode; includes pre-training checks.
+
+    Args:
+        opt (argparse.Namespace): Parsed command line arguments for YOLOv5 training, including model path, dataset, epochs,
+        and more. Contains:
+            - model (str): Initial weights path.
+            - data (str): Dataset name or path.
+            - epochs (int): Total number of training epochs.
+            - batch_size (int): Total batch size for all GPUs.
+            - imgsz (int): Train and validation image size in pixels.
+            - nosave (bool): If specified, only the final checkpoint will be saved.
+            - cache (str): Cache images in RAM or disk.
+            - device (str): CUDA devices, e.g., '0' or '0,1,2,3' or 'cpu'.
+            - workers (int): Maximum number of dataloader workers (per RANK in DDP mode).
+            - project (str): Project name for saving results.
+            - name (str): Experiment name for saving results.
+            - exist_ok (bool): If specified, existing project/name is allowed without incrementing.
+            - pretrained (bool): Whether to start from a pre-trained model.
+            - opt (str): Optimizer type, choices include "SGD", "Adam", "AdamW", "RMSProp".
+            - lr0 (float): Initial learning rate.
+            - decay (float): Weight decay.
+            - label_smoothing (float): Label smoothing epsilon.
+            - cutoff (int): Model layer cutoff index for the Classify head.
+            - dropout (float): Dropout fraction.
+            - verbose (bool): If specified, enables verbose mode.
+            - seed (int): Global training seed.
+            - local_rank (int): Automatic DDP Multi-GPU argument, do not modify.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If batch_size is invalid for DDP mode, or insufficient CUDA devices for DDP command.
+
+    Example:
+        ```python
+        if __name__ == "__main__":
+            opt = parse_opt()
+            main(opt)
+        ```
+
+    Notes:
+        For more details on YOLOv5 models and datasets, refer to:
+        - Model Zoo: https://github.com/ultralytics/yolov5/releases
+        - TorchVision models: https://pytorch.org/vision/stable/models.html
+    """
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
@@ -366,9 +467,25 @@ def main(opt):
 
 def run(**kwargs):
     """
-    Executes YOLOv5 model training or inference with specified parameters, returning updated options.
+    Executes YOLOv5 model training or inference with specified parameters.
 
-    Example: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')
+    Args:
+        **kwargs: Arbitrary keyword arguments to configure the training or inference process, including options such as
+                  'data' (str): Dataset path or identifier (e.g., 'mnist', 'imagenette160'), 'imgsz' (int): Image size in
+                  pixels, 'model' (str): Path to model weights or model identifier.
+
+    Returns:
+        opt (argparse.Namespace): An argument namespace object containing the final parsed and updated options.
+
+    Example:
+        ```python
+        from yolov5 import classify
+        classify.train.run(data='mnist', imgsz=320, model='yolov5m')
+        ```
+
+    Notes:
+        - This function first parses the default options and updates them with any provided keyword arguments.
+        - For detailed usage information, refer to the repository: https://github.com/ultralytics/ultralytics.
     """
     opt = parse_opt(True)
     for k, v in kwargs.items():

@@ -17,7 +17,38 @@ from ..plots import Annotator, colors
 
 @threaded
 def plot_images_and_masks(images, targets, masks, paths=None, fname="images.jpg", names=None):
-    """Plots a grid of images, their labels, and masks with optional resizing and annotations, saving to fname."""
+    """
+    Plots a grid of images, their labels, and masks with optional resizing and annotations, saving to fname.
+
+    Args:
+        images (torch.Tensor | np.ndarray): The batch of images to plot. Can be a torch.Tensor or numpy array.
+        targets (torch.Tensor | np.ndarray): The targets corresponding to each image. Can be a torch.Tensor or numpy array.
+        masks (torch.Tensor | np.ndarray): The masks corresponding to each image. Can be a torch.Tensor or numpy array.
+        paths (list[str] | None, optional): List of path strings to annotate images with filenames. Default is None.
+        fname (str, optional): The filename to save the plotted grid of images. Default is "images.jpg".
+        names (list[str] | None, optional): List of class names to annotate images with. Default is None.
+
+    Returns:
+        None: The function saves the plotted grid of images to the specified filename. No value is returned.
+
+    Notes:
+        1. The images are optionally resized and annotated with bounding boxes, class labels, and masks.
+        2. If images are normalized (values between 0 and 1), they are de-normalized to a scale of 0 to 255.
+
+    Examples:
+        ```python
+        import torch
+        from ultralytics import plot_images_and_masks
+
+        # Dummy data
+        images = torch.rand(4, 3, 640, 640)
+        targets = torch.tensor([[0, 1, 320, 320, 50, 50], [1, 0, 180, 200, 60, 60]])
+        masks = torch.randint(0, 2, (4, 640, 640))
+
+        # Plot and save images
+        plot_images_and_masks(images, targets, masks, fname="output.jpg", names=["class1", "class2"])
+        ```
+    """
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
     if isinstance(targets, torch.Tensor):
@@ -114,9 +145,28 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname="images.jpg"
 
 def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
     """
-    Plots training results from CSV files, plotting best or last result highlights based on `best` parameter.
+    Plots training results from CSV files, highlighting either the best or most recent results based on the `best`
+    parameter.
 
-    Example: from utils.plots import *; plot_results('path/to/results.csv')
+    Args:
+        file (str): Path to the CSV file containing the training results. Default is "path/to/results.csv".
+        dir (str): Directory path to search for CSV files if `file` is not provided. Default is an empty string.
+        best (bool): If True, highlight the best results, otherwise highlight the latest results. Default is True.
+
+    Returns:
+        None
+
+    Example:
+        ```python
+        from utils.plots import plot_results_with_masks
+
+        plot_results_with_masks(file='path/to/results.csv')
+        ```
+
+    Notes:
+        - Saves the plot as "results.png" in the parent directory of the provided file path or specified directory.
+        - The CSV files should contain columns corresponding to the training metrics to be plotted.
+        - If no matching CSV files are found, an assertion error is raised with a descriptive message.
     """
     save_dir = Path(file).parent if file else Path(dir)
     fig, ax = plt.subplots(2, 8, figsize=(18, 6), tight_layout=True)

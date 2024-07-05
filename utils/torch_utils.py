@@ -34,7 +34,24 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):
-    """Applies torch.inference_mode() if torch>=1.9.0, else torch.no_grad() as a decorator for functions."""
+    """
+    Applies `torch.inference_mode()` if `torch>=1.9.0`, otherwise applies `torch.no_grad()` as a decorator for functions.
+    
+    Args:
+        torch_1_9 (bool): Indicates whether the current PyTorch version is at least 1.9.0. Default is determined
+            by the `check_version` utility.
+    
+    Returns:
+        Callable: A decorator that wraps the target function with `torch.inference_mode()` for PyTorch versions
+            1.9.0 and above, otherwise with `torch.no_grad()`.
+    
+    Examples:
+        ```python
+        @smart_inference_mode()
+        def inference_function(model, data):
+            # Your inference code here
+        ```
+    """
 
     def decorate(fn):
         """Applies torch.inference_mode() if torch>=1.9.0, else torch.no_grad() to the decorated function."""
@@ -44,8 +61,23 @@ def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):
 
 
 def smartCrossEntropyLoss(label_smoothing=0.0):
-    """Returns a CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower
-    versions.
+    """
+    Returns a CrossEntropyLoss instance with optional label smoothing, with compatibility checks for PyTorch versions.
+    
+    Args:
+        label_smoothing (float): Value for label smoothing in the loss calculation. Default is 0.0.
+    
+    Returns:
+        torch.nn.CrossEntropyLoss: An instance of CrossEntropyLoss with the specified label smoothing.
+    
+    Notes:
+        - Label smoothing is supported only in PyTorch version 1.10.0 and above. If using a lower version and label
+          smoothing is specified (i.e., label_smoothing > 0), a warning will be issued.
+      
+    Example:
+        ```python
+        criterion = smartCrossEntropyLoss(label_smoothing=0.1)
+        ```
     """
     if check_version(torch.__version__, "1.10.0"):
         return nn.CrossEntropyLoss(label_smoothing=label_smoothing)
@@ -55,7 +87,35 @@ def smartCrossEntropyLoss(label_smoothing=0.0):
 
 
 def smart_DDP(model):
-    """Initializes DistributedDataParallel (DDP) for model training, respecting torch version constraints."""
+    """
+    Initializes DistributedDataParallel (DDP) for model training, respecting torch version constraints.
+    
+    Args:
+        model (torch.nn.Module): The model to be wrapped for distributed training.
+    
+    Returns:
+        torch.nn.parallel.DistributedDataParallel: The model wrapped with DDP for distributed training.
+    
+    Raises:
+        AssertionError: If using torch version 1.12.0 and torchvision version 0.13.0 due to a known device limitation.
+    
+    Notes:
+        - Torch versions 1.11.0 and above support the `static_graph` parameter in DDP.
+        - For torch version 1.12.0, the function raises an assertion error due to an unresolved DDP issue.
+          Please refer to the issue tracker: https://github.com/ultralytics/yolov5/issues/8395 for more details.
+    
+    Examples:
+        ```python
+        import torch
+        from torch.nn.parallel import DistributedDataParallel as DDP
+    
+        model = MyModel().to(LOCAL_RANK)
+        model = smart_DDP(model)
+        ```
+    
+    Returns:
+        torch.nn.parallel.DistributedDataParallel: A DDP wrapped model for distributed training.
+    """
     assert not check_version(torch.__version__, "1.12.0", pinned=True), (
         "torch==1.12.0 torchvision==0.13.0 DDP training is not supported due to a known issue. "
         "Please upgrade or downgrade torch to use DDP. See https://github.com/ultralytics/yolov5/issues/8395"
@@ -67,7 +127,36 @@ def smart_DDP(model):
 
 
 def reshape_classifier_output(model, n=1000):
-    """Reshapes last layer of model to match class count 'n', supporting Classify, Linear, Sequential types."""
+    """
+    Reshapes the last layer of the model to match a specified class count 'n', supporting various model types.
+    
+    Args:
+        model (torch.nn.Module): The neural network model whose final layer will be reshaped. It can be a custom model
+                                 class, a ResNet, EfficientNet, or any model with Linear or Conv2d layers in its Sequential 
+                                 module.
+        n (int): The desired number of output classes. Default is 1000.
+    
+    Returns:
+        None: This function modifies the model in place to change the output dimension of its last layer.
+    
+    Raises:
+        AttributeError: If the model does not have the expected module structure to reshape its final layer.
+    
+    Notes:
+        This function currently supports the YOLOv5 Classify head, ResNet, EfficientNet, and models with Linear or Conv2d 
+        layers in a Sequential container.
+    
+    Example:
+        ```python
+        from torchvision import models
+    
+        model = models.resnet50(pretrained=True)
+        reshape_classifier_output(model, n=10)  # Change output layer to match 10 classes
+        ```
+    
+        This will modify the final fully connected layer of ResNet50 to output predictions for 10 classes instead of the 
+        default 1000 classes.
+    """
     from models.common import Classify
 
     name, m = list((model.model if hasattr(model, "model") else model).named_children())[-1]  # last module
@@ -91,8 +180,20 @@ def reshape_classifier_output(model, n=1000):
 
 @contextmanager
 def torch_distributed_zero_first(local_rank: int):
-    """Context manager ensuring ordered operations in distributed training by making all processes wait for the leading
+    """
+    Context manager ensuring ordered operations in distributed training by making all processes wait for the leading
     process.
+    
+    Args:
+        local_rank (int): The local rank of the process in distributed training. Expected values are -1, 0, or greater.
+    
+    Yields:
+        None: This context manager does not yield any value.
+    
+    Notes:
+        This function utilizes `torch.distributed.barrier` to synchronize processes in distributed training. For processes
+        where `local_rank` is neither -1 nor 0, it will wait at the barrier until the leading process has reached the same
+        point.
     """
     if local_rank not in [-1, 0]:
         dist.barrier(device_ids=[local_rank])
@@ -102,7 +203,27 @@ def torch_distributed_zero_first(local_rank: int):
 
 
 def device_count():
-    """Returns the number of available CUDA devices; works on Linux and Windows by invoking `nvidia-smi`."""
+    """
+    Returns the number of available CUDA devices; works on Linux and Windows by invoking `nvidia-smi`.
+    
+    Args:
+        None
+    
+    Returns:
+        int: The number of available CUDA devices detected by `nvidia-smi`.
+    
+    Raises:
+        AssertionError: If the platform is neither Linux nor Windows.
+        Exception: If there is an error in executing the `nvidia-smi` command.
+    
+    Examples:
+        ```python
+        from ultralytics.utils.torch_utils import device_count
+    
+        num_devices = device_count()
+        print(f"Number of CUDA devices available: {num_devices}")
+        ```
+    """
     assert platform.system() in ("Linux", "Windows"), "device_count() only supported on Linux or Windows"
     try:
         cmd = "nvidia-smi -L | wc -l" if platform.system() == "Linux" else 'nvidia-smi -L | find /c /v ""'  # Windows
@@ -112,7 +233,40 @@ def device_count():
 
 
 def select_device(device="", batch_size=0, newline=True):
-    """Selects computing device (CPU, CUDA GPU, MPS) for YOLOv5 model deployment, logging device info."""
+    """
+    Selects the appropriate computing device (CPU, CUDA GPU, MPS) for YOLOv5 model deployment and logs device information.
+    
+    Args:
+        device (str): Desired device for computation ('cpu', 'cuda' or specific GPU IDs like '0,1,2'). Defaults to "".
+        batch_size (int): Batch size for loading data. Ensures batch size is divisible by number of GPUs if using multiple 
+            GPUs. Defaults to 0.
+        newline (bool): Appends a newline to the logged device information. Defaults to True.
+    
+    Returns:
+        torch.device: Selected device for computation, either CPU, CUDA, or MPS.
+    
+    Raises:
+        AssertionError: If the specified CUDA device(s) are unavailable or an invalid CUDA device is requested, or if batch 
+            size is not divisible by GPU count when using multiple GPUs.
+    
+    Notes:
+        Logs relevant information about the platform, Python version, and PyTorch version in use, as well as details on the 
+        selected computing devices including their properties.
+    
+    Example:
+        ```python
+        device = select_device(device='cuda:0', batch_size=16)
+        ```
+    
+    Context:
+        This function ensures that the selected device is available and properly configured for use, printing a summary of 
+        the configuration.
+    
+    Links:
+        - [PyTorch Elastic Run](https://pytorch.org/docs/stable/elastic/run.html)
+    
+    For related information about multi-GPU training, refer to Ultralytics' [documentation](https://github.com/ultralytics/yolov5).
+    """
     s = f"YOLOv5 🚀 {git_describe() or file_date()} Python-{platform.python_version()} torch-{torch.__version__} "
     device = str(device).strip().lower().replace("cuda:", "").replace("none", "")  # to string, 'cuda:0' to '0'
     cpu = device == "cpu"
@@ -149,19 +303,57 @@ def select_device(device="", batch_size=0, newline=True):
 
 
 def time_sync():
-    """Synchronizes PyTorch for accurate timing, leveraging CUDA if available, and returns the current time."""
+    """
+    Synchronizes PyTorch for accurate timing, leveraging CUDA if available, and returns the current time.
+    
+    Returns:
+        float: The current time in seconds since the Epoch, as a floating point number, synchronized with CUDA if available.
+    
+    Examples:
+        >>> import time
+        >>> start = time_sync()
+        >>> time.sleep(1)
+        >>> end = time_sync()
+        >>> elapsed_time = end - start
+        >>> print(f"Elapsed time: {elapsed_time:.2f} seconds")
+    """
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     return time.time()
 
 
 def profile(input, ops, n=10, device=None):
-    """YOLOv5 speed/memory/FLOPs profiler
-    Usage:
-        input = torch.randn(16, 3, 640, 640)
-        m1 = lambda x: x * torch.sigmoid(x)
-        m2 = nn.SiLU()
-        profile(input, [m1, m2], n=100)  # profile over 100 iterations
+    """
+    YOLOv5 speed/memory/FLOPs profiler.
+    
+    Args:
+      input (torch.Tensor | list): Input tensor or list of tensors to be profiled.
+      ops (torch.nn.Module | list): Operation or list of operations to be profiled.
+      n (int, optional): Number of iterations to execute the profiles for averaging. Defaults to 10.
+      device (torch.device | str, optional): Device to run the profiling on. Defaults to None which triggers automatic device selection.
+    
+    Returns:
+      list: List of profiling results where each result is a list containing the following elements:
+        - p (int): Number of parameters in the operation.
+        - flops (float): Number of floating point operations (in GFLOPs).
+        - mem (float): GPU memory used (in GB).
+        - tf (float): Forward pass time (in ms).
+        - tb (float): Backward pass time (in ms).
+        - s_in (tuple): Shape of the input tensor.
+        - s_out (tuple): Shape of the output tensor.
+    
+    Example:
+      ```python
+      import torch
+      import torch.nn as nn
+      from ultralytics.utils.torch_utils import profile
+    
+      input_tensor = torch.randn(16, 3, 640, 640)
+      operation1 = lambda x: x * torch.sigmoid(x)
+      operation2 = nn.SiLU()
+      
+      profile(input_tensor, [operation1, operation2], n=100)
+      ```
     """
     results = []
     if not isinstance(device, torch.device):
@@ -209,18 +401,93 @@ def profile(input, ops, n=10, device=None):
 
 
 def is_parallel(model):
-    """Checks if the model is using Data Parallelism (DP) or Distributed Data Parallelism (DDP)."""
+    """
+    Checks if the model is using Data Parallelism (DP) or Distributed Data Parallelism (DDP).
+    
+    Args:
+        model (torch.nn.Module): The PyTorch model to check.
+    
+    Returns:
+        bool: True if the model is an instance of torch.nn.DataParallel or torch.nn.parallel.DistributedDataParallel,
+        False otherwise.
+    
+    Examples:
+        ```python
+        import torch
+        from torch.nn import DataParallel
+        from torch.nn.parallel import DistributedDataParallel as DDP
+        from ultralytics import is_parallel
+    
+        model = ...  # assume a defined model
+        model = DataParallel(model)
+        print(is_parallel(model))  # True
+    
+        model = DDP(model)
+        print(is_parallel(model))  # True
+    
+        model = torch.nn.Sequential(...)
+        print(is_parallel(model))  # False
+        ```
+    """
     return type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
 
 
 def de_parallel(model):
-    """Returns a single-GPU model by removing Data Parallelism (DP) or Distributed Data Parallelism (DDP) if applied."""
+    """
+    Returns a single-GPU model by removing Data Parallelism (DP) or Distributed Data Parallelism (DDP) if applied.
+    
+    Args:
+        model (torch.nn.Module): The model to be converted to a single-GPU version from DP or DDP.
+    
+    Returns:
+        torch.nn.Module: The single-GPU model without DP or DDP encapsulation.
+    
+    Examples:
+        ```python
+        model = nn.DataParallel(model)
+        model = de_parallel(model)
+        ```
+    
+    Notes:
+        - This function is useful in scenarios where a model needs to be saved or further manipulated outside of a 
+          multi-GPU environment.
+        - Ensure proper handling of the model state dict if switching between parallel and non-parallel modes for 
+          checkpointing or deployment.
+    """
     return model.module if is_parallel(model) else model
 
 
 def initialize_weights(model):
-    """Initializes weights of Conv2d, BatchNorm2d, and activations (Hardswish, LeakyReLU, ReLU, ReLU6, SiLU) in the
-    model.
+    """
+    Initializes weights of specific layers in the model, including Conv2d, BatchNorm2d, and various activation functions.
+    
+    Args:
+        model (nn.Module): The neural network model containing layers to be initialized.
+    
+    Returns:
+        None
+    
+    Notes:
+        - Conv2d layers are currently passed without specific initialization.
+        - BatchNorm2d layers are initialized with epsilon and momentum values suitable for YOLO models.
+        - Activation functions supported for initialization include Hardswish, LeakyReLU, ReLU, ReLU6, and SiLU.
+    
+    Examples:
+        ```python
+        import torch.nn as nn
+        from ultralytics.yolo.utils.torch_utils import initialize_weights
+    
+        model = nn.Sequential(
+            nn.Conv2d(3, 16, 3, 1, 1),
+            nn.BatchNorm2d(16),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(16, 32, 3, 1, 1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True)
+        )
+    
+        initialize_weights(model)
+        ```
     """
     for m in model.modules():
         t = type(m)
@@ -234,13 +501,65 @@ def initialize_weights(model):
 
 
 def find_modules(model, mclass=nn.Conv2d):
-    """Finds and returns list of layer indices in `model.module_list` matching the specified `mclass`."""
+    """
+    Finds and returns the list of layer indices in the `model.module_list` that match the specified class type `mclass`.
+    
+    Args:
+        model (torch.nn.Module): The model object containing the layers to be inspected.
+        mclass (type): The class type to be matched against model layers. Default is `torch.nn.Conv2d`.
+    
+    Returns:
+        list[int]: List of indices where the layers in `model.module_list` match the `mclass` type.
+    
+    Examples:
+        ```python
+        import torch.nn as nn
+        from ultralytics import find_modules
+        
+        model = nn.Sequential(
+            nn.Conv2d(1, 20, 5),
+            nn.ReLU(),
+            nn.Conv2d(20, 64, 5),
+            nn.ReLU()
+        )
+        indices = find_modules(model, nn.Conv2d)
+        print(indices)  # Output: [0, 2]
+        ```
+    
+    Note:
+        This function is useful when you want to selectively apply functions or modifications to specific types of layers 
+        within a model, such as initializing weights or pruning.
+    """
     return [i for i, m in enumerate(model.module_list) if isinstance(m, mclass)]
 
 
 def sparsity(model):
-    """Calculates and returns the global sparsity of a model as the ratio of zero-valued parameters to total
-    parameters.
+    """
+    Calculates and returns the global sparsity of a model as the ratio of zero-valued parameters to total parameters.
+    
+    Args:
+        model (torch.nn.Module): The PyTorch model whose sparsity needs to be calculated.
+    
+    Returns:
+        float: The global sparsity of the model, defined as the ratio of zero-valued parameters to the total number of parameters.
+    
+    Examples:
+        ```python
+        import torch.nn as nn
+        from ultralytics import sparsity
+    
+        # Define a simple model
+        model = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, stride=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1),
+            nn.ReLU()
+        )
+    
+        # Calculate sparsity
+        model_sparsity = sparsity(model)
+        print(f"Model sparsity: {model_sparsity:.4f}")
+        ```
     """
     a, b = 0, 0
     for p in model.parameters():
@@ -250,7 +569,29 @@ def sparsity(model):
 
 
 def prune(model, amount=0.3):
-    """Prunes Conv2d layers in a model to a specified sparsity using L1 unstructured pruning."""
+    """
+    Prunes Conv2d layers in a model to a specified sparsity using L1 unstructured pruning.
+    
+    Args:
+        model (nn.Module): The neural network model containing Conv2d layers to be pruned.
+        amount (float): The proportion of connections to prune (default is 0.3).
+    
+    Returns:
+        None
+    
+    Notes:
+        This function uses the `torch.nn.utils.prune` module to perform L1 unstructured pruning on all Conv2d layers.
+        After pruning, the pruning masks are removed to make the pruning permanent.
+    
+    Examples:
+        ```python
+        from ultralytics import prune
+        import torchvision.models as models
+    
+        model = models.resnet50(pretrained=True)
+        prune(model, amount=0.5)
+        ```
+    """
     import torch.nn.utils.prune as prune
 
     for name, m in model.named_modules():
@@ -263,8 +604,27 @@ def prune(model, amount=0.3):
 def fuse_conv_and_bn(conv, bn):
     """
     Fuses Conv2d and BatchNorm2d layers into a single Conv2d layer.
-
-    See https://tehnokv.com/posts/fusing-batchnorm-and-conv/.
+    
+    Args:
+        conv (nn.Conv2d): Convolution layer to be fused.
+        bn (nn.BatchNorm2d): BatchNorm layer to be fused.
+    
+    Returns:
+        nn.Conv2d: Fused convolutional layer with the properties of the original Conv2d and BatchNorm2d layers.
+    
+    See:
+        https://tehnokv.com/posts/fusing-batchnorm-and-conv/
+    
+    Example:
+        ```python
+        fused_layer = fuse_conv_and_bn(conv_layer, bn_layer)
+        model.layer = fused_layer
+        ```
+    
+    Note:
+        This function assumes that `conv` and `bn` layers are consecutively connected without any intermediate layers,
+        and both layers must be part of the same model. The resulting fused layer simplifies inference by reducing the
+        number of operations.
     """
     fusedconv = (
         nn.Conv2d(
@@ -296,9 +656,21 @@ def fuse_conv_and_bn(conv, bn):
 
 def model_info(model, verbose=False, imgsz=640):
     """
-    Prints model summary including layers, parameters, gradients, and FLOPs; imgsz may be int or list.
-
-    Example: img_size=640 or img_size=[640, 320]
+    Prints model summary including layers, parameters, gradients, and FLOPs for a specified image size.
+    
+    Args:
+        model (torch.nn.Module): The PyTorch model for which summary information will be printed.
+        verbose (bool, optional): If True, prints detailed summary including layer names, shapes, and statistics. Default is False.
+        imgsz (int | list[int], optional): The input image size to estimate FLOPs; can be an int or list of two ints. Default is 640.
+    
+    Returns:
+        None
+    
+    Example:
+        ```python
+        model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+        model_info(model, verbose=True, imgsz=[640, 320])
+        ```
     """
     n_p = sum(x.numel() for x in model.parameters())  # number parameters
     n_g = sum(x.numel() for x in model.parameters() if x.requires_grad)  # number gradients
@@ -326,8 +698,28 @@ def model_info(model, verbose=False, imgsz=640):
 
 
 def scale_img(img, ratio=1.0, same_shape=False, gs=32):  # img(16,3,256,416)
-    """Scales an image tensor `img` of shape (bs,3,y,x) by `ratio`, optionally maintaining the original shape, padded to
-    multiples of `gs`.
+    """
+    Scales an image tensor by a given ratio, optionally maintaining the original shape and padding to multiples of a
+    specified grid size.
+    
+    Args:
+        img (torch.Tensor): Input image tensor of shape (batch_size, 3, height, width).
+        ratio (float, optional): Scaling ratio. Defaults to 1.0.
+        same_shape (bool, optional): If True, maintains the original shape. Defaults to False.
+        gs (int, optional): Grid size to which the image is padded. Defaults to 32.
+    
+    Returns:
+        torch.Tensor: Scaled image tensor with the same or modified shape based on the `same_shape` parameter.
+    
+    Examples:
+        ```python
+        import torch
+        import torch.nn.functional as F
+        from utils.general import scale_img
+    
+        img = torch.randn(16, 3, 256, 416)  # random image tensor
+        scaled_img = scale_img(img, ratio=1.5, same_shape=False, gs=32)
+        ```
     """
     if ratio == 1.0:
         return img
@@ -340,7 +732,41 @@ def scale_img(img, ratio=1.0, same_shape=False, gs=32):  # img(16,3,256,416)
 
 
 def copy_attr(a, b, include=(), exclude=()):
-    """Copies attributes from object b to a, optionally filtering with include and exclude lists."""
+    """
+    Copies attributes from object `b` to object `a`, with optional `include` and `exclude` filters.
+    
+    Args:
+      a (object): The target object where attributes are being copied to.
+      b (object): The source object from which attributes are copied.
+      include (tuple | list, optional): Specific attributes to include during copying. Defaults to ().
+      exclude (tuple | list, optional): Specific attributes to exclude during copying. Defaults to ().
+    
+    Returns:
+      None
+    
+    Notes:
+      - Only public attributes (those not starting with an underscore) are copied unless explicitly included.
+      - If `include` is non-empty, only the attributes listed in `include` will be copied, regardless of other attributes.
+    
+    Example usage:
+    ```python
+    class A:
+      pass
+    
+    class B:
+      def __init__(self):
+        self.x = 1
+        self._y = 2
+        self.z = 3
+    
+    a = A()
+    b = B()
+    copy_attr(a, b, include=('x', 'z'))
+    print(a.x)  # Outputs: 1
+    # print(a._y)  # AttributeError: 'A' object has no attribute '_y'
+    print(a.z)  # Outputs: 3
+    ```
+    """
     for k, v in b.__dict__.items():
         if (len(include) and k not in include) or k.startswith("_") or k in exclude:
             continue
@@ -350,9 +776,32 @@ def copy_attr(a, b, include=(), exclude=()):
 
 def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):
     """
-    Initializes YOLOv5 smart optimizer with 3 parameter groups for different decay configurations.
-
-    Groups are 0) weights with decay, 1) weights no decay, 2) biases no decay.
+    Initializes a smart optimizer for YOLOv5 with different parameter groups for weights with decay, weights without decay,
+    and biases without decay.
+    
+    Args:
+        model (torch.nn.Module): The model for which the optimizer is to be initialized.
+        name (str): Name of the optimizer to use. Options are 'Adam', 'AdamW', 'RMSProp', and 'SGD'. Default is 'Adam'.
+        lr (float): Learning rate for the optimizer. Default is 0.001.
+        momentum (float): Momentum factor for optimizers that support it (like SGD and RMSProp). Default is 0.9.
+        decay (float): Weight decay (L2 regularization) coefficient. Default is 1e-5.
+    
+    Returns:
+        torch.optim.Optimizer: Initialized optimizer with separate parameter groups for weights with decay, weights without
+        decay, and biases without decay.
+    
+    Raises:
+        NotImplementedError: If an unknown optimizer name is passed.
+    
+    Notes:
+        This function supports optimizers from the PyTorch library, and includes specialized configurations for commonly used 
+        optimizers such as Adam and SGD.
+    
+    Example:
+        ```python
+        model = ...  # Define your model here
+        optimizer = smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, decay=1e-5)
+        ```
     """
     g = [], [], []  # optimizer parameter groups
     bn = tuple(v for k, v in nn.__dict__.items() if "Norm" in k)  # normalization layers, i.e. BatchNorm2d()
@@ -386,7 +835,28 @@ def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):
 
 
 def smart_hub_load(repo="ultralytics/yolov5", model="yolov5s", **kwargs):
-    """YOLOv5 torch.hub.load() wrapper with smart error handling, adjusting torch arguments for compatibility."""
+    """
+    smart_hub_load
+    """
+    YOLOv5 torch.hub.load() wrapper with smart error handling, adjusting torch arguments for compatibility.
+    
+    Args:
+        repo (str): Repository from which to load the model. Default is "ultralytics/yolov5".
+        model (str): Model name or path. Default is "yolov5s".
+        **kwargs: Additional keyword arguments to pass to `torch.hub.load()`.
+    
+    Returns:
+        torch.nn.Module: The loaded model.
+    
+    Example:
+        ```python
+        model = smart_hub_load(repo="ultralytics/yolov5", model="yolov5s")
+        ```
+    
+    Notes:
+        This function adds smart error handling by adjusting arguments based on the PyTorch version, particularly handling 
+        GitHub API rate limit errors and new arguments required in torch 0.12 and later.
+    """
     if check_version(torch.__version__, "1.9.1"):
         kwargs["skip_validation"] = True  # validation causes GitHub API rate limit errors
     if check_version(torch.__version__, "1.12.0"):
@@ -398,7 +868,35 @@ def smart_hub_load(repo="ultralytics/yolov5", model="yolov5s", **kwargs):
 
 
 def smart_resume(ckpt, optimizer, ema=None, weights="yolov5s.pt", epochs=300, resume=True):
-    """Resumes training from a checkpoint, updating optimizer, ema, and epochs, with optional resume verification."""
+    """
+    Resumes training from a checkpoint, updating optimizer, ema, and epochs, with optional resume verification.
+    
+    Args:
+        ckpt (dict): Checkpoint containing model, optimizer, and training states.
+        optimizer (torch.optim.Optimizer): Optimizer to be resumed.
+        ema (optional): Exponential Moving Average object for model weights, default is None.
+        weights (str): Path to the model weights file, default is "yolov5s.pt".
+        epochs (int): Total number of epochs to train from the start, default is 300.
+        resume (bool): Flag to indicate if training should be resumed, default is True.
+    
+    Returns:
+        None
+    
+    Raises:
+        AssertionError: If `resume` is True but no epochs are available to be resumed, indicating the training is completed.
+        
+    Examples:
+        ```python
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        checkpoint = torch.load('checkpoint.pth')
+        smart_resume(checkpoint, optimizer, ema=ema_object, weights='yolov5s.pt', epochs=300, resume=True)
+        ```
+    
+    Notes:
+        - The function assumes the checkpoint dictionary contains 'epoch', 'optimizer', 'best_fitness', and optionally 'ema'
+          and 'updates'.
+        - A resume will log the progress and necessary actions, ensuring the checkpoint states are applied correctly.
+    """
     best_fitness = 0.0
     start_epoch = ckpt["epoch"] + 1
     if ckpt["optimizer"] is not None:
@@ -422,14 +920,51 @@ def smart_resume(ckpt, optimizer, ema=None, weights="yolov5s.pt", epochs=300, re
 class EarlyStopping:
     # YOLOv5 simple early stopper
     def __init__(self, patience=30):
-        """Initializes simple early stopping mechanism for YOLOv5, with adjustable patience for non-improving epochs."""
+        """
+        Initializes simple early stopping mechanism for YOLOv5, with adjustable patience for non-improving epochs.
+        
+        Args:
+            patience (float | int): Number of epochs to wait after fitness stops improving before stopping training. Setting
+                                    this to an integer value specifies the exact number of patience epochs, while setting it to
+                                    float("inf") disables early stopping. Defaults to 30.
+        
+        Returns:
+            None (this constructor does not return value)
+        
+        Notes:
+            - This early stopping mechanism helps in terminating training when there's no improvement in model
+              performance (as measured by fitness, typically mAP) for a specified number of epochs.
+            - It is useful for preventing overfitting and saving computational resources during model training.
+        """
         self.best_fitness = 0.0  # i.e. mAP
         self.best_epoch = 0
         self.patience = patience or float("inf")  # epochs to wait after fitness stops improving to stop
         self.possible_stop = False  # possible stop may occur next epoch
 
     def __call__(self, epoch, fitness):
-        """Evaluates if training should stop based on fitness improvement and patience, returning a boolean."""
+        """
+        Evaluates if training should stop based on fitness improvement and patience.
+        
+        Args:
+            epoch (int): The current training epoch.
+            fitness (float): The current fitness value, typically a model performance metric like mAP.
+        
+        Returns:
+            bool: True if the training should stop, False otherwise.
+        
+        Notes:
+            The early stopping mechanism tracks the highest fitness achieved and the epoch it was achieved at. If the
+            current epoch does not show improvement in fitness over a specified patience interval, training is flagged
+            to stop. The mechanism also logs a message when training stops, noting the best epoch and saving the best model.
+        
+        Example:
+            ```python
+            early_stopping = EarlyStopping(patience=30)
+            should_stop = early_stopping(epoch=10, fitness=0.85)
+            ```
+        
+            This evaluates if training should stop at epoch 10 with a fitness score of 0.85.培训应在第10阶段停止，适合得分为0.85。
+        """
         if fitness >= self.best_fitness:  # >= 0 to allow for early zero-fitness stage of training
             self.best_epoch = epoch
             self.best_fitness = fitness
@@ -453,8 +988,30 @@ class ModelEMA:
     """
 
     def __init__(self, model, decay=0.9999, tau=2000, updates=0):
-        """Initializes EMA with model parameters, decay rate, tau for decay adjustment, and update count; sets model to
-        evaluation mode.
+        """
+        Initializes the Exponential Moving Average (EMA) model with specified decay parameters and sets the model to evaluation mode.
+        
+        Args:
+            model (torch.nn.Module): The model to apply EMA on.
+            decay (float): The decay rate for the EMA. It dictates how much of the model's parameters are retained with each update.
+            tau (int): The tau value to adjust the effective decay during initial updates, ensuring more stability.
+            updates (int): Initial number of updates applied to the EMA model. Useful for resuming training from a checkpoint.
+        
+        Returns:
+            None
+        Notes:
+            For more details on Exponential Moving Average (EMA), refer to 
+            https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
+        
+            Example usage of initializing ModelEMA:
+            ```python
+            from ultralytics import ModelEMA, YOLO
+            
+            model = YOLO('yolov5s.pt').model
+            ema = ModelEMA(model)
+            ```
+        
+            This is useful for maintaining a smoothed version of the model weights which often improves model performance during training.
         """
         self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
         self.updates = updates  # number of EMA updates
@@ -463,7 +1020,20 @@ class ModelEMA:
             p.requires_grad_(False)
 
     def update(self, model):
-        """Updates the Exponential Moving Average (EMA) parameters based on the current model's parameters."""
+        """
+        Updates the Exponential Moving Average (EMA) parameters based on the current model's parameters.
+        
+        Args:
+            model (nn.Module): The current model whose parameters will be used to update the EMA.
+        
+        Returns:
+            None
+        
+        Notes:
+            The EMA decay is dynamically computed using the formula `decay * (1 - exp(-updates / tau))` where
+            `decay` is the base decay rate, `tau` is a constant to help during early epochs, and `updates`
+            represents the number of times the EMA has been updated. Only floating-point parameters are updated.
+        """
         self.updates += 1
         d = self.decay(self.updates)
 
@@ -475,7 +1045,28 @@ class ModelEMA:
         # assert v.dtype == msd[k].dtype == torch.float32, f'{k}: EMA {v.dtype} and model {msd[k].dtype} must be FP32'
 
     def update_attr(self, model, include=(), exclude=("process_group", "reducer")):
-        """Updates EMA attributes by copying specified attributes from model to EMA, excluding certain attributes by
-        default.
+        """
+        Updates EMA attributes by copying specified attributes from the model to the EMA.
+        
+        Args:
+            model (object): The source model from which attributes are copied to the EMA.
+            include (tuple): Tuple of attribute names to include when copying. Default is empty tuple, meaning all attributes
+                are included.
+            exclude (tuple): Tuple of attribute names to exclude when copying. Defaults to ("process_group", "reducer").
+        
+        Returns:
+            None
+        
+        Note:
+            This function selectively copies attributes from the given model to the internal EMA model. Attributes included in 
+            the `include` list will always be copied, provided they are not also included in `exclude`. The function is designed 
+            to handle specific exclusions by default, making it useful for updating model states while avoiding certain 
+            attributes that may interfere with the EMA's functioning.
+            
+        Example:
+            ```python
+            ema = ModelEMA(model)
+            ema.update_attr(model, include=('attr1', 'attr2'), exclude=('reducer',))
+            ```
         """
         copy_attr(self.ema, model, include, exclude)

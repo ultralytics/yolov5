@@ -16,8 +16,33 @@ DETECTION_URL = "/v1/object-detection/<model>"
 
 @app.route(DETECTION_URL, methods=["POST"])
 def predict(model):
-    """Predict and return object detections in JSON format given an image and model name via a Flask REST API POST
-    request.
+    """
+    Predict and return object detections in JSON format given an image and model name via a Flask REST API POST request.
+
+    Args:
+        model (str): The name of the YOLOv5 model to be used for prediction. This should be one of the models loaded into
+            the `models` dictionary.
+
+    Returns:
+        (dict | None): JSON-formatted dictionary containing predicted object detections if the POST request is valid and
+            contains an image file; otherwise, returns None.
+
+    Notes:
+        - Ensure the Flask application is properly configured and running to handle POST requests at the endpoint
+          `DETECTION_URL`.
+        - The image file should be included in the POST request with the key "image".
+        - The model specified in the request should already be loaded into the `models` dictionary.
+
+    Example:
+    ```python
+    import requests
+
+    url = "http://localhost:5000/v1/object-detection/yolov5s"
+    files = {"image": open("image.jpg", "rb")}
+    response = requests.post(url, files=files)
+
+    print(response.json())
+    ```
     """
     if request.method != "POST":
         return

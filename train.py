@@ -102,10 +102,44 @@ GIT_INFO = check_git_info()
 
 def train(hyp, opt, device, callbacks):
     """
-    Trains YOLOv5 model with given hyperparameters, options, and device, managing datasets, model architecture, loss
-    computation, and optimizer steps.
+    Trains a YOLOv5 model on a custom dataset using specified hyperparameters, options, and device, handling dataset
+    management, model architecture, loss computation, and optimizer steps.
 
-    `hyp` argument is path/to/hyp.yaml or hyp dictionary.
+    Args:
+        hyp (str | dict): Path to 'hyp.yaml' or a hyperparameters dictionary.
+        opt (argparse.Namespace): Training command-line options.
+        device (torch.device): Device to run the training on (e.g., CPU or GPU).
+        callbacks (Callbacks): Callback functions to run at various stages of training.
+
+    Returns:
+        None
+
+    Examples:
+        Single-GPU training from pretrained weights:
+        ```python
+        !python train.py --data coco128.yaml --weights yolov5s.pt --img 640
+        ```
+
+        Single-GPU training from scratch:
+        ```python
+        !python train.py --data coco128.yaml --weights '' --cfg yolov5s.yaml --img 640
+        ```
+
+        Multi-GPU DDP training:
+        ```python
+        !python -m torch.distributed.run --nproc_per_node 4 --master_port 1 train.py --data coco128.yaml --weights yolov5s.pt --img 640 --device 0,1,2,3
+        ```
+
+    Notes:
+        - Data models: https://github.com/ultralytics/yolov5/tree/master/models
+        - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
+        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+
+    Attributes:
+        LOCAL_RANK (int): Local rank for distributed training.
+        RANK (int): Global rank in distributed training.
+        WORLD_SIZE (int): Number of distributed training processes.
+        GIT_INFO (dict): Information about the current git repository state.
     """
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = (
         Path(opt.save_dir),
@@ -515,7 +549,34 @@ def train(hyp, opt, device, callbacks):
 
 
 def parse_opt(known=False):
-    """Parses command-line arguments for YOLOv5 training, validation, and testing."""
+    """
+    Parses command-line arguments for YOLOv5 training, validation, and testing.
+
+    Args:
+        known (bool, optional): If True, only known arguments will be parsed. If False, all arguments will be parsed (default: False).
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments as a namespace object containing all specified options.
+
+    Example:
+        To use this function from the command line, you can run:
+        ```python
+        import argparse
+        from your_module import parse_opt
+
+        if __name__ == "__main__":
+            opt = parse_opt()
+            print(opt)
+        ```
+    Note:
+        The function includes a comprehensive set of arguments to cater to various training scenarios,
+        including single-GPU, multi-GPU, and custom configurations.
+
+    Link:
+        - Models: https://github.com/ultralytics/yolov5/tree/master/models
+        - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
+        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="initial weights path")
     parser.add_argument("--cfg", type=str, default="", help="model.yaml path")
@@ -570,7 +631,33 @@ def parse_opt(known=False):
 
 
 def main(opt, callbacks=Callbacks()):
-    """Runs training or hyperparameter evolution with specified options and optional callbacks."""
+    """
+    Main function for Ultralytics YOLOv5. Manages the training or hyperparameter evolution process with specified
+    options.
+
+    Args:
+      opt (argparse.Namespace): Parsed command-line arguments for YOLOv5 training, validation, and testing.
+      callbacks (Callbacks, optional): Custom callback functions to handle various stages of training. Defaults to Callbacks().
+
+    Returns:
+      None
+
+    Example:
+    ```python
+    if __name__ == "__main__":
+        opt = parse_opt()
+        main(opt)
+    ```
+
+    Raises:
+      AssertionError: If parameters are not compatible with Multi-GPU DDP training.
+      IOError: If the device selection fails or if validation checks fail.
+
+    For more details, refer to:
+    - Models and datasets: https://github.com/ultralytics/yolov5/tree/master/models
+    - Training on custom data: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+    - Multi-GPU Training: https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training
+    """
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
@@ -826,7 +913,24 @@ def main(opt, callbacks=Callbacks()):
 
 
 def generate_individual(input_ranges, individual_length):
-    """Generates a list of random values within specified input ranges for each gene in the individual."""
+    """
+    Generate an individual with random values within specified ranges for each gene.
+
+    Args:
+        input_ranges (list[tuple[float, float]]): List of tuples specifying the (lower_bound, upper_bound) for each gene.
+        individual_length (int): The length of the individual, i.e., the number of genes.
+
+    Returns:
+        list[float]: A list of random values representing the individual, with each value within the corresponding bounds.
+
+    Example:
+        ```python
+        input_ranges = [(0.0, 1.0), (0.1, 0.9), (10, 100)]
+        individual_length = 3
+        individual = generate_individual(input_ranges, individual_length)
+        print(individual)  # Example output: [0.5, 0.3, 55.2]
+        ```
+    """
     individual = []
     for i in range(individual_length):
         lower_bound, upper_bound = input_ranges[i]
@@ -836,9 +940,55 @@ def generate_individual(input_ranges, individual_length):
 
 def run(**kwargs):
     """
-    Executes YOLOv5 training with given options, overriding with any kwargs provided.
+    Executes YOLOv5 training with given options, allowing optional overrides through keyword arguments.
 
-    Example: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
+    Args:
+      weights (str, optional): Path to the initial weights file. Default is 'yolov5s.pt'.
+      cfg (str, optional): Path to the model configuration file (YAML format). Default is an empty string.
+      data (str, optional): Path to the dataset configuration file (YAML format). Default is 'data/coco128.yaml'.
+      hyp (str, optional): Path to the hyperparameters configuration file (YAML format). Default is 'data/hyps/hyp.scratch-low.yaml'.
+      epochs (int, optional): Number of training epochs. Default is 100.
+      batch_size (int, optional): Total batch size for all GPUs, use -1 for auto-batching. Default is 16.
+      imgsz (int, optional): Image size for training and validation (in pixels). Default is 640.
+      rect (bool, optional): If true, enables rectangular training. Default is False.
+      resume (bool, optional): If true, resumes the most recent training. Default is False.
+      nosave (bool, optional): If true, saves only the final checkpoint. Default is False.
+      noval (bool, optional): If true, validates only the final epoch. Default is False.
+      noautoanchor (bool, optional): If true, disables AutoAnchor optimization. Default is False.
+      noplots (bool, optional): If true, saves no plot files during training. Default is False.
+      evolve (int or bool, optional): If an integer is provided, evolves hyperparameters for the given number of generations.
+                                      If True, defaults to 300 generations. Default is False.
+      evolve_population (str, optional): Path to the directory with population files for evolving hyperparameters. Default is 'data/hyps'.
+      resume_evolve (str, optional): Path to resume the hyperparameter evolution from the last generation. Default is None.
+      bucket (str, optional): Google Cloud Storage bucket. Default is an empty string.
+      cache (str, optional): Cache images in RAM or disk. Default is None.
+      image_weights (bool, optional): If true, enables weighted image selection for training. Default is False.
+      device (str, optional): CUDA device, e.g., '0' or '0,1,2,3' or 'cpu'. Default is an empty string.
+      multi_scale (bool, optional): If true, varies the image size during training by +/- 50%. Default is False.
+      single_cls (bool, optional): If true, treats multi-class data as single-class. Default is False.
+      optimizer (str, optional): Type of optimizer to use ('SGD', 'Adam', 'AdamW'). Default is 'SGD'.
+      sync_bn (bool, optional): If true, uses SyncBatchNorm, available only in DDP mode. Default is False.
+      workers (int, optional): Maximum number of dataloader workers per rank in DDP mode. Default is 8.
+      project (str, optional): Path to the project directory for saving results. Default is 'runs/train'.
+      name (str, optional): Name of the experiment in the project directory. Default is 'exp'.
+      exist_ok (bool, optional): If true, existing project/name directories are okay and the run is not incremented. Default is False.
+      quad (bool, optional): If true, enables the quad dataloader. Default is False.
+      cos_lr (bool, optional): If true, use a cosine learning rate scheduler. Default is False.
+      label_smoothing (float, optional): Label smoothing epsilon. Default is 0.0.
+      patience (int, optional): EarlyStopping patience (epochs without improvement). Default is 100.
+      freeze (list of int, optional): Layers to freeze. Default is [0].
+      save_period (int, optional): Save checkpoint every x epochs (disabled if < 1). Default is -1.
+      seed (int, optional): Global training seed. Default is 0.
+      local_rank (int, optional): For automatic DDP Multi-GPU; do not modify. Default is -1.
+      entity (str, optional): Entity name. Default is None.
+      upload_dataset (bool or str, optional): Upload data; 'val' option is accepted. Default is False.
+      bbox_interval (int, optional): Interval for logging bounding-box images. Default is -1.
+      artifact_alias (str, optional): Version of the dataset artifact to use. Default is 'latest'.
+      ndjson_console (bool, optional): If true, log in ndjson format to console. Default is False.
+      ndjson_file (bool, optional): If true, log in ndjson format to file. Default is False.
+
+    Returns:
+      None
     """
     opt = parse_opt(True)
     for k, v in kwargs.items():

@@ -21,7 +21,34 @@ except (ImportError, AssertionError):
 
 
 def construct_dataset(clearml_info_string):
-    """Load in a clearml dataset and fill the internal data_dict with its contents."""
+    """
+    Load a ClearML dataset and populate the internal data dictionary with its contents.
+
+    Args:
+        clearml_info_string (str): A string containing the ClearML dataset identifier, typically in the format
+            'clearml://<dataset_id>'.
+
+    Returns:
+        dict: A dictionary containing paths for 'train', 'test', and 'val' datasets along with 'nc' (number of classes)
+            and 'names' (class names).
+
+    Raises:
+        ValueError: If multiple or no YAML files are found in the dataset root path.
+        AssertionError: If essential keys are missing from the YAML file ('train', 'test', 'val', 'nc', 'names').
+
+    Notes:
+        This function depends on the ClearML package for dataset retrieval. Ensure ClearML is installed and
+        properly configured.
+
+    Example:
+        ```python
+        from ultralytics import construct_dataset
+
+        clearml_info_string = 'clearml://your-dataset-id'
+        dataset_dict = construct_dataset(clearml_info_string)
+        print(dataset_dict)
+        ```
+    """
     dataset_id = clearml_info_string.replace("clearml://", "")
     dataset = Dataset.get(dataset_id=dataset_id)
     dataset_root_path = Path(dataset.get_local_copy())
@@ -77,13 +104,14 @@ class ClearmlLogger:
 
     def __init__(self, opt, hyp):
         """
-        - Initialize ClearML Task, this object will capture the experiment
-        - Upload dataset version to ClearML Data if opt.upload_dataset is True
+        Initialize the ClearML logging task for experiment tracking and optionally upload dataset version.
 
-        arguments:
-        opt (namespace) -- Commandline arguments for this run
-        hyp (dict) -- Hyperparameters for this run
+        Args:
+            opt (namespace): Command-line arguments for the current training run.
+            hyp (dict): Hyperparameters for the current training run.
 
+        Returns:
+            None
         """
         self.current_epoch = 0
         # Keep tracked of amount of logged images to enforce a limit
@@ -131,11 +159,27 @@ class ClearmlLogger:
 
     def log_scalars(self, metrics, epoch):
         """
-        Log scalars/metrics to ClearML.
+        Log scalars or metrics to ClearML experiment tracking.
 
-        arguments:
-        metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
-        epoch (int) iteration number for the current set of metrics
+        Args:
+            metrics (dict): Metrics in a dictionary format, e.g., {"metrics/mAP": 0.8, ...}.
+            epoch (int): The epoch number corresponding to the current set of metrics.
+
+        Returns:
+            None
+
+        Examples:
+            ```python
+            clearml_logger = ClearmlLogger(opt, hyp)
+            metrics = {"metrics/mAP50": 0.8, "metrics/precision": 0.75}
+            epoch = 1
+            clearml_logger.log_scalars(metrics, epoch)
+            ```
+
+        Notes:
+            This method logs metrics for the current epoch to the ClearML dashboard, facilitating experiment tracking and
+            visualization. Ensure that 'metrics' dictionary keys follow the "title/series" naming convention, e.g.,
+            "metrics/mAP50".
         """
         for k, v in metrics.items():
             title, series = k.split("/")
@@ -145,10 +189,17 @@ class ClearmlLogger:
         """
         Log model weights to ClearML.
 
-        arguments:
-        model_path (PosixPath or str) Path to the model weights
-        model_name (str) Name of the model visible in ClearML
-        epoch (int) Iteration / epoch of the model weights
+        Args:
+            model_path (Path | str): Path to the model weights file.
+            model_name (str): Name of the model to be displayed in ClearML.
+            epoch (int, optional): Epoch number representing the state of the model. Defaults to 0.
+
+        Returns:
+            None
+
+        Notes:
+            This method updates the output model in ClearML with the specified path and name. The model weights file is not
+            automatically deleted after uploading, ensuring the file remains accessible on the local system.
         """
         self.task.update_output_model(
             model_path=str(model_path), name=model_name, iteration=epoch, auto_delete_file=False
@@ -156,21 +207,45 @@ class ClearmlLogger:
 
     def log_summary(self, metrics):
         """
-        Log final metrics to a summary table.
+        Log final summary metrics to ClearML.
 
-        arguments:
-        metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
+        Args:
+            metrics (dict): Dictionary containing final metrics. Example: {"metrics/mAP": 0.8, "metrics/precision": 0.9, ...}
+
+        Returns:
+            None
+
+        Examples:
+            ```python
+            logger = ClearmlLogger(opt, hyp)
+            final_metrics = {"metrics/mAP": 0.85, "metrics/precision": 0.92}
+            logger.log_summary(final_metrics)
+            ```
         """
         for k, v in metrics.items():
             self.task.get_logger().report_single_value(k, v)
 
     def log_plot(self, title, plot_path):
         """
-        Log image as plot in the plot section of ClearML.
+        Log image as a plot in the plot section of ClearML.
 
-        arguments:
-        title (str) Title of the plot
-        plot_path (PosixPath or str) Path to the saved image file
+        Args:
+            title (str): Title of the plot.
+            plot_path (PosixPath | str): Path to the saved image file.
+
+        Returns:
+            None
+
+        Notes:
+            This function loads the image from the specified path and displays it using Matplotlib.
+            The displayed plot is then logged to ClearML, providing a visual representation within the ClearML UI.
+
+        Examples:
+            ```python
+            from pathlib import Path
+            logger = ClearmlLogger(opt, hyp)
+            logger.log_plot("Sample Plot", Path("path/to/plot.png"))
+            ```
         """
         img = mpimg.imread(plot_path)
         fig = plt.figure()
@@ -183,9 +258,12 @@ class ClearmlLogger:
         """
         Log files (images) as debug samples in the ClearML task.
 
-        arguments:
-        files (List(PosixPath)) a list of file paths in PosixPath format
-        title (str) A title that groups together images with the same values
+        Args:
+          files (List[PosixPath]): A list of file paths to the images to log.
+          title (str, optional): A title that groups together images with the same values. Defaults to "Debug Samples".
+
+        Returns:
+          None
         """
         for f in files:
             if f.exists():
@@ -197,13 +275,22 @@ class ClearmlLogger:
 
     def log_image_with_boxes(self, image_path, boxes, class_names, image, conf_threshold=0.25):
         """
-        Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
+        Clear and report the bounding boxes on an image to ClearML as a debug sample.
 
-        arguments:
-        image_path (PosixPath) the path the original image file
-        boxes (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
-        class_names (dict): dict containing mapping of class int to class name
-        image (Tensor): A torch tensor containing the actual image data
+        Args:
+            image_path (PosixPath): The path to the original image file.
+            boxes (list): List of scaled predictions in the format [xmin, ymin, xmax, ymax, confidence, class].
+            class_names (dict): Mapping of class indices to class names.
+            image (torch.Tensor): Tensor containing the actual image data.
+            conf_threshold (float, optional): Confidence threshold for displaying bounding boxes. Defaults to 0.25.
+
+        Returns:
+            None
+
+        Notes:
+            This method logs at most `max_imgs_to_log_per_epoch` images per epoch, ensuring that logs are not
+            overwhelming. Bounding boxes are only logged if current epoch is divisible by `bbox_interval`
+            and the image hasn't already been logged. All images are converted to numpy arrays before annotation.
         """
         if (
             len(self.current_epoch_logged_images) < self.max_imgs_to_log_per_epoch

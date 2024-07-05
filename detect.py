@@ -97,7 +97,58 @@ def run(
     dnn=False,  # use OpenCV DNN for ONNX inference
     vid_stride=1,  # video frame-rate stride
 ):
-    """Runs YOLOv5 detection inference on various sources like images, videos, directories, streams, etc."""
+    """
+    Runs YOLOv5 detection inference on various sources like images, videos, directories, streams, etc.
+
+    Args:
+    weights (str | Path): Path to the model weights file or a Triton server URL. Default is 'yolov5s.pt'.
+    source (str | Path): The source for inference; can be a file, directory, URL, glob pattern, or video stream. Default is 'data/images'.
+    data (str | Path): Path to the dataset YAML file. Default is 'data/coco128.yaml'.
+    imgsz (int | tuple): Image size for inference as a single integer or a tuple (height, width). Default is (640, 640).
+    conf_thres (float): Confidence threshold for object detection. Default is 0.25.
+    iou_thres (float): Intersection over Union (IoU) threshold for non-max suppression. Default is 0.45.
+    max_det (int): Maximum number of detections per image. Default is 1000.
+    device (str): Device to run inference on, e.g., '0' for GPU or 'cpu' for CPU. Default is empty string.
+    view_img (bool): If True, displays the inference images. Default is False.
+    save_txt (bool): If True, saves the detection results to text files. Default is False.
+    save_csv (bool): If True, saves the detection results in CSV format. Default is False.
+    save_conf (bool): If True, saves the confidence of predictions in text files. Default is False.
+    save_crop (bool): If True, saves the cropped prediction boxes. Default is False.
+    nosave (bool): If True, prevents saving images/videos. Default is False.
+    classes (list[int], optional): Filter detections by class; e.g., [0] or [0, 2, 3]. Default is None.
+    agnostic_nms (bool): If True, performs class-agnostic non-max suppression. Default is False.
+    augment (bool): If True, uses augmented inference. Default is False.
+    visualize (bool): If True, visualizes feature maps. Default is False.
+    update (bool): If True, updates all models. Default is False.
+    project (str | Path): Directory to save results. Default is 'runs/detect'.
+    name (str): Name of the current experiment; results will be saved in 'project/name'. Default is 'exp'.
+    exist_ok (bool): If True, existing 'project/name' directory will not be incremented. Default is False.
+    line_thickness (int): Thickness of bounding box lines in pixels. Default is 3.
+    hide_labels (bool): If True, hides object labels in the output. Default is False.
+    hide_conf (bool): If True, hides confidence scores in the output. Default is False.
+    half (bool): If True, uses FP16 half-precision for inference. Default is False.
+    dnn (bool): If True, uses OpenCV DNN for ONNX inference. Default is False.
+    vid_stride (int): Frame-rate stride for video processing. Default is 1.
+
+    Returns:
+    None
+
+    Notes:
+    - Supports a wide range of input sources including images, videos, directories, YouTube streams, and webcams.
+    - Handles multiple inference formats such as PyTorch, ONNX, TensorFlow, CoreML, and more.
+    - Usage examples:
+        ```python
+        # WebCam
+        run(weights='yolov5s.pt', source=0)
+        # Image file
+        run(weights='yolov5s.pt', source='img.jpg')
+        # YouTube video
+        run(weights='yolov5s.pt', source='https://youtu.be/LNwODJXcvt4')
+        ```
+
+    See Also:
+    - Ultralytics YOLOv5 GitHub: https://github.com/ultralytics/yolov5
+    """
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -266,7 +317,48 @@ def run(
 
 
 def parse_opt():
-    """Parses command-line arguments for YOLOv5 detection, setting inference options and model configurations."""
+    """
+    Parses command-line arguments for YOLOv5 detection, setting inference options and model configurations.
+
+    Args:
+        --weights (str | list[str], optional): Model path or Triton URL. Defaults to ROOT / 'yolov5s.pt'.
+        --source (str, optional): File/dir/URL/glob/screen/0(webcam). Defaults to ROOT / 'data/images'.
+        --data (str, optional): Dataset YAML path. Provides dataset configuration information. Defaults to ROOT / 'data/coco128.yaml'.
+        --imgsz (list[int], optional): Inference image size (height, width). Expanded to [h, w] if single value provided. Defaults to [640].
+        --conf-thres (float, optional): Confidence threshold for detection. Defaults to 0.25.
+        --iou-thres (float, optional): Non-Maximum Suppression IoU threshold. Defaults to 0.45.
+        --max-det (int, optional): Maximum number of detections per image. Defaults to 1000.
+        --device (str, optional): CUDA device, i.e., '0', '0,1,2,3' or 'cpu'. Defaults to ''.
+        --view-img (bool, optional): Flag to display the detection results. Defaults to False.
+        --save-txt (bool, optional): Flag to save the detection results in a text file. Defaults to False.
+        --save-csv (bool, optional): Flag to save the detection results in CSV format. Defaults to False.
+        --save-conf (bool, optional): Flag to save confidence values in the output text file. Defaults to False.
+        --save-crop (bool, optional): Flag to save cropped prediction boxes. Defaults to False.
+        --nosave (bool, optional): Flag to not save inference images/videos. Defaults to False.
+        --classes (list[int], optional): List of class indices for filtering detection. Use --classes 0, or --classes 0 2 3.
+        --agnostic-nms (bool, optional): Flag to use class-agnostic NMS. Defaults to False.
+        --augment (bool, optional): Flag for augmented inference. Defaults to False.
+        --visualize (bool, optional): Flag to visualize feature maps. Defaults to False.
+        --update (bool, optional): Flag to update all models. Defaults to False.
+        --project (str, optional): Directory to save results. Defaults to ROOT / 'runs/detect'.
+        --name (str, optional): Results sub-directory name. Defaults to 'exp'.
+        --exist-ok (bool, optional): Flag to not increment results directory if it exists. Defaults to False.
+        --line-thickness (int, optional): Bounding box line thickness in pixels. Defaults to 3.
+        --hide-labels (bool, optional): Flag to hide detection labels. Defaults to False.
+        --hide-conf (bool, optional): Flag to hide confidence scores. Defaults to False.
+        --half (bool, optional): Flag to use half-precision (FP16) inference. Defaults to False.
+        --dnn (bool, optional): Flag to use OpenCV DNN for ONNX inference. Defaults to False.
+        --vid-stride (int, optional): Video frame-rate stride. Defaults to 1.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments as namespace object.
+
+    Examples:
+        ```python
+        args = parse_opt()
+        run(**vars(args))
+        ```
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s.pt", help="model path or triton URL")
     parser.add_argument("--source", type=str, default=ROOT / "data/images", help="file/dir/URL/glob/screen/0(webcam)")
@@ -303,7 +395,26 @@ def parse_opt():
 
 
 def main(opt):
-    """Executes YOLOv5 model inference with given options, checking requirements before running the model."""
+    """
+    Executes YOLOv5 model inference with given options, checking requirements before running the model.
+
+    Args:
+      opt (argparse.Namespace): Command-line arguments for YOLOv5 detection. See `parse_opt()` for details on each argument.
+
+    Returns:
+        None
+
+    Notes:
+        - This function relies on the presence of certain packages listed in `requirements.txt`.
+        - Ensure that all dependencies are installed before running the model.
+
+    Examples:
+        ```python
+        if __name__ == "__main__":
+            opt = parse_opt()
+            main(opt)
+        ```
+    """
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
     run(**vars(opt))
 

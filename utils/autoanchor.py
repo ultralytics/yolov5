@@ -15,7 +15,28 @@ PREFIX = colorstr("AutoAnchor: ")
 
 
 def check_anchor_order(m):
-    """Checks and corrects anchor order against stride in YOLOv5 Detect() module if necessary."""
+    """
+    Checks and corrects the anchor order against stride in YOLOv5 `Detect` module if necessary.
+
+    Args:
+        m (Detect): The YOLOv5 `Detect` module containing anchor and stride information.
+
+    Returns:
+        None: This function does not return any value.
+
+    Notes:
+        The function computes the mean anchor area for each output layer and verifies their order against the strides.
+        If the order is inconsistent, it reverses the anchor order to ensure proper matching with the strides.
+
+    Example:
+        ```python
+        from models.yolo import Model
+        from utils.autoanchor import check_anchor_order
+
+        model = Model(cfg)  # initialize your YOLOv5 model here
+        check_anchor_order(model.model[-1])  # check and correct anchor order for the Detect module
+        ```
+    """
     a = m.anchors.prod(-1).mean(-1).view(-1)  # mean anchor area per output layer
     da = a[-1] - a[0]  # delta a
     ds = m.stride[-1] - m.stride[0]  # delta s
@@ -26,7 +47,41 @@ def check_anchor_order(m):
 
 @TryExcept(f"{PREFIX}ERROR")
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
-    """Evaluates anchor fit to dataset and adjusts if necessary, supporting customizable threshold and image size."""
+    """
+    Evaluates anchor fit to a given dataset and adjusts the model's anchors if necessary, supporting customizable
+    threshold and image size.
+
+    Args:
+        dataset (Dataset): Dataset containing images and labels to evaluate against the model's anchors.
+        model (torch.nn.Module): YOLOv5 model whose anchors are to be evaluated and updated.
+        thr (float, optional): Threshold for anchor evaluation. Default is 4.0.
+        imgsz (int, optional): Image size for evaluation. Default is 640.
+
+    Returns:
+        None
+
+    Notes:
+        The function assesses the current anchors by computing metrics like the ratio metric, anchors above threshold,
+        and best possible recall (BPR). If the BPR exceeds 0.98, the anchors are considered a good fit. Otherwise, it
+        attempts to improve the anchors using k-means clustering. If new anchors are better, they replace the old ones in
+        the model. The new anchors should be manually updated in the model configuration file (*.yaml) for future use.
+
+    Example:
+        ```python
+        from ultralytics import YOLO
+
+        # Load dataset and model
+        dataset = YOLO('coco128.yaml')
+        model = YOLO('yolov5s.pt')
+
+        # Check and adjust anchors
+        check_anchors(dataset, model)
+        ```
+
+    See Also:
+        - kmean_anchors: Function for generating anchors using k-means clustering.
+        - check_anchor_order: Function for checking and correcting the anchor order against the model's stride.
+    """
     m = model.module.model[-1] if hasattr(model, "module") else model.model[-1]  # Detect()
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
     scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
@@ -65,21 +120,28 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
 
 def kmean_anchors(dataset="./data/coco128.yaml", n=9, img_size=640, thr=4.0, gen=1000, verbose=True):
     """
-    Creates kmeans-evolved anchors from training dataset.
+    Creates k-means-evolved anchors from a training dataset, optionally with genetic algorithm evolution.
 
-    Arguments:
-        dataset: path to data.yaml, or a loaded dataset
-        n: number of anchors
-        img_size: image size used for training
-        thr: anchor-label wh ratio threshold hyperparameter hyp['anchor_t'] used for training, default=4.0
-        gen: generations to evolve anchors using genetic algorithm
-        verbose: print all results
+    Args:
+        dataset (str | dict): Path to the dataset YAML file or a loaded dataset. Default is './data/coco128.yaml'.
+        n (int): Number of anchors to generate. Default is 9.
+        img_size (int): Image size to use for k-means clustering. Default is 640.
+        thr (float): Anchor-label width-height ratio threshold hyperparameter. Default is 4.0.
+        gen (int): Number of generations for genetic algorithm evolution of anchors. Default is 1000.
+        verbose (bool): If True, prints detailed results and progress. Default is True.
 
-    Return:
-        k: kmeans evolved anchors
+    Returns:
+        np.ndarray: A numpy array of shape (n, 2) containing the evolved anchors.
 
-    Usage:
-        from utils.autoanchor import *; _ = kmean_anchors()
+    Notes:
+        This function first attempts to generate initial anchors using k-means clustering on the dataset labels, and then
+        optionally improves these anchors through multiple generations of a genetic algorithm.
+
+    Examples:
+        ```python
+        from utils.autoanchor import kmean_anchors
+        anchors = kmean_anchors(dataset='./data/coco.yaml', n=9, img_size=640, thr=4.0, gen=1000, verbose=True)
+        ```
     """
     from scipy.cluster.vq import kmeans
 

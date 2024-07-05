@@ -13,9 +13,39 @@ from ..general import resample_segments, segment2box
 
 def mixup(im, labels, segments, im2, labels2, segments2):
     """
-    Applies MixUp augmentation blending two images, labels, and segments with a random ratio.
+    Applies MixUp augmentation by blending two images, labels, and segments with a random ratio.
 
-    See https://arxiv.org/pdf/1710.09412.pdf
+    Args:
+        im (np.ndarray): The primary image to be augmented.
+        labels (np.ndarray): The bounding box labels for the primary image.
+        segments (np.ndarray): The segmentation masks or bounding boxes for the primary image.
+        im2 (np.ndarray): The secondary image for blending with the primary image.
+        labels2 (np.ndarray): The bounding box labels for the secondary image.
+        segments2 (np.ndarray): The segmentation masks or bounding boxes for the secondary image.
+
+    Returns:
+        tuple (np.ndarray, np.ndarray, np.ndarray): A tuple containing the augmented image, combined labels,
+        and combined segments.
+
+    Note:
+        The method applies MixUp augmentation by blending two images and their corresponding labels and segments
+        using a random ratio derived from a beta distribution. This technique is described in detail in the
+        MixUp paper: https://arxiv.org/pdf/1710.09412.pdf
+
+    Example:
+        ```python
+        import numpy as np
+        from ultralytics import mixup
+
+        im1 = np.random.randint(0, 256, (640, 640, 3), dtype=np.uint8)
+        im2 = np.random.randint(0, 256, (640, 640, 3), dtype=np.uint8)
+        labels1 = np.array([[0, 0.5, 0.5, 1.0, 1.0]])
+        labels2 = np.array([[1, 0.5, 0.5, 0.8, 0.8]])
+        segments1 = np.array([[[0.5, 0.5], [0.6, 0.5], [0.6, 0.6], [0.5, 0.6]]])
+        segments2 = np.array([[[0.4, 0.4], [0.5, 0.4], [0.5, 0.5], [0.4, 0.5]]])
+
+        mixed_im, mixed_labels, mixed_segments = mixup(im1, labels1, segments1, im2, labels2, segments2)
+        ```
     """
     r = np.random.beta(32.0, 32.0)  # mixup ratio, alpha=beta=32.0
     im = (im * r + im2 * (1 - r)).astype(np.uint8)
@@ -30,7 +60,36 @@ def random_perspective(
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
-    """Applies random perspective, rotation, scale, shear, and translation augmentations to an image and targets."""
+    """
+    Applies random perspective, rotation, scale, shear, and translation augmentations to an image and its targets.
+
+    Args:
+        im (np.ndarray): Image array to be augmented.
+        targets (np.ndarray, optional): Object detection targets in the format [class, xyxy]. Defaults to ().
+        segments (np.ndarray, optional): Image segmentation masks. Defaults to ().
+        degrees (float, optional): Maximum rotation angle in degrees. Defaults to 10.
+        translate (float, optional): Maximum translation as a fraction of image dimensions. Defaults to 0.1.
+        scale (float, optional): Scaling factor range. Defaults to 0.1.
+        shear (float, optional): Shear angle in degrees. Defaults to 10.
+        perspective (float, optional): Perspective transformation factor. Defaults to 0.0.
+        border (tuple(int, int), optional): Pixels to add to the border of the image. Defaults to (0, 0).
+
+    Returns:
+        (tuple): Tuple containing:
+            - im (np.ndarray): Augmented image.
+            - targets (np.ndarray): Augmented targets.
+            - segments (np.ndarray): Augmented segmentation masks.
+
+    Notes:
+        The function applies a combination of perspective, affine transformations, and translation using a composite transformation matrix. The order of transformations is crucial and follows a particular sequence to maintain the geometric properties.
+
+    Example:
+        ```python
+        augmented_image, augmented_targets, augmented_segments = random_perspective(im, targets, segments,
+                                                                                    degrees=5, translate=0.2,
+                                                                                    scale=0.3, shear=15)
+        ```
+    """
     height = im.shape[0] + border[0] * 2  # shape(h,w,c)
     width = im.shape[1] + border[1] * 2
 

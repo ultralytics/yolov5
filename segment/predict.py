@@ -97,7 +97,46 @@ def run(
     vid_stride=1,  # video frame-rate stride
     retina_masks=False,
 ):
-    """Run YOLOv5 segmentation inference on diverse sources including images, videos, directories, and streams."""
+    """
+    Run YOLOv5 segmentation inference on diverse sources including images, videos, directories, and streams.
+
+    Args:
+        weights (str | Path): Path to the model weights file. Default is 'yolov5s-seg.pt'.
+        source (str | Path): Source for inference; accepts file, directory, URL, glob pattern, 'screen', or webcam device index.
+        data (str | Path): Path to the dataset configuration file. Default is 'coco128.yaml'.
+        imgsz (tuple[int, int]): Inference size as (height, width). Default is (640, 640).
+        conf_thres (float): Confidence threshold for predictions. Default is 0.25.
+        iou_thres (float): Intersection Over Union (IOU) threshold for Non-Max Suppression (NMS). Default is 0.45.
+        max_det (int): Maximum number of detections per image. Default is 1000.
+        device (str): CUDA device identifier. Use 'cpu' for CPU inference. Default is ''.
+        view_img (bool): Whether to display results. Default is False.
+        save_txt (bool): Whether to save results to a text file. Default is False.
+        save_conf (bool): Whether to save confidences in text labels. Default is False.
+        save_crop (bool): Whether to save cropped prediction boxes. Default is False.
+        nosave (bool): Whether to save images/videos. Default is False.
+        classes (list[int] | None): List of class indices to filter predictions. Default is None.
+        agnostic_nms (bool): Whether to use class-agnostic NMS. Default is False.
+        augment (bool): Whether to perform augmented inference. Default is False.
+        visualize (bool): Whether to visualize model features. Default is False.
+        update (bool): Whether to update all models. Default is False.
+        project (str | Path): Directory to save results. Default is 'runs/predict-seg'.
+        name (str): Name of the experiment. Default is 'exp'.
+        exist_ok (bool): Whether to overwrite existing experiment results. Default is False.
+        line_thickness (int): Thickness of the bounding boxes. Default is 3.
+        hide_labels (bool): Whether to hide labels on the output image. Default is False.
+        hide_conf (bool): Whether to hide confidence scores on the output image. Default is False.
+        half (bool): Whether to use half-precision (FP16) inference. Default is False.
+        dnn (bool): Whether to use OpenCV DNN for ONNX inference. Default is False.
+        vid_stride (int): Video frame-rate stride. Default is 1.
+        retina_masks (bool): Whether to use high-resolution masks. Default is False.
+
+    Returns:
+        None: Results are saved to the specified project directory, displayed, or both based on input arguments.
+
+    Notes:
+        - Supports diverse data formats including PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow, TFLite.
+        - For detailed usage examples, see https://github.com/ultralytics/ultralytics.
+    """
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -258,8 +297,50 @@ def run(
 
 
 def parse_opt():
-    """Parses command-line options for YOLOv5 inference including model paths, data sources, inference settings, and
-    output preferences.
+    """
+    Parses command-line options for YOLOv5 inference including model paths, data sources, inference settings, and output
+    preferences.
+
+    Args:
+        --weights (str | list[str]): Model path(s). Default is "yolov5s-seg.pt".
+        --source (str): Data source, which could be a file, directory, URL, glob pattern, screen, or webcam. Default is "data/images".
+        --data (str): Path to dataset.yaml file. Default is "data/coco128.yaml".
+        --imgsz | --img | --img-size (list[int]): Inference size (height, width). Default is [640].
+        --conf-thres (float): Confidence threshold for detections. Default is 0.25.
+        --iou-thres (float): Non-Maximum Suppression (NMS) Intersection-over-Union (IoU) threshold. Default is 0.45.
+        --max-det (int): Maximum number of detections per image. Default is 1000.
+        --device (str): CUDA device identifier (e.g., "0", "0,1,2,3") or "cpu". Default is "".
+        --view-img (bool): Show inference results. Default is False.
+        --save-txt (bool): Save results as *.txt files. Default is False.
+        --save-conf (bool): Save confidences in --save-txt labels. Default is False.
+        --save-crop (bool): Save cropped prediction boxes. Default is False.
+        --nosave (bool): Do not save images or videos. Default is False.
+        --classes (list[int]): Class filter for detections (e.g., --classes 0 or --classes 0 2 3). Default is None.
+        --agnostic-nms (bool): Perform class-agnostic NMS. Default is False.
+        --augment (bool): Perform augmented inference. Default is False.
+        --visualize (bool): Visualize features during inference. Default is False.
+        --update (bool): Update all models. Default is False.
+        --project (str): Project directory to save results. Default is "runs/predict-seg".
+        --name (str): Name of the run to save results. Default is "exp".
+        --exist-ok (bool): Allow existing project/name, do not increment. Default is False.
+        --line-thickness (int): Line thickness for bounding boxes in pixels. Default is 3.
+        --hide-labels (bool): Hide labels on bounding boxes. Default is False.
+        --hide-conf (bool): Hide confidence scores on bounding boxes. Default is False.
+        --half (bool): Use FP16 half-precision inference. Default is False.
+        --dnn (bool): Use OpenCV DNN for ONNX inference. Default is False.
+        --vid-stride (int): Video frame-rate stride. Default is 1.
+        --retina-masks (bool): Plot masks in native resolution. Default is False.
+
+    Returns:
+        argparse.Namespace: Parsed command-line options.
+
+    Notes:
+        Ensure that the dataset yaml file and model weights are available at the specified paths before running the script.
+
+    Examples:
+        ```python
+        $ python segment/predict.py --weights "yolov5s-seg.pt" --source "/path/to/image.jpg" --conf-thres 0.3
+        ```
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s-seg.pt", help="model path(s)")
@@ -297,7 +378,31 @@ def parse_opt():
 
 
 def main(opt):
-    """Executes YOLOv5 model inference with given options, checking for requirements before launching."""
+    """
+    Executes YOLOv5 model inference with given options, checking for requirements before launching.
+
+    Args:
+      opt (argparse.Namespace): Parsed command-line arguments including various configurations such as model paths, data
+          sources, inference settings, and output preferences.
+
+    Returns:
+      None
+
+    Notes:
+      - This function ensures that all required dependencies are met before running the inference.
+      - Users are expected to use argparse to provide the necessary command-line arguments.
+      - For complete usage and examples, refer to https://github.com/ultralytics/ultralytics
+
+    Example:
+      ```python
+      import argparse
+      from path.to.your.script import main, parse_opt
+
+      if __name__ == "__main__":
+          opt = parse_opt()
+          main(opt)
+      ```
+    """
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
     run(**vars(opt))
 

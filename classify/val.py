@@ -68,7 +68,41 @@ def run(
     criterion=None,
     pbar=None,
 ):
-    """Validates a YOLOv5 classification model on a dataset, computing metrics like top1 and top5 accuracy."""
+    """
+    Validates a YOLOv5 classification model on a dataset, computing metrics like top-1 and top-5 accuracy.
+
+    Args:
+        data (str | Path): Path to the dataset directory. Defaults to `ROOT / "../datasets/mnist"`.
+        weights (str | Path): Path to the model weights file. Defaults to `ROOT / "yolov5s-cls.pt"`.
+        batch_size (int): Batch size for validation. Defaults to 128.
+        imgsz (int): Inference size (pixels). Defaults to 224.
+        device (str): Device to run validation on, e.g. '0' or '0,1,2,3' or 'cpu'. Defaults to an empty string.
+        workers (int): Number of max dataloader workers per rank in DDP mode. Defaults to 8.
+        verbose (bool): If True, provides verbose output. Defaults to False.
+        project (str | Path): Directory for saving validation results. Defaults to `ROOT / "runs/val-cls"`.
+        name (str): Name for the validation run, under the project directory. Defaults to "exp".
+        exist_ok (bool): If True, existing project/name does not increment. Defaults to False.
+        half (bool): If True, uses FP16 half-precision inference. Defaults to False.
+        dnn (bool): If True, uses OpenCV DNN for ONNX inference. Defaults to False.
+        model (torch.nn.Module, optional): Preloaded model for validation. Used if provided; otherwise, a model is loaded
+                                           from the specified weights.
+        dataloader (torch.utils.data.DataLoader, optional): Preloaded dataloader for validation. Used if provided;
+                                                           otherwise, a dataloader is created.
+        criterion (func, optional): Loss function for computing validation loss.
+        pbar (tqdm.tqdm, optional): Progress bar for display.
+
+    Returns:
+        None
+
+    Notes:
+        For additional details on dataset preparation and usage, refer to the
+        [Ultralytics YOLOv5 repository](https://github.com/ultralytics/ultralytics).
+
+    Examples:
+        ```python
+        $ python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224
+        ```
+    """
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -148,7 +182,30 @@ def run(
 
 
 def parse_opt():
-    """Parses and returns command line arguments for YOLOv5 model evaluation and inference settings."""
+    """
+    Parses and returns command line arguments for YOLOv5 model evaluation and inference settings.
+
+    Args:
+      --data (str): Path to the dataset directory. Default is `ROOT / "../datasets/mnist"`.
+      --weights (list of str): List of model weight file paths. Default is `ROOT / "yolov5s-cls.pt"`.
+      --batch-size (int): Batch size for inference. Default is 128.
+      --imgsz (int): Inference image size (pixels). Default is 224.
+      --device (str): CUDA device, e.g., "0" or "0,1,2,3" or "cpu". Default is an empty string.
+      --workers (int): Maximum number of dataloader workers per rank in DDP mode. Default is 8.
+      --verbose (bool): Flag for verbose output. Default is True.
+      --project (str): Project directory where results will be saved. Default is `ROOT / "runs/val-cls"`.
+      --name (str): Name of the specific run within the project directory. Default is "exp".
+      --exist-ok (bool): Flag to allow existing project/name without incrementing. Default is False.
+      --half (bool): Flag to use FP16 half-precision inference. Default is False.
+      --dnn (bool): Flag to use OpenCV DNN for ONNX inference. Default is False.
+
+    Returns:
+      argparse.Namespace: Parsed command line arguments namespace.
+
+    Notes:
+      The function utilizes `argparse.ArgumentParser` to handle command line argument parsing and provides default values
+      for all parameters.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default=ROOT / "../datasets/mnist", help="dataset path")
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s-cls.pt", help="model.pt path(s)")
@@ -168,7 +225,29 @@ def parse_opt():
 
 
 def main(opt):
-    """Executes the YOLOv5 model prediction workflow, handling argument parsing and requirement checks."""
+    """
+    Executes the YOLOv5 model prediction workflow, handling argument parsing and requirement checks.
+
+    Args:
+        opt (Namespace): Parsed command line arguments containing model evaluation and inference settings.
+
+    Returns:
+        None
+
+    Notes:
+        - This function serves as the entry point for executing YOLOv5 classification model validation.
+        - Make sure to have the required dependencies installed as specified in "requirements.txt" file.
+
+    Example usage:
+        ```python
+        if __name__ == "__main__":
+            opt = parse_opt()
+            main(opt)
+        ```
+
+    Related Links:
+        - YOLOv5 repository: https://github.com/ultralytics/ultralytics
+    """
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
     run(**vars(opt))
 
