@@ -1310,8 +1310,6 @@ def run(
             conf_thres=0.25,
         )
         ```
-
-    ```
     """
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
