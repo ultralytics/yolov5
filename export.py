@@ -1046,11 +1046,9 @@ def add_tflite_metadata(file, metadata, num_outputs):
 
 def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:")):
     """
-    Clear and concise summary line describing the function's purpose:
-    
     Converts a PyTorch YOLOv5 model to CoreML format with Non-Maximum Suppression (NMS), handling different input/output
     shapes and saving the model.
-    
+
     Args:
         model (torch.nn.Module): The YOLOv5 PyTorch model.
         im (torch.Tensor): Input tensor example with shape [N, C, H, W], where N is the batch size, C is the number of
@@ -1059,164 +1057,165 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
         names (dict[int, str]): Dictionary mapping class indices to class names.
         y (torch.Tensor): Output tensor from the PyTorch model's forward pass.
         prefix (str): Custom prefix for logging messages.
-    
+
     Returns:
         Path: Path to the saved CoreML model (.mlmodel).
-    
+
     Raises:
         AssertionError: If the number of class names does not match the number of classes in the model.
-    
+
     Notes:
         - This function requires `coremltools` to be installed.
         - Running this function on a non-macOS environment might not support some features.
         - Flexible input shapes and additional NMS options can be customized within the function.
-    
+
     Examples:
-    ```python
-    from pathlib import Path
-    import torch
+        ```python
+        from pathlib import Path
+        import torch
     
-    # Load YOLOv5 model and an example input tensor
-    model = torch.load("yolov5s.pt")
-    im = torch.zeros(1, 3, 640, 640)  # Example input tensor
+        # Load YOLOv5 model and an example input tensor
+        model = torch.load("yolov5s.pt")
+        im = torch.zeros(1, 3, 640, 640)  # Example input tensor
     
-    # Define class names
-    names = {0: "person", 1: "bicycle", 2: "car", ...}
+        # Define class names
+        names = {0: "person", 1: "bicycle", 2: "car", ...}
     
-    # Perform forward pass to get model output
-    y = model(im)
+        # Perform forward pass to get model output
+        y = model(im)
     
-    # Convert to CoreML
-    output_file = Path("yolov5s.mlmodel")
-    pipeline_coreml(model, im, output_file, names, y)
-    ```
+        # Convert to CoreML
+        output_file = Path("yolov5s.mlmodel")
+        pipeline_coreml(model, im, output_file, names, y)
+        ```
     """
-    Import coremltools as ct from PIL import Image.
+    import coremltools as ct
+    from PIL import Image
 
-        print(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
-        batch_size, ch, h, w = list(im.shape)  # BCHW
-        t = time.time()
+    print(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
+    batch_size, ch, h, w = list(im.shape)  # BCHW
+    t = time.time()
 
-        # YOLOv5 Output shapes
-        spec = model.get_spec()
-        out0, out1 = iter(spec.description.output)
-        if platform.system() == "Darwin":
-            img = Image.new("RGB", (w, h))  # img(192 width, 320 height)
-            # img = torch.zeros((*opt.img_size, 3)).numpy()  # img size(320,192,3) iDetection
-            out = model.predict({"image": img})
-            out0_shape, out1_shape = out[out0.name].shape, out[out1.name].shape
-        else:  # linux and windows can not run model.predict(), get sizes from pytorch output y
-            s = tuple(y[0].shape)
-            out0_shape, out1_shape = (s[1], s[2] - 5), (s[1], 4)  # (3780, 80), (3780, 4)
+    # YOLOv5 Output shapes
+    spec = model.get_spec()
+    out0, out1 = iter(spec.description.output)
+    if platform.system() == "Darwin":
+        img = Image.new("RGB", (w, h))  # img(192 width, 320 height)
+        # img = torch.zeros((*opt.img_size, 3)).numpy()  # img size(320,192,3) iDetection
+        out = model.predict({"image": img})
+        out0_shape, out1_shape = out[out0.name].shape, out[out1.name].shape
+    else:  # linux and windows can not run model.predict(), get sizes from pytorch output y
+        s = tuple(y[0].shape)
+        out0_shape, out1_shape = (s[1], s[2] - 5), (s[1], 4)  # (3780, 80), (3780, 4)
 
-        # Checks
-        nx, ny = spec.description.input[0].type.imageType.width, spec.description.input[0].type.imageType.height
-        na, nc = out0_shape
-        # na, nc = out0.type.multiArrayType.shape  # number anchors, classes
-        assert len(names) == nc, f"{len(names)} names found for nc={nc}"  # check
+    # Checks
+    nx, ny = spec.description.input[0].type.imageType.width, spec.description.input[0].type.imageType.height
+    na, nc = out0_shape
+    # na, nc = out0.type.multiArrayType.shape  # number anchors, classes
+    assert len(names) == nc, f"{len(names)} names found for nc={nc}"  # check
 
-        # Define output shapes (missing)
-        out0.type.multiArrayType.shape[:] = out0_shape  # (3780, 80)
-        out1.type.multiArrayType.shape[:] = out1_shape  # (3780, 4)
-        # spec.neuralNetwork.preprocessing[0].featureName = '0'
+    # Define output shapes (missing)
+    out0.type.multiArrayType.shape[:] = out0_shape  # (3780, 80)
+    out1.type.multiArrayType.shape[:] = out1_shape  # (3780, 4)
+    # spec.neuralNetwork.preprocessing[0].featureName = '0'
 
-        # Flexible input shapes
-        # from coremltools.models.neural_network import flexible_shape_utils
-        # s = [] # shapes
-        # s.append(flexible_shape_utils.NeuralNetworkImageSize(320, 192))
-        # s.append(flexible_shape_utils.NeuralNetworkImageSize(640, 384))  # (height, width)
-        # flexible_shape_utils.add_enumerated_image_sizes(spec, feature_name='image', sizes=s)
-        # r = flexible_shape_utils.NeuralNetworkImageSizeRange()  # shape ranges
-        # r.add_height_range((192, 640))
-        # r.add_width_range((192, 640))
-        # flexible_shape_utils.update_image_size_range(spec, feature_name='image', size_range=r)
+    # Flexible input shapes
+    # from coremltools.models.neural_network import flexible_shape_utils
+    # s = [] # shapes
+    # s.append(flexible_shape_utils.NeuralNetworkImageSize(320, 192))
+    # s.append(flexible_shape_utils.NeuralNetworkImageSize(640, 384))  # (height, width)
+    # flexible_shape_utils.add_enumerated_image_sizes(spec, feature_name='image', sizes=s)
+    # r = flexible_shape_utils.NeuralNetworkImageSizeRange()  # shape ranges
+    # r.add_height_range((192, 640))
+    # r.add_width_range((192, 640))
+    # flexible_shape_utils.update_image_size_range(spec, feature_name='image', size_range=r)
 
-        # Print
-        print(spec.description)
+    # Print
+    print(spec.description)
 
-        # Model from spec
-        model = ct.models.MLModel(spec)
+    # Model from spec
+    model = ct.models.MLModel(spec)
 
-        # 3. Create NMS protobuf
-        nms_spec = ct.proto.Model_pb2.Model()
-        nms_spec.specificationVersion = 5
-        for i in range(2):
-            decoder_output = model._spec.description.output[i].SerializeToString()
-            nms_spec.description.input.add()
-            nms_spec.description.input[i].ParseFromString(decoder_output)
-            nms_spec.description.output.add()
-            nms_spec.description.output[i].ParseFromString(decoder_output)
+    # 3. Create NMS protobuf
+    nms_spec = ct.proto.Model_pb2.Model()
+    nms_spec.specificationVersion = 5
+    for i in range(2):
+        decoder_output = model._spec.description.output[i].SerializeToString()
+        nms_spec.description.input.add()
+        nms_spec.description.input[i].ParseFromString(decoder_output)
+        nms_spec.description.output.add()
+        nms_spec.description.output[i].ParseFromString(decoder_output)
 
-        nms_spec.description.output[0].name = "confidence"
-        nms_spec.description.output[1].name = "coordinates"
+    nms_spec.description.output[0].name = "confidence"
+    nms_spec.description.output[1].name = "coordinates"
 
-        output_sizes = [nc, 4]
-        for i in range(2):
-            ma_type = nms_spec.description.output[i].type.multiArrayType
-            ma_type.shapeRange.sizeRanges.add()
-            ma_type.shapeRange.sizeRanges[0].lowerBound = 0
-            ma_type.shapeRange.sizeRanges[0].upperBound = -1
-            ma_type.shapeRange.sizeRanges.add()
-            ma_type.shapeRange.sizeRanges[1].lowerBound = output_sizes[i]
-            ma_type.shapeRange.sizeRanges[1].upperBound = output_sizes[i]
-            del ma_type.shape[:]
+    output_sizes = [nc, 4]
+    for i in range(2):
+        ma_type = nms_spec.description.output[i].type.multiArrayType
+        ma_type.shapeRange.sizeRanges.add()
+        ma_type.shapeRange.sizeRanges[0].lowerBound = 0
+        ma_type.shapeRange.sizeRanges[0].upperBound = -1
+        ma_type.shapeRange.sizeRanges.add()
+        ma_type.shapeRange.sizeRanges[1].lowerBound = output_sizes[i]
+        ma_type.shapeRange.sizeRanges[1].upperBound = output_sizes[i]
+        del ma_type.shape[:]
 
-        nms = nms_spec.nonMaximumSuppression
-        nms.confidenceInputFeatureName = out0.name  # 1x507x80
-        nms.coordinatesInputFeatureName = out1.name  # 1x507x4
-        nms.confidenceOutputFeatureName = "confidence"
-        nms.coordinatesOutputFeatureName = "coordinates"
-        nms.iouThresholdInputFeatureName = "iouThreshold"
-        nms.confidenceThresholdInputFeatureName = "confidenceThreshold"
-        nms.iouThreshold = 0.45
-        nms.confidenceThreshold = 0.25
-        nms.pickTop.perClass = True
-        nms.stringClassLabels.vector.extend(names.values())
-        nms_model = ct.models.MLModel(nms_spec)
+    nms = nms_spec.nonMaximumSuppression
+    nms.confidenceInputFeatureName = out0.name  # 1x507x80
+    nms.coordinatesInputFeatureName = out1.name  # 1x507x4
+    nms.confidenceOutputFeatureName = "confidence"
+    nms.coordinatesOutputFeatureName = "coordinates"
+    nms.iouThresholdInputFeatureName = "iouThreshold"
+    nms.confidenceThresholdInputFeatureName = "confidenceThreshold"
+    nms.iouThreshold = 0.45
+    nms.confidenceThreshold = 0.25
+    nms.pickTop.perClass = True
+    nms.stringClassLabels.vector.extend(names.values())
+    nms_model = ct.models.MLModel(nms_spec)
 
-        # 4. Pipeline models together
-        pipeline = ct.models.pipeline.Pipeline(
-            input_features=[
-                ("image", ct.models.datatypes.Array(3, ny, nx)),
-                ("iouThreshold", ct.models.datatypes.Double()),
-                ("confidenceThreshold", ct.models.datatypes.Double()),
-            ],
-            output_features=["confidence", "coordinates"],
-        )
-        pipeline.add_model(model)
-        pipeline.add_model(nms_model)
+    # 4. Pipeline models together
+    pipeline = ct.models.pipeline.Pipeline(
+        input_features=[
+            ("image", ct.models.datatypes.Array(3, ny, nx)),
+            ("iouThreshold", ct.models.datatypes.Double()),
+            ("confidenceThreshold", ct.models.datatypes.Double()),
+        ],
+        output_features=["confidence", "coordinates"],
+    )
+    pipeline.add_model(model)
+    pipeline.add_model(nms_model)
 
-        # Correct datatypes
-        pipeline.spec.description.input[0].ParseFromString(model._spec.description.input[0].SerializeToString())
-        pipeline.spec.description.output[0].ParseFromString(nms_model._spec.description.output[0].SerializeToString())
-        pipeline.spec.description.output[1].ParseFromString(nms_model._spec.description.output[1].SerializeToString())
+    # Correct datatypes
+    pipeline.spec.description.input[0].ParseFromString(model._spec.description.input[0].SerializeToString())
+    pipeline.spec.description.output[0].ParseFromString(nms_model._spec.description.output[0].SerializeToString())
+    pipeline.spec.description.output[1].ParseFromString(nms_model._spec.description.output[1].SerializeToString())
 
-        # Update metadata
-        pipeline.spec.specificationVersion = 5
-        pipeline.spec.description.metadata.versionString = "https://github.com/ultralytics/yolov5"
-        pipeline.spec.description.metadata.shortDescription = "https://github.com/ultralytics/yolov5"
-        pipeline.spec.description.metadata.author = "glenn.jocher@ultralytics.com"
-        pipeline.spec.description.metadata.license = "https://github.com/ultralytics/yolov5/blob/master/LICENSE"
-        pipeline.spec.description.metadata.userDefined.update(
-            {
-                "classes": ",".join(names.values()),
-                "iou_threshold": str(nms.iouThreshold),
-                "confidence_threshold": str(nms.confidenceThreshold),
-            }
-        )
+    # Update metadata
+    pipeline.spec.specificationVersion = 5
+    pipeline.spec.description.metadata.versionString = "https://github.com/ultralytics/yolov5"
+    pipeline.spec.description.metadata.shortDescription = "https://github.com/ultralytics/yolov5"
+    pipeline.spec.description.metadata.author = "glenn.jocher@ultralytics.com"
+    pipeline.spec.description.metadata.license = "https://github.com/ultralytics/yolov5/blob/master/LICENSE"
+    pipeline.spec.description.metadata.userDefined.update(
+        {
+            "classes": ",".join(names.values()),
+            "iou_threshold": str(nms.iouThreshold),
+            "confidence_threshold": str(nms.confidenceThreshold),
+        }
+    )
 
-        # Save the model
-        f = file.with_suffix(".mlmodel")  # filename
-        model = ct.models.MLModel(pipeline.spec)
-        model.input_description["image"] = "Input image"
-        model.input_description["iouThreshold"] = f"(optional) IOU Threshold override (default: {nms.iouThreshold})"
-        model.input_description["confidenceThreshold"] = (
-            f"(optional) Confidence Threshold override (default: {nms.confidenceThreshold})"
-        )
-        model.output_description["confidence"] = 'Boxes × Class confidence (see user-defined metadata "classes")'
-        model.output_description["coordinates"] = "Boxes × [x, y, width, height] (relative to image size)"
-        model.save(f)  # pipelined
-        print(f"{prefix} pipeline success ({time.time() - t:.2f}s), saved as {f} ({file_size(f):.1f} MB)")
+    # Save the model
+    f = file.with_suffix(".mlmodel")  # filename
+    model = ct.models.MLModel(pipeline.spec)
+    model.input_description["image"] = "Input image"
+    model.input_description["iouThreshold"] = f"(optional) IOU Threshold override (default: {nms.iouThreshold})"
+    model.input_description["confidenceThreshold"] = (
+        f"(optional) Confidence Threshold override (default: {nms.confidenceThreshold})"
+    )
+    model.output_description["confidence"] = 'Boxes × Class confidence (see user-defined metadata "classes")'
+    model.output_description["coordinates"] = "Boxes × [x, y, width, height] (relative to image size)"
+    model.save(f)  # pipelined
+    print(f"{prefix} pipeline success ({time.time() - t:.2f}s), saved as {f} ({file_size(f):.1f} MB)")
 
 
     @smart_inference_mode()
