@@ -62,7 +62,30 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 
 def save_one_txt(predn, save_conf, shape, file):
-    """Saves one detection result to a txt file in normalized xywh format, optionally including confidence."""
+    """
+    Saves one detection result to a txt file in normalized xywh format, optionally including confidence.
+
+    Args:
+        predn (torch.Tensor): Predicted bounding boxes and associated confidence scores and classes
+                              in xyxy format, tensor of shape (N, 6) where N is the number of detections.
+        save_conf (bool): If True, saves the confidence scores along with the bounding box coordinates.
+        shape (tuple): Shape of the original image as (height, width).
+        file (str | Path): File path where the result will be saved.
+
+    Returns:
+        None
+
+    Notes:
+        The xyxy bounding box format represents the coordinates (xmin, ymin, xmax, ymax).
+        The xywh format represents the coordinates (center_x, center_y, width, height) and is
+        normalized by the width and height of the image.
+
+    Example:
+        ```python
+        predn = torch.tensor([[10, 20, 30, 40, 0.9, 1]])  # example prediction
+        save_one_txt(predn, save_conf=True, shape=(640, 480), file="output.txt")
+        ```
+    """
     gn = torch.tensor(shape)[[1, 0, 1, 0]]  # normalization gain whwh
     for *xyxy, conf, cls in predn.tolist():
         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
@@ -73,9 +96,36 @@ def save_one_txt(predn, save_conf, shape, file):
 
 def save_one_json(predn, jdict, path, class_map):
     """
-    Saves one JSON detection result with image ID, category ID, bounding box, and score.
+    Saves a single JSON detection result, including image ID, category ID, bounding box, and confidence score.
 
-    Example: {"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}
+    Args:
+      predn (torch.Tensor): Predicted detections in xyxy format with shape (n, 6) where n is the number of detections.
+          The tensor should contain [x_min, y_min, x_max, y_max, confidence, class_id] for each detection.
+      jdict (list[dict]): List to collect JSON formatted detection results.
+      path (pathlib.Path): Path object of the image file, used to extract image_id.
+      class_map (dict[int, int]): Mapping from model class indices to dataset-specific category IDs.
+
+    Returns:
+      None: Appends detection results as dictionaries to `jdict` list in-place.
+
+    Example:
+      ```python
+      predn = torch.tensor([[100, 50, 200, 150, 0.9, 0], [50, 30, 100, 80, 0.8, 1]])
+      jdict = []
+      path = Path("42.jpg")
+      class_map = {0: 18, 1: 19}
+      save_one_json(predn, jdict, path, class_map)
+      ```
+      This will append to `jdict`:
+      ```
+      [
+          {'image_id': 42, 'category_id': 18, 'bbox': [125.0, 75.0, 100.0, 100.0], 'score': 0.9},
+          {'image_id': 42, 'category_id': 19, 'bbox': [75.0, 55.0, 50.0, 50.0], 'score': 0.8}
+      ]
+      ```
+
+    Notes:
+      The `bbox` values are formatted as [x, y, width, height], where x and y represent the top-left corner of the box.
     """
     image_id = int(path.stem) if path.stem.isnumeric() else path.stem
     box = xyxy2xywh(predn[:, :4])  # xywh
@@ -93,13 +143,30 @@ def save_one_json(predn, jdict, path, class_map):
 
 def process_batch(detections, labels, iouv):
     """
-    Return correct prediction matrix.
+    Return a correct prediction matrix given detections and labels at various IoU thresholds.
 
-    Arguments:
-        detections (array[N, 6]), x1, y1, x2, y2, conf, class
-        labels (array[M, 5]), class, x1, y1, x2, y2
+    Args:
+        detections (np.ndarray): Array of shape (N, 6) where each row corresponds to a detection with
+            format [x1, y1, x2, y2, conf, class].
+        labels (np.ndarray): Array of shape (M, 5) where each row corresponds to a ground truth label with
+            format [class, x1, y1, x2, y2].
+        iouv (np.ndarray): Array of IoU thresholds to evaluate at.
+
     Returns:
-        correct (array[N, 10]), for 10 IoU levels
+        correct (np.ndarray): A binary array of shape (N, len(iouv)) indicating whether each detection
+            is a true positive for each IoU threshold. There are 10 IoU levels used in the evaluation.
+
+    Example:
+        ```python
+        detections = np.array([[50, 50, 200, 200, 0.9, 1], [30, 30, 150, 150, 0.7, 0]])
+        labels = np.array([[1, 50, 50, 200, 200]])
+        iouv = np.linspace(0.5, 0.95, 10)
+        correct = process_batch(detections, labels, iouv)
+        ```
+
+    Notes:
+        - This function is used as part of the evaluation pipeline for object detection models.
+        - IoU (Intersection over Union) is a common evaluation metric for object detection performance.
     """
     correct = np.zeros((detections.shape[0], iouv.shape[0])).astype(bool)
     iou = box_iou(labels[:, 1:], detections[:, :4])
@@ -148,7 +215,44 @@ def run(
     callbacks=Callbacks(),
     compute_loss=None,
 ):
-    """Evaluates model on a dataset and logs performance metrics, results are saved to specific directories."""
+    """
+    Evaluates a YOLOv5 model on a dataset and logs performance metrics.
+
+    Args:
+        data (str | dict): Path to a dataset yaml file or a dataset dictionary.
+        weights (str | list[str], optional): Path to the model weights file(s). Supports various formats: PyTorch,
+            TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow SavedModel, TensorFlow GraphDef, TensorFlow Lite,
+            TensorFlow Edge TPU, and PaddlePaddle.
+        batch_size (int, optional): Batch size for inference. Default is 32.
+        imgsz (int, optional): Input image size (pixels). Default is 640.
+        conf_thres (float, optional): Confidence threshold for object detection. Default is 0.001.
+        iou_thres (float, optional): IoU threshold for Non-Maximum Suppression (NMS). Default is 0.6.
+        max_det (int, optional): Maximum number of detections per image. Default is 300.
+        task (str, optional): Task type - 'train', 'val', 'test', 'speed', or 'study'. Default is 'val'.
+        device (str, optional): Device to use for computation, e.g., '0' or '0,1,2,3' for CUDA or 'cpu' for CPU. Default is ''.
+        workers (int, optional): Number of dataloader workers. Default is 8.
+        single_cls (bool, optional): Treat dataset as a single class. Default is False.
+        augment (bool, optional): Enable augmented inference. Default is False.
+        verbose (bool, optional): Enable verbose output. Default is False.
+        save_txt (bool, optional): Save results to *.txt files. Default is False.
+        save_hybrid (bool, optional): Save label and prediction hybrid results to *.txt files. Default is False.
+        save_conf (bool, optional): Save confidences in --save-txt labels. Default is False.
+        save_json (bool, optional): Save a COCO-JSON results file. Default is False.
+        project (str | Path, optional): Directory to save results. Default is ROOT/'runs/val'.
+        name (str, optional): Name of the run. Default is 'exp'.
+        exist_ok (bool, optional): Overwrite existing project/name without incrementing. Default is False.
+        half (bool, optional): Use FP16 half-precision inference. Default is True.
+        dnn (bool, optional): Use OpenCV DNN for ONNX inference. Default is False.
+        model (torch.nn.Module, optional): Model object for training. Default is None.
+        dataloader (torch.utils.data.DataLoader, optional): Dataloader object. Default is None.
+        save_dir (Path, optional): Directory to save results. Default is Path('').
+        plots (bool, optional): Plot validation images and metrics. Default is True.
+        callbacks (utils.callbacks.Callbacks, optional): Callbacks for logging and monitoring. Default is Callbacks().
+        compute_loss (function, optional): Loss function for training. Default is None.
+
+    Returns:
+        dict: Contains performance metrics including precision, recall, mAP50, and mAP50-95.
+    """
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -364,7 +468,53 @@ def run(
 
 
 def parse_opt():
-    """Parses command-line options for YOLOv5 model inference configuration."""
+    """
+    Parses command-line options for YOLOv5 model inference configuration.
+
+    Args:
+        data (str): Path to the dataset YAML file, default is 'data/coco128.yaml'.
+        weights (List[str]): List of paths to the model weight files, default is 'yolov5s.pt'.
+        batch_size (int): Batch size for inference, default is 32.
+        imgsz (int): Inference image size in pixels, default is 640.
+        conf_thres (float): Confidence threshold for predictions, default is 0.001.
+        iou_thres (float): IoU threshold for Non-Max Suppression (NMS), default is 0.6.
+        max_det (int): Maximum number of detections per image, default is 300.
+        task (str): Task type - options are 'train', 'val', 'test', 'speed', or 'study'. Default is 'val'.
+        device (str): Device to run the model on, e.g., '0' or '0,1,2,3' or 'cpu'. Default is empty to let
+            the system choose automatically.
+        workers (int): Maximum number of dataloader workers per rank in DDP mode, default is 8.
+        single_cls (bool): If set, treats the dataset as a single-class dataset. Default is False.
+        augment (bool): If set, performs augmented inference. Default is False.
+        verbose (bool): If set, reports mAP by class. Default is False.
+        save_txt (bool): If set, saves results to *.txt files. Default is False.
+        save_hybrid (bool): If set, saves label+prediction hybrid results to *.txt files. Default is False.
+        save_conf (bool): If set, saves confidences in --save-txt labels. Default is False.
+        save_json (bool): If set, saves results to a COCO-JSON file. Default is False.
+        project (str): Project directory to save results to. Default is 'runs/val'.
+        name (str): Name of the directory to save results to. Default is 'exp'.
+        exist_ok (bool): If set, existing directory will not be incremented. Default is False.
+        half (bool): If set, uses FP16 half-precision inference. Default is False.
+        dnn (bool): If set, uses OpenCV DNN for ONNX inference. Default is False.
+
+    Returns:
+        argparse.Namespace: Parsed command-line options
+
+    Notes:
+        - The '--data' parameter is checked to ensure it ends with 'coco.yaml' if '--save-json' is set.
+        - The '--save-txt' option is set to True if '--save-hybrid' is enabled.
+        - Args are printed using `print_args` to facilitate debugging.
+
+    Example:
+        To validate a trained YOLOv5 model on a COCO dataset:
+        ```python
+        $ python val.py --weights yolov5s.pt --data coco128.yaml --img 640
+        ```
+        Different model formats could be used instead of yolov5s.pt:
+        ```python
+        $ python val.py --weights yolov5s.pt yolov5s.torchscript yolov5s.onnx yolov5s_openvino_model yolov5s.engine
+        ```
+        Additional options include saving results in different formats, selecting devices, and more.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default=ROOT / "data/coco128.yaml", help="dataset.yaml path")
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s.pt", help="model path(s)")
@@ -397,8 +547,25 @@ def parse_opt():
 
 
 def main(opt):
-    """Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided
-    options.
+    """
+    Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided options.
+
+    Args:
+        opt (argparse.Namespace): Parsed command-line options.
+            - This includes values for parameters like 'data', 'weights', 'batch_size', 'imgsz', 'conf_thres', 'iou_thres',
+              'max_det', 'task', 'device', 'workers', 'single_cls', 'augment', 'verbose', 'save_txt', 'save_hybrid',
+              'save_conf', 'save_json', 'project', 'name', 'exist_ok', 'half', and 'dnn', essential for configuring
+              the YOLOv5 tasks.
+
+    Returns:
+        None
+
+    Examples:
+        To validate a trained YOLOv5 model on the COCO dataset with a specific weights file, use:
+
+        ```python
+        $ python val.py --weights yolov5s.pt --data coco128.yaml --img 640
+        ```
     """
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
 
