@@ -68,7 +68,7 @@ def run(
         imgsz (int): Inference size in pixels (default: 640).
         batch_size (int): Batch size for inference (default: 1).
         data (Path | str): Path to the dataset.yaml file (default: ROOT / "data/coco128.yaml").
-        device (str): CUDA device, e.g., '0' or '0,1,2,3' or 'cpu' (default: None).
+        device (str): CUDA device, e.g., '0' or '0,1,2,3' or 'cpu' (default: "").
         half (bool): Use FP16 half-precision inference (default: False).
         test (bool): Test export formats only (default: False).
         pt_only (bool): Test PyTorch format only (default: False).
@@ -175,6 +175,24 @@ def test(
 
     Returns:
         pd.DataFrame: DataFrame containing the results of the export tests, including format names and export statuses.
+
+    Examples:
+        ```python
+        $ python benchmarks.py --weights yolov5s.pt --img 640
+        ```
+
+    Notes:
+        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow
+        SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js are unsupported.
+
+    Usage:
+        Install required packages:
+            $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU support
+            $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow   # GPU support
+            $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
+
+        Run export tests:
+            $ python benchmarks.py --weights yolov5s.pt --img 640
     """
     y, t = [], time.time()
     device = select_device(device)
@@ -213,8 +231,8 @@ def parse_opt():
         half (bool): Use FP16 half-precision inference. This is a flag and defaults to False.
         test (bool): Test exports only. This is a flag and defaults to False.
         pt_only (bool): Test PyTorch only. This is a flag and defaults to False.
-        hard_fail (bool|str): Throw an error on benchmark failure. Can be a boolean or a string representing a minimum metric
-            floor, i.e., '0.29'. Defaults to False.
+        hard_fail (bool | str): Throw an error on benchmark failure. Can be a boolean or a string representing a minimum
+            metric floor, e.g., '0.29'. Defaults to False.
 
     Returns:
         argparse.Namespace: Parsed command-line arguments encapsulated in an argparse Namespace object.

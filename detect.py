@@ -101,40 +101,40 @@ def run(
     Runs YOLOv5 detection inference on various sources like images, videos, directories, streams, etc.
 
     Args:
-    weights (str | Path): Path to the model weights file or a Triton URL. Default is 'yolov5s.pt'.
-    source (str | Path): Input source, which can be a file, directory, URL, glob pattern, screen capture, or webcam index.
-        Default is 'data/images'.
-    data (str | Path): Path to the dataset YAML file. Default is 'data/coco128.yaml'.
-    imgsz (tuple[int, int]): Inference image size as a tuple (height, width). Default is (640, 640).
-    conf_thres (float): Confidence threshold for detections. Default is 0.25.
-    iou_thres (float): Intersection Over Union (IOU) threshold for non-max suppression. Default is 0.45.
-    max_det (int): Maximum number of detections per image. Default is 1000.
-    device (str): CUDA device identifier (e.g., '0' or '0,1,2,3') or 'cpu'. Default is an empty string, which
-        uses the best available device.
-    view_img (bool): If True, display inference results using OpenCV. Default is False.
-    save_txt (bool): If True, save results in a text file. Default is False.
-    save_csv (bool): If True, save results in a CSV file. Default is False.
-    save_conf (bool): If True, include confidence scores in the saved results. Default is False.
-    save_crop (bool): If True, save cropped prediction boxes. Default is False.
-    nosave (bool): If True, do not save inference images or videos. Default is False.
-    classes (list[int]): List of class indices to filter detections by. Default is None.
-    agnostic_nms (bool): If True, perform class-agnostic non-max suppression. Default is False.
-    augment (bool): If True, use augmented inference. Default is False.
-    visualize (bool): If True, visualize feature maps. Default is False.
-    update (bool): If True, update all models' weights. Default is False.
-    project (str | Path): Directory to save results. Default is 'runs/detect'.
-    name (str): Name of the current experiment; used to create a subdirectory within 'project'. Default is 'exp'.
-    exist_ok (bool): If True, existing directories with the same name are reused instead of being incremented. Default is
-        False.
-    line_thickness (int): Thickness of bounding box lines in pixels. Default is 3.
-    hide_labels (bool): If True, do not display labels on bounding boxes. Default is False.
-    hide_conf (bool): If True, do not display confidence scores on bounding boxes. Default is False.
-    half (bool): If True, use FP16 half-precision inference. Default is False.
-    dnn (bool): If True, use OpenCV DNN backend for ONNX inference. Default is False.
-    vid_stride (int): Stride for processing video frames, to skip frames between processing. Default is 1.
+        weights (str | Path): Path to the model weights file or a Triton URL. Default is 'yolov5s.pt'.
+        source (str | Path): Input source, which can be a file, directory, URL, glob pattern, screen capture, or webcam index.
+            Default is 'data/images'.
+        data (str | Path): Path to the dataset YAML file. Default is 'data/coco128.yaml'.
+        imgsz (tuple[int, int]): Inference image size as a tuple (height, width). Default is (640, 640).
+        conf_thres (float): Confidence threshold for detections. Default is 0.25.
+        iou_thres (float): Intersection Over Union (IOU) threshold for non-max suppression. Default is 0.45.
+        max_det (int): Maximum number of detections per image. Default is 1000.
+        device (str): CUDA device identifier (e.g., '0' or '0,1,2,3') or 'cpu'. Default is an empty string, which
+            uses the best available device.
+        view_img (bool): If True, display inference results using OpenCV. Default is False.
+        save_txt (bool): If True, save results in a text file. Default is False.
+        save_csv (bool): If True, save results in a CSV file. Default is False.
+        save_conf (bool): If True, include confidence scores in the saved results. Default is False.
+        save_crop (bool): If True, save cropped prediction boxes. Default is False.
+        nosave (bool): If True, do not save inference images or videos. Default is False.
+        classes (list[int]): List of class indices to filter detections by. Default is None.
+        agnostic_nms (bool): If True, perform class-agnostic non-max suppression. Default is False.
+        augment (bool): If True, use augmented inference. Default is False.
+        visualize (bool): If True, visualize feature maps. Default is False.
+        update (bool): If True, update all models' weights. Default is False.
+        project (str | Path): Directory to save results. Default is 'runs/detect'.
+        name (str): Name of the current experiment; used to create a subdirectory within 'project'. Default is 'exp'.
+        exist_ok (bool): If True, existing directories with the same name are reused instead of being incremented. Default is
+            False.
+        line_thickness (int): Thickness of bounding box lines in pixels. Default is 3.
+        hide_labels (bool): If True, do not display labels on bounding boxes. Default is False.
+        hide_conf (bool): If True, do not display confidence scores on bounding boxes. Default is False.
+        half (bool): If True, use FP16 half-precision inference. Default is False.
+        dnn (bool): If True, use OpenCV DNN backend for ONNX inference. Default is False.
+        vid_stride (int): Stride for processing video frames, to skip frames between processing. Default is 1.
 
     Returns:
-    None
+        None
 
     Examples:
     ```python
@@ -397,15 +397,15 @@ def main(opt):
     Executes YOLOv5 model inference based on provided command-line arguments, validating dependencies before running.
 
     Args:
-      opt (argparse.Namespace): Command-line arguments for YOLOv5 detection. See function `parse_opt` for details.
+        opt (argparse.Namespace): Command-line arguments for YOLOv5 detection. See function `parse_opt` for details.
 
     Returns:
-      None
+        None
 
     Note:
-      This function performs essential pre-execution checks and initiates the YOLOv5 detection process based on user-specified options.
-      Refer to the usage guide and examples for more information about different sources and formats at:
-      https://github.com/ultralytics/ultralytics
+        This function performs essential pre-execution checks and initiates the YOLOv5 detection process based on user-specified options.
+        Refer to the usage guide and examples for more information about different sources and formats at:
+        https://github.com/ultralytics/ultralytics
 
     Example usage:
 
