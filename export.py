@@ -103,10 +103,9 @@ class iOSModel(torch.nn.Module):
             None: This method does not return any value.
 
         Notes:
-            This initializer configures normalization based on the input image dimensions, which is critical for
-            ensuring the model's compatibility and proper functionality on iOS devices. The normalization step
-            involves dividing by the image width if the image is square; otherwise, additional conditions might
-            apply (trimmed for brevity).
+            This initializer configures normalization based on the input image dimensions, which is critical for ensuring the
+            model's compatibility and proper functionality on iOS devices. The normalization step involves dividing by the image
+            width if the image is square; otherwise, additional conditions might apply (trimmed for brevity).
         """
         super().__init__()
         b, c, h, w = im.shape  # batch, channel, height, width
@@ -124,16 +123,17 @@ class iOSModel(torch.nn.Module):
         Runs a forward pass on the input tensor, returning class confidences and normalized coordinates.
 
         Args:
-          x (torch.Tensor): Input tensor containing the image data.
+            x (torch.Tensor): Input tensor containing the image data.
 
         Returns:
-          torch.Tensor: Concatenated tensor with normalized coordinates (xywh), confidence scores (conf), and class probabilities (cls).
+            torch.Tensor: Concatenated tensor with normalized coordinates (xywh), confidence scores (conf),
+            and class probabilities (cls).
 
         Examples:
-          ```python
-          model = iOSModel(pretrained_model, input_image)
-          output = model.forward(torch_input_tensor)
-          ```
+            ```python
+            model = iOSModel(pretrained_model, input_image)
+            output = model.forward(torch_input_tensor)
+            ```
         """
         xywh, conf, cls = self.model(x)[0].squeeze().split((4, 1, self.nc), 1)
         return cls * conf, xywh * self.normalize  # confidence (3780, 80), coordinates (3780, 4)
@@ -151,7 +151,7 @@ def export_formats():
     Examples:
         ```python
         formats = export_formats()
-        print(formats)
+        print(f"Supported export formats:\n{formats}")
         ```
 
     Notes:
@@ -188,16 +188,18 @@ def try_export(inner_func):
 
     Returns:
         Callable: The wrapped function that logs execution details. When executed, this wrapper function returns either:
-            - Tuple (str, torch.nn.Module): On success — the file path of the exported model and the model instance.
-            - Tuple (None, None): On failure — None values indicating export failed.
+            - Tuple (str | torch.nn.Module): On success — the file path of the exported model and the model instance.
+            - Tuple (None, None): On failure — None values indicating export failure.
 
     Examples:
+        ```python
         @try_export
         def export_onnx(model, filepath):
             # implementation here
             pass
 
         exported_file, exported_model = export_onnx(yolo_model, 'path/to/save/model.onnx')
+        ```
 
     Notes:
         For additional requirements and model export formats, refer to the [Ultralytics YOLOv5 GitHub repository](https://github.com/ultralytics/ultralytics).
@@ -239,7 +241,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr("TorchScript:"
     Notes:
         - This function uses tracing to create the TorchScript model.
         - Metadata, including the input image shape, model stride, and class names, is saved in an extra file (`config.txt`)
-        within the TorchScript model package.
+          within the TorchScript model package.
         - For mobile optimization, refer to the PyTorch tutorial: https://pytorch.org/tutorials/recipes/mobile_interpreter.html
 
     Example:
@@ -359,8 +361,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
 @try_export
 def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:")):
     """
-    Exports a YOLOv5 model to OpenVINO format with optional FP16 and INT8 quantization; see
-    https://pypi.org/project/openvino-dev/.
+    Exports a YOLOv5 model to OpenVINO format with optional FP16 and INT8 quantization.
 
     Args:
         file (Path): The path to the output file where the OpenVINO model will be saved.
@@ -450,7 +451,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
 @try_export
 def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):
     """
-    Exports a YOLOv5 model to PaddlePaddle format using X2Paddle, saving the converted model and metadata.
+    Export a YOLOv5 model to PaddlePaddle format using X2Paddle, saving the converted model and metadata.
 
     Args:
         model (torch.nn.Module): The YOLOv5 model to be exported.
@@ -476,6 +477,7 @@ def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):
 
         export_paddle(model=model, im=im, file=file, metadata=metadata)
         ```
+
     Notes:
         Ensure that `paddlepaddle` and `x2paddle` are installed, as these are required for the export function. You can
         install them via pip:
@@ -556,7 +558,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
 
     Args:
         model (torch.nn.Module): YOLOv5 model to be exported.
-        im (torch.Tensor): Input tensor of shape (B,C,H,W).
+        im (torch.Tensor): Input tensor of shape (B, C, H, W).
         file (Path): Path to save the exported model.
         half (bool): Set to True to export with FP16 precision.
         dynamic (bool): Set to True to enable dynamic input shapes.
@@ -664,7 +666,8 @@ def export_saved_model(
     prefix=colorstr("TensorFlow SavedModel:"),
 ):
     """
-    Exports a YOLOv5 model to TensorFlow SavedModel format, supporting dynamic axes and non-maximum suppression (NMS).
+    Exports a YOLOv5 model to the TensorFlow SavedModel format, supporting dynamic axes and non-maximum suppression
+    (NMS).
 
     Args:
         model (torch.nn.Module): The PyTorch model to convert.
@@ -681,16 +684,14 @@ def export_saved_model(
         prefix (str, optional): Prefix for logging messages. Default is "TensorFlow SavedModel:".
 
     Returns:
-        tuple: A tuple containing the path to the saved model folder (str) and the Keras model instance (tf.keras.Model | None).
+        tuple[str, tf.keras.Model | None]: A tuple containing the path to the saved model folder and the Keras model instance,
+        or None if TensorFlow export fails.
 
     Notes:
         - The method supports TensorFlow versions up to 2.15.1.
         - TensorFlow NMS may not be supported in older TensorFlow versions.
         - If the TensorFlow version exceeds 2.13.1, it might cause issues when exporting to TFLite.
           Refer to: https://github.com/ultralytics/yolov5/issues/12489
-
-    Raises:
-        Exception: If TensorFlow is not installed.
 
     Example:
         ```python
@@ -749,7 +750,7 @@ def export_saved_model(
 @try_export
 def export_pb(keras_model, file, prefix=colorstr("TensorFlow GraphDef:")):
     """
-    Exports YOLOv5 model to TensorFlow GraphDef (*.pb) format.
+    Export YOLOv5 model to TensorFlow GraphDef (*.pb) format.
 
     Args:
         keras_model (tf.keras.Model): The Keras model to be converted.
@@ -790,44 +791,43 @@ def export_tflite(
 ):
     # YOLOv5 TensorFlow Lite export
     """
-    Exports YOLOv5 model to TensorFlow Lite format with optional FP16, INT8, and NMS support.
+    Exports a YOLOv5 model to TensorFlow Lite format with optional INT8 quantization and NMS support.
 
     Args:
         keras_model (tf.keras.Model): The Keras model to be exported.
-        im (torch.Tensor): Image tensor for normalization and model tracing.
-        file (Path): The file path to save the exported TensorFlow Lite model.
+        im (torch.Tensor): An input image tensor for normalization and model tracing.
+        file (Path): The file path to save the TensorFlow Lite model.
         int8 (bool): Enables INT8 quantization if True.
-        per_tensor (bool): If True, disable per-channel quantization (applicable when int8 is True).
-        data (str): Path to dataset for representative dataset generation in INT8 quantization.
-        nms (bool): Enables Non-Maximum Suppression (NMS) support if True.
-        agnostic_nms (bool): Enables class-agnostic NMS support if True.
-        prefix (str): Prefix for logging messages.
+        per_tensor (bool): If True, disables per-channel quantization.
+        data (str): Path to the dataset for representative dataset generation in INT8 quantization.
+        nms (bool): Enables Non-Maximum Suppression (NMS) if True.
+        agnostic_nms (bool): Enables class-agnostic NMS if True.
+        prefix (str): Prefix for log messages.
 
     Returns:
-        (str | None, tf.lite.Model | None): The file path of the saved TFLite model, and the TFLite model instance if successful.
+        (str | None, tflite.Model | None): The file path of the exported TFLite model and the TFLite model instance, or None if export failed.
 
     Example:
         ```python
         from pathlib import Path
         import torch
         import tensorflow as tf
-        from torchvision import models
 
-        # Load a pre-trained model from torchvision
-        model = models.yolov5()  # Placeholder for actual YOLOv5 model loading
-        im = torch.zeros(1, 3, 640, 640)  # Example image tensor
-
-        # Provide the Keras model wrapping the PyTorch YOLOv5 model
+        # Load a Keras model wrapping a YOLOv5 model
         keras_model = tf.keras.models.load_model('path/to/keras_model.h5')
 
-        # Export the model to TensorFlow Lite format
-        file_path = export_tflite(keras_model, im, Path('model.tflite'), int8=False, per_tensor=False,
-                                  data='path/to/dataset.yaml', nms=False, agnostic_nms=False)
+        # Example input tensor
+        im = torch.zeros(1, 3, 640, 640)
+
+        # Export the model
+        export_tflite(keras_model, im, Path('model.tflite'), int8=True, per_tensor=False, data='data/coco.yaml',
+                      nms=True, agnostic_nms=False)
         ```
 
     Notes:
-        Ensure the TensorFlow and TensorFlow Lite dependencies are installed. The exported TFLite model can be used for
-        efficient inference on mobile and edge devices.
+        - Ensure TensorFlow and TensorFlow Lite dependencies are installed.
+        - INT8 quantization requires a representative dataset to achieve optimal accuracy.
+        - TensorFlow Lite models are suitable for efficient inference on mobile and edge devices.
     """
     import tensorflow as tf
 
@@ -935,18 +935,18 @@ def export_tfjs(file, int8, prefix=colorstr("TensorFlow.js:")):
         prefix (str): Prefix for logging information (default: colorstr("TensorFlow.js:")).
 
     Returns:
-        tuple: Output directory path (str), None
+        (str, None): The output directory path as a string and None.
 
     Notes:
         This function requires `tensorflowjs` to be installed. You can install it using:
-            ```shell
-            pip install tensorflowjs
-            ```
+        ```shell
+        pip install tensorflowjs
+        ```
 
         Example usage:
-            ```python
-            export_tfjs(Path('yolov5s.onnx'), int8=False)
-            ```
+        ```python
+        export_tfjs(Path('yolov5s.onnx'), int8=False)
+        ```
 
         The TensorFlow.js converted model is saved in the directory specified by `file` with "_web_model" suffix.
     """
@@ -987,12 +987,12 @@ def export_tfjs(file, int8, prefix=colorstr("TensorFlow.js:")):
 
 def add_tflite_metadata(file, metadata, num_outputs):
     """
-    Adds TFLite metadata to a model file, supporting multiple outputs, as specified by TensorFlow guidelines.
+    Adds metadata to a TensorFlow Lite (TFLite) model file, supporting multiple outputs, based on TensorFlow guidelines.
 
     Args:
-        file (str): The path to the TensorFlow Lite model file to which metadata will be added.
-        metadata (dict): Metadata information to be added to the model, structured as required by TFLite metadata schema.
-        num_outputs (int): Number of output tensors the model has, to properly configure the metadata.
+        file (str): Path to the TFLite model file to which metadata will be added.
+        metadata (dict): Metadata information to be added to the model, structured as required by the TFLite metadata schema.
+        num_outputs (int): Number of output tensors the model has, used to configure the metadata properly.
 
     Returns:
         None
@@ -1011,7 +1011,7 @@ def add_tflite_metadata(file, metadata, num_outputs):
 
     Note:
         TFLite metadata can include information such as model name, version, author, and other relevant details.
-        For more details and structure of the metadata, refer to the TensorFlow Lite
+        For more details on the structure of the metadata, refer to TensorFlow Lite
         [metadata guidelines](https://www.tensorflow.org/lite/models/convert/metadata).
     """
     with contextlib.suppress(ImportError):
@@ -1071,24 +1071,24 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
         - Flexible input shapes and additional NMS options can be customized within the function.
 
     Examples:
-    ```python
-    from pathlib import Path
-    import torch
+        ```python
+        from pathlib import Path
+        import torch
 
-    # Load YOLOv5 model and an example input tensor
-    model = torch.load("yolov5s.pt")
-    im = torch.zeros(1, 3, 640, 640)  # Example input tensor
+        # Load YOLOv5 model and an example input tensor
+        model = torch.load("yolov5s.pt")
+        im = torch.zeros(1, 3, 640, 640)  # Example input tensor
 
-    # Define class names
-    names = {0: "person", 1: "bicycle", 2: "car", ...}
+        # Define class names
+        names = {0: "person", 1: "bicycle", 2: "car", ...}
 
-    # Perform forward pass to get model output
-    y = model(im)
+        # Perform forward pass to get model output
+        y = model(im)
 
-    # Convert to CoreML
-    output_file = Path("yolov5s.mlmodel")
-    pipeline_coreml(model, im, output_file, names, y)
-    ```
+        # Convert to CoreML
+        output_file = Path("yolov5s.mlmodel")
+        pipeline_coreml(model, im, output_file, names, y)
+        ```
     """
     import coremltools as ct
     from PIL import Image
@@ -1246,6 +1246,8 @@ def run(
     conf_thres=0.25,  # TF.js NMS: confidence threshold
 ):
     """
+    Clear and concise summary line describing the function's purpose:
+
     Exports a YOLOv5 model to specified formats including ONNX, TensorRT, CoreML, and TensorFlow.
 
     Args:
@@ -1474,42 +1476,42 @@ def parse_opt(known=False):
 
 def main(opt):
     """
-    ```python Exports the YOLOv5 model to specified formats, including ONNX, TensorRT, CoreML, and TensorFlow.
+    Exports the YOLOv5 model to specified formats, including ONNX, TensorRT, CoreML, and TensorFlow.
 
     Args:
         opt (argparse.Namespace): Parsed command-line arguments containing the export configurations.
-              - data (str): Path to the dataset.yaml.
-              - weights (list[str]): Paths to model (.pt) file(s).
-              - imgsz (list[int]): Image size (height, width).
-              - batch_size (int): Batch size.
-              - device (str): CUDA device, e.g., '0' or '0,1,2,3' or 'cpu'.
-              - half (bool): FP16 half-precision export flag.
-              - inplace (bool): Set YOLOv5 Detect() inplace to True.
-              - keras (bool): Use Keras for TensorFlow models.
-              - optimize (bool): Optimize TorchScript model for mobile.
-              - int8 (bool): INT8 quantization flag.
-              - per_tensor (bool): Per tensor quantization for TensorFlow.
-              - dynamic (bool): Dynamic axes for ONNX/TF/TensorRT.
-              - simplify (bool): Simplify ONNX model.
-              - opset (int): ONNX opset version.
-              - verbose (bool): Verbose logging for TensorRT.
-              - workspace (int): Workspace size for TensorRT (in GB).
-              - nms (bool): Add NMS to TensorFlow model.
-              - agnostic_nms (bool): Add agnostic NMS to TensorFlow model.
-              - topk_per_class (int): Top-k per class for TensorFlow.js NMS.
-              - topk_all (int): Top-k for all classes for TensorFlow.js NMS.
-              - iou_thres (float): IoU threshold for TensorFlow.js NMS.
-              - conf_thres (float): Confidence threshold for TensorFlow.js NMS.
-              - include (list[str]): List of formats to include in export, e.g., ['torchscript', 'onnx'].
+            - data (str): Path to the dataset YAML configuration file (e.g., 'data/coco128.yaml').
+            - weights (list[str] | str): Paths to the pretrained model weights file(s) (e.g., 'yolov5s.pt').
+            - imgsz (list[int]): Image size as a list [height, width].
+            - batch_size (int): Batch size for exporting the model.
+            - device (str): Device to run the export on, such as '0' for GPU, or 'cpu' for CPU.
+            - half (bool): Flag to export the model with FP16 half-precision.
+            - inplace (bool): Set the YOLOv5 Detect() module inplace mode to True.
+            - keras (bool): Flag to use Keras for TensorFlow SavedModel export.
+            - optimize (bool): Optimize TorchScript model for mobile deployment.
+            - int8 (bool): Apply INT8 quantization for CoreML or TensorFlow models.
+            - per_tensor (bool): Apply per-tensor quantization for TensorFlow models.
+            - dynamic (bool): Enable dynamic axes for ONNX, TensorFlow, or TensorRT exports.
+            - simplify (bool): Simplify ONNX model during export.
+            - opset (int): ONNX opset version.
+            - verbose (bool): Enable verbose logging for TensorRT export.
+            - workspace (int): TensorRT workspace size in GB.
+            - nms (bool): Add non-maximum suppression (NMS) to the TensorFlow model.
+            - agnostic_nms (bool): Add class-agnostic NMS to the TensorFlow model.
+            - topk_per_class (int): Top-K boxes per class to keep for TensorFlow.js NMS.
+            - topk_all (int): Top-K boxes for all classes to keep for TensorFlow.js NMS.
+            - iou_thres (float): IoU threshold for NMS.
+            - conf_thres (float): Confidence threshold for NMS.
+            - include (list[str]): List of formats to include in export (e.g., ['torchscript', 'onnx']).
 
     Returns:
-        list[str]: List of exported file paths.
-    ```python
+        list[str]: List of paths to the exported model files.
 
-    # Example usage:
-    # opt = parse_opt()
-    # main(opt)
-    ```
+    Example:
+        ```python
+        opt = parse_opt()
+        main(opt)
+        ```
     """
     for opt.weights in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
         run(**vars(opt))
