@@ -895,10 +895,10 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
         LOGGER.info(f"\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}")
         sudo = subprocess.run("sudo --version >/dev/null", shell=True).returncode == 0  # sudo installed on system
         for c in (
-            "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
-            'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
-            "sudo apt-get update",
-            "sudo apt-get install edgetpu-compiler",
+                "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
+                'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
+                "sudo apt-get update",
+                "sudo apt-get install edgetpu-compiler",
         ):
             subprocess.run(c if sudo else c.replace("sudo ", ""), shell=True, check=True)
     ver = subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1]
@@ -1218,32 +1218,32 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
     print(f"{prefix} pipeline success ({time.time() - t:.2f}s), saved as {f} ({file_size(f):.1f} MB)")
 
 
-    @smart_inference_mode()
-    def run(
-        data=ROOT / "data/coco128.yaml",  # 'dataset.yaml path'
-        weights=ROOT / "yolov5s.pt",  # weights path
-        imgsz=(640, 640),  # image (height, width)
-        batch_size=1,  # batch size
-        device="cpu",  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=("torchscript", "onnx"),  # include formats
-        half=False,  # FP16 half-precision export
-        inplace=False,  # set YOLOv5 Detect() inplace=True
-        keras=False,  # use Keras
-        optimize=False,  # TorchScript: optimize for mobile
-        int8=False,  # CoreML/TF INT8 quantization
-        per_tensor=False,  # TF per tensor quantization
-        dynamic=False,  # ONNX/TF/TensorRT: dynamic axes
-        simplify=False,  # ONNX: simplify model
-        opset=12,  # ONNX: opset version
-        verbose=False,  # TensorRT: verbose log
-        workspace=4,  # TensorRT: workspace size (GB)
-        nms=False,  # TF: add NMS to model
-        agnostic_nms=False,  # TF: add agnostic NMS to model
-        topk_per_class=100,  # TF.js NMS: topk per class to keep
-        topk_all=100,  # TF.js NMS: topk for all classes to keep
-        iou_thres=0.45,  # TF.js NMS: IoU threshold
-        conf_thres=0.25,  # TF.js NMS: confidence threshold
-    ):
+@smart_inference_mode()
+def run(
+    data=ROOT / "data/coco128.yaml",  # 'dataset.yaml path'
+    weights=ROOT / "yolov5s.pt",  # weights path
+    imgsz=(640, 640),  # image (height, width)
+    batch_size=1,  # batch size
+    device="cpu",  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+    include=("torchscript", "onnx"),  # include formats
+    half=False,  # FP16 half-precision export
+    inplace=False,  # set YOLOv5 Detect() inplace=True
+    keras=False,  # use Keras
+    optimize=False,  # TorchScript: optimize for mobile
+    int8=False,  # CoreML/TF INT8 quantization
+    per_tensor=False,  # TF per tensor quantization
+    dynamic=False,  # ONNX/TF/TensorRT: dynamic axes
+    simplify=False,  # ONNX: simplify model
+    opset=12,  # ONNX: opset version
+    verbose=False,  # TensorRT: verbose log
+    workspace=4,  # TensorRT: workspace size (GB)
+    nms=False,  # TF: add NMS to model
+    agnostic_nms=False,  # TF: add agnostic NMS to model
+    topk_per_class=100,  # TF.js NMS: topk per class to keep
+    topk_all=100,  # TF.js NMS: topk for all classes to keep
+    iou_thres=0.45,  # TF.js NMS: IoU threshold
+    conf_thres=0.25,  # TF.js NMS: confidence threshold
+):
     """
     Clear and concise summary line describing the function's purpose:
     
@@ -1516,7 +1516,6 @@ def main(opt):
     """
     opt = parse_opt()
     run(**vars(opt))
-    """
     for opt.weights in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
         run(**vars(opt))
 
