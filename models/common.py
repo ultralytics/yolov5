@@ -825,7 +825,7 @@ class AutoShape(nn.Module):
         """
         # For size(height=640, width=1280), RGB images example inputs are:
         #   file:        ims = 'data/images/zidane.jpg'  # str or PosixPath
-        #   URI:             = 'https://ultralytics.com/images/zidane.jpg'
+        #   URI:             = 'https://github.com/ultralytics/assets/releases/download/v0.0.0/zidane.jpg'
         #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
         #   PIL:             = Image.open('image.jpg') or ImageGrab.grab()  # HWC x(640,1280,3)
         #   numpy:           = np.zeros((640,1280,3))  # HWC

@@ -31,7 +31,7 @@ def gsutil_getsize(url=""):
     return int(output.split()[0]) if output else 0
 
 
-def url_getsize(url="https://ultralytics.com/images/bus.jpg"):
+def url_getsize(url="https://github.com/ultralytics/assets/releases/download/v0.0.0/bus.jpg"):
     """Returns the size in bytes of a downloadable file at a given URL; defaults to -1 if not found."""
     response = requests.head(url, allow_redirects=True)
     return int(response.headers.get("content-length", -1))

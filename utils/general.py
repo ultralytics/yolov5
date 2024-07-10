@@ -59,7 +59,7 @@ DATASETS_DIR = Path(os.getenv("YOLOv5_DATASETS_DIR", ROOT.parent / "datasets")) 
 AUTOINSTALL = str(os.getenv("YOLOv5_AUTOINSTALL", True)).lower() == "true"  # global auto-install mode
 VERBOSE = str(os.getenv("YOLOv5_VERBOSE", True)).lower() == "true"  # global verbose mode
 TQDM_BAR_FORMAT = "{l_bar}{bar:10}{r_bar}"  # tqdm bar format
-FONT = "Arial.ttf"  # https://ultralytics.com/assets/Arial.ttf
+FONT = "Arial.ttf"  # https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf
 
 torch.set_printoptions(linewidth=320, precision=5, profile="long")
 np.set_printoptions(linewidth=320, formatter={"float_kind": "{:11.5g}".format})  # format short g, %precision=5
@@ -511,7 +511,7 @@ def check_font(font=FONT, progress=False):
     font = Path(font)
     file = CONFIG_DIR / font.name
     if not font.exists() and not file.exists():
-        url = f"https://ultralytics.com/assets/{font.name}"
+        url = f"https://github.com/ultralytics/assets/releases/download/v0.0.0/{font.name}"
         LOGGER.info(f"Downloading {url} to {file}...")
         torch.hub.download_url_to_file(url, str(file), progress=progress)
 
@@ -599,7 +599,7 @@ def check_amp(model):
     if device.type in ("cpu", "mps"):
         return False  # AMP only used on CUDA devices
     f = ROOT / "data" / "images" / "bus.jpg"  # image to check
-    im = f if f.exists() else "https://ultralytics.com/images/bus.jpg" if check_online() else np.ones((640, 640, 3))
+    im = f if f.exists() else "https://github.com/ultralytics/assets/releases/download/v0.0.0/bus.jpg" if check_online() else np.ones((640, 640, 3))
     try:
         assert amp_allclose(deepcopy(model), im) or amp_allclose(DetectMultiBackend("yolov5n.pt", device), im)
         LOGGER.info(f"{prefix}checks passed ✅")

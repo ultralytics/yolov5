@@ -480,7 +480,7 @@ if __name__ == "__main__":
     imgs = [
         "data/images/zidane.jpg",  # filename
         Path("data/images/zidane.jpg"),  # Path
-        "https://ultralytics.com/images/zidane.jpg",  # URI
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/zidane.jpg",  # URI
         cv2.imread("data/images/bus.jpg")[:, :, ::-1],  # OpenCV
         Image.open("data/images/bus.jpg"),  # PIL
         np.zeros((320, 640, 3)),
