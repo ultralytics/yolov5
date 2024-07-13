@@ -3,3 +3,4 @@ pip==23.3
 Flask==2.3.2
 gunicorn==22.0.0
 werkzeug>=3.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
