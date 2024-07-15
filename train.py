@@ -104,31 +104,31 @@ def train(hyp, opt, device, callbacks):
     """
     Train a YOLOv5 model on a custom dataset using specified hyperparameters, options, and device, managing datasets,
     model architecture, loss computation, and optimizer steps.
-    
+
     Args:
         hyp (str | dict): Path to the hyperparameters YAML file or a dictionary of hyperparameters.
         opt (argparse.Namespace): Parsed command-line arguments containing training options.
         device (torch.device): Device on which training occurs, e.g., 'cuda' or 'cpu'.
         callbacks (Callbacks): Callback functions for various training events.
-    
+
     Returns:
         None
-    
+
     Models and datasets download automatically from the latest YOLOv5 release.
-    
+
     Example:
         Single-GPU training:
         ```bash
         $ python train.py --data coco128.yaml --weights yolov5s.pt --img 640  # from pretrained (recommended)
         $ python train.py --data coco128.yaml --weights '' --cfg yolov5s.yaml --img 640  # from scratch
         ```
-    
+
         Multi-GPU DDP training:
         ```bash
         $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 train.py --data coco128.yaml --weights
         yolov5s.pt --img 640 --device 0,1,2,3
         ```
-    
+
         For more usage details, refer to:
         - Models: https://github.com/ultralytics/yolov5/tree/master/models
         - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
@@ -544,20 +544,20 @@ def train(hyp, opt, device, callbacks):
 def parse_opt(known=False):
     """
     Parse command-line arguments for YOLOv5 training, validation, and testing.
-    
+
     Args:
         known (bool, optional): If True, parses known arguments, ignoring the unknown. Defaults to False.
-    
+
     Returns:
         (argparse.Namespace): Parsed command-line arguments containing options for YOLOv5 execution.
-    
+
     Example:
         ```python
         from ultralytics.yolo import parse_opt
         opt = parse_opt()
         print(opt)
         ```
-    
+
     Links:
         - Models: https://github.com/ultralytics/yolov5/tree/master/models
         - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
@@ -619,15 +619,15 @@ def parse_opt(known=False):
 def main(opt, callbacks=Callbacks()):
     """
     Runs the main entry point for training or hyperparameter evolution with specified options and optional callbacks.
-    
+
     Args:
         opt (argparse.Namespace): The command-line arguments parsed for YOLOv5 training and evolution.
-        callbacks (ultralytics.utils.callbacks.Callbacks, optional): Callback functions for various training stages. 
+        callbacks (ultralytics.utils.callbacks.Callbacks, optional): Callback functions for various training stages.
             Defaults to Callbacks().
-    
+
     Returns:
         None
-    
+
     Note:
         For detailed usage, refer to:
         https://github.com/ultralytics/yolov5/tree/master/models
@@ -889,15 +889,15 @@ def main(opt, callbacks=Callbacks()):
 def generate_individual(input_ranges, individual_length):
     """
     Generate an individual with random hyperparameters within specified ranges.
-    
+
     Args:
         input_ranges (list[tuple[float, float]]): List of tuples where each tuple contains the lower and upper bounds
             for the corresponding gene (hyperparameter).
         individual_length (int): The number of genes (hyperparameters) in the individual.
-    
+
     Returns:
         list[float]: A list representing a generated individual with random gene values within the specified ranges.
-    
+
     Example:
         ```python
         input_ranges = [(0.01, 0.1), (0.1, 1.0), (0.9, 2.0)]
@@ -905,7 +905,7 @@ def generate_individual(input_ranges, individual_length):
         individual = generate_individual(input_ranges, individual_length)
         print(individual)  # Output: [0.035, 0.678, 1.456] (example output)
         ```
-    
+
     Note:
         The individual returned will have a length equal to `individual_length`, with each gene value being a floating-point
         number within its specified range in `input_ranges`.
@@ -920,7 +920,7 @@ def generate_individual(input_ranges, individual_length):
 def run(**kwargs):
     """
     Execute YOLOv5 training with specified options, allowing optional overrides through keyword arguments.
-    
+
     Args:
         weights (str, optional): Path to initial weights. Defaults to ROOT / 'yolov5s.pt'.
         cfg (str, optional): Path to model YAML configuration. Defaults to an empty string.
@@ -935,7 +935,7 @@ def run(**kwargs):
         noval (bool, optional): Only validate at the final epoch. Defaults to False.
         noautoanchor (bool, optional): Disable AutoAnchor. Defaults to False.
         noplots (bool, optional): Do not save plot files. Defaults to False.
-        evolve (int, optional): Evolve hyperparameters for a specified number of generations. Use 300 if provided without a 
+        evolve (int, optional): Evolve hyperparameters for a specified number of generations. Use 300 if provided without a
             value.
         evolve_population (str, optional): Directory for loading population during evolution. Defaults to ROOT / 'data/ hyps'.
         resume_evolve (str, optional): Resume hyperparameter evolution from the last generation. Defaults to None.
@@ -959,16 +959,16 @@ def run(**kwargs):
         save_period (int, optional): Frequency in epochs to save checkpoints. Disabled if < 1. Defaults to -1.
         seed (int, optional): Global training random seed. Defaults to 0.
         local_rank (int, optional): Automatic DDP Multi-GPU argument. Do not modify. Defaults to -1.
-    
+
     Returns:
         None: The function initiates YOLOv5 training or hyperparameter evolution based on the provided options.
-    
+
     Examples:
         ```python
         import train
         train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
         ```
-    
+
     Notes:
         - Models: https://github.com/ultralytics/yolov5/tree/master/models
         - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
