@@ -78,10 +78,11 @@ def run(
         None. Logs information about the benchmark results, including the format, size, mAP50-95, and inference time.
 
     Notes:
-        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow
-        SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js are unsupported.
+        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML,
+            TensorFlow SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js
+            are unsupported.
 
-    Examples:
+    Example:
         ```python
         $ python benchmarks.py --weights yolov5s.pt --img 640
         ```
@@ -190,7 +191,6 @@ def test(
             $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU support
             $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow   # GPU support
             $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
-
         Run export tests:
             $ python benchmarks.py --weights yolov5s.pt --img 640
     """
@@ -263,7 +263,7 @@ def main(opt):
 
     Args:
         opt (argparse.Namespace): Parsed command-line arguments including options for weights, image size, batch size, data
-        configuration, device, and other flags for inference settings.
+            configuration, device, and other flags for inference settings.
 
     Returns:
         None: This function does not return any value. It leverages side-effects such as logging and running benchmarks.
