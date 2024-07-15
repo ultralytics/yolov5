@@ -102,15 +102,15 @@ def run(
 
     Args:
         weights (str | Path): Path to the model weights file or a Triton URL. Default is 'yolov5s.pt'.
-        source (str | Path): Input source, which can be a file, directory, URL, glob pattern, screen capture, or webcam index.
-            Default is 'data/images'.
+        source (str | Path): Input source, which can be a file, directory, URL, glob pattern, screen capture, or webcam
+            index. Default is 'data/images'.
         data (str | Path): Path to the dataset YAML file. Default is 'data/coco128.yaml'.
         imgsz (tuple[int, int]): Inference image size as a tuple (height, width). Default is (640, 640).
         conf_thres (float): Confidence threshold for detections. Default is 0.25.
         iou_thres (float): Intersection Over Union (IOU) threshold for non-max suppression. Default is 0.45.
         max_det (int): Maximum number of detections per image. Default is 1000.
-        device (str): CUDA device identifier (e.g., '0' or '0,1,2,3') or 'cpu'. Default is an empty string, which
-            uses the best available device.
+        device (str): CUDA device identifier (e.g., '0' or '0,1,2,3') or 'cpu'. Default is an empty string, which uses the
+            best available device.
         view_img (bool): If True, display inference results using OpenCV. Default is False.
         save_txt (bool): If True, save results in a text file. Default is False.
         save_csv (bool): If True, save results in a CSV file. Default is False.
@@ -137,15 +137,15 @@ def run(
         None
 
     Examples:
-    ```python
-    from ultralytics import run
+        ```python
+        from ultralytics import run
 
-    # Run inference on an image
-    run(source='data/images/example.jpg', weights='yolov5s.pt', device='0')
+        # Run inference on an image
+        run(source='data/images/example.jpg', weights='yolov5s.pt', device='0')
 
-    # Run inference on a video with specific confidence threshold
-    run(source='data/videos/example.mp4', weights='yolov5s.pt', conf_thres=0.4, device='0')
-    ```
+        # Run inference on a video with specific confidence threshold
+        run(source='data/videos/example.mp4', weights='yolov5s.pt', conf_thres=0.4, device='0')
+        ```
     """
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
@@ -316,7 +316,7 @@ def run(
 
 def parse_opt():
     """
-    Parses command-line arguments for YOLOv5 detection, setting inference options and model configurations.
+    Parse command-line arguments for YOLOv5 detection, allowing custom inference options and model configurations.
 
     Args:
         --weights (str | list[str], optional): Model path or Triton URL. Defaults to ROOT / 'yolov5s.pt'.
@@ -346,7 +346,8 @@ def parse_opt():
         --hide-conf (bool, optional): Flag to hide confidences in the output. Defaults to False.
         --half (bool, optional): Flag to use FP16 half-precision inference. Defaults to False.
         --dnn (bool, optional): Flag to use OpenCV DNN for ONNX inference. Defaults to False.
-        --vid-stride (int, optional): Video frame-rate stride, determining the number of frames to skip in between consecutive frames. Defaults to 1.
+        --vid-stride (int, optional): Video frame-rate stride, determining the number of frames to skip in between
+            consecutive frames. Defaults to 1.
 
     Returns:
         argparse.Namespace: Parsed command-line arguments as an argparse.Namespace object.
@@ -403,8 +404,8 @@ def main(opt):
         None
 
     Note:
-        This function performs essential pre-execution checks and initiates the YOLOv5 detection process based on user-specified options.
-        Refer to the usage guide and examples for more information about different sources and formats at:
+        This function performs essential pre-execution checks and initiates the YOLOv5 detection process based on user-specified
+        options. Refer to the usage guide and examples for more information about different sources and formats at:
         https://github.com/ultralytics/ultralytics
 
     Example usage:
