@@ -99,18 +99,18 @@ def run(
 ):
     """
     Runs YOLOv5 detection inference on various sources like images, videos, directories, streams, etc.
-
+    
     Args:
         weights (str | Path): Path to the model weights file or a Triton URL. Default is 'yolov5s.pt'.
-        source (str | Path): Input source, which can be a file, directory, URL, glob pattern, screen capture, or webcam index.
-            Default is 'data/images'.
+        source (str | Path): Input source, which can be a file, directory, URL, glob pattern, screen capture, or webcam
+            index. Default is 'data/images'.
         data (str | Path): Path to the dataset YAML file. Default is 'data/coco128.yaml'.
         imgsz (tuple[int, int]): Inference image size as a tuple (height, width). Default is (640, 640).
         conf_thres (float): Confidence threshold for detections. Default is 0.25.
         iou_thres (float): Intersection Over Union (IOU) threshold for non-max suppression. Default is 0.45.
         max_det (int): Maximum number of detections per image. Default is 1000.
-        device (str): CUDA device identifier (e.g., '0' or '0,1,2,3') or 'cpu'. Default is an empty string, which
-            uses the best available device.
+        device (str): CUDA device identifier (e.g., '0' or '0,1,2,3') or 'cpu'. Default is an empty string, which uses the 
+            best available device.
         view_img (bool): If True, display inference results using OpenCV. Default is False.
         save_txt (bool): If True, save results in a text file. Default is False.
         save_csv (bool): If True, save results in a CSV file. Default is False.
@@ -132,20 +132,20 @@ def run(
         half (bool): If True, use FP16 half-precision inference. Default is False.
         dnn (bool): If True, use OpenCV DNN backend for ONNX inference. Default is False.
         vid_stride (int): Stride for processing video frames, to skip frames between processing. Default is 1.
-
+    
     Returns:
         None
-
+    
     Examples:
-    ```python
-    from ultralytics import run
-
-    # Run inference on an image
-    run(source='data/images/example.jpg', weights='yolov5s.pt', device='0')
-
-    # Run inference on a video with specific confidence threshold
-    run(source='data/videos/example.mp4', weights='yolov5s.pt', conf_thres=0.4, device='0')
-    ```
+        ```python
+        from ultralytics import run
+    
+        # Run inference on an image
+        run(source='data/images/example.jpg', weights='yolov5s.pt', device='0')
+    
+        # Run inference on a video with specific confidence threshold
+        run(source='data/videos/example.mp4', weights='yolov5s.pt', conf_thres=0.4, device='0')
+        ```
     """
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
@@ -316,8 +316,8 @@ def run(
 
 def parse_opt():
     """
-    Parses command-line arguments for YOLOv5 detection, setting inference options and model configurations.
-
+    Parse command-line arguments for YOLOv5 detection, allowing custom inference options and model configurations.
+    
     Args:
         --weights (str | list[str], optional): Model path or Triton URL. Defaults to ROOT / 'yolov5s.pt'.
         --source (str, optional): File/dir/URL/glob/screen/0(webcam). Defaults to ROOT / 'data/images'.
@@ -346,11 +346,12 @@ def parse_opt():
         --hide-conf (bool, optional): Flag to hide confidences in the output. Defaults to False.
         --half (bool, optional): Flag to use FP16 half-precision inference. Defaults to False.
         --dnn (bool, optional): Flag to use OpenCV DNN for ONNX inference. Defaults to False.
-        --vid-stride (int, optional): Video frame-rate stride, determining the number of frames to skip in between consecutive frames. Defaults to 1.
-
+        --vid-stride (int, optional): Video frame-rate stride, determining the number of frames to skip in between 
+            consecutive frames. Defaults to 1.
+    
     Returns:
         argparse.Namespace: Parsed command-line arguments as an argparse.Namespace object.
-
+    
     Example:
         ```python
         from ultralytics import YOLOv5
@@ -395,20 +396,20 @@ def parse_opt():
 def main(opt):
     """
     Executes YOLOv5 model inference based on provided command-line arguments, validating dependencies before running.
-
+    
     Args:
         opt (argparse.Namespace): Command-line arguments for YOLOv5 detection. See function `parse_opt` for details.
-
+    
     Returns:
         None
-
+    
     Note:
-        This function performs essential pre-execution checks and initiates the YOLOv5 detection process based on user-specified options.
-        Refer to the usage guide and examples for more information about different sources and formats at:
+        This function performs essential pre-execution checks and initiates the YOLOv5 detection process based on user-specified
+        options. Refer to the usage guide and examples for more information about different sources and formats at:
         https://github.com/ultralytics/ultralytics
-
+    
     Example usage:
-
+    
     ```python
     if __name__ == "__main__":
         opt = parse_opt()

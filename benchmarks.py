@@ -62,7 +62,7 @@ def run(
 ):
     """
     Run YOLOv5 benchmarks on multiple export formats and log results for model performance evaluation.
-
+    
     Args:
         weights (Path | str): Path to the model weights file (default: ROOT / "yolov5s.pt").
         imgsz (int): Inference size in pixels (default: 640).
@@ -73,25 +73,26 @@ def run(
         test (bool): Test export formats only (default: False).
         pt_only (bool): Test PyTorch format only (default: False).
         hard_fail (bool): Throw an error on benchmark failure if True (default: False).
-
+    
     Returns:
         None. Logs information about the benchmark results, including the format, size, mAP50-95, and inference time.
-
+    
     Notes:
-        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow
-        SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js are unsupported.
-
-    Examples:
+        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, 
+            TensorFlow SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js 
+            are unsupported.
+    
+    Example:
         ```python
         $ python benchmarks.py --weights yolov5s.pt --img 640
         ```
-
+    
     Usage:
         Install required packages:
           $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU support
           $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow   # GPU support
           $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
-
+    
         Run benchmarks:
           $ python benchmarks.py --weights yolov5s.pt --img 640
     """
@@ -161,7 +162,7 @@ def test(
 ):
     """
     Run YOLOv5 export tests for all supported formats and log the results, including export statuses.
-
+    
     Args:
         weights (Path | str): Path to the model weights file (.pt format). Default is 'ROOT / "yolov5s.pt"'.
         imgsz (int): Inference image size (in pixels). Default is 640.
@@ -172,25 +173,24 @@ def test(
         test (bool): Test export formats only without running inference. Default is False.
         pt_only (bool): Test only the PyTorch model if True. Default is False.
         hard_fail (bool): Raise error on export or test failure if True. Default is False.
-
+    
     Returns:
         pd.DataFrame: DataFrame containing the results of the export tests, including format names and export statuses.
-
+    
     Examples:
         ```python
         $ python benchmarks.py --weights yolov5s.pt --img 640
         ```
-
+    
     Notes:
         Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow
         SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js are unsupported.
-
+    
     Usage:
         Install required packages:
             $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU support
             $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow   # GPU support
             $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
-
         Run export tests:
             $ python benchmarks.py --weights yolov5s.pt --img 640
     """
@@ -221,7 +221,7 @@ def test(
 def parse_opt():
     """
     Parses command-line arguments for YOLOv5 model inference configuration.
-
+    
     Args:
         weights (str): The path to the weights file. Defaults to 'ROOT / "yolov5s.pt"'.
         imgsz (int): Inference size in pixels. Defaults to 640.
@@ -233,10 +233,10 @@ def parse_opt():
         pt_only (bool): Test PyTorch only. This is a flag and defaults to False.
         hard_fail (bool | str): Throw an error on benchmark failure. Can be a boolean or a string representing a minimum
             metric floor, e.g., '0.29'. Defaults to False.
-
+    
     Returns:
         argparse.Namespace: Parsed command-line arguments encapsulated in an argparse Namespace object.
-
+    
     Notes:
         The function modifies the 'opt.data' by checking and validating the YAML path using 'check_yaml()'.
         The parsed arguments are printed for reference using 'print_args()'.
@@ -260,27 +260,27 @@ def parse_opt():
 def main(opt):
     """
     Executes YOLOv5 benchmark tests or main training/inference routines based on the provided command-line arguments.
-
+    
     Args:
         opt (argparse.Namespace): Parsed command-line arguments including options for weights, image size, batch size, data
-        configuration, device, and other flags for inference settings.
-
+            configuration, device, and other flags for inference settings.
+    
     Returns:
         None: This function does not return any value. It leverages side-effects such as logging and running benchmarks.
-
+    
     Example:
         ```python
         if __name__ == "__main__":
             opt = parse_opt()
             main(opt)
         ```
-
+    
     Notes:
         - For a complete list of supported export formats and their respective requirements, refer to the
           [Ultralytics YOLOv5 Export Formats](https://github.com/ultralytics/yolov5#export-formats).
         - Ensure that you have installed all necessary dependencies by following the installation instructions detailed in
           the [main repository](https://github.com/ultralytics/yolov5#installation).
-
+    
         ```shell
         # Running benchmarks on default weights and image size
         $ python benchmarks.py --weights yolov5s.pt --img 640
