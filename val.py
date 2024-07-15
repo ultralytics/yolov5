@@ -67,7 +67,7 @@ def save_one_txt(predn, save_conf, shape, file):
 
     Args:
         predn (torch.Tensor): Predicted bounding boxes and associated confidence scores and classes in xyxy format,
-                              tensor of shape (N, 6) where N is the number of detections.
+            tensor of shape (N, 6) where N is the number of detections.
         save_conf (bool): If True, saves the confidence scores along with the bounding box coordinates.
         shape (tuple): Shape of the original image as (height, width).
         file (str | Path): File path where the result will be saved.
@@ -153,8 +153,8 @@ def process_batch(detections, labels, iouv):
         iouv (np.ndarray): Array of IoU thresholds to evaluate at.
 
     Returns:
-        correct (np.ndarray): A binary array of shape (N, len(iouv)) indicating whether each detection is a true positive
-            for each IoU threshold. There are 10 IoU levels used in the evaluation.
+        (np.ndarray): A binary array of shape (N, len(iouv)) indicating whether each detection is a true positive for each
+            IoU threshold. There are 10 IoU levels used in the evaluation.
 
     Example:
         ```python
@@ -219,7 +219,7 @@ def run(
     Evaluates a YOLOv5 model on a dataset and logs performance metrics.
 
     Args:
-        data (str | dict): Path to a dataset yaml file or a dataset dictionary.
+        data (str | dict): Path to a dataset YAML file or a dataset dictionary.
         weights (str | list[str], optional): Path to the model weights file(s). Supports various formats including PyTorch,
             TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow SavedModel, TensorFlow GraphDef, TensorFlow Lite,
             TensorFlow Edge TPU, and PaddlePaddle.
@@ -469,7 +469,7 @@ def run(
 
 def parse_opt():
     """
-    Parses command-line options for YOLOv5 model inference configuration.
+    Parse command-line options for YOLOv5 model inference configuration.
 
     Args:
         data (str): Path to the dataset YAML file, default is 'data/coco128.yaml'.
@@ -477,10 +477,10 @@ def parse_opt():
         batch_size (int): Batch size for inference, default is 32.
         imgsz (int): Inference image size in pixels, default is 640.
         conf_thres (float): Confidence threshold for predictions, default is 0.001.
-        iou_thres (float): IoU threshold for Non-Max Suppression (NMS), default is 0.6.
+        iou_thres (float): IoU threshold for Non-Maximum Suppression (NMS), default is 0.6.
         max_det (int): Maximum number of detections per image, default is 300.
         task (str): Task type - options are 'train', 'val', 'test', 'speed', or 'study'. Default is 'val'.
-        device (str): Device to run the model on, e.g., '0' or '0,1,2,3' or 'cpu'. Default is empty to let the system choose automatically.
+        device (str): Device to run the model on, e.g., '0' or '0,1,2,3' or 'cpu'. Default is let the system choose automatically.
         workers (int): Maximum number of dataloader workers per rank in DDP mode, default is 8.
         single_cls (bool): If set, treats the dataset as a single-class dataset. Default is False.
         augment (bool): If set, performs augmented inference. Default is False.
@@ -496,7 +496,7 @@ def parse_opt():
         dnn (bool): If set, uses OpenCV DNN for ONNX inference. Default is False.
 
     Returns:
-        argparse.Namespace: Parsed command-line options
+        argparse.Namespace: Parsed command-line options.
 
     Notes:
         - The '--data' parameter is checked to ensure it ends with 'coco.yaml' if '--save-json' is set.
@@ -547,24 +547,51 @@ def parse_opt():
 
 def main(opt):
     """
-    Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided options.
+    Executes YOLOv5 tasks like training, validation, and benchmarking based on provided options.
 
     Args:
-        opt (argparse.Namespace): Parsed command-line options.
-            This includes values for parameters like 'data', 'weights', 'batch_size', 'imgsz', 'conf_thres', 'iou_thres',
-            'max_det', 'task', 'device', 'workers', 'single_cls', 'augment', 'verbose', 'save_txt', 'save_hybrid',
-            'save_conf', 'save_json', 'project', 'name', 'exist_ok', 'half', and 'dnn', essential for configuring
-            the YOLOv5 tasks.
+        opt (argparse.Namespace): Parsed command-line options. This includes:
+            - data (str): Path to the dataset YAML file.
+            - weights (str | list[str]): Path(s) to the model weights files.
+            - batch_size (int): Batch size for inference.
+            - imgsz (int): Inference image size (pixels).
+            - conf_thres (float): Confidence threshold for predictions.
+            - iou_thres (float): IoU threshold for non-max suppression (NMS).
+            - max_det (int): Maximum number of detections per image.
+            - task (str): Task type ('train', 'val', 'test', 'speed', 'study').
+            - device (str): Device to run the model on ('0', '0,1,2,3', 'cpu').
+            - workers (int): Maximum number of dataloader workers per rank in DDP mode.
+            - single_cls (bool): Treat as single-class dataset.
+            - augment (bool): Perform augmented inference.
+            - verbose (bool): Report mAP by class.
+            - save_txt (bool): Save results to *.txt files.
+            - save_hybrid (bool): Save label+prediction hybrid results to *.txt.
+            - save_conf (bool): Save confidences in --save-txt labels.
+            - save_json (bool): Save a COCO-JSON results file.
+            - project (str | Path): Directory to save results.
+            - name (str): Name of the directory to save results.
+            - exist_ok (bool): Overwrite existing directory without incrementing.
+            - half (bool): Use FP16 half-precision inference.
+            - dnn (bool): Use OpenCV DNN for ONNX inference.
 
     Returns:
         None
 
     Examples:
-        To validate a trained YOLOv5 model on the COCO dataset with a specific weights file, use:
+        To validate a trained YOLOv5 model on the COCO dataset:
 
         ```python
         $ python val.py --weights yolov5s.pt --data coco128.yaml --img 640
         ```
+
+        To run speed benchmarks:
+
+        ```python
+        $ python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt ...
+        ```
+
+    Note:
+        Refer to https://github.com/ultralytics/ultralytics for more details.
     """
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
 

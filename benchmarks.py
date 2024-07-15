@@ -78,8 +78,9 @@ def run(
         None. Logs information about the benchmark results, including the format, size, mAP50-95, and inference time.
 
     Notes:
-        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow
-        SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js are unsupported.
+        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML,
+            TensorFlow SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js
+            are unsupported.
 
     Examples:
         ```python
@@ -167,7 +168,8 @@ def test(
         imgsz (int): Inference image size (in pixels). Default is 640.
         batch_size (int): Batch size for testing. Default is 1.
         data (Path | str): Path to the dataset configuration file (.yaml format). Default is 'ROOT / "data/coco128.yaml"'.
-        device (str): Device for running the tests, can be 'cpu' or a specific CUDA device ('0', '0,1,2,3', etc.). Default is an empty string.
+        device (str): Device for running the tests, can be 'cpu' or a specific CUDA device ('0', '0,1,2,3', etc.).
+            Default is an empty string.
         half (bool): Use FP16 half-precision for inference if True. Default is False.
         test (bool): Test export formats only without running inference. Default is False.
         pt_only (bool): Test only the PyTorch model if True. Default is False.
@@ -223,23 +225,43 @@ def parse_opt():
     Parses command-line arguments for YOLOv5 model inference configuration.
 
     Args:
-        weights (str): The path to the weights file. Defaults to 'ROOT / "yolov5s.pt"'.
-        imgsz (int): Inference size in pixels. Defaults to 640.
-        batch_size (int): Batch size. Defaults to 1.
-        data (str): Path to the dataset YAML file. Defaults to 'ROOT / "data/coco128.yaml"'.
-        device (str): CUDA device, e.g., '0' or '0,1,2,3' or 'cpu'. Defaults to an empty string (auto-select).
-        half (bool): Use FP16 half-precision inference. This is a flag and defaults to False.
-        test (bool): Test exports only. This is a flag and defaults to False.
-        pt_only (bool): Test PyTorch only. This is a flag and defaults to False.
-        hard_fail (bool | str): Throw an error on benchmark failure. Can be a boolean or a string representing a minimum
-            metric floor, e.g., '0.29'. Defaults to False.
+        weights (str): Path to the weights file. Default is 'ROOT / "yolov5s.pt"'.
+        imgsz (int): Inference image size in pixels. Default is 640.
+        batch_size (int): Batch size for inference. Default is 1.
+        data (str): Path to the dataset YAML file. Default is 'ROOT / "data/coco128.yaml"'.
+        device (str): CUDA device, e.g., '0' or '0,1,2,3' or 'cpu'. Default is an empty string, which auto-selects the device.
+        half (bool): Flag to use FP16 half-precision inference. Default is False.
+        test (bool): Flag indicating to test exports only. Default is False.
+        pt_only (bool): Flag to test PyTorch format only. Default is False.
+        hard_fail (bool | str): Raise an error on benchmark failure. Can be a boolean or a string representing a minimum
+            metric floor, e.g., '0.29'. Default is False.
 
     Returns:
         argparse.Namespace: Parsed command-line arguments encapsulated in an argparse Namespace object.
 
     Notes:
-        The function modifies the 'opt.data' by checking and validating the YAML path using 'check_yaml()'.
-        The parsed arguments are printed for reference using 'print_args()'.
+        - This function modifies 'opt.data' by checking and validating the YAML path using 'check_yaml()'.
+        - The parsed arguments are printed for reference using 'print_args()'.
+
+    Example:
+        To parse the arguments and run the script with custom values:
+        ```python
+        args = parse_opt()
+        run(
+            weights=args.weights,
+            imgsz=args.imgsz,
+            batch_size=args.batch_size,
+            data=args.data,
+            device=args.device,
+            half=args.half,
+            test=args.test,
+            pt_only=args.pt_only,
+            hard_fail=args.hard_fail
+        )
+        ```
+
+    Links:
+        Refer to [YOLOv5 Export Scripts](https://github.com/ultralytics/yolov5/tree/master/export.py) for more details.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="weights path")
@@ -263,7 +285,7 @@ def main(opt):
 
     Args:
         opt (argparse.Namespace): Parsed command-line arguments including options for weights, image size, batch size, data
-        configuration, device, and other flags for inference settings.
+            configuration, device, and other flags for inference settings.
 
     Returns:
         None: This function does not return any value. It leverages side-effects such as logging and running benchmarks.
