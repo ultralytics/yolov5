@@ -77,17 +77,18 @@ class Detect(nn.Module):
 
     def __init__(self, nc=80, anchors=(), ch=(), inplace=True):
         """
-        Initialize the YOLOv5 detection layer with specified class counts, anchors, input channels, and inplace operations.
-        
+        Initialize the YOLOv5 detection layer with specified class counts, anchors, input channels, and inplace
+        operations.
+
         Args:
             nc (int): Number of object classes that the model should detect.
             anchors (tuple): Tuple consisting of anchor box dimensions.
             ch (tuple): Tuple containing the number of input channels for each detection layer.
             inplace (bool): If True, performs operations in-place for memory efficiency.
-        
+
         Returns:
             None
-        
+
         Example:
             ```python
             # Initialize a Detect layer with 80 classes, given anchors, and input channels for each detection layer
@@ -108,20 +109,20 @@ class Detect(nn.Module):
     def forward(self, x):
         """
         Processes input data through YOLOv5 detection layers and adjusts tensor shapes for detection outputs.
-        
+
         Args:
-            x (list[torch.Tensor]): Input data for detection, where each tensor corresponds to a detection layer output 
+            x (list[torch.Tensor]): Input data for detection, where each tensor corresponds to a detection layer output
                 and has shape (BATCH_SIZE, CHANNELS, HEIGHT, WIDTH).
-        
+
         Returns:
-            (list[torch.Tensor]): Processed detection outputs that contain bounding box coordinates, objectness scores, 
+            (list[torch.Tensor]): Processed detection outputs that contain bounding box coordinates, objectness scores,
                 and class scores. Each tensor has shape (BATCH_SIZE, NUM_ANCHORS * HEIGHT * WIDTH, OUTPUT_DIMENSIONS).
-        
+
         Note:
-            The function differentiates between training and inference modes. During inference, it dynamically adjusts the 
-            grid and anchor grid shapes if needed. The method also accounts for whether the model is a `Segment` instance 
+            The function differentiates between training and inference modes. During inference, it dynamically adjusts the
+            grid and anchor grid shapes if needed. The method also accounts for whether the model is a `Segment` instance
             (for both boxes and masks) or a `Detect` instance (for boxes only).
-           
+
         Example:
             ```python
             model = Detect(nc=80, anchors=[[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]], ch=[128, 256, 512])
@@ -156,23 +157,23 @@ class Detect(nn.Module):
     def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, "1.10.0")):
         """
         Generate a grid of coordinates and scaled anchor boxes for YOLOv5 detection layers.
-        
+
         Args:
             nx (int): Number of grid cells along the x-axis.
             ny (int): Number of grid cells along the y-axis.
             i (int): Index of the detection layer.
             torch_1_10 (bool): Compatibility check for torch versions below 1.10.0. Default is `check_version(torch.__version__, "1.10.0")`.
-        
+
         Returns:
             (torch.Tensor, torch.Tensor): Tuple containing:
                 - grid (torch.Tensor): Grid coordinates tensor with shape (1, num_anchors, ny, nx, 2).
                 - anchor_grid (torch.Tensor): Scaled anchor boxes tensor with shape (1, num_anchors, ny, nx, 2).
-        
+
         Example:
             ```python
             grid, anchor_grid = self._make_grid(20, 20, 0)
             ```
-        
+
         Note:
             The function creates a coordinate grid and scales anchor boxes according to the strides and anchors specified for the YOLOv5 model.
         """
@@ -191,7 +192,7 @@ class Segment(Detect):
     def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), inplace=True):
         """
         Initializes YOLOv5 Segment head with options for mask count, protos, and channel adjustments.
-        
+
         Args:
             nc (int): Number of classes for the segmentation model, default is 80 classes.
             anchors (tuple): Tuple representing anchor box dimensions.
@@ -199,15 +200,15 @@ class Segment(Detect):
             npr (int): Number of protos, default is 256.
             ch (tuple): Tuple representing the number of input channels for each image.
             inplace (bool): Whether to use inplace operations to save memory, default is True.
-        
+
         Returns:
             None
-        
+
         Example:
             ```python
             segment_head = Segment(nc=80, anchors=anchors, nm=32, npr=256, ch=(256, 512, 1024), inplace=True)
             ```
-        
+
         Note:
             Required initialization for YOLOv5 segmentation models, integrating detection and mask prediction capabilities.
         """
@@ -222,16 +223,16 @@ class Segment(Detect):
     def forward(self, x):
         """
         Process input through the YOLOv5 segment head, returning detection boxes and mask prototypes.
-        
+
         Args:
             x (list[torch.Tensor]): Input image tensor of shape (N, C, H, W).
-        
+
         Returns:
             tuple: Tuple containing:
-                - torch.Tensor: Concatenated detection results with shape (N, M, `5 + nc + nm`), where nc represents the 
+                - torch.Tensor: Concatenated detection results with shape (N, M, `5 + nc + nm`), where nc represents the
                     number of classes and nm the number of masks. During training, the shape is (N, M, 6).
                 - torch.Tensor: Mask prototypes with shape (N, 32, H, W).
-        
+
         Example:
             ```python
             model = Segment(nc=80, anchors=[...], nm=32, npr=256, ch=[...])
@@ -250,24 +251,24 @@ class BaseModel(nn.Module):
     def forward(self, x, profile=False, visualize=False):
         """
         Performs a forward pass through the YOLOv5 base model, optionally profiling and visualizing the process.
-        
+
         Args:
             x (torch.Tensor): Input tensor with shape (N, C, H, W) where N is the batch size, C is the number of channels,
                 H is the height, and W is the width.
             profile (bool): If True, profiles the forward pass. Default is False.
             visualize (bool): If True, visualizes feature maps. Default is False.
-        
+
         Returns:
             (torch.Tensor | tuple[torch.Tensor, ...]): Model output. If in inference mode, returns a single torch.Tensor.
                 If training, returns a tuple of tensors.
-        
+
         Example:
             ```python
             model = BaseModel()
             input_tensor = torch.randn(1, 3, 640, 640)
             output = model(input_tensor)
             ```
-        
+
         Note:
             Profiling outputs can be used to understand the compute requirements of the model layers, while visualization
             aids in examining the intermediate feature maps.
@@ -277,35 +278,35 @@ class BaseModel(nn.Module):
     def _forward_once(self, x, profile=False, visualize=False):
         """
         Perform a forward pass through the YOLOv5 model, enabling optional profiling and feature visualization.
-        
+
         Args:
             x (torch.Tensor): Input tensor with shape (N, C, H, W) where N is the batch size, C is the number of
                 channels, H is the height, and W is the width.
             profile (bool): If True, profiles the forward pass, logging time and memory consumption. Default is False.
             visualize (bool | str): If True or a path string, visualizes feature maps and saves the output. Default is False.
-        
+
         Returns:
             (torch.Tensor | tuple[torch.Tensor, ...]): Model output tensor during inference, or a tuple of tensors during
-                training. During inference, returns a single tensor of shape (N, M, 85) or (N, M, 6) depending on the model. 
+                training. During inference, returns a single tensor of shape (N, M, 85) or (N, M, 6) depending on the model.
                 During training, returns a tuple containing tensors from intermediate layers.
-        
+
         Example:
             ```python
             # Initialize model
             model = BaseModel()
-        
+
             # Generate random input tensor
             input_tensor = torch.randn(1, 3, 640, 640)
-        
+
             # Perform forward pass with profiling and visualization
             output = model._forward_once(input_tensor, profile=True, visualize='path/to/save')
-        
+
             # Perform standard forward pass
             output = model._forward_once(input_tensor)
             ```
-        
+
         Note:
-            Enable profiling to understand the computational resources required by each layer. Visualization is 
+            Enable profiling to understand the computational resources required by each layer. Visualization is
             beneficial to analyze intermediate feature maps.
         """
         y, dt = [], []  # outputs
@@ -323,21 +324,21 @@ class BaseModel(nn.Module):
     def _profile_one_layer(self, m, x, dt):
         """
         Profiles a single model layer's performance by measuring GFLOPs, execution time, and parameter count.
-        
+
         Args:
             m (nn.Module): The neural network layer to be profiled.
-            x (torch.Tensor): Input tensor to the layer being profiled, with shape (N, C, H, W) where N is the batch size, 
+            x (torch.Tensor): Input tensor to the layer being profiled, with shape (N, C, H, W) where N is the batch size,
                 C is the number of channels, H is the height, and W is the width.
             dt (list): A list to which the execution times (in milliseconds) for the layer will be appended.
-        
+
         Returns:
             None
-        
+
         Note:
-            The function uses the `thop` library for FLOPs computation and `time_sync()` for measuring the time. Make sure 
-            `thop` is installed for computing GFLOPs, otherwise, GFLOPs will be zero. The input tensor `x` might be copied 
+            The function uses the `thop` library for FLOPs computation and `time_sync()` for measuring the time. Make sure
+            `thop` is installed for computing GFLOPs, otherwise, GFLOPs will be zero. The input tensor `x` might be copied
             for the final layer to avoid in-place operation issues.
-        
+
         Example:
             ```python
             model = BaseModel()
@@ -360,23 +361,23 @@ class BaseModel(nn.Module):
     def fuse(self):
         """
         Fuses `Conv2d` and `BatchNorm2d` layers in the model to improve inference speed and efficiency.
-        
+
         This method modifies the model in-place by fusing the convolutional and batch normalization layers, which can
         result in faster inference times and reduced memory usage due to consolidating separate layers into a single
         operation. Generally applied after model training but before deployment for inference.
-        
+
         Args:
             None
-        
+
         Returns:
             None: The model is modified in-place without returning any value.
-        
+
         Example:
             ```python
             model = BaseModel()
             model.fuse()
             ```
-        
+
         Note:
             After calling `fuse()`, the model will no longer have separate batch normalization layers. This could make
             further fine-tuning or training less effective unless the changes are undone.
@@ -393,20 +394,20 @@ class BaseModel(nn.Module):
     def info(self, verbose=False, img_size=640):
         """
         Prints summary information about the YOLOv5 base model, including layer details and computational cost.
-        
+
         Args:
             verbose (bool): If True, prints a detailed layer-by-layer summary of the model. Default is False.
             img_size (int): The size of the input image to the model, used for FLOPs computation. Default is 640.
-        
+
         Returns:
             None
-        
+
         Example:
             ```python
             model = BaseModel()
             model.info(verbose=True, img_size=640)
             ```
-        
+
         Note:
             The detailed summary includes information about each layer's type, number of parameters, computational cost (FLOPs),
             and execution time. Use this information to understand the model's structure and performance implications better.
@@ -416,14 +417,14 @@ class BaseModel(nn.Module):
     def _apply(self, fn):
         """
         Apply a function to transform the BaseModel's tensors.
-        
+
         Args:
             fn (Callable): Function that applies a transformation such as to(), cpu(), cuda(), half() to the model's
                 tensors.
-        
+
         Returns:
             (BaseModel): The model with the transformation function applied to its tensors.
-        
+
         Note:
             This method excludes parameters or registered buffers from being transformed. It targets tensors
             specifically related to the model's detect or segmentation layers, such as stride, grid, or anchor_grid.
@@ -443,21 +444,21 @@ class DetectionModel(BaseModel):
     def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, anchors=None):
         """
         Initialize the YOLOv5 detection model with configuration, input channels, number of classes, and anchors.
-        
+
         Args:
             cfg (str | dict): Configuration file or dictionary. For example, 'yolov5s.yaml'.
             ch (int): Number of input channels. Default is 3.
             nc (int | None): Number of classes. If provided, it overrides the number specified in the configuration.
             anchors (list | None): List of anchors. If provided, it overrides the anchors specified in the configuration.
-        
+
         Returns:
             (None): Initializes the model with the specified parameters and configurations.
-        
+
         Example:
             ```python
             model = DetectionModel(cfg='yolov5s.yaml', ch=3, nc=80, anchors=None)
             ```
-        
+
         Note:
             The model structure is defined according to the configuration file (or dictionary). The strides and anchors
             are built and initialized based on the input configuration. If the number of classes or anchors are provided,
@@ -510,27 +511,27 @@ class DetectionModel(BaseModel):
     def forward(self, x, augment=False, profile=False, visualize=False):
         """
         Perform a forward pass through the YOLOv5 detection model during training or inference.
-        
+
         Args:
-            x (torch.Tensor): Input tensor with shape (N, C, H, W) where N is the batch size, C is the number of channels, H is 
+            x (torch.Tensor): Input tensor with shape (N, C, H, W) where N is the batch size, C is the number of channels, H is
                 the height, and W is the width.
             augment (bool): If True, applies augmented inference.
             profile (bool): If True, profiles the forward pass. Default is False.
             visualize (bool): If True, visualizes feature maps. Default is False.
-        
+
         Returns:
-            (tuple[torch.Tensor, torch.Tensor] | torch.Tensor): If not training, returns concatenated detections with shape 
+            (tuple[torch.Tensor, torch.Tensor] | torch.Tensor): If not training, returns concatenated detections with shape
                 (N, M, 85/6) and feature maps list. If in training mode, returns a tuple of both raw outputs and feature outputs.
-        
+
         Example:
             ```python
             model = DetectionModel(cfg='yolov5s.yaml')
             input_tensor = torch.randn(1, 3, 640, 640)
             output = model(input_tensor)
             ```
-        
+
         Note:
-            When exporting the model, concatenated detections are returned alone. This is useful for further processing and 
+            When exporting the model, concatenated detections are returned alone. This is useful for further processing and
             optimization.
         """
         if augment:
@@ -540,20 +541,20 @@ class DetectionModel(BaseModel):
     def _forward_augment(self, x):
         """
         Combine augmented inference results obtained from varying scales and flips.
-        
+
         Args:
-            x (torch.Tensor): Input tensor with shape (N, C, H, W), where N is the batch size, C is the number of channels, 
+            x (torch.Tensor): Input tensor with shape (N, C, H, W), where N is the batch size, C is the number of channels,
                 H is the height, and W is the width.
-        
+
         Returns:
-            (torch.Tensor): Aggregated detection results after applying scale and flip augmentations, matching the input 
+            (torch.Tensor): Aggregated detection results after applying scale and flip augmentations, matching the input
                 image size.
-        
+
         Notes:
-            This method performs augmented inference by scaling and flipping the input image tensor 'x' through predefined 
-            scales and flips. Each augmented version is processed through the model, and the results are combined to generate 
+            This method performs augmented inference by scaling and flipping the input image tensor 'x' through predefined
+            scales and flips. Each augmented version is processed through the model, and the results are combined to generate
             a comprehensive detection output.
-        
+
         Example:
             ```python
             model = DetectionModel(cfg='yolov5s.yaml')
@@ -577,23 +578,23 @@ class DetectionModel(BaseModel):
     def _descale_pred(self, p, flips, scale, img_size):
         """
         De-scale augmented predictions to original image size, adjusting coordinates for any flips applied.
-        
+
         Args:
             p (torch.Tensor): Augmented predictions tensor with shape (N, M, 6) where N is the batch size and M is the number
                 of predictions.
-            flips (int | None): Indicates the type of flip applied to the image augmentation (2 for up-down, 3 for 
+            flips (int | None): Indicates the type of flip applied to the image augmentation (2 for up-down, 3 for
                 left-right, None for no flip).
             scale (float): Scaling factor applied during image augmentation.
             img_size (tuple[int, int]): Original image size as a tuple (height, width).
-        
+
         Returns:
             (torch.Tensor): De-scaled predictions tensor with the same shape as input, adjusted to the original image size.
-        
+
         Note:
-            This function is used to reverse any augmentations applied during inference, such as scaling and flipping, 
+            This function is used to reverse any augmentations applied during inference, such as scaling and flipping,
             to ensure the predictions are correctly mapped to the original image dimensions. If `self.inplace` is True,
             it operates in-place on the predictions tensor; otherwise, it creates new tensors for adjusted coordinates.
-        
+
         Example:
             ```python
             model = DetectionModel(cfg="yolov5s.yaml")
@@ -619,18 +620,18 @@ class DetectionModel(BaseModel):
     def _clip_augmented(self, y):
         """
         Clip augmented inference tails for YOLOv5 models.
-        
+
         Args:
             y (list[torch.Tensor]): List of augmented inference results, each a torch.Tensor with shape (B, N, 85), where
                 B is the batch size, N is the number of detections, and 85 includes (x, y, w, h, conf, cls).
-        
+
         Returns:
             (list[torch.Tensor]): Clipped augmented inference results with adjusted shapes to remove tails.
-        
+
         Note:
             This method specifically adjusts the first and last layers based on the number of detection layers and grid points,
             improving inference accuracy by removing extraneous detections from augmented inputs.
-        
+
         Example:
             ```python
             y_augmented = [
@@ -652,24 +653,24 @@ class DetectionModel(BaseModel):
     def _initialize_biases(self, cf=None):
         """
         Initialize biases for the YOLOv5 'Detect' layer.
-        
+
         Args:
             cf (torch.Tensor | None): Optional tensor of class frequencies with shape (C,) where C is the number of classes.
                 If not provided, biases are initialized using a default strategy.
-        
+
         Returns:
             (torch.Tensor): Updated biases for the detection model's convolutional layers.
-        
+
         Note:
             For more information, refer to the paper here: https://arxiv.org/abs/1708.02002 (Section 3.3).
-        
+
         Example:
             ```python
             # Assuming 'model' is an instance of the YOLOv5 DetectionModel
             class_frequencies = torch.tensor([10, 20, 30, 40])  # example class frequencies
             model._initialize_biases(class_frequencies)
             ```
-        
+
             If `cf` is not provided, the function uses default values to initialize biases:
             ```python
             model._initialize_biases()
@@ -693,23 +694,23 @@ class SegmentationModel(DetectionModel):
     # YOLOv5 segmentation model
     def __init__(self, cfg="yolov5s-seg.yaml", ch=3, nc=None, anchors=None):
         """
-        Initializes a YOLOv5 segmentation model with a configuration file, input channels, classes, and anchors. 
-        
+        Initializes a YOLOv5 segmentation model with a configuration file, input channels, classes, and anchors.
+
         Args:
             cfg (str): Path to the model configuration file (e.g., 'yolov5s-seg.yaml').
             ch (int): Number of input channels.
-            nc (int | None): Number of classes for segmentation. Overrides the number of classes defined in the 
+            nc (int | None): Number of classes for segmentation. Overrides the number of classes defined in the
                 configuration file if provided.
             anchors (list | None): List of anchor box scales. If provided, overrides the anchors specified in the configuration file.
-        
+
         Returns:
             (None): This constructor does not return a value. It initializes the segmentation model.
-        
+
         Example:
             ```python
             model = SegmentationModel(cfg='yolov5s-seg.yaml', ch=3, nc=21, anchors=[[10,13], [16,30], [33,23]])
             ```
-        
+
         Note:
             This model inherits from the `DetectionModel` class and adapts the YOLO architecture to include mask prediction
             for segmentation tasks.
@@ -722,24 +723,24 @@ class ClassificationModel(BaseModel):
     def __init__(self, cfg=None, model=None, nc=1000, cutoff=10):
         """
         Initialize a YOLOv5 Classification model with a given configuration file or a pre-defined model.
-        
+
         Args:
-            cfg (str | None): Path to the model configuration file, specifying the model's architecture and parameters. 
+            cfg (str | None): Path to the model configuration file, specifying the model's architecture and parameters.
                 If None, a pre-defined model must be provided.
-            model (nn.Module | None): A pre-defined model which can be used instead of loading from a configuration file. 
+            model (nn.Module | None): A pre-defined model which can be used instead of loading from a configuration file.
                 If None, the model will be built based on the configuration file specified in 'cfg'.
             nc (int): Number of classes for the classification task. Determines the size of the output layer.
             cutoff (int): Layer cutoff index for the model. Default is 10. Determines where the backbone ends and the classifier starts.
-        
+
         Notes:
-            This method sets up the YOLOv5 classification model using either a configuration file or a pre-defined model. The 
+            This method sets up the YOLOv5 classification model using either a configuration file or a pre-defined model. The
             specified number of classes ('nc') determines the output layer size and is crucial for correct classification.
-        
+
         Examples:
             ```python
             # Initialize with a configuration file
             model = ClassificationModel(cfg='yolov5s.yaml', nc=1000)
-        
+
             # Initialize with a pre-defined model
             pre_defined_model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
             model = ClassificationModel(model=pre_defined_model, nc=1000)
@@ -750,20 +751,21 @@ class ClassificationModel(BaseModel):
 
     def _from_detection_model(self, model, nc=1000, cutoff=10):
         """
-        Create a classification model from a detection model by truncating it at a specified layer and adding a classification head.
-        
+        Create a classification model from a detection model by truncating it at a specified layer and adding a
+        classification head.
+
         Args:
             model (nn.Module): YOLOv5 detection model to be converted.
             nc (int): Number of classes for the classification model. Default is 1000.
             cutoff (int): Layer index at which to split the detection model for creating the classification model. Default is 10.
-        
+
         Returns:
             None
-        
+
         Note:
-            This function modifies the input model in place by truncating it at the specified `cutoff` layer and adding 
+            This function modifies the input model in place by truncating it at the specified `cutoff` layer and adding
             a classification head.
-        
+
         Example:
             ```python
             detection_model = DetectionModel()
@@ -792,16 +794,16 @@ class ClassificationModel(BaseModel):
 def parse_model(d, ch):
     """
     Parses the YOLO model configuration and constructs model layers accordingly.
-    
+
     Args:
         d (dict): The YOLO model configuration dictionary containing backbone and head definitions, among other parameters.
         ch (list[int]): List of input channels, typically specified by the model's input configuration.
-    
+
     Returns:
-        (tuple[List[nn.Module], List[int]]): 
+        (tuple[List[nn.Module], List[int]]):
             - List of created model layers.
             - List of indices specifying which layers produce output that needs to be saved during the forward pass.
-    
+
     Example:
         ```python
         config = {
@@ -820,7 +822,7 @@ def parse_model(d, ch):
         ch = [3]  # RGB input
         layers, save = parse_model(config, ch)
         ```
-    
+
     Note:
         This function supports various model components including `Conv`, `BottleneckCSP`, `Detect`, and others. The function will log
         the details of each layer as it is created, including the from layer, number of repetitions, number of parameters, module type,
