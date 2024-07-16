@@ -14,8 +14,24 @@ class Sum(nn.Module):
     """Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070."""
 
     def __init__(self, n, weight=False):
-        """Initializes a module to sum outputs of layers with number of inputs `n` and optional weighting, supporting 2+
-        inputs.
+        """
+        Initialize the Sum module which performs a weighted sum of outputs from multiple layers.
+        
+        Args:
+            n (int): Number of input layers.
+            weight (bool): If True, apply learnable weights to each input layer.
+        
+        Returns:
+            (None)
+        
+        Example:
+            ```python
+            sum_module = Sum(n=3, weight=True)
+            ```
+        
+        Note:
+            This module is useful for merging features from different layers, as described in 
+            https://arxiv.org/abs/1911.09070.
         """
         super().__init__()
         self.weight = weight  # apply weights boolean
@@ -24,7 +40,22 @@ class Sum(nn.Module):
             self.w = nn.Parameter(-torch.arange(1.0, n) / 2, requires_grad=True)  # layer weights
 
     def forward(self, x):
-        """Processes input through a customizable weighted sum of `n` inputs, optionally applying learned weights."""
+        """
+        Aggregates input tensors using a weighted or unweighted sum, based on initialization parameters.
+        
+        Args:
+            x (list[torch.Tensor]): A list of input tensors to be summed, with each tensor having shape (N, ...).
+        
+        Returns:
+            (torch.Tensor): The resulting tensor after summing, with the same shape (N, ...) as the input tensors.
+        
+        Example:
+            ```python
+            sum_module = Sum(n=3, weight=True)
+            input_tensors = [torch.randn(5, 10), torch.randn(5, 10), torch.randn(5, 10)]
+            output_tensor = sum_module(input_tensors)
+            ```
+        """
         y = x[0]  # no weight
         if self.weight:
             w = torch.sigmoid(self.w) * 2
@@ -40,8 +71,25 @@ class MixConv2d(nn.Module):
     """Mixed Depth-wise Conv https://arxiv.org/abs/1907.09595."""
 
     def __init__(self, c1, c2, k=(1, 3), s=1, equal_ch=True):
-        """Initializes MixConv2d with mixed depth-wise convolutional layers, taking input and output channels (c1, c2),
-        kernel sizes (k), stride (s), and channel distribution strategy (equal_ch).
+        """
+        Initialize MixConv2d with mixed depth-wise convolutional layers for enhanced computational efficiency and accuracy.
+        
+        Args:
+            c1 (int): Number of input channels.
+            c2 (int): Number of output channels.
+            k (tuple[int]): Tuple of kernel sizes to be used in mixed convolutions.
+            s (int): Stride for convolutions.
+            equal_ch (bool): Whether to use equal channels per group (True) or equal weight per group (False).
+        
+        Returns:
+            (torch.Tensor): Output tensor after applying mixed depth-wise convolution and batch normalization.
+        
+        Example:
+            ```python
+            mixconv_layer = MixConv2d(64, 128, k=(1, 3, 5), s=1, equal_ch=True)
+            input_tensor = torch.randn(1, 64, 224, 224)
+            output_tensor = mixconv_layer(input_tensor)
+            ```
         """
         super().__init__()
         n = len(k)  # number of convolutions
@@ -63,8 +111,28 @@ class MixConv2d(nn.Module):
         self.act = nn.SiLU()
 
     def forward(self, x):
-        """Performs forward pass by applying SiLU activation on batch-normalized concatenated convolutional layer
-        outputs.
+        """
+        Perform a forward pass with MixConv2d layer to apply mixed depth-wise convolutions.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (N, C, H, W), where N is the batch size, C is the number of channels, 
+                H is the height, and W is the width.
+        
+        Returns:
+            (torch.Tensor): Resulting tensor after applying mixed depth-wise convolutions, batch normalization, 
+                and SiLU activation.
+        
+        Example:
+            ```python
+            mixconv = MixConv2d(c1=16, c2=32, k=(1, 3, 5), s=1, equal_ch=True)
+            x = torch.rand(1, 16, 64, 64)
+            y = mixconv(x)
+            print(y.shape)  # Expected output shape: (1, 32, 64, 64)
+            ```
+        
+        Note:
+            This function is based on the mixed depth-wise convolution from the paper: 
+            https://arxiv.org/abs/1907.09595.
         """
         return self.act(self.bn(torch.cat([m(x) for m in self.m], 1)))
 
@@ -73,11 +141,50 @@ class Ensemble(nn.ModuleList):
     """Ensemble of models."""
 
     def __init__(self):
-        """Initializes an ensemble of models to be used for aggregated predictions."""
+        """
+        Initializes an ensemble of models, typically used for combining predictions from multiple YOLO models to improve 
+        inference accuracy.
+        
+        Args:
+            None
+        
+        Returns:
+            (None)
+        
+        Example:
+            ```python
+            model_ensemble = Ensemble()
+            ```
+        """
         super().__init__()
 
     def forward(self, x, augment=False, profile=False, visualize=False):
-        """Performs forward pass aggregating outputs from an ensemble of models.."""
+        """
+        Perform a forward pass aggregating outputs from an ensemble of models.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (N, C, H, W) where N is the batch size, C is the number of channels, 
+                H is the height, and W is the width.
+            augment (bool): If True, perform augmented inference.
+            profile (bool): If True, profile the forward pass for performance.
+            visualize (bool): If True, visualize features of the model.
+        
+        Returns:
+            (torch.Tensor): Aggregated output tensor from the ensemble of models, with shape (N, C', H, W) where C' is 
+                the concatenated channels from individual model outputs.
+        
+        Example:
+            ```python
+            ensemble_model = Ensemble()
+            input_tensor = torch.randn(1, 3, 224, 224)
+            output_tensor = ensemble_model(input_tensor)
+            print(output_tensor.shape)  # Expected output shape will depend on individual models in the ensemble
+            ```
+        
+        Note:
+            This function assumes that each model in the ensemble produces outputs with shapes that can be concatenated 
+            along the channel dimension.
+        """
         y = [module(x, augment, profile, visualize)[0] for module in self]
         # y = torch.stack(y).max(0)[0]  # max ensemble
         # y = torch.stack(y).mean(0)  # mean ensemble
@@ -87,9 +194,25 @@ class Ensemble(nn.ModuleList):
 
 def attempt_load(weights, device=None, inplace=True, fuse=True):
     """
-    Loads and fuses an ensemble or single YOLOv5 model from weights, handling device placement and model adjustments.
-
-    Example inputs: weights=[a,b,c] or a single model weights=[a] or weights=a.
+    Load and prepare a YOLOv5 model or ensemble of models from specified weights, supporting device placement and model fusion.
+    
+    Args:
+        weights (list[str] | str): Path(s) to model weights. Can be a list of multiple weight paths or a single path.
+        device (torch.device | None): Device for model loading. If None, defaults to 'cpu'.
+        inplace (bool): Whether to use inplace operations in the model (e.g., for activation layers).
+        fuse (bool): Whether to fuse model layers to achieve better inference performance.
+    
+    Returns:
+        (nn.Module): A PyTorch model, either a single YOLOv5 model or an ensemble of models for inference.
+    
+    Example:
+        ```python
+        model = attempt_load(weights='yolov5s.pt', device=torch.device('cuda'), inplace=True, fuse=True)
+        ```
+    
+    Notes:
+        This function ensures compatibility with older model formats by performing necessary updates (e.g., stride and
+        anchor grid adjustments).
     """
     from models.yolo import Detect, Model
 
