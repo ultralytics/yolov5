@@ -39,7 +39,7 @@ seaborn>=0.11.0
 # openvino-dev>=2023.0  # OpenVINO export
 
 # Deploy ----------------------------------------------------------------------
-setuptools>=65.5.1 # Snyk vulnerability fix
+setuptools>=70.0.0 # Snyk vulnerability fix
 # tritonclient[all]~=2.24.0
 
 # Extras ----------------------------------------------------------------------
