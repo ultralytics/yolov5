@@ -16,16 +16,16 @@ class Sum(nn.Module):
     def __init__(self, n, weight=False):
         """
         Initialize the Sum module to aggregate outputs from multiple layers, optionally with weights.
-        
+
         Args:
             n (int): Number of layers to sum. Must be 2 or more.
             weight (bool): If True, applies weights to the inputs before summing.
-        
+
         Returns:
             None
-        
+
         Notes:
-            Refer to "Weighted sum of 2 or more layers" at https://arxiv.org/abs/1911.09070 for detailed insights 
+            Refer to "Weighted sum of 2 or more layers" at https://arxiv.org/abs/1911.09070 for detailed insights
             and usage scenarios.
         """
         super().__init__()
@@ -37,20 +37,20 @@ class Sum(nn.Module):
     def forward(self, x):
         """
         Compute a weighted or unweighted sum of input tensors.
-        
+
         Args:
             x (list[torch.Tensor]): List of input tensors to be summed, with each tensor having the same shape (N, D).
-        
+
         Returns:
             (torch.Tensor): The resulting tensor after summing the input tensors, maintaining the same shape (N, D).
-        
+
         Example:
             ```python
             sum_layer = Sum(n=3, weight=False)
             inputs = [torch.rand(1, 10), torch.rand(1, 10), torch.rand(1, 10)]
             result = sum_layer.forward(inputs)
             ```
-        
+
         Note:
             If `weight` is set to True when initializing the class, weights will be applied to the inputs before summing.
             For more information, refer to "Weighted sum of 2 or more layers" at https://arxiv.org/abs/1911.09070.
@@ -72,7 +72,7 @@ class MixConv2d(nn.Module):
     def __init__(self, c1, c2, k=(1, 3), s=1, equal_ch=True):
         """
         Initialize the MixConv2d module, handling mixed depth-wise convolutional operations.
-        
+
         Args:
             c1 (int): Number of input channels (C1).
             c2 (int): Number of output channels (C2).
@@ -80,18 +80,18 @@ class MixConv2d(nn.Module):
             s (int): Stride value for the convolutional layers.
             equal_ch (bool): Flag to determine if channels are distributed equally. True for equal channels per group, False
                 for equal weight.numel() per group.
-        
+
         Example:
             ```python
             mixconv = MixConv2d(c1=32, c2=64, k=(1, 3, 5), s=1, equal_ch=True)
             output = mixconv(input_tensor)
             ```
-        
+
         Note:
-            The `MixConv2d` layer applies multiple depth-wise convolutions with different kernel sizes in parallel, which 
-            can capture multi-scale features within a single layer. This technique is particularly useful for improving 
+            The `MixConv2d` layer applies multiple depth-wise convolutions with different kernel sizes in parallel, which
+            can capture multi-scale features within a single layer. This technique is particularly useful for improving
             spatial feature extraction and reducing model complexity.
-        
+
             Further reading: https://arxiv.org/abs/1907.09595
         """
         super().__init__()
@@ -115,17 +115,18 @@ class MixConv2d(nn.Module):
 
     def forward(self, x):
         """
-        Perform forward pass by applying mixed depth-wise convolutions followed by batch normalization and SiLU activation.
-        
+        Perform forward pass by applying mixed depth-wise convolutions followed by batch normalization and SiLU
+        activation.
+
         Args:
             x (torch.Tensor): Input tensor with shape (N, C, H, W) where N is the batch size, C is the number of channels,
                 H is the height, and W is the width.
-        
+
         Returns:
             (torch.Tensor): Output tensor after applying mixed convolutions, batch normalization, and SiLU activation,
                 maintaining the shape (N, C', H', W') where C' is the output channels based on the convolutional layer
                 configuration.
-        
+
         Example:
             ```python
             mixconv = MixConv2d(c1=32, c2=64, k=(1, 3), s=1)
@@ -142,7 +143,7 @@ class Ensemble(nn.ModuleList):
     def __init__(self):
         """
         Initializes an ensemble of models for combined inference and aggregated predictions.
-        
+
         Example:
             ```python
             ensemble = Ensemble()
@@ -157,30 +158,30 @@ class Ensemble(nn.ModuleList):
     def forward(self, x, augment=False, profile=False, visualize=False):
         """
         Aggregates outputs from multiple models in the ensemble by concatenating them during the forward pass.
-        
+
         Args:
             x (torch.Tensor): Input tensor with shape (N, C, H, W) where N is the batch size, C is the number of channels,
                 H is the height, and W is the width.
             augment (bool): Flag to apply test-time augmentation (TTA) during inference. Default is False.
             profile (bool): If True, enables profiling of the forward pass. Default is False.
             visualize (bool): If True, enables visualization of model predictions. Default is False.
-        
+
         Returns:
             (torch.Tensor): Aggregated output tensor from the ensemble models, with shape dependent on the number of models
                 and their architectures.
-        
+
         Example:
             ```python
             from ultralytics import Ensemble
             import torch
-        
+
             # Initialize the ensemble
             ensemble = Ensemble()
             # Assume models are already added to the ensemble
-        
+
             # Create a dummy input tensor
             x = torch.randn(8, 3, 640, 640)  # Example input for 8 images of 3 channels and 640x640 resolution
-        
+
             # Perform forward pass
             output = ensemble.forward(x, augment=False, profile=False, visualize=False)
             ```
@@ -194,28 +195,28 @@ class Ensemble(nn.ModuleList):
 
 def attempt_load(weights, device=None, inplace=True, fuse=True):
     """
-    Loads and fuses a YOLOv5 model or an ensemble of models from provided weights, adjusting device placement and model 
+    Loads and fuses a YOLOv5 model or an ensemble of models from provided weights, adjusting device placement and model
     attributes for optimal performance.
-    
+
     Args:
         weights (str | list[str]): Path(s) to model weight file(s). It can be a single path or a list of paths.
         device (torch.device | None, optional): Device to load the model on. If None, loads on CPU by default.
-        inplace (bool, optional): If True, enables inplace operations in certain layers like activation layers. 
+        inplace (bool, optional): If True, enables inplace operations in certain layers like activation layers.
             Defaults to True.
         fuse (bool, optional): Whether to fuse Conv2d + BatchNorm2d layers for speedup during inference. Defaults to True.
-    
+
     Returns:
         (torch.nn.Module): Loaded YOLOv5 model or an ensemble of models loaded onto the specified device.
-    
+
     Example:
         ```python
         # Load a single model weight
         model = attempt_load('yolov5s.pt')
-    
+
         # Load an ensemble of models
         model = attempt_load(['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt'])
         ```
-    
+
     Note:
         - This function ensures compatibility and performance optimization by adjusting attributes and configurations of the
           loaded model(s).
