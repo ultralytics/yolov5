@@ -791,7 +791,7 @@ class TFC3x(keras.layers.Layer):
         """
         Summary:
         Initialize the TFC3x layer with cross-convolutions for enhanced feature extraction in deep learning models.
-        
+
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels.
@@ -800,17 +800,17 @@ class TFC3x(keras.layers.Layer):
             g (int): Number of groups for grouped convolution. Defaults to 1.
             e (float): Expansion ratio for hidden channels relative to the output channels. Defaults to 0.5.
             w (nn.Module | None): Pretrained weights for initializing the layer if available. Defaults to None.
-        
+
         Returns:
             None
-        
+
         Example:
             ```python
             # Initialize TFC3x layer with 64 input channels, 128 output channels, stacking 3 sub-layers,
             # using residual connections, and optional pretrained weights.
             layer = TFC3x(c1=64, c2=128, n=3, shortcut=True, g=1, e=0.5, w=pretrained_weights)
             ```
-        
+
         Note:
             The TFC3x layer is designed for advanced convolutional neural network (CNN) architectures, particularly for tasks
             requiring efficient and enhanced feature extraction, such as object detection. The cross-convolution mechanism
