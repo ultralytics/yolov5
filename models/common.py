@@ -815,21 +815,21 @@ class SPPF(nn.Module):
     def __init__(self, c1, c2, k=5):
         """
         Initializes YOLOv5 Spatial Pyramid Pooling - Fast (SPPF) layer for efficient feature extraction.
-        
+
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels.
             k (int): Kernel size for the max pooling layer, default is 5.
-        
+
         Notes:
-            This module applies a series of three max-pooling operations followed by two convolutional operations. It is 
-            optimized for speed compared to the standard SPP layer with kernel sizes (5, 9, 13), achieving similar results 
+            This module applies a series of three max-pooling operations followed by two convolutional operations. It is
+            optimized for speed compared to the standard SPP layer with kernel sizes (5, 9, 13), achieving similar results
             while reducing computation time.
-        
+
         Example:
             ```python
             from ultralytics.models.common import SPPF
-        
+
             # Initialize SPPF layer
             sppf_layer = SPPF(c1=512, c2=1024)
             # Create a dummy input tensor with shape (batch_size, channels, height, width)
@@ -848,28 +848,28 @@ class SPPF(nn.Module):
     def forward(self, x):
         """
         Forward pass through the Spatial Pyramid Pooling - Fast (SPPF) layer for efficient feature extraction.
-        
+
         Args:
             x (torch.Tensor): Input tensor with shape (N, C, H, W), where N is the batch size, C is the number of channels,
                 and H, W are height and width, respectively.
-        
+
         Returns:
-            (torch.Tensor): Output tensor after applying convolution and max pooling layers, concatenated along the channel dimension, 
+            (torch.Tensor): Output tensor after applying convolution and max pooling layers, concatenated along the channel dimension,
                 with shape (N, C_out, H, W) where C_out is the number of output channels.
-        
+
         Example:
             ```python
             from ultralytics.models.common import SPPF
             import torch
-        
+
             sppf_layer = SPPF(c1=512, c2=1024)
             input_tensor = torch.randn(1, 512, 20, 20)  # Example input with batch size 1, and 512 channels
             output_tensor = sppf_layer(input_tensor)
             print(output_tensor.shape)  # Should output torch.Size([1, 1024, 20, 20])
             ```
-        
+
         Note:
-            This layer is optimized for speed compared to traditional SPP layers, combining convolutions and max pooling within 
+            This layer is optimized for speed compared to traditional SPP layers, combining convolutions and max pooling within
             a specified kernel size to improve processing efficiency.
         """
         x = self.cv1(x)
@@ -1050,26 +1050,26 @@ class GhostBottleneck(nn.Module):
     def forward(self, x):
         """
         Processes input tensor through sequential GhostNet convolution layers and optional shortcut.
-        
+
         Args:
             x (torch.Tensor): Input tensor with shape (N, C, H, W) where N is the batch size, C is the number of channels,
                 H and W are the height and width of the input feature map.
-        
+
         Returns:
             (torch.Tensor): Output tensor after processing, with the same or altered shape depending on the stride of the
                 convolutions.
-        
+
         Example:
             ```python
             from ultralytics import GhostBottleneck
             import torch
-        
+
             ghost_bottleneck = GhostBottleneck(c1=64, c2=128, k=3, s=1)
             input_tensor = torch.randn(1, 64, 56, 56)  # Shape (batch_size, channels, height, width)
             output_tensor = ghost_bottleneck(input_tensor)
             print(output_tensor.shape)  # Output shape should match the expected transformation
             ```
-        
+
         Note:
             The function harnesses the GhostNet architecture, enabling efficient feature extraction with reduced computational
             complexity, as detailed in https://github.com/huawei-noah/ghostnet.
@@ -2234,7 +2234,7 @@ class Detections:
         """
         Returns:
             (int): The total number of detections.
-        
+
         Example:
             ```python
             detections = model(image)  # Perform detection
