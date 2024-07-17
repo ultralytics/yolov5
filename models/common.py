@@ -1048,7 +1048,8 @@ class GhostBottleneck(nn.Module):
         )
 
     def forward(self, x):
-        """```"""Processes input tensor through sequential GhostNet convolution layers and optional shortcut.
+        """
+        Processes input tensor through sequential GhostNet convolution layers and optional shortcut.
         
         Args:
             x (torch.Tensor): Input tensor with shape (N, C, H, W) where N is the batch size, C is the number of channels,
@@ -1072,8 +1073,6 @@ class GhostBottleneck(nn.Module):
         Note:
             The function harnesses the GhostNet architecture, enabling efficient feature extraction with reduced computational
             complexity, as detailed in https://github.com/huawei-noah/ghostnet.
-        """
-        ```
         """
         return self.conv(x) + self.shortcut(x)
 
