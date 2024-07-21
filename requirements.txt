@@ -1,21 +1,34 @@
-# YOLOv5 requirements
 # Usage: pip install -r requirements.txt
 
 # Base ------------------------------------------------------------------------
+#ffmpeg-python>=0.2.0
+#prompt_toolkit>=3.0.47
+tensorboard>=2.17.0
+tensorboard-data-server>=0.7.2
+tensorflow>=2.17.0
+tensorflow-intel>=2.17.0
+#tensorflow-io-gcs-filesystem>=0.31.0
+ultralytics-thop>=2.0.0
 gitpython>=3.1.30
 matplotlib>=3.3
-numpy>=1.23.5
-opencv-python>=4.1.1
-pillow>=10.3.0
+numpy 1.26.3
+opencv-python>=4.10.0.84
+opencv-python-headless>=4.10.0.84
+pillow>=10.4.0
 psutil  # system resources
 PyYAML>=5.3.1
 requests>=2.32.0
-scipy>=1.4.1
+scipy>=1.13.1
 thop>=0.1.1  # FLOPs computation
-torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
+torch>=2.3.1+cu121  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
 tqdm>=4.64.0
-ultralytics>=8.2.34  # https://ultralytics.com
+ultralytics>=8.2.60  # https://ultralytics.com
+pytesseract>=0.3.10
+protobuf>=3.20.3
+easyocr>=1.7.1
+
+
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
 # Logging ---------------------------------------------------------------------
@@ -24,7 +37,7 @@ ultralytics>=8.2.34  # https://ultralytics.com
 # comet
 
 # Plotting --------------------------------------------------------------------
-pandas>=1.1.4
+pandas>=2.2.2
 seaborn>=0.11.0
 
 # Export ----------------------------------------------------------------------
