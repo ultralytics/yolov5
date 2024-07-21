@@ -1,9 +1,9 @@
 #train and val data
-train : "./dataset/train/images"
-val : "./dataset/val/images"
+train: "./dataset/train/images"
+val: "./dataset/val/images"
 
 #number of classes
-nc : 4
+nc: 4
 
-#class names 
-names : ['inhibitory','danger','mandatory','other']
+#class names
+names: ["inhibitory", "danger", "mandatory", "other"]

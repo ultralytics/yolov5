@@ -7,7 +7,7 @@ import os
 max_files = 11
 
 # تعداد فعلی فایل ها را در دایرکتوری شمارش کنید
-for n in range(1,10):
+for n in range(1, 10):
     directory = f"./dataset/main/image/sample{n}"
     num_files = len(os.listdir(directory))
 

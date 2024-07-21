@@ -66,8 +66,6 @@ from utils.general import (
 from utils.torch_utils import select_device, smart_inference_mode
 
 
-
-
 @smart_inference_mode()
 def run(
     weights=ROOT / "yolov5s.pt",  # model path or triton URL
@@ -312,12 +310,12 @@ def run(
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ""
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
-        
-        
+
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
     return save_path
+
 
 def parse_opt():
     """
@@ -424,6 +422,7 @@ def main(opt):
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
     exp = run(**vars(opt))
     return exp
+
 
 if __name__ == "__main__":
     opt = parse_opt()

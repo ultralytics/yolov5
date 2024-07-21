@@ -1,17 +1,18 @@
 import os
 
-list_index=[]
+list_index = []
+
+
 def read_dir(path):
-  """
-  نام فایل های موجود در پوشه `path` را می خواند و آنها را به یک لیست اضافه می کند.
-  """
-  list_len = 0
-  files_list = []
-  for file in os.listdir(path):
-    files_list.append(file)
-    list_index.append(list_len)
-    list_len += 1
-  return files_list , list_index
+    """نام فایل های موجود در پوشه `path` را می خواند و آنها را به یک لیست اضافه می کند."""
+    list_len = 0
+    files_list = []
+    for file in os.listdir(path):
+        files_list.append(file)
+        list_index.append(list_len)
+        list_len += 1
+    return files_list, list_index
+
 
 # مثال استفاده
 path = "./dataset/main/labels"
