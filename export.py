@@ -256,7 +256,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr("TorchScript:"
         # Load model
         weights = 'yolov5s.pt'
         device = select_device('')
-        model = attempt_load(weights, map_location=device)
+        model = attempt_load(weights, device=device)
 
         # Example input tensor
         im = torch.zeros(1, 3, 640, 640).to(device)
