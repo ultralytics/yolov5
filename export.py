@@ -571,15 +571,22 @@ def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("Co
     if nms:
         model = iOSModel(model, im)
     ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
-    ct_model = ct.convert(ts, inputs=[ct.ImageType("image", shape=im.shape, scale=1 / 255, bias=[0, 0, 0])], convert_to=convert_to, compute_precision=precision)
+    ct_model = ct.convert(
+        ts,
+        inputs=[ct.ImageType("image", shape=im.shape, scale=1 / 255, bias=[0, 0, 0])],
+        convert_to=convert_to,
+        compute_precision=precision,
+    )
     bits, mode = (8, "kmeans") if int8 else (16, "linear") if half else (32, None)
     if bits < 32:
         if mlmodel:
             with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning, fixed in coremltools==7.0
+                warnings.filterwarnings(
+                    "ignore", category=DeprecationWarning
+                )  # suppress numpy==1.20 float warning, fixed in coremltools==7.0
                 ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
         elif bits == 8:
-            op_config=ct.optimize.coreml.OpPalettizerConfig(mode=mode, nbits=bits, weight_threshold=512)
+            op_config = ct.optimize.coreml.OpPalettizerConfig(mode=mode, nbits=bits, weight_threshold=512)
             config = ct.optimize.coreml.OptimizationConfig(global_config=op_config)
             ct_model = ct.optimize.coreml.palettize_weights(ct_model, config)
     ct_model.save(f)
