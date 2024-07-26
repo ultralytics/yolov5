@@ -575,10 +575,7 @@ def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("Co
     bits, mode = (8, "kmeans") if int8 else (16, "linear") if half else (32, None)
     if bits < 32:
         if mlmodel:
-            if MACOS:
-                ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
-            else:
-                print(f"{prefix} quantization only supported on macOS, skipping...")
+            ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
         elif bits == 8:
             op_config=ct.optimize.coreml.OpPalettizerConfig(mode=mode, nbits=bits, weight_threshold=512)
             config = ct.optimize.coreml.OptimizationConfig(global_config=op_config)
