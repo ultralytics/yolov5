@@ -169,7 +169,7 @@ def export_formats():
         ["ONNX", "onnx", ".onnx", True, True],
         ["OpenVINO", "openvino", "_openvino_model", True, False],
         ["TensorRT", "engine", ".engine", False, True],
-        ["CoreML", "coreml", ".mlmodel", True, False],
+        ["CoreML", "coreml", ".mlpackage", True, False],
         ["TensorFlow SavedModel", "saved_model", "_saved_model", True, True],
         ["TensorFlow GraphDef", "pb", ".pb", True, True],
         ["TensorFlow Lite", "tflite", ".tflite", True, False],
@@ -553,22 +553,36 @@ def export_coreml(model, im, file, int8, half, nms, prefix=colorstr("CoreML:")):
     """
     check_requirements("coremltools")
     import coremltools as ct
+    mlmodel = False
 
     LOGGER.info(f"\n{prefix} starting export with coremltools {ct.__version__}...")
-    f = file.with_suffix(".mlmodel")
+    if mlmodel:
+        f = file.with_suffix(".mlmodel")
+        convert_to = "neuralnetwork"
+        precision = None
+    else:
+        f = file.with_suffix(".mlpackage")
+        convert_to = "mlprogram"
+        if half:
+            precision = ct.precision.FLOAT16
+        else:
+            precision = ct.precision.FLOAT32
 
     if nms:
         model = iOSModel(model, im)
     ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
-    ct_model = ct.convert(ts, inputs=[ct.ImageType("image", shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
-    bits, mode = (8, "kmeans_lut") if int8 else (16, "linear") if half else (32, None)
+    ct_model = ct.convert(ts, inputs=[ct.ImageType("image", shape=im.shape, scale=1 / 255, bias=[0, 0, 0])], convert_to=convert_to, compute_precision=precision)
+    bits, mode = (8, "kmeans") if int8 else (16, "linear") if half else (32, None)
     if bits < 32:
-        if MACOS:  # quantization only supported on macOS
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning
+        if mlmodel:
+            if MACOS:
                 ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
-        else:
-            print(f"{prefix} quantization only supported on macOS, skipping...")
+            else:
+                print(f"{prefix} quantization only supported on macOS, skipping...")
+        elif bits == 8:
+            op_config=ct.optimize.coreml.OpPalettizerConfig(mode=mode, nbits=bits, weight_threshold=512)
+            config = ct.optimize.coreml.OptimizationConfig(global_config=op_config)
+            ct_model = ct.optimize.coreml.palettize_weights(ct_model, config)
     ct_model.save(f)
     return f, ct_model
 
@@ -1114,6 +1128,12 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
     import coremltools as ct
     from PIL import Image
 
+    mlmodel = False
+    if mlmodel:
+        f = file.with_suffix(".mlmodel")  # filename
+    else:
+        f = file.with_suffix(".mlpackage")  # filename
+
     print(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
     batch_size, ch, h, w = list(im.shape)  # BCHW
     t = time.time()
@@ -1156,7 +1176,12 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
     print(spec.description)
 
     # Model from spec
-    model = ct.models.MLModel(spec)
+    weights_dir = None
+    if mlmodel:
+        weights_dir = None
+    else:
+        weights_dir = str(f / "Data/com.apple.CoreML/weights")
+    model = ct.models.MLModel(spec, weights_dir=weights_dir)
 
     # 3. Create NMS protobuf
     nms_spec = ct.proto.Model_pb2.Model()
@@ -1227,8 +1252,7 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
     )
 
     # Save the model
-    f = file.with_suffix(".mlmodel")  # filename
-    model = ct.models.MLModel(pipeline.spec)
+    model = ct.models.MLModel(pipeline.spec, weights_dir=weights_dir)
     model.input_description["image"] = "Input image"
     model.input_description["iouThreshold"] = f"(optional) IOU Threshold override (default: {nms.iouThreshold})"
     model.input_description["confidenceThreshold"] = (
