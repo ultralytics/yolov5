@@ -575,7 +575,9 @@ def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("Co
     bits, mode = (8, "kmeans") if int8 else (16, "linear") if half else (32, None)
     if bits < 32:
         if mlmodel:
-            ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning, fixed in coremltools==7.0
+                ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
         elif bits == 8:
             op_config=ct.optimize.coreml.OpPalettizerConfig(mode=mode, nbits=bits, weight_threshold=512)
             config = ct.optimize.coreml.OptimizationConfig(global_config=op_config)
