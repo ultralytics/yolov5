@@ -49,9 +49,8 @@ from models.common import (
     GhostConv,
     Proto,
 )
-from models.lsknet import LSKNet
-
 from models.experimental import MixConv2d
+from models.lsknet import LSKNet
 from utils.autoanchor import check_anchor_order
 from utils.general import LOGGER, check_version, check_yaml, colorstr, make_divisible, print_args
 from utils.plots import feature_visualization
