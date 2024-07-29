@@ -49,6 +49,8 @@ from models.common import (
     GhostConv,
     Proto,
 )
+from models.lsknet import LSKNet
+
 from models.experimental import MixConv2d
 from utils.autoanchor import check_anchor_order
 from utils.general import LOGGER, check_version, check_yaml, colorstr, make_divisible, print_args
@@ -228,7 +230,7 @@ class DetectionModel(BaseModel):
                 self.yaml = yaml.safe_load(f)  # model dict
 
         # Define model
-        ch = self.yaml["ch"] = self.yaml.get("ch", ch)  # input channels
+        ch = self.yaml["ch"] = self.yaml.get("ch", ch)  # input channels  3
         if nc and nc != self.yaml["nc"]:
             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
             self.yaml["nc"] = nc  # override yaml value
@@ -373,21 +375,21 @@ def parse_model(d, ch):
     """Parses a YOLOv5 model from a dict `d`, configuring layers based on input channels `ch` and model architecture."""
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
     anchors, nc, gd, gw, act, ch_mul = (
-        d["anchors"],
-        d["nc"],
+        d["anchors"],  # 配置文件中的anchors
+        d["nc"],  # 80
         d["depth_multiple"],
         d["width_multiple"],
-        d.get("activation"),
-        d.get("channel_multiple"),
+        d.get("activation"),  # None
+        d.get("channel_multiple"),  # None
     )
     if act:
         Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
         LOGGER.info(f"{colorstr('activation:')} {act}")  # print
-    if not ch_mul:
+    if not ch_mul:  # True
         ch_mul = 8
-    na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
+    na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors  3
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
-
+    # c2: 3
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
         m = eval(m) if isinstance(m, str) else m  # eval strings
@@ -416,9 +418,9 @@ def parse_model(d, ch):
             DWConvTranspose2d,
             C3x,
         }:
-            c1, c2 = ch[f], args[0]
-            if c2 != no:  # if not output
-                c2 = make_divisible(c2 * gw, ch_mul)
+            c1, c2 = ch[f], args[0]  # 3, 64
+            if c2 != no:  # if not output  no: anchors * (classes + 5)
+                c2 = make_divisible(c2 * gw, ch_mul)  # 16
 
             args = [c1, c2, *args[1:]]
             if m in {BottleneckCSP, C3, C3TR, C3Ghost, C3x}:
@@ -439,11 +441,13 @@ def parse_model(d, ch):
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+        elif m is LSKNet:
+            c2 = 16
         else:
             c2 = ch[f]
 
         m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
-        t = str(m)[8:-2].replace("__main__.", "")  # module type
+        t = str(m)[8:-2].replace("__main__.", "")  # module type, "<class 'models.common.Conv'>"
         np = sum(x.numel() for x in m_.parameters())  # number params
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
         LOGGER.info(f"{i:>3}{str(f):>18}{n_:>3}{np:10.0f}  {t:<40}{str(args):<30}")  # print
@@ -451,7 +455,7 @@ def parse_model(d, ch):
         layers.append(m_)
         if i == 0:
             ch = []
-        ch.append(c2)
+        ch.append(c2)  # 增加输出的channels：[16, ]
     return nn.Sequential(*layers), sorted(save)
 
 
