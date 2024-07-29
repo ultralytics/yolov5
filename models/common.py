@@ -444,7 +444,7 @@ class DetectMultiBackend(nn.Module):
         #   ONNX Runtime:                   *.onnx
         #   ONNX OpenCV DNN:                *.onnx --dnn
         #   OpenVINO:                       *_openvino_model
-        #   CoreML:                         *.mlmodel
+        #   CoreML:                         *.mlpackage
         #   TensorRT:                       *.engine
         #   TensorFlow SavedModel:          *_saved_model
         #   TensorFlow GraphDef:            *.pb
