@@ -54,6 +54,7 @@ VOC/
 *.onnx
 *.engine
 *.mlmodel
+*.mlpackage
 *.torchscript
 *.tflite
 *.h5
