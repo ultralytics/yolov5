@@ -750,7 +750,7 @@ def export_saved_model(
         import tensorflow as tf
     from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
-    from models.tf import TFModel, KerasModel
+    from models.tf import KerasModel, TFModel
 
     LOGGER.info(f"\n{prefix} starting export with tensorflow {tf.__version__}...")
     if tf.__version__ > "2.13.1":

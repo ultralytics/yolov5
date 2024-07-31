@@ -668,7 +668,9 @@ class KerasModel(tf.keras.layers.Layer):
         return config
 
     def call(self, inputs):
-        return self.tf_model.predict(inputs, self.tf_nms, self.agnostic_nms, self.topk_per_class, self.topk_all, self.iou_thres, self.conf_thres)
+        return self.tf_model.predict(
+            inputs, self.tf_nms, self.agnostic_nms, self.topk_per_class, self.topk_all, self.iou_thres, self.conf_thres
+        )
 
 
 class AgnosticNMS(keras.layers.Layer):
