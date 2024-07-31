@@ -368,12 +368,11 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
     if simplify:
         try:
             cuda = torch.cuda.is_available()
-            check_requirements(("onnxruntime-gpu" if cuda else "onnxruntime", "onnx-simplifier>=0.4.1"))
-            import onnxsim
+            check_requirements(("onnxruntime-gpu" if cuda else "onnxruntime", "onnxslim"))
+            import onnxslim
 
-            LOGGER.info(f"{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...")
-            model_onnx, check = onnxsim.simplify(model_onnx)
-            assert check, "assert check failed"
+            LOGGER.info(f"{prefix} slimming with onnxslim {onnxslim.__version__}...")
+            model_onnx = onnxslim.slim(model_onnx)
             onnx.save(model_onnx, f)
         except Exception as e:
             LOGGER.info(f"{prefix} simplifier failure: {e}")
