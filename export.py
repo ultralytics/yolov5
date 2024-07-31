@@ -750,7 +750,7 @@ def export_saved_model(
         import tensorflow as tf
     from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
-    from models.tf import TFModel
+    from models.tf import TFModel, KerasModel
 
     LOGGER.info(f"\n{prefix} starting export with tensorflow {tf.__version__}...")
     if tf.__version__ > "2.13.1":
@@ -765,12 +765,12 @@ def export_saved_model(
     im = tf.zeros((batch_size, *imgsz, ch))  # BHWC order for TensorFlow
     _ = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
     inputs = tf.keras.Input(shape=(*imgsz, ch), batch_size=None if dynamic else batch_size)
-    outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
+    outputs = KerasModel(tf_model, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)(inputs)
     keras_model = tf.keras.Model(inputs=inputs, outputs=outputs)
     keras_model.trainable = False
     keras_model.summary()
     if keras:
-        keras_model.save(f, save_format="tf")
+        keras_model.save(str(file).replace(".pt", ".h5"))
     else:
         spec = tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype)
         m = tf.function(lambda x: keras_model(x))  # full model

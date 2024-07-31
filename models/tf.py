@@ -652,6 +652,25 @@ class TFModel:
         return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
 
 
+class KerasModel(tf.keras.layers.Layer):
+    def __init__(self, tf_model, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres):
+        super(KerasModel, self).__init__()
+        self.tf_model = tf_model
+        self.tf_nms = tf_nms
+        self.agnostic_nms = agnostic_nms
+        self.topk_per_class = topk_per_class
+        self.topk_all = topk_all
+        self.iou_thres = iou_thres
+        self.conf_thres = conf_thres
+
+    def get_config(self):
+        config = super().get_config()
+        return config
+
+    def call(self, inputs):
+        return self.tf_model.predict(inputs, self.tf_nms, self.agnostic_nms, self.topk_per_class, self.topk_all, self.iou_thres, self.conf_thres)
+
+
 class AgnosticNMS(keras.layers.Layer):
     # TF Agnostic NMS
     def call(self, input, topk_all, iou_thres, conf_thres):
