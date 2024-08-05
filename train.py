@@ -353,7 +353,7 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    
+
     scaler = None
     if check_version(torch.__version__, "2.4.0", "Torch", hard=False):
         scaler = torch.amp.GradScaler("cuda", enabled=amp)
@@ -420,7 +420,7 @@ def train(hyp, opt, device, callbacks):
                 amp_autocast = torch.amp.autocast("cuda", enabled=amp)
             else:
                 amp_autocast = torch.cuda.amp.autocast(amp)
-            
+
             # Forward
             with amp_autocast:
                 pred = model(imgs)  # forward

@@ -386,7 +386,6 @@ def train(hyp, opt, device, callbacks):
                     ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
                     imgs = nn.functional.interpolate(imgs, size=ns, mode="bilinear", align_corners=False)
 
-
             amp_autocast = None
             if check_version(torch.__version__, "2.4.0", "Torch", hard=False):
                 amp_autocast = torch.amp.autocast("cuda", enabled=amp)
