@@ -111,7 +111,7 @@ def run(
     bar = tqdm(dataloader, desc, n, not training, bar_format=TQDM_BAR_FORMAT, position=0)
     
     amp_autocast = None
-    if check_version(torch.__version__, "2.4.0", "Torch", hard=False):
+    if check_version(torch.__version__, "2.4.0"):
         amp_autocast = torch.amp.autocast("cuda", enabled=device.type != "cpu")
     else:
         amp_autocast = torch.cuda.amp.autocast(enabled=device.type != "cpu")

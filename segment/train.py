@@ -323,7 +323,7 @@ def train(hyp, opt, device, callbacks):
     scheduler.last_epoch = start_epoch - 1  # do not move
 
     scaler = None
-    if check_version(torch.__version__, "2.4.0", "Torch", hard=False):
+    if check_version(torch.__version__, "2.4.0"):
         scaler = torch.amp.GradScaler("cuda", enabled=amp)
     else:
         scaler = torch.cuda.amp.GradScaler(enabled=amp)
@@ -388,7 +388,7 @@ def train(hyp, opt, device, callbacks):
 
 
             amp_autocast = None
-            if check_version(torch.__version__, "2.4.0", "Torch", hard=False):
+            if check_version(torch.__version__, "2.4.0"):
                 amp_autocast = torch.amp.autocast("cuda", enabled=amp)
             else:
                 amp_autocast = torch.cuda.amp.autocast(enabled=amp)
