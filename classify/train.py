@@ -224,7 +224,6 @@ def train(opt, device):
         for i, (images, labels) in pbar:  # progress bar
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
-
             amp_autocast = None
             if check_version(torch.__version__, "2.4.0"):
                 amp_autocast = torch.amp.autocast("cuda", enabled=device.type != "cpu")
