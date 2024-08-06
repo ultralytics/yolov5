@@ -48,6 +48,7 @@ from models.common import (
     GhostBottleneck,
     GhostConv,
     Proto,
+    CBAM,
 )
 from models.experimental import MixConv2d
 from utils.autoanchor import check_anchor_order
@@ -415,7 +416,9 @@ def parse_model(d, ch):
             nn.ConvTranspose2d,
             DWConvTranspose2d,
             C3x,
+            CBAM
         }:
+            """c1 = number previous chanel ,c2 = number output chanel"""
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, ch_mul)
@@ -439,6 +442,8 @@ def parse_model(d, ch):
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+        elif m is CBAM:
+            c2 = c1
         else:
             c2 = ch[f]
 
