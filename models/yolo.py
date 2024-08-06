@@ -416,7 +416,6 @@ def parse_model(d, ch):
             nn.ConvTranspose2d,
             DWConvTranspose2d,
             C3x,
-            CBAM
         }:
             """c1 = number previous chanel ,c2 = number output chanel"""
             c1, c2 = ch[f], args[0]
@@ -443,7 +442,8 @@ def parse_model(d, ch):
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
         elif m is CBAM:
-            c2 = c1
+            c1 = ch[f]
+            args = [c1, args[0]]
         else:
             c2 = ch[f]
 
