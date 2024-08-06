@@ -290,9 +290,9 @@ class CAM(nn.Module):
             nn.Linear(in_features=self.channels//self.r, out_features=self.channels, bias=True))
 
     def forward(self, x):
-        max = nn.functional.adaptive_max_pool2d(x, output_size=1)
-        avg = nn.functional.adaptive_avg_pool2d(x, output_size=1)
-        b, c, _, _ = x.size()
+        b, c, h, w = x.size()
+        max = nn.functional.max_pool2d(x,(h,w))
+        avg = nn.functional.avg_pool2d(x,(h,w))
         linear_max = self.linear(max.view(b,c)).view(b, c, 1, 1)
         linear_avg = self.linear(avg.view(b,c)).view(b, c, 1, 1)
         output = linear_max + linear_avg
