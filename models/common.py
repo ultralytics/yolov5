@@ -279,6 +279,51 @@ class C3Ghost(C3):
         c_ = int(c2 * e)  # hidden channels
         self.m = nn.Sequential(*(GhostBottleneck(c_, c_) for _ in range(n)))
 
+class CAM(nn.Module):
+    def __init__(self, channels, r):
+        super(CAM, self).__init__()
+        self.channels = channels
+        self.r = r
+        self.linear = nn.Sequential(
+            nn.Linear(in_features=self.channels, out_features=self.channels//self.r, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=self.channels//self.r, out_features=self.channels, bias=True))
+
+    def forward(self, x):
+        b, c, h, w = x.size()
+        max = nn.functional.max_pool2d(x,(h,w))
+        avg = nn.functional.avg_pool2d(x,(h,w))
+        linear_max = self.linear(max.view(b,c)).view(b, c, 1, 1)
+        linear_avg = self.linear(avg.view(b,c)).view(b, c, 1, 1)
+        output = linear_max + linear_avg
+        output = nn.functional.sigmoid(output) * x
+        return output
+
+class SAM(nn.Module):
+    def __init__(self, bias=False):
+        super(SAM, self).__init__()
+        self.bias = bias
+        self.conv = nn.Conv2d(in_channels=2, out_channels=1, kernel_size=7, stride=1, padding=3, dilation=1, bias=self.bias)
+
+    def forward(self, x):
+        max = torch.max(x,1)[0].unsqueeze(1)
+        avg = torch.mean(x,1).unsqueeze(1)
+        concat = torch.cat((max,avg), dim=1)
+        output = self.conv(concat)
+        output = nn.functional.sigmoid(output) * x 
+        return output 
+class CBAM(nn.Module):
+    def __init__(self, channels, r):
+        super(CBAM, self).__init__()
+        self.channels = channels
+        self.r = r
+        self.sam = SAM(bias=False)
+        self.cam = CAM(channels=self.channels, r=self.r)
+
+    def forward(self, x):
+        output = self.cam(x)
+        output = self.sam(output)
+        return output + x
 
 class SPP(nn.Module):
     # Spatial Pyramid Pooling (SPP) layer https://arxiv.org/abs/1406.4729
@@ -1066,9 +1111,6 @@ class Classify(nn.Module):
     def __init__(
         self, c1, c2, k=1, s=1, p=None, g=1, dropout_p=0.0
     ):  # ch_in, ch_out, kernel, stride, padding, groups, dropout probability
-        """Initializes YOLOv5 classification head with convolution, pooling, and dropout layers for input to output
-        channel transformation.
-        """
         super().__init__()
         c_ = 1280  # efficientnet_b0 size
         self.conv = Conv(c1, c_, k, s, autopad(k, p), g)
