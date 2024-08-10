@@ -310,7 +310,7 @@ class SAM(nn.Module):
         avg = torch.mean(x,1).unsqueeze(1)
         concat = torch.cat((max,avg), dim=1)
         output = self.conv(concat)
-        output = nn.functional.sigmoid(output) * x 
+        output = output.sigmoid() * x 
         return output 
 class CBAM(nn.Module):
     def __init__(self, channels, r):
