@@ -2,11 +2,11 @@
 # Usage: pip install -r requirements.txt
 
 # Base ------------------------------------------------------------------------
-gitpython
+#gitpython
 ipython  # interactive notebook
 matplotlib>=3.2.2
 numpy>=1.18.5
-opencv-python>=4.1.1
+opencv-python
 Pillow>=7.1.2
 psutil  # system resources
 PyYAML>=5.3.1
