@@ -80,7 +80,7 @@ class ClearmlLogger:
         - Initialize ClearML Task, this object will capture the experiment
         - Upload dataset version to ClearML Data if opt.upload_dataset is True
 
-        arguments:
+        Arguments:
         opt (namespace) -- Commandline arguments for this run
         hyp (dict) -- Hyperparameters for this run
 
@@ -133,7 +133,7 @@ class ClearmlLogger:
         """
         Log scalars/metrics to ClearML.
 
-        arguments:
+        Arguments:
         metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
         epoch (int) iteration number for the current set of metrics
         """
@@ -145,7 +145,7 @@ class ClearmlLogger:
         """
         Log model weights to ClearML.
 
-        arguments:
+        Arguments:
         model_path (PosixPath or str) Path to the model weights
         model_name (str) Name of the model visible in ClearML
         epoch (int) Iteration / epoch of the model weights
@@ -158,7 +158,7 @@ class ClearmlLogger:
         """
         Log final metrics to a summary table.
 
-        arguments:
+        Arguments:
         metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
         """
         for k, v in metrics.items():
@@ -168,7 +168,7 @@ class ClearmlLogger:
         """
         Log image as plot in the plot section of ClearML.
 
-        arguments:
+        Arguments:
         title (str) Title of the plot
         plot_path (PosixPath or str) Path to the saved image file
         """
@@ -183,7 +183,7 @@ class ClearmlLogger:
         """
         Log files (images) as debug samples in the ClearML task.
 
-        arguments:
+        Arguments:
         files (List(PosixPath)) a list of file paths in PosixPath format
         title (str) A title that groups together images with the same values
         """
@@ -199,7 +199,7 @@ class ClearmlLogger:
         """
         Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
 
-        arguments:
+        Arguments:
         image_path (PosixPath) the path the original image file
         boxes (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
         class_names (dict): dict containing mapping of class int to class name
