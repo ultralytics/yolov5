@@ -14,7 +14,6 @@ def crop_mask(masks, boxes):
         - masks should be a size [n, h, w] tensor of masks
         - boxes should be a size [n, 4] tensor of bbox coords in relative point form
     """
-
     n, h, w = masks.shape
     x1, y1, x2, y2 = torch.chunk(boxes[:, :, None], 4, 1)  # x1 shape(1,1,n)
     r = torch.arange(w, device=masks.device, dtype=x1.dtype)[None, None, :]  # rows shape(1,w,1)
@@ -33,7 +32,6 @@ def process_mask_upsample(protos, masks_in, bboxes, shape):
 
     return: h, w, n
     """
-
     c, mh, mw = protos.shape  # CHW
     masks = (masks_in @ protos.float().view(c, -1)).sigmoid().view(-1, mh, mw)
     masks = F.interpolate(masks[None], shape, mode="bilinear", align_corners=False)[0]  # CHW
@@ -51,7 +49,6 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=False):
 
     return: h, w, n
     """
-
     c, mh, mw = protos.shape  # CHW
     ih, iw = shape
     masks = (masks_in @ protos.float().view(c, -1)).sigmoid().view(-1, mh, mw)  # CHW
