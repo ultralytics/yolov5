@@ -54,6 +54,8 @@ def ap_per_class_box_and_mask(
 
 
 class Metric:
+    """Computes performance metrics like precision, recall, F1 score, and average precision for model evaluation."""
+
     def __init__(self) -> None:
         """Initializes performance metric attributes for precision, recall, F1 score, average precision, and class
         indices.

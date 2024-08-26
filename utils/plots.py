@@ -29,7 +29,8 @@ matplotlib.use("Agg")  # for writing to files only
 
 
 class Colors:
-    # Ultralytics color palette https://ultralytics.com/
+    """Provides an RGB color palette derived from Ultralytics color scheme for visualization tasks."""
+
     def __init__(self):
         """
         Initializes the Colors class with a palette derived from Ultralytics color scheme, converting hex codes to RGB.

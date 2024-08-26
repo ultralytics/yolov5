@@ -34,11 +34,11 @@ jobs:
 
           g = Github(os.getenv('GITHUB_TOKEN'))
           repo = g.get_repo(os.getenv('GITHUB_REPOSITORY'))
-          
+
           # Fetch the default branch name
           default_branch_name = repo.default_branch
           default_branch = repo.get_branch(default_branch_name)
-          
+
           for pr in repo.get_pulls(state='open', sort='created'):
               try:
                   # Get full names for repositories and branches
