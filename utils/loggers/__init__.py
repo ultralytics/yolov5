@@ -76,7 +76,8 @@ def _json_default(value):
 
 
 class Loggers:
-    # YOLOv5 Loggers class
+    """Initializes and manages various logging utilities for tracking YOLOv5 training and validation metrics."""
+
     def __init__(self, save_dir=None, weights=None, opt=None, hyp=None, logger=None, include=LOGGERS):
         """Initializes loggers for YOLOv5 training and validation metrics, paths, and options."""
         self.save_dir = save_dir

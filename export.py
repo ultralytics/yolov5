@@ -91,6 +91,8 @@ MACOS = platform.system() == "Darwin"  # macOS environment
 
 
 class iOSModel(torch.nn.Module):
+    """An iOS-compatible wrapper for YOLOv5 models that normalizes input images based on their dimensions."""
+
     def __init__(self, model, im):
         """
         Initializes an iOS compatible model with normalization based on image dimensions.

@@ -83,6 +83,8 @@ def create_dataloader(
 
 
 class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
+    """Loads images, labels, and segmentation masks for training and testing YOLO models with augmentation support."""
+
     def __init__(
         self,
         path,
