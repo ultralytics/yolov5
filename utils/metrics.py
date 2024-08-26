@@ -100,7 +100,7 @@ def compute_ap(recall, precision):
         recall:    The recall curve (list)
         precision: The precision curve (list)
     # Returns
-        Average precision, precision curve, recall curve
+        Average precision, precision curve, recall curve.
     """
     # Append sentinel values to beginning and end
     mrec = np.concatenate(([0.0], recall, [1.0]))

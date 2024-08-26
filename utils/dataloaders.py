@@ -93,7 +93,7 @@ def exif_size(img):
 def exif_transpose(image):
     """
     Transpose a PIL image accordingly if it has an EXIF Orientation tag.
-    Inplace version of https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py exif_transpose()
+    Inplace version of https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py exif_transpose().
 
     :param image: The image to transpose.
     :return: An image.
@@ -316,7 +316,7 @@ class LoadScreenshots:
 
 
 class LoadImages:
-    """YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`"""
+    """YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`."""
 
     def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         """Initializes YOLOv5 loader for images/videos, supporting glob patterns, directories, and lists of paths."""
@@ -1103,7 +1103,7 @@ def extract_boxes(path=DATASETS_DIR / "coco128"):
 
 def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), annotated_only=False):
     """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    Usage: from utils.dataloaders import *; autosplit()
+    Usage: from utils.dataloaders import *; autosplit().
 
     Arguments:
         path:            Path to images directory
