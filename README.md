@@ -56,7 +56,7 @@ pip install ultralytics
 ```
 
 <div align="center">
-  <a href="https://ultralytics.com/yolov8" target="_blank">
+  <a href="https://ultralytics.com/yolo" target="_blank">
   <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/yolo-comparison-plots.png"></a>
 </div>
 
