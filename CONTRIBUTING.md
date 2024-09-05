@@ -64,10 +64,10 @@ When asking a question, people will be better able to provide help if you provid
 - ✅ **Complete** – Provide **all** parts someone else needs to reproduce your problem in the question itself
 - ✅ **Reproducible** – Test the code you're about to provide to make sure it reproduces the problem
 
-In addition to the above requirements, for [Ultralytics](https://ultralytics.com/) to provide assistance your code should be:
+In addition to the above requirements, for [Ultralytics](https://www.ultralytics.com/) to provide assistance your code should be:
 
 - ✅ **Current** – Verify that your code is up-to-date with the current GitHub [master](https://github.com/ultralytics/yolov5/tree/master), and if necessary `git pull` or `git clone` a new copy to ensure your problem has not already been resolved by previous commits.
-- ✅ **Unmodified** – Your problem must be reproducible without any modifications to the codebase in this repository. [Ultralytics](https://ultralytics.com/) does not provide support for custom code ⚠️.
+- ✅ **Unmodified** – Your problem must be reproducible without any modifications to the codebase in this repository. [Ultralytics](https://www.ultralytics.com/) does not provide support for custom code ⚠️.
 
 If you believe your problem meets all of the above criteria, please close this issue and raise a new one using the 🐛 **Bug Report** [template](https://github.com/ultralytics/yolov5/issues/new/choose) and provide a [minimum reproducible example](https://docs.ultralytics.com/help/minimum_reproducible_example/) to help us better understand and diagnose your problem.
 

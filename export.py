@@ -566,11 +566,7 @@ def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("Co
     else:
         f = file.with_suffix(".mlpackage")
         convert_to = "mlprogram"
-        if half:
-            precision = ct.precision.FLOAT16
-        else:
-            precision = ct.precision.FLOAT32
-
+        precision = ct.precision.FLOAT16 if half else ct.precision.FLOAT32
     if nms:
         model = iOSModel(model, im)
     ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
@@ -1138,11 +1134,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
     import coremltools as ct
     from PIL import Image
 
-    if mlmodel:
-        f = file.with_suffix(".mlmodel")  # filename
-    else:
-        f = file.with_suffix(".mlpackage")  # filename
-
+    f = file.with_suffix(".mlmodel") if mlmodel else file.with_suffix(".mlpackage")
     print(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
     batch_size, ch, h, w = list(im.shape)  # BCHW
     t = time.time()
@@ -1186,10 +1178,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
 
     # Model from spec
     weights_dir = None
-    if mlmodel:
-        weights_dir = None
-    else:
-        weights_dir = str(f / "Data/com.apple.CoreML/weights")
+    weights_dir = None if mlmodel else str(f / "Data/com.apple.CoreML/weights")
     model = ct.models.MLModel(spec, weights_dir=weights_dir)
 
     # 3. Create NMS protobuf
