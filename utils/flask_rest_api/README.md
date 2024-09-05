@@ -4,7 +4,7 @@
 
 ## Requirements
 
-[Flask](https://palletsprojects.com/p/flask/) is required. Install with:
+[Flask](https://palletsprojects.com/projects/flask/) is required. Install with:
 
 ```shell
 $ pip install Flask
