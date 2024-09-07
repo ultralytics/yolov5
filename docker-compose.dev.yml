@@ -4,21 +4,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command:
-      ddtrace-run python3 /app/server.py
+#    command:
+#      python3 /app/server.py
     environment:
       - ENV_ID=dev
-      - DD_SERVICE=models-bee-detector
-      - DD_ENV=dev
-      - DD_PROFILING_ENABLED=true
     ports:
       - 8700:8700
       - 8126:8126
     volumes:
       - .:/app/
     restart: always
-    # network_mode: bridge
-    networks:
-      - gratheon
-networks:
-  gratheon:
+    mem_limit: 2g
+    cpus: 2.0

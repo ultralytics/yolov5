@@ -65,9 +65,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             weights = "/app/weights/best.pt"
             device = "cpu"
 
-            if os.getenv("ENV_ID") == "dev":
-                weights = "/weights/best.pt"
-                device = "0"
+            # if os.getenv("ENV_ID") == "dev":
+            #     weights = "/weights/best.pt"
+            #     device = "0"
 
             run(
                 weights=weights,

@@ -13,4 +13,4 @@ RUN cd /app && pip install -r requirements.txt
 EXPOSE 8700
 # COPY . /app/
 
-# CMD ["python3", "/app/server.py"]
+CMD ["python3", "/app/server.py"]

@@ -47,7 +47,3 @@ seaborn>=0.11.0
 # pycocotools>=2.0.6  # COCO mAP
 # roboflow
 # ultralytics  # HUB https://hub.ultralytics.com
-
-
-# Tracing
-ddtrace==2.0.2

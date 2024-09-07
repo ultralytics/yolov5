@@ -14,4 +14,4 @@ RUN ls /app/weights
 
 EXPOSE 8700
 
-# CMD ["python3", "/app/server.py"]
+CMD ["python3", "/app/server.py"]

@@ -4,13 +4,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    command:
-      ddtrace-run python3 /app/server.py
+#    command:
+#      python3 /app/server.py
     environment:
       - ENV_ID=prod
-      - DD_SERVICE=models-bee-detector
-      - DD_ENV=prod
-      - DD_PROFILING_ENABLED=true
     ports:
       - 8700:8700
       - 8126:8126
