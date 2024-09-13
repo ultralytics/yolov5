@@ -1,4 +1,5 @@
-"""A test runner for pywin32"""
+"""A test runner for pywin32."""
+
 import os
 import site
 import subprocess
@@ -21,10 +22,10 @@ def run_test(script, cmdline_extras):
     dirname, scriptname = os.path.split(script)
     # some tests prefer to be run from their directory.
     cmd = [sys.executable, "-u", scriptname] + cmdline_extras
-    print("--- Running '%s' ---" % script)
+    print(f"--- Running '{script}' ---")
     sys.stdout.flush()
     result = subprocess.run(cmd, check=False, cwd=dirname)
-    print("*** Test script '%s' exited with %s" % (script, result.returncode))
+    print(f"*** Test script '{script}' exited with {result.returncode}")
     sys.stdout.flush()
     if result.returncode:
         failures.append(script)
@@ -36,9 +37,7 @@ def find_and_run(possible_locations, extras):
             run_test(maybe, extras)
             break
     else:
-        raise RuntimeError(
-            "Failed to locate a test script in one of %s" % possible_locations
-        )
+        raise RuntimeError(f"Failed to locate a test script in one of {possible_locations}")
 
 
 def main():
@@ -46,9 +45,7 @@ def main():
 
     code_directories = [this_dir] + site_packages
 
-    parser = argparse.ArgumentParser(
-        description="A script to trigger tests in all subprojects of PyWin32."
-    )
+    parser = argparse.ArgumentParser(description="A script to trigger tests in all subprojects of PyWin32.")
     parser.add_argument(
         "-no-user-interaction",
         default=False,
@@ -98,17 +95,13 @@ def main():
 
     # adodbapi
     if not args.skip_adodbapi:
-        maybes = [
-            os.path.join(directory, "adodbapi", "test", "adodbapitest.py")
-            for directory in code_directories
-        ]
+        maybes = [os.path.join(directory, "adodbapi", "test", "adodbapitest.py") for directory in code_directories]
         find_and_run(maybes, remains)
         # This script has a hard-coded sql server name in it, (and markh typically
         # doesn't have a different server to test on) but there is now supposed to be a server out there on the Internet
         # just to run these tests, so try it...
         maybes = [
-            os.path.join(directory, "adodbapi", "test", "test_adodbapi_dbapi20.py")
-            for directory in code_directories
+            os.path.join(directory, "adodbapi", "test", "test_adodbapi_dbapi20.py") for directory in code_directories
         ]
         find_and_run(maybes, remains)
 
