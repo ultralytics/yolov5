@@ -9,7 +9,6 @@ STYLE_FILE.odt.
 
 # Author: Michael Schutte <michi@uiae.at>
 
-
 import os
 import shutil
 import sys

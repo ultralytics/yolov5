@@ -753,7 +753,6 @@ def main():
             # child already dead
             pass
 
-
     if args.install:
         install(args.destination)
 

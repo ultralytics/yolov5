@@ -5,7 +5,6 @@
 # Copyright: This module has been placed in the public domain.
 """A front end to the Docutils Publisher, producing OpenOffice documents."""
 
-
 try:
     import locale
 
