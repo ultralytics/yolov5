@@ -93,7 +93,7 @@ def exif_size(img):
 def exif_transpose(image):
     """
     Transpose a PIL image accordingly if it has an EXIF Orientation tag.
-    Inplace version of https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py exif_transpose()
+    Inplace version of https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py exif_transpose().
 
     :param image: The image to transpose.
     :return: An image.
@@ -131,6 +131,8 @@ def seed_worker(worker_id):
 # Inherit from DistributedSampler and override iterator
 # https://github.com/pytorch/pytorch/blob/master/torch/utils/data/distributed.py
 class SmartDistributedSampler(distributed.DistributedSampler):
+    """A distributed sampler ensuring deterministic shuffling and balanced data distribution across GPUs."""
+
     def __iter__(self):
         """Yields indices for distributed data sampling, shuffled deterministically based on epoch and seed."""
         g = torch.Generator()
@@ -259,7 +261,8 @@ class _RepeatSampler:
 
 
 class LoadScreenshots:
-    # YOLOv5 screenshot dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
+    """Loads and processes screenshots for YOLOv5 detection from specified screen regions using mss."""
+
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
         """
         Initializes a screenshot dataloader for YOLOv5 with specified source region, image size, stride, auto, and
@@ -316,7 +319,7 @@ class LoadScreenshots:
 
 
 class LoadImages:
-    """YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`"""
+    """YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`."""
 
     def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         """Initializes YOLOv5 loader for images/videos, supporting glob patterns, directories, and lists of paths."""
@@ -428,7 +431,8 @@ class LoadImages:
 
 
 class LoadStreams:
-    # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
+    """Loads and processes video streams for YOLOv5, supporting various sources including YouTube and IP cameras."""
+
     def __init__(self, sources="file.streams", img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         """Initializes a stream loader for processing video streams with YOLOv5, supporting various sources including
         YouTube.
@@ -531,7 +535,8 @@ def img2label_paths(img_paths):
 
 
 class LoadImagesAndLabels(Dataset):
-    # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
+    """Loads images and their corresponding labels for training and validation in YOLOv5."""
+
     cache_version = 0.6  # dataset labels *.cache version
     rand_interp_methods = [cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4]
 
@@ -1103,7 +1108,7 @@ def extract_boxes(path=DATASETS_DIR / "coco128"):
 
 def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), annotated_only=False):
     """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    Usage: from utils.dataloaders import *; autosplit()
+    Usage: from utils.dataloaders import *; autosplit().
 
     Arguments:
         path:            Path to images directory

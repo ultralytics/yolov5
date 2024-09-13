@@ -70,7 +70,8 @@ except ImportError:
 
 
 class Detect(nn.Module):
-    # YOLOv5 Detect head for detection models
+    """YOLOv5 Detect head for processing input tensors and generating detection outputs in object detection models."""
+
     stride = None  # strides computed during build
     dynamic = False  # force grid reconstruction
     export = False  # export mode
@@ -127,7 +128,8 @@ class Detect(nn.Module):
 
 
 class Segment(Detect):
-    # YOLOv5 Segment head for segmentation models
+    """YOLOv5 Segment head for segmentation models, extending Detect with mask and prototype layers."""
+
     def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), inplace=True):
         """Initializes YOLOv5 Segment head with options for mask count, protos, and channel adjustments."""
         super().__init__(nc, anchors, ch, inplace)
@@ -214,7 +216,8 @@ class BaseModel(nn.Module):
 
 
 class DetectionModel(BaseModel):
-    # YOLOv5 detection model
+    """YOLOv5 detection model class for object detection tasks, supporting custom configurations and anchors."""
+
     def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, anchors=None):
         """Initializes YOLOv5 model with configuration file, input channels, number of classes, and custom anchors."""
         super().__init__()
@@ -332,14 +335,16 @@ Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibilit
 
 
 class SegmentationModel(DetectionModel):
-    # YOLOv5 segmentation model
+    """YOLOv5 segmentation model for object detection and segmentation tasks with configurable parameters."""
+
     def __init__(self, cfg="yolov5s-seg.yaml", ch=3, nc=None, anchors=None):
         """Initializes a YOLOv5 segmentation model with configurable params: cfg (str) for configuration, ch (int) for channels, nc (int) for num classes, anchors (list)."""
         super().__init__(cfg, ch, nc, anchors)
 
 
 class ClassificationModel(BaseModel):
-    # YOLOv5 classification model
+    """YOLOv5 classification model for image classification tasks, initialized with a config file or detection model."""
+
     def __init__(self, cfg=None, model=None, nc=1000, cutoff=10):
         """Initializes YOLOv5 model with config file `cfg`, input channels `ch`, number of classes `nc`, and `cuttoff`
         index.

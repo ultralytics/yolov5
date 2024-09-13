@@ -121,7 +121,7 @@ def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, over
         detections (array[N, 6]), x1, y1, x2, y2, conf, class
         labels (array[M, 5]), class, x1, y1, x2, y2
     Returns:
-        correct (array[N, 10]), for 10 IoU levels
+        correct (array[N, 10]), for 10 IoU levels.
     """
     if masks:
         if overlap:

@@ -161,7 +161,7 @@ def profile(input, ops, n=10, device=None):
         input = torch.randn(16, 3, 640, 640)
         m1 = lambda x: x * torch.sigmoid(x)
         m2 = nn.SiLU()
-        profile(input, [m1, m2], n=100)  # profile over 100 iterations
+        profile(input, [m1, m2], n=100)  # profile over 100 iterations.
     """
     results = []
     if not isinstance(device, torch.device):
@@ -420,7 +420,8 @@ def smart_resume(ckpt, optimizer, ema=None, weights="yolov5s.pt", epochs=300, re
 
 
 class EarlyStopping:
-    # YOLOv5 simple early stopper
+    """Implements early stopping to halt training when no improvement is observed for a specified number of epochs."""
+
     def __init__(self, patience=30):
         """Initializes simple early stopping mechanism for YOLOv5, with adjustable patience for non-improving epochs."""
         self.best_fitness = 0.0  # i.e. mAP
@@ -449,7 +450,7 @@ class EarlyStopping:
 class ModelEMA:
     """Updated Exponential Moving Average (EMA) from https://github.com/rwightman/pytorch-image-models
     Keeps a moving average of everything in the model state_dict (parameters and buffers)
-    For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
+    For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage.
     """
 
     def __init__(self, model, decay=0.9999, tau=2000, updates=0):

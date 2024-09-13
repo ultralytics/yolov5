@@ -47,7 +47,7 @@ class WandbLogger:
         """
         - Initialize WandbLogger instance
         - Upload dataset if opt.upload_dataset is True
-        - Setup training processes if job_type is 'Training'
+        - Setup training processes if job_type is 'Training'.
 
         Arguments:
         opt (namespace) -- Commandline arguments for this run
@@ -88,7 +88,7 @@ class WandbLogger:
         Setup the necessary processes for training YOLO models:
           - Attempt to download model checkpoint and dataset artifacts if opt.resume stats with WANDB_ARTIFACT_PREFIX
           - Update data_dict, to contain info of previous run if resumed and the paths of dataset artifact if downloaded
-          - Setup log_dict, initialize bbox_interval
+          - Setup log_dict, initialize bbox_interval.
 
         Arguments:
         opt (namespace) -- commandline arguments for this run

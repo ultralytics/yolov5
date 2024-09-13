@@ -78,7 +78,7 @@ class ClearmlLogger:
     def __init__(self, opt, hyp):
         """
         - Initialize ClearML Task, this object will capture the experiment
-        - Upload dataset version to ClearML Data if opt.upload_dataset is True
+        - Upload dataset version to ClearML Data if opt.upload_dataset is True.
 
         Arguments:
         opt (namespace) -- Commandline arguments for this run

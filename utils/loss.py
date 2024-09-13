@@ -9,12 +9,13 @@ from utils.torch_utils import de_parallel
 
 
 def smooth_BCE(eps=0.1):
-    """Returns label smoothing BCE targets for reducing overfitting; pos: `1.0 - 0.5*eps`, neg: `0.5*eps`. For details see https://github.com/ultralytics/yolov3/issues/238#issuecomment-598028441"""
+    """Returns label smoothing BCE targets for reducing overfitting; pos: `1.0 - 0.5*eps`, neg: `0.5*eps`. For details see https://github.com/ultralytics/yolov3/issues/238#issuecomment-598028441."""
     return 1.0 - 0.5 * eps, 0.5 * eps
 
 
 class BCEBlurWithLogitsLoss(nn.Module):
-    # BCEwithLogitLoss() with reduced missing label effects.
+    """Modified BCEWithLogitsLoss to reduce missing label effects in YOLOv5 training with optional alpha smoothing."""
+
     def __init__(self, alpha=0.05):
         """Initializes a modified BCEWithLogitsLoss with reduced missing label effects, taking optional alpha smoothing
         parameter.
@@ -37,7 +38,8 @@ class BCEBlurWithLogitsLoss(nn.Module):
 
 
 class FocalLoss(nn.Module):
-    # Wraps focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
+    """Applies focal loss to address class imbalance by modifying BCEWithLogitsLoss with gamma and alpha parameters."""
+
     def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
         """Initializes FocalLoss with specified loss function, gamma, and alpha values; modifies loss reduction to
         'none'.
@@ -71,7 +73,8 @@ class FocalLoss(nn.Module):
 
 
 class QFocalLoss(nn.Module):
-    # Wraps Quality focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
+    """Implements Quality Focal Loss to address class imbalance by modulating loss based on prediction confidence."""
+
     def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
         """Initializes Quality Focal Loss with given loss function, gamma, alpha; modifies reduction to 'none'."""
         super().__init__()
@@ -101,6 +104,8 @@ class QFocalLoss(nn.Module):
 
 
 class ComputeLoss:
+    """Computes the total loss for YOLOv5 model predictions, including classification, box, and objectness losses."""
+
     sort_obj_iou = False
 
     # Compute losses

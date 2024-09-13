@@ -29,7 +29,8 @@ matplotlib.use("Agg")  # for writing to files only
 
 
 class Colors:
-    # Ultralytics color palette https://ultralytics.com/
+    """Provides an RGB color palette derived from Ultralytics color scheme for visualization tasks."""
+
     def __init__(self):
         """
         Initializes the Colors class with a palette derived from Ultralytics color scheme, converting hex codes to RGB.
@@ -81,7 +82,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detec
     module_type:    Module type
     stage:          Module stage within model
     n:              Maximum number of feature maps to plot
-    save_dir:       Directory to save results
+    save_dir:       Directory to save results.
     """
     if ("Detect" not in module_type) and (
         "Segment" not in module_type

@@ -100,7 +100,7 @@ def compute_ap(recall, precision):
         recall:    The recall curve (list)
         precision: The precision curve (list)
     # Returns
-        Average precision, precision curve, recall curve
+        Average precision, precision curve, recall curve.
     """
     # Append sentinel values to beginning and end
     mrec = np.concatenate(([0.0], recall, [1.0]))
@@ -122,7 +122,8 @@ def compute_ap(recall, precision):
 
 
 class ConfusionMatrix:
-    # Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
+    """Generates and visualizes a confusion matrix for evaluating object detection classification performance."""
+
     def __init__(self, nc, conf=0.25, iou_thres=0.45):
         """Initializes ConfusionMatrix with given number of classes, confidence, and IoU threshold."""
         self.matrix = np.zeros((nc + 1, nc + 1))
@@ -346,7 +347,7 @@ def plot_pr_curve(px, py, ap, save_dir=Path("pr_curve.png"), names=()):
     else:
         ax.plot(px, py, linewidth=1, color="grey")  # plot(recall, precision)
 
-    ax.plot(px, py.mean(1), linewidth=3, color="blue", label="all classes %.3f mAP@0.5" % ap[:, 0].mean())
+    ax.plot(px, py.mean(1), linewidth=3, color="blue", label=f"all classes {ap[:, 0].mean():.3f} mAP@0.5")
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
     ax.set_xlim(0, 1)

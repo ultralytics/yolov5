@@ -1,6 +1,6 @@
 # Ultralytics YOLOv5 🚀, AGPL-3.0 license
 """
-Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit
+Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit.
 
 Format                      | `export.py --include`         | Model
 ---                         | ---                           | ---
@@ -91,6 +91,8 @@ MACOS = platform.system() == "Darwin"  # macOS environment
 
 
 class iOSModel(torch.nn.Module):
+    """An iOS-compatible wrapper for YOLOv5 models that normalizes input images based on their dimensions."""
+
     def __init__(self, model, im):
         """
         Initializes an iOS compatible model with normalization based on image dimensions.
@@ -141,7 +143,7 @@ class iOSModel(torch.nn.Module):
 
 
 def export_formats():
-    """
+    r"""
     Returns a DataFrame of supported YOLOv5 model export formats and their properties.
 
     Returns:
@@ -450,8 +452,9 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
 
             Extracts and preprocess input data from dataloader item for quantization.
 
-            Parameters:
+            Args:
                data_item: Tuple with data item produced by DataLoader during iteration
+
             Returns:
                 input_tensor: Input data for quantization
             """
@@ -563,11 +566,7 @@ def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("Co
     else:
         f = file.with_suffix(".mlpackage")
         convert_to = "mlprogram"
-        if half:
-            precision = ct.precision.FLOAT16
-        else:
-            precision = ct.precision.FLOAT32
-
+        precision = ct.precision.FLOAT16 if half else ct.precision.FLOAT32
     if nms:
         model = iOSModel(model, im)
     ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
@@ -1135,11 +1134,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
     import coremltools as ct
     from PIL import Image
 
-    if mlmodel:
-        f = file.with_suffix(".mlmodel")  # filename
-    else:
-        f = file.with_suffix(".mlpackage")  # filename
-
+    f = file.with_suffix(".mlmodel") if mlmodel else file.with_suffix(".mlpackage")
     print(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
     batch_size, ch, h, w = list(im.shape)  # BCHW
     t = time.time()
@@ -1183,10 +1178,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
 
     # Model from spec
     weights_dir = None
-    if mlmodel:
-        weights_dir = None
-    else:
-        weights_dir = str(f / "Data/com.apple.CoreML/weights")
+    weights_dir = None if mlmodel else str(f / "Data/com.apple.CoreML/weights")
     model = ct.models.MLModel(spec, weights_dir=weights_dir)
 
     # 3. Create NMS protobuf
