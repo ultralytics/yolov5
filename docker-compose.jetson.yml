@@ -1,0 +1,18 @@
+version: "3.9"
+services:
+  models-bee-detector:
+    build:
+      context: .
+      dockerfile: Dockerfile.jetson
+    #    command:
+    #      python3 /app/server.py
+    environment:
+      - ENV_ID=prod
+      - CUDA_VISIBLE_DEVICES=0
+    ports:
+      - 8700:8700
+      - 8126:8126
+    volumes:
+      - .:/app/
+    restart: always
+    network_mode: host

@@ -7,16 +7,17 @@ import time
 import subprocess
 from detect import run
 
+
 # Define the request handler class
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     # Handle GET requests
     def do_GET(self):
         self.send_response(200)  # Send 200 OK status code
-        self.send_header('Content-type', 'text/html')
+        self.send_header("Content-type", "text/html")
         self.end_headers()
 
         # Send the HTML form as the response body
-        form_html = '''
+        form_html = """
         <html>
         <body>
         <form method="POST" enctype="multipart/form-data">
@@ -25,26 +26,24 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         </form>
         </body>
         </html>
-        '''
-        self.wfile.write(form_html.encode('utf-8'))
+        """
+        self.wfile.write(form_html.encode("utf-8"))
 
     # Handle POST requests
     def do_POST(self):
-        content_type = self.headers['Content-Type']
+        content_type = self.headers["Content-Type"]
 
-        reqdir = "/app/tmp/" + str(time.time())+"/"
+        reqdir = "/app/tmp/" + str(time.time()) + "/"
         os.makedirs(reqdir, exist_ok=True)
 
         # Check if the content type is multipart/form-data
-        if content_type.startswith('multipart/form-data'):
+        if content_type.startswith("multipart/form-data"):
             # Parse the form data
             form_data = cgi.FieldStorage(
-                fp=self.rfile,
-                headers=self.headers,
-                environ={'REQUEST_METHOD': 'POST'}
+                fp=self.rfile, headers=self.headers, environ={"REQUEST_METHOD": "POST"}
             )
             # Get the uploaded file field
-            file_field = form_data['file']
+            file_field = form_data["file"]
 
             # Create a temporary file to save the uploaded file
             with tempfile.NamedTemporaryFile(dir="/app/tmp", delete=False) as tmp_file:
@@ -65,9 +64,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             weights = "/app/weights/best.pt"
             device = "cpu"
 
-            # if os.getenv("ENV_ID") == "dev":
-            #     weights = "/weights/best.pt"
-            #     device = "0"
+            # support GPU in jetson
+            if os.getenv("ENV_ID") == "dev":
+                weights = "/weights/best.pt"
+
+            if os.getenv("CUDA_VISIBLE_DEVICES") != "":
+                device = "0"
 
             run(
                 weights=weights,
@@ -80,29 +82,30 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             if not os.path.exists(reqdir + "exp/result.txt"):
                 self.send_response(200)  # Send 200 OK status code
-                self.send_header('Content-type', 'application/json')
+                self.send_header("Content-type", "application/json")
                 self.end_headers()
-                response = {'message': 'Nothing found', 'result': ""}
-                self.wfile.write(json.dumps(response).encode('utf-8'))
-                
+                response = {"message": "Nothing found", "result": ""}
+                self.wfile.write(json.dumps(response).encode("utf-8"))
+
                 subprocess.call(["rm", "-rf", reqdir])
                 return
 
-            with open(reqdir + "exp/result.txt", 'r') as file:
+            with open(reqdir + "exp/result.txt", "r") as file:
                 result = file.read()
-            response = {'message': 'File processed successfully', 'result': result}
+            response = {"message": "File processed successfully", "result": result}
 
             subprocess.call(["rm", "-rf", reqdir])
 
             self.send_response(200)  # Send 200 OK status code
-            self.send_header('Content-type', 'application/json')
+            self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps(response).encode('utf-8'))
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+
 
 # Create an HTTP server with the request handler
-server_address = ('', 8700)  # Listen on all available interfaces, port 8700
+server_address = ("", 8700)  # Listen on all available interfaces, port 8700
 httpd = ThreadingHTTPServer(server_address, SimpleHTTPRequestHandler)
 
 # Start the server
-print('Server running on port 8700')
+print("Server running on port 8700")
 httpd.serve_forever()
