@@ -34,8 +34,8 @@ import os
 import platform
 import sys
 from pathlib import Path
-import pyttsx3
 
+import pyttsx3
 import torch
 
 FILE = Path(__file__).resolve()
@@ -315,9 +315,9 @@ def run(
             engine = pyttsx3.init()
             engine.say(f"{s.split (':') [1][8:]}")  # Convert label to speech
             engine.runAndWait()
-        else :
+        else:
             engine = pyttsx3.init()
-            engine.say(f"{s.split (':') [2][8:]}")  
+            engine.say(f"{s.split (':') [2][8:]}")
             engine.runAndWait()
 
     # Print results
