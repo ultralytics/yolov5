@@ -16,7 +16,7 @@ torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
 tqdm>=4.66.3
 ultralytics>=8.2.34  # https://ultralytics.com
-# protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
+git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI  # MSCOCO API
 
 # Logging ---------------------------------------------------------------------
 # tensorboard>=2.4.1
@@ -39,7 +39,7 @@ seaborn>=0.11.0
 # openvino-dev>=2023.0  # OpenVINO export
 
 # Deploy ----------------------------------------------------------------------
-setuptools>=70.0.0 # Snyk vulnerability fix
+setuptools>=70.0.0  # Snyk vulnerability fix
 # tritonclient[all]~=2.24.0
 
 # Extras ----------------------------------------------------------------------
