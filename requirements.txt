@@ -16,6 +16,9 @@ torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
 tqdm>=4.66.3
 ultralytics>=8.2.34  # https://ultralytics.com
+Cython  # Required for cocoapi installation
+
+# MSCOCO API -------------------------------------------------------------------
 git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI  # MSCOCO API
 
 # Logging ---------------------------------------------------------------------
