@@ -20,7 +20,6 @@ import requests
 import torch
 import torch.nn as nn
 from PIL import Image
-from torch.cuda import amp
 
 # Import 'ultralytics' package or install if missing
 try:
@@ -862,7 +861,12 @@ class AutoShape(nn.Module):
             p = next(self.model.parameters()) if self.pt else torch.empty(1, device=self.model.device)  # param
             autocast = self.amp and (p.device.type != "cpu")  # Automatic Mixed Precision (AMP) inference
             if isinstance(ims, torch.Tensor):  # torch
-                with amp.autocast(autocast):
+                amp_autocast = None
+                if check_version(torch.__version__, "2.4.0"):
+                    amp_autocast = torch.amp.autocast("cuda", enabled=autocast)
+                else:
+                    amp_autocast = torch.cuda.amp.autocast(enabled=autocast)
+                with amp_autocast:
                     return self.model(ims.to(p.device).type_as(p), augment=augment)  # inference
 
             # Pre-process
@@ -889,7 +893,13 @@ class AutoShape(nn.Module):
             x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
             x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
 
-        with amp.autocast(autocast):
+        amp_autocast = None
+        if check_version(torch.__version__, "2.4.0"):
+            amp_autocast = torch.amp.autocast("cuda", enabled=autocast)
+        else:
+            amp_autocast = torch.cuda.amp.autocast(enabled=autocast)
+
+        with amp_autocast:
             # Inference
             with dt[1]:
                 y = self.model(x, augment=augment)  # forward
