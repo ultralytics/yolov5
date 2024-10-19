@@ -27,7 +27,6 @@ import torch.distributed as dist
 import torch.hub as hub
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
-from torch.cuda import amp
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
@@ -48,6 +47,7 @@ from utils.general import (
     check_git_info,
     check_git_status,
     check_requirements,
+    check_version,
     colorstr,
     download,
     increment_path,
@@ -198,7 +198,13 @@ def train(opt, device):
     t0 = time.time()
     criterion = smartCrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
     best_fitness = 0.0
-    scaler = amp.GradScaler(enabled=cuda)
+
+    scaler = None
+    if check_version(torch.__version__, "2.4.0"):
+        scaler = torch.amp.GradScaler("cuda", enabled=cuda)
+    else:
+        scaler = torch.cuda.amp.GradScaler(enabled=cuda)
+
     val = test_dir.stem  # 'val' or 'test'
     LOGGER.info(
         f'Image sizes {imgsz} train, {imgsz} test\n'
@@ -218,8 +224,14 @@ def train(opt, device):
         for i, (images, labels) in pbar:  # progress bar
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
+            amp_autocast = None
+            if check_version(torch.__version__, "2.4.0"):
+                amp_autocast = torch.amp.autocast("cuda", enabled=device.type != "cpu")
+            else:
+                amp_autocast = torch.cuda.amp.autocast(enabled=device.type != "cpu")
+
             # Forward
-            with amp.autocast(enabled=cuda):  # stability issues when enabled
+            with amp_autocast:  # stability issues when enabled
                 loss = criterion(model(images), labels)
 
             # Backward
