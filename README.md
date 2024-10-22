@@ -43,11 +43,11 @@ To request an Enterprise License please complete the form at [Ultralytics Licens
 </div>
 <br>
 
-## <div align="center">YOLOv8 🚀 NEW</div>
+## <div align="center">YOLO11 🚀 NEW</div>
 
-We are thrilled to announce the launch of Ultralytics YOLOv8 🚀, our NEW cutting-edge, state-of-the-art (SOTA) model released at **[https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)**. YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent choice for a wide range of object detection, image segmentation and image classification tasks.
+We are excited to unveil the launch of Ultralytics YOLO11 🚀, the latest advancement in our state-of-the-art (SOTA) vision models! Available now at **[GitHub](https://github.com/ultralytics/ultralytics)**, YOLO11 builds on our legacy of speed, precision, and ease of use. Whether you're tackling object detection, image segmentation, or image classification, YOLO11 delivers the performance and versatility needed to excel in diverse applications.
 
-See the [YOLOv8 Docs](https://docs.ultralytics.com/) for details and get started with:
+Get started today and unlock the full potential of YOLO11! Visit the [Ultralytics Docs](https://docs.ultralytics.com/) for comprehensive guides and resources:
 
 [![PyPI version](https://badge.fury.io/py/ultralytics.svg)](https://badge.fury.io/py/ultralytics) [![Downloads](https://static.pepy.tech/badge/ultralytics)](https://pepy.tech/project/ultralytics)
 
@@ -57,7 +57,7 @@ pip install ultralytics
 
 <div align="center">
   <a href="https://www.ultralytics.com/yolo" target="_blank">
-  <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/yolo-comparison-plots.png"></a>
+  <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/refs/heads/main/yolo/performance-comparison.png"></a>
 </div>
 
 ## <div align="center">Documentation</div>
@@ -152,9 +152,9 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  -
 - [Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter_evolution/)
 - [Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers/)
 - [Architecture Summary](https://docs.ultralytics.com/yolov5/tutorials/architecture_description/) 🌟 NEW
-- [Roboflow for Datasets, Labeling, and Active Learning](https://docs.ultralytics.com/yolov5/tutorials/roboflow_datasets_integration/)
-- [ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration/) 🌟 NEW
-- [YOLOv5 with Neural Magic's Deepsparse](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization/) 🌟 NEW
+- [Ultralytics HUB to train and deploy YOLO](https://www.ultralytics.com/hub) 🚀 RECOMMENDED
+- [ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration/)
+- [YOLOv5 with Neural Magic's Deepsparse](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization/)
 - [Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration/) 🌟 NEW
 
 </details>
