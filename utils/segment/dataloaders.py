@@ -75,6 +75,7 @@ def create_dataloader(
         shuffle=shuffle and sampler is None,
         num_workers=nw,
         sampler=sampler,
+        drop_last=quad,
         pin_memory=True,
         collate_fn=LoadImagesAndLabelsAndMasks.collate_fn4 if quad else LoadImagesAndLabelsAndMasks.collate_fn,
         worker_init_fn=seed_worker,

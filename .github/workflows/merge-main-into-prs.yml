@@ -67,5 +67,5 @@ jobs:
                   print(f"❌ Could not process PR #{pr.number}: {e}")
 
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
