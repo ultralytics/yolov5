@@ -47,7 +47,7 @@ YOLOv5 🚀 是世界上最受欢迎的视觉 AI，代表<a href="https://www.ul
 
 立即开始，解锁 YOLO11 的全部潜力！访问 [Ultralytics 文档](https://docs.ultralytics.com/) 获取全面的指南和资源：
 
-[![PyPI 版本](https://badge.fury.io/py/ultralytics.svg)](https://badge.fury.io/py/ultralytics) [![下载量](https://static.pepy.tech/badge/ultralytics)](https://pepy.tech/project/ultralytics)
+[![PyPI 版本](https://badge.fury.io/py/ultralytics.svg)](https://badge.fury.io/py/ultralytics) [![下载量](https://static.pepy.tech/badge/ultralytics)](https://www.pepy.tech/projects/ultralytics)
 
 ```bash
 pip install ultralytics
