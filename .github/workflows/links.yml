@@ -31,9 +31,9 @@ jobs:
         uses: nick-invision/retry@v3
         with:
           timeout_minutes: 5
-          retry_wait_seconds: 60
-          max_attempts: 3
-          command: |
+          retry_delay_seconds: 60
+          retries: 3
+          run: |
             lychee \
             --scheme 'https' \
             --timeout 60 \
@@ -52,9 +52,9 @@ jobs:
         uses: nick-invision/retry@v3
         with:
           timeout_minutes: 5
-          retry_wait_seconds: 60
-          max_attempts: 3
-          command: |
+          retry_delay_seconds: 60
+          retries: 3
+          run: |
             lychee \
             --scheme 'https' \
             --timeout 60 \
