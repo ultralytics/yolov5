@@ -717,10 +717,10 @@ def main(opt, callbacks=Callbacks()):
             "perspective": (True, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
             "flipud": (True, 0.0, 1.0),  # image flip up-down (probability)
             "fliplr": (True, 0.0, 1.0),  # image flip left-right (probability)
-            "mosaic": (True, 0.0, 1.0),  # image mixup (probability)
+            "mosaic": (True, 0.0, 1.0),  # image mosaic (probability)
             "mixup": (True, 0.0, 1.0),  # image mixup (probability)
-            "copy_paste": (True, 0.0, 1.0),
-        }  # segment copy-paste (probability)
+            "copy_paste": (True, 0.0, 1.0),  # segment copy-paste (probability)
+        }
 
         # GA configs
         pop_size = 50
