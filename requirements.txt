@@ -12,7 +12,7 @@ PyYAML>=5.3.1
 requests>=2.32.2
 scipy>=1.4.1
 thop>=0.1.1  # FLOPs computation
-torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
+torch>=2.2.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
 tqdm>=4.66.3
 ultralytics>=8.2.34  # https://ultralytics.com
@@ -47,3 +47,4 @@ setuptools>=70.0.0 # Snyk vulnerability fix
 # mss  # screenshots
 # albumentations>=1.0.3
 # pycocotools>=2.0.6  # COCO mAP
+wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
