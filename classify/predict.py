@@ -8,6 +8,8 @@ Usage - sources:
                                                                    vid.mp4                         # video
                                                                    screen                          # screenshot
                                                                    path/                           # directory
+                                                                   list.txt                        # list of images
+                                                                   list.streams                    # list of streams
                                                                    'path/*.jpg'                    # glob
                                                                    'https://youtu.be/Zgi9g1ksQHc'  # YouTube
                                                                    'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
@@ -74,7 +76,7 @@ def run(
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
     is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
-    webcam = source.isnumeric() or source.endswith('.txt') or (is_url and not is_file)
+    webcam = source.isnumeric() or source.endswith('.streams') or (is_url and not is_file)
     screenshot = source.lower().startswith('screen')
     if is_url and is_file:
         source = check_file(source)  # download
@@ -177,7 +179,7 @@ def run(
                     vid_writer[i].write(im0)
 
         # Print time (inference-only)
-        LOGGER.info(f"{s}{dt[1].dt * 1E3:.1f}ms")
+        LOGGER.info(f'{s}{dt[1].dt * 1E3:.1f}ms')
 
     # Print results
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
@@ -219,6 +221,6 @@ def main(opt):
     run(**vars(opt))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)

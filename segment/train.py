@@ -19,6 +19,7 @@ import argparse
 import math
 import os
 import random
+import subprocess
 import sys
 import time
 from copy import deepcopy
@@ -138,7 +139,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # Batch size
     if RANK == -1 and batch_size == -1:  # single-GPU only, estimate best batch size
         batch_size = check_train_batch_size(model, imgsz, amp)
-        logger.update_params({"batch_size": batch_size})
+        logger.update_params({'batch_size': batch_size})
         # loggers.on_params_update({"batch_size": batch_size})
 
     # Optimizer
@@ -340,10 +341,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 # Mosaic plots
                 if plots:
                     if ni < 3:
-                        plot_images_and_masks(imgs, targets, masks, paths, save_dir / f"train_batch{ni}.jpg")
+                        plot_images_and_masks(imgs, targets, masks, paths, save_dir / f'train_batch{ni}.jpg')
                     if ni == 10:
                         files = sorted(save_dir.glob('train*.jpg'))
-                        logger.log_images(files, "Mosaics", epoch)
+                        logger.log_images(files, 'Mosaics', epoch)
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -453,8 +454,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
             files = [(save_dir / f) for f in files if (save_dir / f).exists()]  # filter
             LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
-            logger.log_images(files, "Results", epoch + 1)
-            logger.log_images(sorted(save_dir.glob('val*.jpg')), "Validation", epoch + 1)
+            logger.log_images(files, 'Results', epoch + 1)
+            logger.log_images(sorted(save_dir.glob('val*.jpg')), 'Validation', epoch + 1)
     torch.cuda.empty_cache()
     return results
 
@@ -547,7 +548,7 @@ def main(opt, callbacks=Callbacks()):
         assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
-        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
+        dist.init_process_group(backend='nccl' if dist.is_nccl_available() else 'gloo')
 
     # Train
     if not opt.evolve:
@@ -597,7 +598,12 @@ def main(opt, callbacks=Callbacks()):
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         evolve_yaml, evolve_csv = save_dir / 'hyp_evolve.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
-            os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {evolve_csv}')  # download evolve.csv if exists
+            # download evolve.csv if exists
+            subprocess.run([
+                'gsutil',
+                'cp',
+                f'gs://{opt.bucket}/evolve.csv',
+                str(evolve_csv),])
 
         for _ in range(opt.evolve):  # generations to evolve
             if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
@@ -653,6 +659,6 @@ def run(**kwargs):
     return opt
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     opt = parse_opt()
     main(opt)

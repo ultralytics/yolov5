@@ -28,7 +28,7 @@ def smooth(y, f=0.05):
     return np.convolve(yp, np.ones(nf) / nf, mode='valid')  # y-smoothed
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16, prefix=""):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16, prefix=''):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
@@ -177,9 +177,6 @@ class ConfusionMatrix:
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # predicted background
 
-    def matrix(self):
-        return self.matrix
-
     def tp_fp(self):
         tp = self.matrix.diagonal()  # true positives
         fp = self.matrix.sum(1) - tp  # false positives
@@ -197,21 +194,21 @@ class ConfusionMatrix:
         nc, nn = self.nc, len(names)  # number of classes, names
         sn.set(font_scale=1.0 if nc < 50 else 0.8)  # for label size
         labels = (0 < nn < 99) and (nn == nc)  # apply names to ticklabels
-        ticklabels = (names + ['background']) if labels else "auto"
+        ticklabels = (names + ['background']) if labels else 'auto'
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
             sn.heatmap(array,
                        ax=ax,
                        annot=nc < 30,
                        annot_kws={
-                           "size": 8},
+                           'size': 8},
                        cmap='Blues',
                        fmt='.2f',
                        square=True,
                        vmin=0.0,
                        xticklabels=ticklabels,
                        yticklabels=ticklabels).set_facecolor((1, 1, 1))
-        ax.set_ylabel('True')
+        ax.set_xlabel('True')
         ax.set_ylabel('Predicted')
         ax.set_title('Confusion Matrix')
         fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
@@ -234,12 +231,12 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
     else:  # x1, y1, x2, y2 = box1
         b1_x1, b1_y1, b1_x2, b1_y2 = box1.chunk(4, -1)
         b2_x1, b2_y1, b2_x2, b2_y2 = box2.chunk(4, -1)
-        w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
-        w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
+        w1, h1 = b1_x2 - b1_x1, (b1_y2 - b1_y1).clamp(eps)
+        w2, h2 = b2_x2 - b2_x1, (b2_y2 - b2_y1).clamp(eps)
 
     # Intersection area
-    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
-            (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
+    inter = (b1_x2.minimum(b2_x2) - b1_x1.maximum(b2_x1)).clamp(0) * \
+            (b1_y2.minimum(b2_y2) - b1_y1.maximum(b2_y1)).clamp(0)
 
     # Union Area
     union = w1 * h1 + w2 * h2 - inter + eps
@@ -247,13 +244,13 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
     # IoU
     iou = inter / union
     if CIoU or DIoU or GIoU:
-        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
-        ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
+        cw = b1_x2.maximum(b2_x2) - b1_x1.minimum(b2_x1)  # convex (smallest enclosing box) width
+        ch = b1_y2.maximum(b2_y2) - b1_y1.minimum(b2_y1)  # convex height
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
             rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center dist ** 2
             if CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+                v = (4 / math.pi ** 2) * (torch.atan(w2 / h2) - torch.atan(w1 / h1)).pow(2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
@@ -334,7 +331,7 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     ax.set_ylabel('Precision')
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
     ax.set_title('Precision-Recall Curve')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
@@ -357,7 +354,7 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_ylabel(ylabel)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
     ax.set_title(f'{ylabel}-Confidence Curve')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)

@@ -1,9 +1,8 @@
-# YOLOv5 🚀 requirements
+# YOLOv5 requirements
 # Usage: pip install -r requirements.txt
 
 # Base ------------------------------------------------------------------------
-gitpython
-ipython  # interactive notebook
+gitpython>=3.1.30
 matplotlib>=3.2.2
 numpy>=1.18.5
 opencv-python>=4.1.1
@@ -29,7 +28,7 @@ seaborn>=0.11.0
 
 # Export ----------------------------------------------------------------------
 # coremltools>=6.0  # CoreML export
-# onnx>=1.9.0  # ONNX export
+# onnx>=1.12.0  # ONNX export
 # onnx-simplifier>=0.4.1  # ONNX simplifier
 # nvidia-pyindex  # TensorRT export
 # nvidia-tensorrt  # TensorRT export
@@ -39,11 +38,13 @@ seaborn>=0.11.0
 # openvino-dev  # OpenVINO export
 
 # Deploy ----------------------------------------------------------------------
+setuptools>=65.5.1 # Snyk vulnerability fix
 # tritonclient[all]~=2.24.0
 
 # Extras ----------------------------------------------------------------------
+# ipython  # interactive notebook
 # mss  # screenshots
 # albumentations>=1.0.3
-# pycocotools>=2.0  # COCO mAP
+# pycocotools>=2.0.6  # COCO mAP
 # roboflow
 # ultralytics  # HUB https://hub.ultralytics.com

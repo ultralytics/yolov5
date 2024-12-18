@@ -26,14 +26,35 @@ def is_url(url, check=True):
 
 def gsutil_getsize(url=''):
     # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
-    s = subprocess.check_output(f'gsutil du {url}', shell=True).decode('utf-8')
-    return eval(s.split(' ')[0]) if len(s) else 0  # bytes
+    output = subprocess.check_output(['gsutil', 'du', url], shell=True, encoding='utf-8')
+    if output:
+        return int(output.split()[0])
+    return 0
 
 
 def url_getsize(url='https://ultralytics.com/images/bus.jpg'):
     # Return downloadable file size in bytes
     response = requests.head(url, allow_redirects=True)
     return int(response.headers.get('content-length', -1))
+
+
+def curl_download(url, filename, *, silent: bool = False) -> bool:
+    """
+    Download a file from a url to a filename using curl.
+    """
+    silent_option = 'sS' if silent else ''  # silent
+    proc = subprocess.run([
+        'curl',
+        '-#',
+        f'-{silent_option}L',
+        url,
+        '--output',
+        filename,
+        '--retry',
+        '9',
+        '-C',
+        '-',])
+    return proc.returncode == 0
 
 
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
@@ -50,12 +71,13 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         if file.exists():
             file.unlink()  # remove partial downloads
         LOGGER.info(f'ERROR: {e}\nRe-attempting {url2 or url} to {file}...')
-        os.system(f"curl -# -L '{url2 or url}' -o '{file}' --retry 3 -C -")  # curl download, retry and resume on fail
+        # curl download, retry and resume on fail
+        curl_download(url2 or url, file)
     finally:
         if not file.exists() or file.stat().st_size < min_bytes:  # check
             if file.exists():
                 file.unlink()  # remove partial downloads
-            LOGGER.info(f"ERROR: {assert_msg}\n{error_msg}")
+            LOGGER.info(f'ERROR: {assert_msg}\n{error_msg}')
         LOGGER.info('')
 
 
@@ -98,11 +120,9 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v7.0'):
 
         file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         if name in assets:
-            url3 = 'https://drive.google.com/drive/folders/1EFQTEUeXWSFww0luse2jB9M1QNZQGwNl'  # backup gdrive mirror
-            safe_download(
-                file,
-                url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
-                min_bytes=1E5,
-                error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/{tag} or {url3}')
+            safe_download(file,
+                          url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
+                          min_bytes=1E5,
+                          error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/{tag}')
 
     return str(file)
