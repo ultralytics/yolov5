@@ -1119,13 +1119,13 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
 imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
-def imread(path, flags=cv2.IMREAD_COLOR):
-    return cv2.imdecode(np.fromfile(path, np.uint8), flags)
+def imread(filename, flags=cv2.IMREAD_COLOR):
+    return cv2.imdecode(np.fromfile(filename, np.uint8), flags)
 
 
-def imwrite(path, im):
+def imwrite(filename, img):
     try:
-        cv2.imencode(Path(path).suffix, im)[1].tofile(path)
+        cv2.imencode(Path(filename).suffix, img)[1].tofile(filename)
         return True
     except Exception:
         return False
@@ -1135,6 +1135,7 @@ def imshow(path, im):
     imshow_(path.encode('unicode_escape').decode(), im)
 
 
-cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
+if Path(inspect.stack()[0].filename).parent.parent.as_posix() in inspect.stack()[-1].filename:
+    cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
 
 # Variables ------------------------------------------------------------------------------------------------------------
