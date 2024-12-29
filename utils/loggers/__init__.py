@@ -153,7 +153,7 @@ class GenericLogger:
         if self.tb:
             log_tensorboard_graph(self.tb, model, imgsz)
 
-    def def log_model(self, model_path, epoch=0, metadata={}):
+    def log_model(self, model_path, epoch=0, metadata={}):
         # a placeholder
 
         return None
