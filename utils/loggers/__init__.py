@@ -153,6 +153,11 @@ class GenericLogger:
         if self.tb:
             log_tensorboard_graph(self.tb, model, imgsz)
 
+    def log_model(self, model_path, epoch=0, metadata={}):
+        # a placeholder
+
+        return None
+
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard
