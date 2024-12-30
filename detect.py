@@ -35,6 +35,7 @@ import platform
 import sys
 from pathlib import Path
 
+import pyttsx3
 import torch
 
 FILE = Path(__file__).resolve()
@@ -309,6 +310,15 @@ def run(
 
         # Print time (inference-only)
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
+
+        if s.startswith("0"):
+            engine = pyttsx3.init()
+            engine.say(f"{s.split (':') [1][8:]}")  # Convert label to speech
+            engine.runAndWait()
+        else:
+            engine = pyttsx3.init()
+            engine.say(f"{s.split (':') [2][8:]}")
+            engine.runAndWait()
 
     # Print results
     t = tuple(x.t / seen * 1e3 for x in dt)  # speeds per image
