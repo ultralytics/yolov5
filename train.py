@@ -352,8 +352,8 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    
-    #checking if autocast is available
+
+    # checking if autocast is available
     device_amp = torch.is_autocast_available(device_type=device.type)
 
     scaler = torch.amp.GradScaler(enabled=(device_amp and device.type != "cpu"))
