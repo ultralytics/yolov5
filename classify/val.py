@@ -108,7 +108,8 @@ def run(
     action = "validating" if dataloader.dataset.root.stem == "val" else "testing"
     desc = f"{pbar.desc[:-36]}{action:>36}" if pbar else f"{action}"
     bar = tqdm(dataloader, desc, n, not training, bar_format=TQDM_BAR_FORMAT, position=0)
-    with torch.amp.autocast("cuda", enabled=device.type != "cpu"):
+    device_amp = torch.is_autocast_available(device_type=device.type)
+    with torch.amp.autocast(device_type=device.type, enabled=device_amp):
         for images, labels in bar:
             with dt[0]:
                 images, labels = images.to(device, non_blocking=True), labels.to(device)
