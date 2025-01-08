@@ -352,7 +352,11 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = torch.amp.GradScaler("cuda", enabled=amp) #updated 
+    scaler = None
+    if torch.__version__.startswith("1.8"):
+        scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    else:
+        scaler = torch.amp.GradScaler("cuda", enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
     compute_loss = ComputeLoss(model)  # init loss class
     callbacks.run("on_train_start")
@@ -409,7 +413,12 @@ def train(hyp, opt, device, callbacks):
                     imgs = nn.functional.interpolate(imgs, size=ns, mode="bilinear", align_corners=False)
 
             # Forward
-            with torch.amp.autocast("cuda", enabled=amp):
+            amp_autocast = None
+            if torch.__version__.startswith("1.8"):
+                amp_autocast = torch.cuda.amp.autocast(enabled=amp)
+            else:
+                amp_autocast = torch.amp.autocast("cuda", enabled=amp)
+            with amp_autocast: 
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if RANK != -1:
