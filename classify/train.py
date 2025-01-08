@@ -218,7 +218,7 @@ def train(opt, device):
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
             # Forward
-            with torch.amp.autocast("cuda", enabled=device.type != "cpu"):  
+            with torch.amp.autocast("cuda", enabled=device.type != "cpu"):
                 loss = criterion(model(images), labels)
 
             # Backward
