@@ -418,7 +418,7 @@ def train(hyp, opt, device, callbacks):
                 amp_autocast = torch.cuda.amp.autocast(enabled=amp)
             else:
                 amp_autocast = torch.amp.autocast("cuda", enabled=amp)
-            with amp_autocast: 
+            with amp_autocast:
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if RANK != -1:

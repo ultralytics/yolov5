@@ -115,7 +115,7 @@ def run(
         amp_autocast = torch.cuda.amp.autocast(enabled=device.type != "cpu")
     else:
         amp_autocast = torch.amp.autocast("cuda", enabled=device.type != "cpu")
-        
+
     with amp_autocast:
         for images, labels in bar:
             with dt[0]:
