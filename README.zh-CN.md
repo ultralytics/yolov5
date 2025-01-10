@@ -207,7 +207,7 @@ YOLOv5 超级容易上手，简单易学。我们优先考虑现实世界的结�
   <summary>图表笔记</summary>
 
 - **COCO AP val** 表示 mAP@0.5:0.95 指标，在 [COCO val2017](http://cocodataset.org) 数据集的 5000 张图像上测得， 图像包含 256 到 1536 各种推理大小。
-- **显卡推理速度** 为在 [COCO val2017](http://cocodataset.org) 数据集上的平均推理时间，使用 [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100实例，batchsize 为 32 。
+- **显卡推理速度** 为在 [COCO val2017](http://cocodataset.org) 数据集上的平均推理时间，使用 [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p4/) V100实例，batchsize 为 32 。
 - **EfficientDet** 数据来自 [google/automl](https://github.com/google/automl) ， batchsize 为32。
 - **复现命令** 为 `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
 
@@ -234,7 +234,7 @@ YOLOv5 超级容易上手，简单易学。我们优先考虑现实世界的结�
 
 - 所有模型都使用默认配置，训练 300 epochs。n和s模型使用 [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) ，其他模型都使用 [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml) 。
 - \*\*mAP<sup>val</sup>\*\*在单模型单尺度上计算，数据集使用 [COCO val2017](http://cocodataset.org) 。<br>复现命令 `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
-- **推理速度**在 COCO val 图像总体时间上进行平均得到，测试环境使用[AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/)实例。 NMS 时间 (大约 1 ms/img) 不包括在内。<br>复现命令 `python val.py --data coco.yaml --img 640 --task speed --batch 1`
+- **推理速度**在 COCO val 图像总体时间上进行平均得到，测试环境使用[AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p4/)实例。 NMS 时间 (大约 1 ms/img) 不包括在内。<br>复现命令 `python val.py --data coco.yaml --img 640 --task speed --batch 1`
 - **TTA** [测试时数据增强](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation/) 包括反射和尺度变换。<br>复现命令 `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
