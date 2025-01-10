@@ -356,8 +356,7 @@ class LoadImages:
         else:
             self.cap = None
         assert self.nf > 0, (
-            f"No images or videos found in {p}. "
-            f"Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
+            f"No images or videos found in {p}. Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
         )
 
     def __iter__(self):
@@ -713,8 +712,8 @@ class LoadImagesAndLabels(Dataset):
         cache = mem_required * (1 + safety_margin) < mem.available  # to cache or not to cache, that is the question
         if not cache:
             LOGGER.info(
-                f'{prefix}{mem_required / gb:.1f}GB RAM required, '
-                f'{mem.available / gb:.1f}/{mem.total / gb:.1f}GB available, '
+                f"{prefix}{mem_required / gb:.1f}GB RAM required, "
+                f"{mem.available / gb:.1f}/{mem.total / gb:.1f}GB available, "
                 f"{'caching images ✅' if cache else 'not caching images ⚠️'}"
             )
         return cache
