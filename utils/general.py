@@ -173,8 +173,7 @@ def user_config_dir(dir="Ultralytics", env_var="YOLOV5_CONFIG_DIR"):
     """Returns user configuration directory path, preferring environment variable `YOLOV5_CONFIG_DIR` if set, else OS-
     specific.
     """
-    env = os.getenv(env_var)
-    if env:
+    if env := os.getenv(env_var):
         path = Path(env)  # use environment variable
     else:
         cfg = {"Windows": "AppData/Roaming", "Linux": ".config", "Darwin": "Library/Application Support"}  # 3 OS dirs
@@ -496,9 +495,9 @@ def check_file(file, suffix=""):
             assert Path(file).exists() and Path(file).stat().st_size > 0, f"File download failed: {url}"  # check
         return file
     elif file.startswith("clearml://"):  # ClearML Dataset ID
-        assert (
-            "clearml" in sys.modules
-        ), "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        assert "clearml" in sys.modules, (
+            "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        )
         return file
     else:  # search
         files = []
