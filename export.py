@@ -1471,12 +1471,12 @@ def run(
             else ""
         )
         LOGGER.info(
-            f'\nExport complete ({time.time() - t:.1f}s)'
+            f"\nExport complete ({time.time() - t:.1f}s)"
             f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
             f"\nDetect:          python {dir / ('detect.py' if det else 'predict.py')} --weights {f[-1]} {h}"
             f"\nValidate:        python {dir / 'val.py'} --weights {f[-1]} {h}"
             f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')  {s}"
-            f'\nVisualize:       https://netron.app'
+            f"\nVisualize:       https://netron.app"
         )
     return f  # return list of exported files/dirs
 
