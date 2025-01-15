@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """General utils."""
 
 import contextlib
@@ -495,9 +495,9 @@ def check_file(file, suffix=""):
             assert Path(file).exists() and Path(file).stat().st_size > 0, f"File download failed: {url}"  # check
         return file
     elif file.startswith("clearml://"):  # ClearML Dataset ID
-        assert (
-            "clearml" in sys.modules
-        ), "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        assert "clearml" in sys.modules, (
+            "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        )
         return file
     else:  # search
         files = []

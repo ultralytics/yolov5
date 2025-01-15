@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Dataloaders and dataset utils."""
 
 import contextlib
@@ -355,9 +355,9 @@ class LoadImages:
             self._new_video(videos[0])  # new video
         else:
             self.cap = None
-        assert (
-            self.nf > 0
-        ), f"No images or videos found in {p}. Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
+        assert self.nf > 0, (
+            f"No images or videos found in {p}. Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
+        )
 
     def __iter__(self):
         """Initializes iterator by resetting count and returns the iterator object itself."""
