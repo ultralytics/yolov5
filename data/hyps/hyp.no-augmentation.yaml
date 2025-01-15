@@ -1,4 +1,5 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # Hyperparameters when using Albumentations frameworks
 # python train.py --hyp hyp.no-augmentation.yaml
 # See https://github.com/ultralytics/yolov5/pull/3882 for YOLOv5 + Albumentations Usage examples
