@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ["mistake"]
+
+roboflow:
+  workspace: yolo-1t5zh
+  project: bachelorprojekt
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/yolo-1t5zh/bachelorprojekt/dataset/1
