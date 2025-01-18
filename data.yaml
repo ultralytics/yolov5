@@ -3,7 +3,7 @@ val: ../valid/images
 test: ../test/images
 
 nc: 1
-names: ['mistake']
+names: ["mistake"]
 
 roboflow:
   workspace: yolo-1t5zh
