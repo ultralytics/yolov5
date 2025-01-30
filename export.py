@@ -60,6 +60,7 @@ from pathlib import Path
 # activate rknn hack
 if '--rknpu' in sys.argv:
     os.environ['RKNN_model_hack'] = "1"
+    rknpu = True
 
 import pandas as pd
 import torch
@@ -87,6 +88,7 @@ def export_formats():
         ['ONNX', 'onnx', '.onnx', True, True],
         ['OpenVINO', 'openvino', '_openvino_model', True, False],
         ['TensorRT', 'engine', '.engine', False, True],
+        ['RKNN', 'rknn', '.rknn', True, False],
     ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
@@ -248,38 +250,22 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
         t.write(engine.serialize())
     return f, None
 
-
-def add_tflite_metadata(file, metadata, num_outputs):
-    # Add metadata to *.tflite models per https://www.tensorflow.org/lite/models/convert/metadata
-    with contextlib.suppress(ImportError):
-        # check_requirements('tflite_support')
-        from tflite_support import flatbuffers
-        from tflite_support import metadata as _metadata
-        from tflite_support import metadata_schema_py_generated as _metadata_fb
-
-        tmp_file = Path('/tmp/meta.txt')
-        with open(tmp_file, 'w') as meta_f:
-            meta_f.write(str(metadata))
-
-        model_meta = _metadata_fb.ModelMetadataT()
-        label_file = _metadata_fb.AssociatedFileT()
-        label_file.name = tmp_file.name
-        model_meta.associatedFiles = [label_file]
-
-        subgraph = _metadata_fb.SubGraphMetadataT()
-        subgraph.inputTensorMetadata = [_metadata_fb.TensorMetadataT()]
-        subgraph.outputTensorMetadata = [_metadata_fb.TensorMetadataT()] * num_outputs
-        model_meta.subgraphMetadata = [subgraph]
-
-        b = flatbuffers.Builder(0)
-        b.Finish(model_meta.Pack(b), _metadata.MetadataPopulator.METADATA_FILE_IDENTIFIER)
-        metadata_buf = b.Output()
-
-        populator = _metadata.MetadataPopulator.with_model_file(file)
-        populator.load_metadata_buffer(metadata_buf)
-        populator.load_associated_files([str(tmp_file)])
-        populator.populate()
-        tmp_file.unlink()
+@try_export
+def export_rknn(model, int8, data, prefix=colorstr('RKNN:')):
+    # YOLOv5 RKNN export
+    check_requirements('rknn-toolkit2')
+    from rknn.api import RKNN
+    # Create RKNN object
+    rknn = RKNN(verbose=False)
+    rknn.config(mean_values=[[0, 0, 0]], std_values=[
+                    [255, 255, 255]], target_platform=os.getenv("RKNN_PLATFORM", "rk3588").lower())
+    
+    rknn.load_onnx(model=str(model.with_suffix(".onnx")))
+    rknn.build(do_quantization=int8, dataset=data)
+    f = model.with_suffix('.rknn')
+    rknn.export_rknn(str(f))
+    rknn.release()
+    return f, None
 
 
 @smart_inference_mode()
@@ -292,7 +278,6 @@ def run(
         include=('torchscript', 'onnx'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
-        keras=False,  # use Keras
         optimize=False,  # TorchScript: optimize for mobile
         int8=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF/TensorRT: dynamic axes
@@ -300,19 +285,13 @@ def run(
         opset=12,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
         workspace=4,  # TensorRT: workspace size (GB)
-        nms=False,  # TF: add NMS to model
-        agnostic_nms=False,  # TF: add agnostic NMS to model
-        topk_per_class=100,  # TF.js NMS: topk per class to keep
-        topk_all=100,  # TF.js NMS: topk for all classes to keep
-        iou_thres=0.45,  # TF.js NMS: IoU threshold
-        conf_thres=0.25,  # TF.js NMS: confidence threshold
 ):
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
     fmts = tuple(export_formats()['Argument'])  # --include arguments
     flags = [x in include for x in fmts]
     assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {fmts}'
-    onnx, xml, engine = flags  # export booleans
+    onnx, xml, engine, _ = flags  # export booleans
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
 
     # Load PyTorch model
@@ -340,7 +319,7 @@ def run(
             m.dynamic = dynamic
             m.export = True
 
-        if os.getenv('RKNN_model_hack', '0') in ['1']:
+        if rknpu:
             from models.common import Focus
             from models.common import Conv
             from models.common_rk_plug_in import surrogate_focus
@@ -386,7 +365,7 @@ def run(
                 model.model[0].f = temp_f
                 model.model[0].eval()
 
-    if os.getenv('RKNN_model_hack', '0') in ['1']:
+    if rknpu:
         if isinstance(model.model[-1], Detect):
             # save anchors
             print('---> save anchors for RKNN')
@@ -418,10 +397,12 @@ def run(
     warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
     if engine:  # TensorRT required before ONNX
         f[0], _ = export_engine(model, im, file, half, dynamic, simplify, workspace, verbose)
-    if onnx or xml:  # OpenVINO requires ONNX
+    if onnx or xml or rknpu:  # OpenVINO and RKNN requires ONNX
         f[1], _ = export_onnx(model, im, file, opset, dynamic, simplify)
     if xml:  # OpenVINO
         f[2], _ = export_openvino(file, metadata, half)
+    if rknpu:
+        f[3], _ = export_rknn(file, int8, data)
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
@@ -450,7 +431,6 @@ def parse_opt(known=False):
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
-    parser.add_argument('--keras', action='store_true', help='TF: use Keras')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF/TensorRT: dynamic axes')
@@ -458,16 +438,10 @@ def parse_opt(known=False):
     parser.add_argument('--opset', type=int, default=17, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
-    parser.add_argument('--nms', action='store_true', help='TF: add NMS to model')
-    parser.add_argument('--agnostic-nms', action='store_true', help='TF: add agnostic NMS to model')
-    parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
-    parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
     parser.add_argument('--include',
                         nargs='+',
                         default=['onnx'],
-                        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+                        help='onnx, openvino, engine')
     parser.add_argument('--rknpu', action='store_true', help='RKNN npu platform')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     print_args(vars(opt))
