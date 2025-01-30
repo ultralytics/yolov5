@@ -56,6 +56,11 @@ import time
 import warnings
 from pathlib import Path
 
+
+# activate rknn hack
+if '--rknpu' in sys.argv:
+    os.environ['RKNN_model_hack'] = "1"
+
 import pandas as pd
 import torch
 
@@ -79,11 +84,18 @@ MACOS = platform.system() == 'Darwin'  # macOS environment
 def export_formats():
     # YOLOv5 export formats
     x = [
+        ['PyTorch', '-', '.pt', True, True],
+        ['TorchScript', 'torchscript', '.torchscript', True, True],
         ['ONNX', 'onnx', '.onnx', True, True],
         ['OpenVINO', 'openvino', '_openvino_model', True, False],
         ['TensorRT', 'engine', '.engine', False, True],
-        ['RKNN', 'rknn', '.rknn', True, False],
-        ]
+        ['CoreML', 'coreml', '.mlmodel', True, False],
+        ['TensorFlow SavedModel', 'saved_model', '_saved_model', True, True],
+        ['TensorFlow GraphDef', 'pb', '.pb', True, True],
+        ['TensorFlow Lite', 'tflite', '.tflite', True, False],
+        ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
+        ['TensorFlow.js', 'tfjs', '_web_model', False, False],
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -103,6 +115,22 @@ def try_export(inner_func):
             return None, None
 
     return outer_func
+
+
+@try_export
+def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
+    # YOLOv5 TorchScript model export
+    LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
+    f = file.with_suffix('.torchscript')
+
+    ts = torch.jit.trace(model, im, strict=False)
+    d = {'shape': im.shape, 'stride': int(max(model.stride)), 'names': model.names}
+    extra_files = {'config.txt': json.dumps(d)}  # torch._C.ExtraFilesMap()
+    if optimize:  # https://pytorch.org/tutorials/recipes/mobile_interpreter.html
+        optimize_for_mobile(ts)._save_for_lite_interpreter(str(f), _extra_files=extra_files)
+    else:
+        ts.save(str(f), _extra_files=extra_files)
+    return f, None
 
 
 @try_export
@@ -184,8 +212,45 @@ def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
 
 
 @try_export
+def export_paddle(model, im, file, metadata, prefix=colorstr('PaddlePaddle:')):
+    # YOLOv5 Paddle export
+    check_requirements(('paddlepaddle', 'x2paddle'))
+    import x2paddle
+    from x2paddle.convert import pytorch2paddle
+
+    LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
+    f = str(file).replace('.pt', f'_paddle_model{os.sep}')
+
+    pytorch2paddle(module=model, save_dir=f, jit_type='trace', input_examples=[im])  # export
+    yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
+    return f, None
+
+
+@try_export
+def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
+    # YOLOv5 CoreML export
+    check_requirements('coremltools')
+    import coremltools as ct
+
+    LOGGER.info(f'\n{prefix} starting export with coremltools {ct.__version__}...')
+    f = file.with_suffix('.mlmodel')
+
+    ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
+    ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
+    bits, mode = (8, 'kmeans_lut') if int8 else (16, 'linear') if half else (32, None)
+    if bits < 32:
+        if MACOS:  # quantization only supported on macOS
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=DeprecationWarning)  # suppress numpy==1.20 float warning
+                ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
+        else:
+            print(f'{prefix} quantization only supported on macOS, skipping...')
+    ct_model.save(f)
+    return f, ct_model
+
+
+@try_export
 def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
-    
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
     try:
@@ -246,33 +311,216 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
     return f, None
 
 
-def export_rknn(file, int8, data, prefix=colorstr('RKNN:')):
-    # YOLOv5 RKNN export
-    check_requirements('rknn-toolkit2')
-    from rknn.api import RKNN
+@try_export
+def export_saved_model(model,
+                       im,
+                       file,
+                       dynamic,
+                       tf_nms=False,
+                       agnostic_nms=False,
+                       topk_per_class=100,
+                       topk_all=100,
+                       iou_thres=0.45,
+                       conf_thres=0.25,
+                       keras=False,
+                       prefix=colorstr('TensorFlow SavedModel:')):
+    # YOLOv5 TensorFlow SavedModel export
+    try:
+        import tensorflow as tf
+    except Exception:
+        check_requirements(f"tensorflow{'' if torch.cuda.is_available() else '-macos' if MACOS else '-cpu'}")
+        import tensorflow as tf
+    from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
-    LOGGER.info(f'\n{prefix} starting export with rknn...')
-    rknn = RKNN(verbose=False)
-    rknn.config(mean_values=[[0, 0, 0]], std_values=[[255, 255, 255]], target_platform=os.getenv("RKNN_TARGET", "rk3588").lower())
-    if rknn.load_onnx(model=str(file.with_suffix('.onnx'))):
-        raise RuntimeError(f'failed to load ONNX file: {file.with_suffix(".onnx")}')
-    if rknn.build(do_quantization=int8, dataset=data):
-        raise RuntimeError(f'failed to build RKNN model!')
-    f = file.with_suffix('.rknn')
-    if rknn.export_rknn(str(f)):
-        raise RuntimeError(f'failed to export RKNN model!')
-    rknn.release()
-    return str(f), None
+    from models.tf import TFModel
+
+    LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
+    f = str(file).replace('.pt', '_saved_model')
+    batch_size, ch, *imgsz = list(im.shape)  # BCHW
+
+    tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
+    im = tf.zeros((batch_size, *imgsz, ch))  # BHWC order for TensorFlow
+    _ = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
+    inputs = tf.keras.Input(shape=(*imgsz, ch), batch_size=None if dynamic else batch_size)
+    outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
+    keras_model = tf.keras.Model(inputs=inputs, outputs=outputs)
+    keras_model.trainable = False
+    keras_model.summary()
+    if keras:
+        keras_model.save(f, save_format='tf')
+    else:
+        spec = tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype)
+        m = tf.function(lambda x: keras_model(x))  # full model
+        m = m.get_concrete_function(spec)
+        frozen_func = convert_variables_to_constants_v2(m)
+        tfm = tf.Module()
+        tfm.__call__ = tf.function(lambda x: frozen_func(x)[:4] if tf_nms else frozen_func(x), [spec])
+        tfm.__call__(im)
+        tf.saved_model.save(tfm,
+                            f,
+                            options=tf.saved_model.SaveOptions(experimental_custom_gradients=False) if check_version(
+                                tf.__version__, '2.6') else tf.saved_model.SaveOptions())
+    return f, keras_model
+
+
+@try_export
+def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
+    # YOLOv5 TensorFlow GraphDef *.pb export https://github.com/leimao/Frozen_Graph_TensorFlow
+    import tensorflow as tf
+    from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+
+    LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
+    f = file.with_suffix('.pb')
+
+    m = tf.function(lambda x: keras_model(x))  # full model
+    m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
+    frozen_func = convert_variables_to_constants_v2(m)
+    frozen_func.graph.as_graph_def()
+    tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(f.parent), name=f.name, as_text=False)
+    return f, None
+
+
+@try_export
+def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=colorstr('TensorFlow Lite:')):
+    # YOLOv5 TensorFlow Lite export
+    import tensorflow as tf
+
+    LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
+    batch_size, ch, *imgsz = list(im.shape)  # BCHW
+    f = str(file).replace('.pt', '-fp16.tflite')
+
+    converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+    converter.target_spec.supported_types = [tf.float16]
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    if int8:
+        from models.tf import representative_dataset_gen
+        dataset = LoadImages(check_dataset(check_yaml(data))['train'], img_size=imgsz, auto=False)
+        converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib=100)
+        converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+        converter.target_spec.supported_types = []
+        converter.inference_input_type = tf.uint8  # or tf.int8
+        converter.inference_output_type = tf.uint8  # or tf.int8
+        converter.experimental_new_quantizer = True
+        f = str(file).replace('.pt', '-int8.tflite')
+    if nms or agnostic_nms:
+        converter.target_spec.supported_ops.append(tf.lite.OpsSet.SELECT_TF_OPS)
+
+    tflite_model = converter.convert()
+    open(f, 'wb').write(tflite_model)
+    return f, None
+
+
+@try_export
+def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
+    # YOLOv5 Edge TPU export https://coral.ai/docs/edgetpu/models-intro/
+    cmd = 'edgetpu_compiler --version'
+    help_url = 'https://coral.ai/docs/edgetpu/compiler/'
+    assert platform.system() == 'Linux', f'export only supported on Linux. See {help_url}'
+    if subprocess.run(f'{cmd} > /dev/null 2>&1', shell=True).returncode != 0:
+        LOGGER.info(f'\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}')
+        sudo = subprocess.run('sudo --version >/dev/null', shell=True).returncode == 0  # sudo installed on system
+        for c in (
+                'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
+                'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
+                'sudo apt-get update', 'sudo apt-get install edgetpu-compiler'):
+            subprocess.run(c if sudo else c.replace('sudo ', ''), shell=True, check=True)
+    ver = subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1]
+
+    LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')
+    f = str(file).replace('.pt', '-int8_edgetpu.tflite')  # Edge TPU model
+    f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
+
+    subprocess.run([
+        'edgetpu_compiler',
+        '-s',
+        '-d',
+        '-k',
+        '10',
+        '--out_dir',
+        str(file.parent),
+        f_tfl,], check=True)
+    return f, None
+
+
+@try_export
+def export_tfjs(file, int8, prefix=colorstr('TensorFlow.js:')):
+    # YOLOv5 TensorFlow.js export
+    check_requirements('tensorflowjs')
+    import tensorflowjs as tfjs
+
+    LOGGER.info(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
+    f = str(file).replace('.pt', '_web_model')  # js dir
+    f_pb = file.with_suffix('.pb')  # *.pb path
+    f_json = f'{f}/model.json'  # *.json path
+
+    args = [
+        'tensorflowjs_converter',
+        '--input_format=tf_frozen_model',
+        '--quantize_uint8' if int8 else '',
+        '--output_node_names=Identity,Identity_1,Identity_2,Identity_3',
+        str(f_pb),
+        str(f),]
+    subprocess.run([arg for arg in args if arg], check=True)
+
+    json = Path(f_json).read_text()
+    with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
+        subst = re.sub(
+            r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
+            r'"Identity.?.?": {"name": "Identity.?.?"}, '
+            r'"Identity.?.?": {"name": "Identity.?.?"}, '
+            r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
+            r'"Identity_1": {"name": "Identity_1"}, '
+            r'"Identity_2": {"name": "Identity_2"}, '
+            r'"Identity_3": {"name": "Identity_3"}}}', json)
+        j.write(subst)
+    return f, None
+
+
+def add_tflite_metadata(file, metadata, num_outputs):
+    # Add metadata to *.tflite models per https://www.tensorflow.org/lite/models/convert/metadata
+    with contextlib.suppress(ImportError):
+        # check_requirements('tflite_support')
+        from tflite_support import flatbuffers
+        from tflite_support import metadata as _metadata
+        from tflite_support import metadata_schema_py_generated as _metadata_fb
+
+        tmp_file = Path('/tmp/meta.txt')
+        with open(tmp_file, 'w') as meta_f:
+            meta_f.write(str(metadata))
+
+        model_meta = _metadata_fb.ModelMetadataT()
+        label_file = _metadata_fb.AssociatedFileT()
+        label_file.name = tmp_file.name
+        model_meta.associatedFiles = [label_file]
+
+        subgraph = _metadata_fb.SubGraphMetadataT()
+        subgraph.inputTensorMetadata = [_metadata_fb.TensorMetadataT()]
+        subgraph.outputTensorMetadata = [_metadata_fb.TensorMetadataT()] * num_outputs
+        model_meta.subgraphMetadata = [subgraph]
+
+        b = flatbuffers.Builder(0)
+        b.Finish(model_meta.Pack(b), _metadata.MetadataPopulator.METADATA_FILE_IDENTIFIER)
+        metadata_buf = b.Output()
+
+        populator = _metadata.MetadataPopulator.with_model_file(file)
+        populator.load_metadata_buffer(metadata_buf)
+        populator.load_associated_files([str(tmp_file)])
+        populator.populate()
+        tmp_file.unlink()
+
+
 @smart_inference_mode()
 def run(
-        data=ROOT / 'data/coco128.txt',  # 'dataset.yaml path'
+        data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('onnx'),  # include formats
+        include=('torchscript', 'onnx'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
+        keras=False,  # use Keras
         optimize=False,  # TorchScript: optimize for mobile
         int8=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF/TensorRT: dynamic axes
@@ -280,19 +528,25 @@ def run(
         opset=12,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
         workspace=4,  # TensorRT: workspace size (GB)
+        nms=False,  # TF: add NMS to model
+        agnostic_nms=False,  # TF: add agnostic NMS to model
+        topk_per_class=100,  # TF.js NMS: topk per class to keep
+        topk_all=100,  # TF.js NMS: topk for all classes to keep
+        iou_thres=0.45,  # TF.js NMS: IoU threshold
+        conf_thres=0.25,  # TF.js NMS: confidence threshold
 ):
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
-    fmts = tuple(export_formats()['Argument'])  # --include arguments
+    fmts = tuple(export_formats()['Argument'][1:])  # --include arguments
     flags = [x in include for x in fmts]
     assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {fmts}'
-    onnx, xml, engine, rknn = flags  # export booleans
+    jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = flags  # export booleans
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
 
     # Load PyTorch model
     device = select_device(device)
     if half:
-        assert device.type != 'cpu', '--half only compatible with GPU export, i.e. use --device 0'
+        assert device.type != 'cpu' or coreml, '--half only compatible with GPU export, i.e. use --device 0'
         assert not dynamic, '--half not compatible with --dynamic, i.e. use either --half or --dynamic but not both'
     model = attempt_load(weights, device=device, inplace=True, fuse=True)  # load FP32 model
 
@@ -314,7 +568,7 @@ def run(
             m.dynamic = dynamic
             m.export = True
 
-        if rknn:
+        if os.getenv('RKNN_model_hack', '0') in ['1']:
             from models.common import Focus
             from models.common import Conv
             from models.common_rk_plug_in import surrogate_focus
@@ -360,10 +614,10 @@ def run(
                 model.model[0].f = temp_f
                 model.model[0].eval()
 
-    if rknn:
+    if os.getenv('RKNN_model_hack', '0') in ['1']:
         if isinstance(model.model[-1], Detect):
             # save anchors
-            print('---> saving anchors for RKNN to RK_anchors.txt')
+            print('---> save anchors for RKNN')
             RK_anchors = model.model[-1].stride.reshape(3,1).repeat(1,3).reshape(-1,1)* model.model[-1].anchors.reshape(9,2)
             with open('RK_anchors.txt', 'w') as anf:
                 # anf.write(str(model.model[-1].na)+'\n')
@@ -381,7 +635,7 @@ def run(
 
     for _ in range(2):
         y = model(im)  # dry runs
-    if half:
+    if half and not coreml:
         im, model = im.half(), model.half()  # to FP16
     shape = tuple((y[0] if (isinstance(y, tuple) or (isinstance(y, list))) else y).shape)  # model output shape
     metadata = {'stride': int(max(model.stride)), 'names': model.names}  # model metadata
@@ -390,14 +644,41 @@ def run(
     # Exports
     f = [''] * len(fmts)  # exported filenames
     warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
+    if jit:  # TorchScript
+        f[0], _ = export_torchscript(model, im, file, optimize)
     if engine:  # TensorRT required before ONNX
-        f[0], _ = export_engine(model, im, file, half, dynamic, simplify, workspace, verbose)
-    if onnx or xml or rknn:  # OpenVINO requires ONNX
-        f[1], _ = export_onnx(model, im, file, opset, dynamic, simplify)
+        f[1], _ = export_engine(model, im, file, half, dynamic, simplify, workspace, verbose)
+    if onnx or xml:  # OpenVINO requires ONNX
+        f[2], _ = export_onnx(model, im, file, opset, dynamic, simplify)
     if xml:  # OpenVINO
-        f[2], _ = export_openvino(file, metadata, half)
-    if rknn:
-        f[3], _ = export_rknn(file, half, int8, data)
+        f[3], _ = export_openvino(file, metadata, half)
+    if coreml:  # CoreML
+        f[4], _ = export_coreml(model, im, file, int8, half)
+    if any((saved_model, pb, tflite, edgetpu, tfjs)):  # TensorFlow formats
+        assert not tflite or not tfjs, 'TFLite and TF.js models must be exported separately, please pass only one type.'
+        assert not isinstance(model, ClassificationModel), 'ClassificationModel export to TF formats not yet supported.'
+        f[5], s_model = export_saved_model(model.cpu(),
+                                           im,
+                                           file,
+                                           dynamic,
+                                           tf_nms=nms or agnostic_nms or tfjs,
+                                           agnostic_nms=agnostic_nms or tfjs,
+                                           topk_per_class=topk_per_class,
+                                           topk_all=topk_all,
+                                           iou_thres=iou_thres,
+                                           conf_thres=conf_thres,
+                                           keras=keras)
+        if pb or tfjs:  # pb prerequisite to tfjs
+            f[6], _ = export_pb(s_model, file)
+        if tflite or edgetpu:
+            f[7], _ = export_tflite(s_model, im, file, int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
+            if edgetpu:
+                f[8], _ = export_edgetpu(file)
+            add_tflite_metadata(f[8] or f[7], metadata, num_outputs=len(s_model.outputs))
+        if tfjs:
+            f[9], _ = export_tfjs(file, int8)
+    if paddle:  # PaddlePaddle
+        f[10], _ = export_paddle(model, im, file, metadata)
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
@@ -419,13 +700,14 @@ def run(
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.txt', help='dataset.txt path')
+    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
+    parser.add_argument('--keras', action='store_true', help='TF: use Keras')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF/TensorRT: dynamic axes')
@@ -433,10 +715,17 @@ def parse_opt(known=False):
     parser.add_argument('--opset', type=int, default=17, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
+    parser.add_argument('--nms', action='store_true', help='TF: add NMS to model')
+    parser.add_argument('--agnostic-nms', action='store_true', help='TF: add agnostic NMS to model')
+    parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
+    parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
+    parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
+    parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
     parser.add_argument('--include',
                         nargs='+',
-                        default=['onnx', 'rknn'],
-                        help='onnx, openvino, engine, rknn')
+                        default=['onnx'],
+                        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+    parser.add_argument('--rknpu', action='store_true', help='RKNN npu platform')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     print_args(vars(opt))
     return opt
@@ -449,4 +738,5 @@ def main(opt):
 
 if __name__ == '__main__':
     opt = parse_opt()
+    del opt.rknpu
     main(opt)
