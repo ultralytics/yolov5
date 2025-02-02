@@ -1,0 +1,2 @@
+images/bus.jpg
+images/zidane.jpg

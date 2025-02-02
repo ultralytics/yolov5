@@ -61,6 +61,8 @@ from pathlib import Path
 if '--rknpu' in sys.argv:
     os.environ['RKNN_model_hack'] = "1"
     rknpu = True
+else:
+    rknpu = False
 
 import pandas as pd
 import torch
