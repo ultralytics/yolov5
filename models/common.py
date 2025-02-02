@@ -661,7 +661,6 @@ class DetectMultiBackend(nn.Module):
         sf = list(export_formats().Suffix)  # export suffixes
         url = urlparse(p)  # if url may be Triton inference server
         types = [s in Path(p).name for s in sf]
-        types[8] &= not types[9]  # tflite &= not edgetpu
         triton = not any(types) and all([any(s in url.scheme for s in ['http', 'grpc']), url.netloc])
         return types + [triton]
 
