@@ -659,8 +659,6 @@ class DetectMultiBackend(nn.Module):
         from export import export_formats
         from utils.downloads import is_url
         sf = list(export_formats().Suffix)  # export suffixes
-        if not is_url(p, check=False):
-            check_suffix(p, sf)  # checks
         url = urlparse(p)  # if url may be Triton inference server
         types = [s in Path(p).name for s in sf]
         types[8] &= not types[9]  # tflite &= not edgetpu
