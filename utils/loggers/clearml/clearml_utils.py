@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Main Logger class for ClearML experiment tracking."""
 
 import glob
@@ -41,11 +41,9 @@ def construct_dataset(clearml_info_string):
     with open(yaml_filenames[0]) as f:
         dataset_definition = yaml.safe_load(f)
 
-    assert set(
-        dataset_definition.keys()
-    ).issuperset(
-        {"train", "test", "val", "nc", "names"}
-    ), "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
+    assert set(dataset_definition.keys()).issuperset({"train", "test", "val", "nc", "names"}), (
+        "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
+    )
 
     data_dict = {
         "train": (
