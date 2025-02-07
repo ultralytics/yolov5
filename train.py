@@ -447,7 +447,6 @@ def parse_opt(known=False):
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')
     parser.add_argument('--noplots', action='store_true', help='save no plot files')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
-    parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='image --cache ram/disk')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -570,13 +569,6 @@ def main(opt, callbacks=Callbacks()):
         opt.noval, opt.nosave, save_dir = True, True, Path(opt.save_dir)  # only val/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         evolve_yaml, evolve_csv = save_dir / 'hyp_evolve.yaml', save_dir / 'evolve.csv'
-        if opt.bucket:
-            # download evolve.csv if exists
-            subprocess.run([
-                'gsutil',
-                'cp',
-                f'gs://{opt.bucket}/evolve.csv',
-                str(evolve_csv),])
 
         for _ in range(opt.evolve):  # generations to evolve
             if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
@@ -616,7 +608,7 @@ def main(opt, callbacks=Callbacks()):
             # Write mutation results
             keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'val/box_loss',
                     'val/obj_loss', 'val/cls_loss')
-            print_mutation(keys, results, hyp.copy(), save_dir, opt.bucket)
+            print_mutation(keys, results, hyp.copy(), save_dir)
 
         # Plot results
         plot_evolve(evolve_csv)
