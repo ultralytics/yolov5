@@ -1031,7 +1031,7 @@ def print_mutation(keys, results, hyp, save_dir, prefix=colorstr('evolve: ')):
     # Print to screen
     LOGGER.info(prefix + f'{generations} generations finished, current result:\n' + prefix +
                 ', '.join(f'{x.strip():>20s}' for x in keys) + '\n' + prefix + ', '.join(f'{x:20.5g}'
-
+                for x in vals) + '\n\n')
 
 def apply_classifier(x, model, img, im0):
     # Apply a second stage classifier to YOLO outputs
