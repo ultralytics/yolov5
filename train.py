@@ -99,6 +99,76 @@ RANK = int(os.getenv("RANK", -1))
 WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
 GIT_INFO = check_git_info()
 
+from torch._functorch.aot_autograd import aot_export_joint_simple, aot_export_module
+import torch.optim as optim
+from compile.FxGraphConvertor import fx2mlir
+import torchvision.models as models
+import argparse
+import numpy as np
+from torch.fx import Interpreter
+import torch._dynamo
+
+class JitNet(nn.Module):
+    def __init__(self, net, loss_fn):
+        super().__init__()
+        self.net = net
+        self.loss_fn = loss_fn
+
+    def forward(self, x, y):
+        predict = self.net(x)
+        loss,loss_item = self.loss_fn(self.net(x), y)
+        return loss, loss_item.detach()
+
+def _get_disc_decomp():
+    from torch._decomp import get_decompositions
+    aten = torch.ops.aten
+    decompositions_dict = get_decompositions(
+        [
+            aten.gelu,
+            aten.gelu_backward,
+            aten.native_group_norm_backward,
+            # aten.native_layer_norm,
+            aten.native_layer_norm_backward,
+            # aten.std_mean.correction,
+            # aten._softmax,
+            aten._softmax_backward_data,
+            aten.tanh_backward,
+            aten.slice_backward,
+            aten.select_backward,
+            aten.embedding_dense_backward,
+            aten.sigmoid_backward,
+            aten.nll_loss_backward,
+            aten._log_softmax_backward_data,
+            aten.nll_loss_forward,
+        ]
+    )
+    return decompositions_dict
+
+
+def convert_module_fx(
+    submodule_name: str,
+    module: torch.fx.GraphModule,
+    args={},
+    bwd_graph:bool=False,
+    para_shape: list=[],
+) :
+    c = fx2mlir(submodule_name, args, bwd_graph, para_shape)
+    return c.convert(module)
+
+class SophonJointCompile:
+
+    def __init__(self, model, example_inputs, trace_joint=True, output_loss_index=0, args=None):
+        fx_g, signature = aot_export_module(
+            model, example_inputs, trace_joint=trace_joint, output_loss_index=0, decompositions=_get_disc_decomp()
+        )
+        fx_g.to_folder("yolov5sc","joint")
+        breakpoint()
+
+    def fx_convert_bmodel(self):
+        name = f"test_{args.model}_joint_{args.batch}"
+        convert_module_fx(name, self.fx_g, self.args, False)
+
+
 
 def train(hyp, opt, device, callbacks):
     """
@@ -384,6 +454,7 @@ def train(hyp, opt, device, callbacks):
         if RANK in {-1, 0}:
             pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
         optimizer.zero_grad()
+        zwyjit = JitNet(model, compute_loss)
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             callbacks.run("on_train_batch_start")
             ni = i + nb * epoch  # number integrated batches (since train start)
@@ -410,8 +481,15 @@ def train(hyp, opt, device, callbacks):
 
             # Forward
             with torch.cuda.amp.autocast(amp):
-                pred = model(imgs)  # forward
-                loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
+                # print(1)
+                # zwy = SophonJointCompile(model, [imgs, targets], trace_joint=True, output_loss_index=0, args=None)
+                # pred = model(imgs)  # forward
+                # loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
+                loss, loss_items = zwyjit(imgs, targets.to(device))
+                # fx_g, signature = aot_export_module(
+                #     zwyjit, [imgs, targets], trace_joint=True, output_loss_index=0, decompositions=_get_disc_decomp()
+                # )
+                # print(fx_g)
                 if RANK != -1:
                     loss *= WORLD_SIZE  # gradient averaged between devices in DDP mode
                 if opt.quad:
