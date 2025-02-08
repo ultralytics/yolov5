@@ -27,7 +27,7 @@ from torch.cuda import amp
 
 from utils import TryExcept
 from utils.dataloaders import exif_transpose, letterbox
-from utils.general import (LOGGER, ROOT, Profile, check_requirements, check_suffix, check_version, colorstr,
+from utils.general import (LOGGER, ROOT, Profile, check_suffix, check_version, colorstr,
                            increment_path, is_jupyter, make_divisible, non_max_suppression, scale_boxes, xywh2xyxy,
                            xyxy2xywh, yaml_load)
 from utils.plots import Annotator, colors, save_one_box
@@ -415,11 +415,9 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(d['stride']), d['names']
         elif dnn:  # ONNX OpenCV DNN
             LOGGER.info(f'Loading {w} for ONNX OpenCV DNN inference...')
-            check_requirements('opencv-python>=4.5.4')
             net = cv2.dnn.readNetFromONNX(w)
         elif onnx:  # ONNX Runtime
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
-            check_requirements(('onnx', 'onnxruntime-gpu' if cuda else 'onnxruntime'))
             import onnxruntime
             providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if cuda else ['CPUExecutionProvider']
             session = onnxruntime.InferenceSession(w, providers=providers)
@@ -429,7 +427,6 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(meta['stride']), eval(meta['names'])
         elif xml:  # OpenVINO
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
-            check_requirements('openvino')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
             from openvino.runtime import Core, Layout, get_batch
             ie = Core()
             if not Path(w).is_file():  # if not *.xml
@@ -531,7 +528,6 @@ class DetectMultiBackend(nn.Module):
             raise NotImplementedError('ERROR: YOLOv5 TF.js inference is not supported')
         elif paddle:  # PaddlePaddle
             LOGGER.info(f'Loading {w} for PaddlePaddle inference...')
-            check_requirements('paddlepaddle-gpu' if cuda else 'paddlepaddle')
             import paddle.inference as pdi
             if not Path(w).is_file():  # if not *.pdmodel
                 w = next(Path(w).rglob('*.pdmodel'))  # get *.pdmodel file from *_paddle_model dir
@@ -544,7 +540,6 @@ class DetectMultiBackend(nn.Module):
             output_names = predictor.get_output_names()
         elif triton:  # NVIDIA Triton Inference Server
             LOGGER.info(f'Using {w} as Triton Inference Server...')
-            check_requirements('tritonclient[all]')
             from utils.triton import TritonRemoteModel
             model = TritonRemoteModel(url=w)
             nhwc = model.runtime.startswith('tensorflow')

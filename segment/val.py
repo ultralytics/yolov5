@@ -44,7 +44,7 @@ from models.common import DetectMultiBackend
 from models.yolo import SegmentationModel
 from utils.callbacks import Callbacks
 from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size,
-                           check_requirements, check_yaml, coco80_to_coco91_class, colorstr, increment_path,
+                           check_yaml, coco80_to_coco91_class, colorstr, increment_path,
                            non_max_suppression, print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
@@ -160,7 +160,6 @@ def run(
         callbacks=Callbacks(),
 ):
     if save_json:
-        check_requirements('pycocotools>=2.0.6')
         process = process_mask_native  # more accurate
     else:
         process = process_mask  # faster
@@ -434,7 +433,6 @@ def parse_opt():
 
 
 def main(opt):
-    check_requirements(requirements=ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
