@@ -485,11 +485,11 @@ def train(hyp, opt, device, callbacks):
                 # zwy = SophonJointCompile(model, [imgs, targets], trace_joint=True, output_loss_index=0, args=None)
                 # pred = model(imgs)  # forward
                 # loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
-                loss, loss_items = zwyjit(imgs, targets.to(device))
-                # fx_g, signature = aot_export_module(
-                #     zwyjit, [imgs, targets], trace_joint=True, output_loss_index=0, decompositions=_get_disc_decomp()
-                # )
-                # print(fx_g)
+                # loss, loss_items = zwyjit(imgs, targets.to(device))
+                fx_g, signature = aot_export_module(
+                    zwyjit, [imgs, targets], trace_joint=True, output_loss_index=0, decompositions=_get_disc_decomp()
+                )
+                print(fx_g)
                 if RANK != -1:
                     loss *= WORLD_SIZE  # gradient averaged between devices in DDP mode
                 if opt.quad:
