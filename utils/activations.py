@@ -133,4 +133,5 @@ class MetaAconC(nn.Module):
         dpx = (self.p1 - self.p2) * x
         return dpx * torch.sigmoid(beta * dpx) + self.p2 * x
 
+
 # Automated edit: [Edited] Fix minor bug in the main function
