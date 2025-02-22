@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # WARNING ⚠️ wandb is deprecated and will be removed in future release.
 # See supported integrations at https://github.com/ultralytics/yolov5#integrations
