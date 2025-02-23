@@ -96,10 +96,10 @@ from utils.torch_utils import (
 
 # version check
 if torch.__version__.startswith("1.8"):
-    Autocast = torch.cuda.amp.autocast
+    Autocast = torch.cuda.amp.autocast(enabled=amp)
     GradScaler = torch.cuda.amp.GradScaler
 else:
-    Autocast = torch.amp.autocast
+    Autocast = torch.amp.autocast("cuda", enabled=amp)
     GradScaler = torch.amp.GradScaler
 
 LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -417,7 +417,7 @@ def train(hyp, opt, device, callbacks):
                     imgs = nn.functional.interpolate(imgs, size=ns, mode="bilinear", align_corners=False)
 
             # Forward
-            with Autocast(enabled=device.type != "cpu"):
+            with Autocast:
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if RANK != -1:
