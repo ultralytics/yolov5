@@ -94,13 +94,6 @@ from utils.torch_utils import (
     torch_distributed_zero_first,
 )
 
-# version check
-# if torch.__version__.startswith("1.8"):
-#   Autocast = torch.cuda.amp.autocast(enabled=amp)
-#  GradScaler = torch.cuda.amp.GradScaler
-# else:
-#   Autocast = torch.amp.autocast("cuda", enabled=amp)
-#   GradScaler = torch.amp.GradScaler
 
 LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv("RANK", -1))
@@ -360,7 +353,6 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    # scaler = GradScaler(enabled=amp)
     scaler = None
     if torch.__version__.startswith("1.8"):
         scaler = torch.cuda.amp.GradScaler(enabled=amp)
