@@ -29,6 +29,14 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 from tqdm import tqdm
 
+# version check
+if torch.__version__.startswith("1.8"):
+    Autocast = torch.cuda.amp.autocast
+    GradScaler = torch.cuda.amp.GradScaler
+else:
+    Autocast = torch.amp.autocast
+    GradScaler = torch.amp.GradScaler
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -197,13 +205,7 @@ def train(opt, device):
     t0 = time.time()
     criterion = smartCrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
     best_fitness = 0.0
-    # adding a check to torch version
-    scaler = None
-    if torch.__version__.startswith("1.8"):
-        scaler = torch.cuda.amp.GradScaler(enabled=cuda)
-    else:
-        scaler = torch.amp.GradScaler("cuda", enabled=cuda)
-
+    scaler = GradScaler(enabled=cuda)
     val = test_dir.stem  # 'val' or 'test'
     LOGGER.info(
         f"Image sizes {imgsz} train, {imgsz} test\n"
@@ -224,12 +226,7 @@ def train(opt, device):
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
             # Forward
-            amp_autocast = None
-            if torch.__version__.startswith("1.8"):
-                amp_autocast = torch.cuda.amp.autocast(enabled=device.type != "cpu")
-            else:
-                amp_autocast = torch.amp.autocast("cuda", enabled=device.type != "cpu")
-            with amp_autocast:
+            with Autocast(enabled=device.type != "cpu"):  # stability issues when enabled
                 loss = criterion(model(images), labels)
 
             # Backward

@@ -89,6 +89,14 @@ from utils.torch_utils import (
     torch_distributed_zero_first,
 )
 
+# version check
+if torch.__version__.startswith("1.8"):
+    Autocast = torch.cuda.amp.autocast
+    GradScaler = torch.cuda.amp.GradScaler
+else:
+    Autocast = torch.amp.autocast
+    GradScaler = torch.amp.GradScaler
+
 LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv("RANK", -1))
 WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
@@ -320,13 +328,7 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-
-    scaler = None
-    if torch.__version__.startswith("1.8"):
-        scaler = torch.cuda.amp.GradScaler(enabled=amp)
-    else:
-        scaler = torch.amp.GradScaler("cuda", enabled=amp)
-
+    scaler = GradScaler(enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
     compute_loss = ComputeLoss(model, overlap=overlap)  # init loss class
     # callbacks.run('on_train_start')
@@ -391,7 +393,7 @@ def train(hyp, opt, device, callbacks):
             else:
                 amp_autocast = torch.amp.autocast("cuda", enabled=amp)
             # Forward
-            with amp_autocast:
+            with Autocast(enabled=amp):
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device), masks=masks.to(device).float())
                 if RANK != -1:

@@ -55,6 +55,11 @@ from utils.general import (
 )
 from utils.torch_utils import copy_attr, smart_inference_mode
 
+# version check 
+if torch.__version__.startswith("1.8"):
+    Autocast = torch.cuda.amp.autocast
+else:
+    Autocast = torch.amp.autocast
 
 def autopad(k, p=None, d=1):
     """
@@ -863,12 +868,7 @@ class AutoShape(nn.Module):
             p = next(self.model.parameters()) if self.pt else torch.empty(1, device=self.model.device)  # param
             autocast = self.amp and (p.device.type != "cpu")  # Automatic Mixed Precision (AMP) inference
             if isinstance(ims, torch.Tensor):  # torch
-                amp_autocast = None
-                if torch.__version__.startswith("1.8"):
-                    amp_autocast = torch.cuda.amp.autocast(enabled=autocast)
-                else:
-                    amp_autocast = torch.amp.autocast("cuda", enabled=autocast)
-                with amp_autocast:
+                with Autocast(enabled=autocast):
                     return self.model(ims.to(p.device).type_as(p), augment=augment)  # inference
 
             # Pre-process
@@ -895,12 +895,7 @@ class AutoShape(nn.Module):
             x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
             x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
 
-        amp_autocast = None
-        if torch.__version__.startswith("1.8"):
-            amp_autocast = torch.cuda.amp.autocast(enabled=autocast)
-        else:
-            amp_autocast = torch.amp.autocast("cuda", enabled=autocast)
-        with amp_autocast:
+        with Autocast(enabled=autocast):
             # Inference
             with dt[1]:
                 y = self.model(x, augment=augment)  # forward
