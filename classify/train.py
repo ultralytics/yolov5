@@ -27,9 +27,7 @@ import torch.distributed as dist
 import torch.hub as hub
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
-from torch.cuda import amp
 from tqdm import tqdm
-
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory

@@ -863,7 +863,7 @@ class AutoShape(nn.Module):
             p = next(self.model.parameters()) if self.pt else torch.empty(1, device=self.model.device)  # param
             autocast = self.amp and (p.device.type != "cpu")  # Automatic Mixed Precision (AMP) inference
             if isinstance(ims, torch.Tensor):  # torch
-                amp_autocast = None 
+                amp_autocast = None
                 if torch.__version__.startswith("1.8"):
                     amp_autocast = torch.cuda.amp.autocast(enabled=autocast)
                 else:
