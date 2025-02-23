@@ -48,11 +48,12 @@ from utils.general import (
 )
 from utils.torch_utils import select_device, smart_inference_mode
 
-#version check 
+# version check
 if torch.__version__.startswith("1.8"):
-    Autocast = torch.cuda.amp.autocast 
+    Autocast = torch.cuda.amp.autocast
 else:
     Autocast = torch.amp.autocast
+
 
 @smart_inference_mode()
 def run(

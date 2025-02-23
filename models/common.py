@@ -55,11 +55,12 @@ from utils.general import (
 )
 from utils.torch_utils import copy_attr, smart_inference_mode
 
-# version check 
+# version check
 if torch.__version__.startswith("1.8"):
     Autocast = torch.cuda.amp.autocast
 else:
     Autocast = torch.amp.autocast
+
 
 def autopad(k, p=None, d=1):
     """

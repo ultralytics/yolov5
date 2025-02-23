@@ -387,11 +387,10 @@ def train(hyp, opt, device, callbacks):
                     ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
                     imgs = nn.functional.interpolate(imgs, size=ns, mode="bilinear", align_corners=False)
 
-            amp_autocast = None
             if torch.__version__.startswith("1.8"):
-                amp_autocast = torch.cuda.amp.autocast(enabled=amp)
+                torch.cuda.amp.autocast(enabled=amp)
             else:
-                amp_autocast = torch.amp.autocast("cuda", enabled=amp)
+                torch.amp.autocast("cuda", enabled=amp)
             # Forward
             with Autocast(enabled=amp):
                 pred = model(imgs)  # forward
