@@ -95,12 +95,12 @@ from utils.torch_utils import (
 )
 
 # version check
-if torch.__version__.startswith("1.8"):
-    Autocast = torch.cuda.amp.autocast(enabled=amp)
-    GradScaler = torch.cuda.amp.GradScaler
-else:
-    Autocast = torch.amp.autocast("cuda", enabled=amp)
-    GradScaler = torch.amp.GradScaler
+#if torch.__version__.startswith("1.8"):
+ #   Autocast = torch.cuda.amp.autocast(enabled=amp)
+  #  GradScaler = torch.cuda.amp.GradScaler
+#else:
+ #   Autocast = torch.amp.autocast("cuda", enabled=amp)
+ #   GradScaler = torch.amp.GradScaler
 
 LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv("RANK", -1))
@@ -121,7 +121,7 @@ def train(hyp, opt, device, callbacks):
 
     Returns:
         None
-
+#
     Models and datasets download automatically from the latest YOLOv5 release.
 
     Example:
@@ -360,7 +360,12 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = GradScaler(enabled=amp)
+   # scaler = GradScaler(enabled=amp)
+    scaler = None
+    if torch.__version__.startswith("1.8"):
+        scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    else:
+        scaler = torch.amp.GradScaler("cuda", enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
     compute_loss = ComputeLoss(model)  # init loss class
     callbacks.run("on_train_start")
@@ -417,7 +422,13 @@ def train(hyp, opt, device, callbacks):
                     imgs = nn.functional.interpolate(imgs, size=ns, mode="bilinear", align_corners=False)
 
             # Forward
-            with Autocast:
+            #with Autocast:
+            amp_autocast = None
+            if torch.__version__.startswith("1.8"):
+                amp_autocast = torch.cuda.amp.autocast(enabled=amp)
+            else:
+                amp_autocast = torch.amp.autocast("cuda", enabled=amp)
+            with amp_autocast:
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if RANK != -1:
