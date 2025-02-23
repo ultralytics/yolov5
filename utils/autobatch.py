@@ -12,7 +12,7 @@ from utils.torch_utils import profile
 
 def check_train_batch_size(model, imgsz=640, amp=True):
     """Checks and computes optimal training batch size for YOLOv5 model, given image size and AMP setting."""
-    with torch.cuda.amp.autocast(amp):
+    with torch.amp.autocast("cuda", enabled=amp):
         return autobatch(deepcopy(model).train(), imgsz)  # compute optimal batch size
 
 
