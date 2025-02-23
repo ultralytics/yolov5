@@ -95,12 +95,12 @@ from utils.torch_utils import (
 )
 
 # version check
-#if torch.__version__.startswith("1.8"):
- #   Autocast = torch.cuda.amp.autocast(enabled=amp)
-  #  GradScaler = torch.cuda.amp.GradScaler
-#else:
- #   Autocast = torch.amp.autocast("cuda", enabled=amp)
- #   GradScaler = torch.amp.GradScaler
+# if torch.__version__.startswith("1.8"):
+#   Autocast = torch.cuda.amp.autocast(enabled=amp)
+#  GradScaler = torch.cuda.amp.GradScaler
+# else:
+#   Autocast = torch.amp.autocast("cuda", enabled=amp)
+#   GradScaler = torch.amp.GradScaler
 
 LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv("RANK", -1))
@@ -114,33 +114,33 @@ def train(hyp, opt, device, callbacks):
     model architecture, loss computation, and optimizer steps.
 
     Args:
-        hyp (str | dict): Path to the hyperparameters YAML file or a dictionary of hyperparameters.
-        opt (argparse.Namespace): Parsed command-line arguments containing training options.
-        device (torch.device): Device on which training occurs, e.g., 'cuda' or 'cpu'.
-        callbacks (Callbacks): Callback functions for various training events.
+            hyp (str | dict): Path to the hyperparameters YAML file or a dictionary of hyperparameters.
+            opt (argparse.Namespace): Parsed command-line arguments containing training options.
+            device (torch.device): Device on which training occurs, e.g., 'cuda' or 'cpu'.
+            callbacks (Callbacks): Callback functions for various training events.
 
     Returns:
-        None
-#
-    Models and datasets download automatically from the latest YOLOv5 release.
+            None
+    #
+        Models and datasets download automatically from the latest YOLOv5 release.
 
     Example:
-        Single-GPU training:
-        ```bash
-        $ python train.py --data coco128.yaml --weights yolov5s.pt --img 640  # from pretrained (recommended)
-        $ python train.py --data coco128.yaml --weights '' --cfg yolov5s.yaml --img 640  # from scratch
-        ```
+            Single-GPU training:
+            ```bash
+            $ python train.py --data coco128.yaml --weights yolov5s.pt --img 640  # from pretrained (recommended)
+            $ python train.py --data coco128.yaml --weights '' --cfg yolov5s.yaml --img 640  # from scratch
+            ```
 
-        Multi-GPU DDP training:
-        ```bash
-        $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 train.py --data coco128.yaml --weights
-        yolov5s.pt --img 640 --device 0,1,2,3
-        ```
+            Multi-GPU DDP training:
+            ```bash
+            $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 train.py --data coco128.yaml --weights
+            yolov5s.pt --img 640 --device 0,1,2,3
+            ```
 
-        For more usage details, refer to:
-        - Models: https://github.com/ultralytics/yolov5/tree/master/models
-        - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
-        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+            For more usage details, refer to:
+            - Models: https://github.com/ultralytics/yolov5/tree/master/models
+            - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
+            - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
     """
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = (
         Path(opt.save_dir),
@@ -360,7 +360,7 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-   # scaler = GradScaler(enabled=amp)
+    # scaler = GradScaler(enabled=amp)
     scaler = None
     if torch.__version__.startswith("1.8"):
         scaler = torch.cuda.amp.GradScaler(enabled=amp)
@@ -422,7 +422,7 @@ def train(hyp, opt, device, callbacks):
                     imgs = nn.functional.interpolate(imgs, size=ns, mode="bilinear", align_corners=False)
 
             # Forward
-            #with Autocast:
+            # with Autocast:
             amp_autocast = None
             if torch.__version__.startswith("1.8"):
                 amp_autocast = torch.cuda.amp.autocast(enabled=amp)
