@@ -116,8 +116,9 @@ def select_device(device="", batch_size=0, newline=True):
     s = f"YOLOv5 🚀 {git_describe() or file_date()} Python-{platform.python_version()} torch-{torch.__version__} "
     device = str(device).strip().lower().replace("cuda:", "").replace("none", "")  # to string, 'cuda:0' to '0'
     cpu = device == "cpu"
+    tpu = device == "tpu"
     mps = device == "mps"  # Apple Metal Performance Shaders (MPS)
-    if cpu or mps:
+    if cpu or mps or tpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
         os.environ["CUDA_VISIBLE_DEVICES"] = device  # set environment variable - must be before assert is_available()
@@ -125,7 +126,7 @@ def select_device(device="", batch_size=0, newline=True):
             f"Invalid CUDA '--device {device}' requested, use '--device cpu' or pass valid CUDA device(s)"
         )
 
-    if not cpu and not mps and torch.cuda.is_available():  # prefer GPU if available
+    if not cpu and not mps and not tpu and torch.cuda.is_available():  # prefer GPU if available
         devices = device.split(",") if device else "0"  # range(torch.cuda.device_count())  # i.e. 0,1,6,7
         n = len(devices)  # device count
         if n > 1 and batch_size > 0:  # check batch_size is divisible by device_count
@@ -138,6 +139,9 @@ def select_device(device="", batch_size=0, newline=True):
     elif mps and getattr(torch, "has_mps", False) and torch.backends.mps.is_available():  # prefer MPS if available
         s += "MPS\n"
         arg = "mps"
+    elif tpu:
+        s += "TPU\n"
+        arg = "tpu"
     else:  # revert to CPU
         s += "CPU\n"
         arg = "cpu"
@@ -457,7 +461,10 @@ class ModelEMA:
         """Initializes EMA with model parameters, decay rate, tau for decay adjustment, and update count; sets model to
         evaluation mode.
         """
-        self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
+        # self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
+        self.ema = de_parallel(model)  # FP32 EMA
+        self.ema.load_state_dict(model.state_dict()) 
+        self.ema = self.ema.eval()
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / tau))  # decay exponential ramp (to help early epochs)
         for p in self.ema.parameters():

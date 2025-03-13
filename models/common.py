@@ -333,11 +333,12 @@ class SPPF(nn.Module):
     def forward(self, x):
         """Processes input through a series of convolutions and max pooling operations for feature extraction."""
         x = self.cv1(x)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")  # suppress torch 1.9.0 max_pool2d() warning
-            y1 = self.m(x)
-            y2 = self.m(y1)
-            return self.cv2(torch.cat((x, y1, y2, self.m(y2)), 1))
+		# wangxuec: We need to comment this out, otherwise we'll end up with a very fragmented portion of the captured graph
+        # with warnings.catch_warnings():
+        #     warnings.simplefilter("ignore")  # suppress torch 1.9.0 max_pool2d() warning
+        y1 = self.m(x)
+        y2 = self.m(y1)
+        return self.cv2(torch.cat((x, y1, y2, self.m(y2)), 1))
 
 
 class Focus(nn.Module):

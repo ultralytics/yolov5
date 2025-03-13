@@ -13,7 +13,7 @@ Models:     https://github.com/ultralytics/yolov5/tree/master/models
 Datasets:   https://github.com/ultralytics/yolov5/tree/master/data
 Tutorial:   https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
 """
-
+import torch_tpu
 import argparse
 import math
 import os
@@ -99,14 +99,11 @@ RANK = int(os.getenv("RANK", -1))
 WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
 GIT_INFO = check_git_info()
 
+# from tpu_mlir import aot_backend
+from tpu_mlir.python.tools.train.tpu_mlir_jit import aot_backend
 from torch._functorch.aot_autograd import aot_export_joint_simple, aot_export_module
-import torch.optim as optim
-from compile.FxGraphConvertor import fx2mlir
-import torchvision.models as models
-import argparse
-import numpy as np
-from torch.fx import Interpreter
-import torch._dynamo
+
+import torch._dynamo.config
 
 class JitNet(nn.Module):
     def __init__(self, net, loss_fn):
@@ -116,8 +113,9 @@ class JitNet(nn.Module):
 
     def forward(self, x, y):
         predict = self.net(x)
-        loss,loss_item = self.loss_fn(self.net(x), y)
+        loss,loss_item = self.loss_fn(predict, y)
         return loss, loss_item.detach()
+
 
 def _get_disc_decomp():
     from torch._decomp import get_decompositions
@@ -144,6 +142,15 @@ def _get_disc_decomp():
     )
     return decompositions_dict
 
+tensor_idx = 0
+features_out_hook = {}
+def hook(module, fea_in, fea_out):
+    global features_out_hook, tensor_idx
+
+    if isinstance(fea_out, torch.Tensor):
+        features_out_hook[f'f_{tensor_idx}'] = fea_out.detach().numpy()
+        tensor_idx += 1
+    return None
 
 def convert_module_fx(
     submodule_name: str,
@@ -367,7 +374,7 @@ def train(hyp, opt, device, callbacks):
         image_weights=opt.image_weights,
         quad=opt.quad,
         prefix=colorstr("train: "),
-        shuffle=True,
+        shuffle=False,
         seed=opt.seed,
     )
     labels = np.concatenate(dataset.labels, 0)
@@ -422,7 +429,12 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    if opt.device == 'tpu':
+        scaler = torch_tpu.tpu.amp.GradScaler(enabled=True, allow_fp16=True)
+    elif opt.device == 'cpu':
+        scaler = None
+    else:
+        scaler = torch.cuda.amp.GradScaler(enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
     compute_loss = ComputeLoss(model)  # init loss class
     callbacks.run("on_train_start")
@@ -432,6 +444,15 @@ def train(hyp, opt, device, callbacks):
         f"Logging results to {colorstr('bold', save_dir)}\n"
         f"Starting training for {epochs} epochs..."
     )
+ 
+    hook_handles = []
+    # dump_cuda_ref = True
+    dump_cuda_ref = False
+    if dump_cuda_ref:
+        for name, child in model.named_modules():
+            hd = child.register_forward_hook(hook=hook)
+            hook_handles.append(hd)
+
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run("on_train_epoch_start")
         model.train()
@@ -454,7 +475,14 @@ def train(hyp, opt, device, callbacks):
         if RANK in {-1, 0}:
             pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
         optimizer.zero_grad()
-        zwyjit = JitNet(model, compute_loss)
+        compiled = True
+        joint = False
+        if compiled:
+            if joint:
+                zwyjit = JitNet(model, compute_loss)
+                model_opt = torch.compile(zwyjit, backend=aot_backend, dynamic = None, fullgraph = False)
+            else:
+                model_opt = torch.compile(model, backend=aot_backend, dynamic = None, fullgraph = False)  
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             callbacks.run("on_train_batch_start")
             ni = i + nb * epoch  # number integrated batches (since train start)
@@ -481,22 +509,54 @@ def train(hyp, opt, device, callbacks):
 
             # Forward
             with torch.cuda.amp.autocast(amp):
-                # print(1)
-                # zwy = SophonJointCompile(model, [imgs, targets], trace_joint=True, output_loss_index=0, args=None)
-                # pred = model(imgs)  # forward
-                # loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
-                # loss, loss_items = zwyjit(imgs, targets.to(device))
-                fx_g, signature = aot_export_module(
-                    zwyjit, [imgs, targets], trace_joint=True, output_loss_index=0, decompositions=_get_disc_decomp()
-                )
-                print(fx_g)
+                # from torch._subclasses import FakeTensorMode
+                # fake_mode = FakeTensorMode(allow_non_fake_inputs=True)
+                # with fake_mode:
+                #     zwyjit = JitNet(model, compute_loss)
+                #     fx_g, signature = aot_export_module(
+                #         zwyjit, [imgs, targets], trace_joint=True, output_loss_index=0, decompositions=_get_disc_decomp()
+                #     )
+                #     print('fx_g:')
+                #     fx_g.graph.print_tabular()
+                #     print('signature:', signature)
+                #     exit(0)
+                if dump_cuda_ref:
+                    pred = model(imgs)
+                    global features_out_hook
+                    features_out_hook['data'] = imgs.detach().numpy()
+                    for name, param in model.named_parameters():
+                        features_out_hook[name] = param.detach().numpy()
+                    np.savez('layer_outputs.npz', **features_out_hook)
+                    for hd in hook_handles:
+                        hd.remove()
+                    exit(0)
+                else:
+                    if compiled:
+                        if joint:
+                            loss, loss_items = model_opt(imgs, targets.to(device))  # forward
+                        else:
+                            pred = model_opt(imgs)
+                            loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
+                    else:
+                        pred = model(imgs)
+                        loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
+
                 if RANK != -1:
                     loss *= WORLD_SIZE  # gradient averaged between devices in DDP mode
                 if opt.quad:
                     loss *= 4.0
 
             # Backward
-            scaler.scale(loss).backward()
+            if opt.device == 'tpu':
+                loss = loss.to(device)
+            #print('old loss:', loss, loss.device)
+            #total_loss = 0.2666
+            #loss.data.copy_(total_loss)
+            print('loss:', loss, loss.device)
+            if scaler is None:
+                loss.backward()
+            else:
+                scaler.scale(loss).backward()
 
             # Optimize - https://pytorch.org/docs/master/notes/amp_examples.html
             if ni - last_opt_step >= accumulate:
@@ -663,7 +723,7 @@ def parse_opt(known=False):
     parser.add_argument("--bucket", type=str, default="", help="gsutil bucket")
     parser.add_argument("--cache", type=str, nargs="?", const="ram", help="image --cache ram/disk")
     parser.add_argument("--image-weights", action="store_true", help="use weighted image selection for training")
-    parser.add_argument("--device", default="", help="cuda device, i.e. 0 or 0,1,2,3 or cpu")
+    parser.add_argument("--device", default="", help="cuda device, i.e. 0 or 0,1,2,3 or cpu or tpu")
     parser.add_argument("--multi-scale", action="store_true", help="vary img-size +/- 50%%")
     parser.add_argument("--single-cls", action="store_true", help="train multi-class data as single-class")
     parser.add_argument("--optimizer", type=str, choices=["SGD", "Adam", "AdamW"], default="SGD", help="optimizer")
@@ -690,6 +750,7 @@ def parse_opt(known=False):
     # NDJSON logging
     parser.add_argument("--ndjson-console", action="store_true", help="Log ndjson to console")
     parser.add_argument("--ndjson-file", action="store_true", help="Log ndjson to file")
+    parser.add_argument("--debug_cmd", type=str, default="", help="debug_cmd")
 
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
@@ -1058,7 +1119,26 @@ def run(**kwargs):
     main(opt)
     return opt
 
+# import torch._dynamo
+# import logging
+# logger = logging.getLogger("torch._dynamo")
+# logger.setLevel(logging.DEBUG)
+# console_handler = logging.StreamHandler()
+# console_handler.setLevel(logging.DEBUG)
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# console_handler.setFormatter(formatter)
+# logger.addHandler(console_handler)
 
 if __name__ == "__main__":
     opt = parse_opt()
+    #print_ori_fx_graph/dump_fx_graph/skip_tpu_compile/dump_bmodel_input
+    import tpu_mlir
+    tpu_mlir.python.tools.train.config.debug_cmd = opt.debug_cmd
+    tpu_mlir.python.tools.train.config.compile_opt = 2
+    # tpu_mlir.python.tools.train.config.only_compile_graph_id = 1
+    # tpu_mlir.python.tools.train.config.run_on_cmodel = False if opt.device == 'tpu' else True
+    tpu_mlir.python.tools.train.config.run_on_cmodel = True
+    tpu_mlir.python.tools.train.config.print_config_info()
+    # torch._dynamo.config.suppress_errors = True
+    
     main(opt)
