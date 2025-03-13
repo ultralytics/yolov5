@@ -463,7 +463,7 @@ class ModelEMA:
         """
         # self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
         self.ema = de_parallel(model)  # FP32 EMA
-        self.ema.load_state_dict(model.state_dict()) 
+        self.ema.load_state_dict(model.state_dict())
         self.ema = self.ema.eval()
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / tau))  # decay exponential ramp (to help early epochs)
