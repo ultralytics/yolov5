@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 import glob
 import json
@@ -88,14 +88,12 @@ class CometLogger:
         self.upload_dataset = self.opt.upload_dataset or COMET_UPLOAD_DATASET
         self.resume = self.opt.resume
 
-        # Default parameters to pass to Experiment objects
         self.default_experiment_kwargs = {
             "log_code": False,
             "log_env_gpu": True,
             "log_env_cpu": True,
             "project_name": COMET_PROJECT_NAME,
-        }
-        self.default_experiment_kwargs.update(experiment_kwargs)
+        } | experiment_kwargs
         self.experiment = self._get_experiment(self.comet_mode, run_id)
         self.experiment.set_name(self.opt.name)
 

@@ -1,5 +1,6 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
-# COCO128-seg dataset https://www.kaggle.com/ultralytics/coco128 (first 128 images from COCO train2017) by Ultralytics
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# COCO128-seg dataset https://www.kaggle.com/datasets/ultralytics/coco128 (first 128 images from COCO train2017) by Ultralytics
 # Example usage: python train.py --data coco128.yaml
 # parent
 # ├── yolov5

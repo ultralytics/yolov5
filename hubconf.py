@@ -1,6 +1,6 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """
-PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5
+PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5.
 
 Usage:
     import torch
