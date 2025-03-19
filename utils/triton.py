@@ -16,9 +16,7 @@ class TritonRemoteModel:
     """
 
     def __init__(self, url: str):
-        """
-        Keyword Arguments:
-        """
+        """Keyword Arguments:"""
         parsed_url = urlparse(url)
         if parsed_url.scheme == "grpc":
             from tritonclient.grpc import InferenceServerClient, InferInput

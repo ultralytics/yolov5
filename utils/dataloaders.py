@@ -1107,7 +1107,8 @@ def extract_boxes(path=DATASETS_DIR / "coco128"):
 
 
 def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), annotated_only=False):
-    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
+    """
+    Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files.
 
     Arguments:
         path:            Path to images directory

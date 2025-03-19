@@ -349,8 +349,7 @@ class Loggers:
 
 class GenericLogger:
     """
-    YOLOv5 General purpose logger for non-task specific logging
-
+    YOLOv5 General purpose logger for non-task specific logging.
 
     Arguments:
         opt:             Run arguments
