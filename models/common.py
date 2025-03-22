@@ -21,6 +21,7 @@ import torch
 import torch.nn as nn
 from PIL import Image
 CHECK_PYTORCH_18 = torch.__version__.startswith("1.8")
+
 # Import 'ultralytics' package or install if missing
 try:
     import ultralytics
