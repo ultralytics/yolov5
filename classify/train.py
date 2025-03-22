@@ -23,6 +23,7 @@ from datetime import datetime
 from pathlib import Path
 
 import torch
+
 CHECK_PYTORCH_18 = torch.__version__.startswith("1.8")
 import torch.distributed as dist
 import torch.hub as hub
@@ -199,7 +200,7 @@ def train(opt, device):
     criterion = smartCrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
     best_fitness = 0.0
     # adding a check to torch version
-    if CHECK_PYTORCH_18: 
+    if CHECK_PYTORCH_18:
         scaler = torch.cuda.amp.GradScaler(enabled=cuda)
     else:
         scaler = torch.amp.GradScaler("cuda", enabled=cuda)
@@ -223,7 +224,7 @@ def train(opt, device):
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
             # Forward
-            if CHECK_PYTORCH_18: 
+            if CHECK_PYTORCH_18:
                 amp_autocast = torch.cuda.amp.autocast(enabled=device.type != "cpu")
             else:
                 amp_autocast = torch.amp.autocast("cuda", enabled=device.type != "cpu")

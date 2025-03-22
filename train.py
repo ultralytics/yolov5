@@ -353,7 +353,7 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    if CHECK_PYTORCH_18: 
+    if CHECK_PYTORCH_18:
         scaler = torch.cuda.amp.GradScaler(enabled=amp)
     else:
         scaler = torch.amp.GradScaler("cuda", enabled=amp)
