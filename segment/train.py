@@ -39,6 +39,7 @@ ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+CHECK_PYTORCH_18 = torch.__version__.startswith("1.8")
 
 import segment.val as validate  # for end-of-epoch mAP
 from models.experimental import attempt_load
@@ -321,8 +322,7 @@ def train(hyp, opt, device, callbacks):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = None
-    if torch.__version__.startswith("1.8"):
+    if CHECK_PYTORCH_18: 
         scaler = torch.cuda.amp.GradScaler(enabled=amp)
     else:
         scaler = torch.amp.GradScaler("cuda", enabled=amp)
@@ -383,8 +383,7 @@ def train(hyp, opt, device, callbacks):
                 if sf != 1:
                     ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
                     imgs = nn.functional.interpolate(imgs, size=ns, mode="bilinear", align_corners=False)
-            amp_autocast = None
-            if torch.__version__.startswith("1.8"):
+            if CHECK_PYTORCH_18:
                 amp_autocast = torch.cuda.amp.autocast(enabled=amp)
             else:
                 amp_autocast = torch.amp.autocast("cuda", enabled=amp)

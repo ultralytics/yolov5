@@ -26,6 +26,7 @@ import sys
 from pathlib import Path
 
 import torch
+CHECK_PYTORCH_18 = torch.__version__.startswith("1.8")
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
@@ -110,8 +111,7 @@ def run(
     bar = tqdm(dataloader, desc, n, not training, bar_format=TQDM_BAR_FORMAT, position=0)
 
     # checking the version
-    amp_autocast = None
-    if torch.__version__.startswith("1.8"):
+    if CHECK_PYTORCH_18: 
         amp_autocast = torch.cuda.amp.autocast(enabled=device.type != "cpu")
     else:
         amp_autocast = torch.amp.autocast("cuda", enabled=device.type != "cpu")
