@@ -104,16 +104,16 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 `detect.py` 在各种来源上运行推理， [模型](https://github.com/ultralytics/yolov5/tree/master/models) 自动从 最新的YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载，并将结果保存到 `runs/detect` 。
 
 ```bash
-python detect.py --weights yolov5s.pt --source 0 # webcam
-python detect.py --weights yolov5s.pt --source img.jpg                                          # image
-python detect.py --weights yolov5s.pt --source vid.mp4                                          # video
-python detect.py --weights yolov5s.pt --source screen                                           # screenshot
-python detect.py --weights yolov5s.pt --source path/                                            # directory
-python detect.py --weights yolov5s.pt --source list.txt                                         # list of images
-python detect.py --weights yolov5s.pt --source list.streams                                     # list of streams
-python detect.py --weights yolov5s.pt --source 'path/*.jpg'                                     # glob
-python detect.py --weights yolov5s.pt --source 'https://youtu.be/LNwODJXcvt4'                   # YouTube
-python detect.py --weights yolov5s.pt --source 'rtsp://example.com/media.mp4'                   # RTSP, RTMP, HTTP stream
+python detect.py --weights yolov5s.pt --source 0                              # webcam
+python detect.py --weights yolov5s.pt --source img.jpg                        # image
+python detect.py --weights yolov5s.pt --source vid.mp4                        # video
+python detect.py --weights yolov5s.pt --source screen                         # screenshot
+python detect.py --weights yolov5s.pt --source path/                          # directory
+python detect.py --weights yolov5s.pt --source list.txt                       # list of images
+python detect.py --weights yolov5s.pt --source list.streams                   # list of streams
+python detect.py --weights yolov5s.pt --source 'path/*.jpg'                   # glob
+python detect.py --weights yolov5s.pt --source 'https://youtu.be/LNwODJXcvt4' # YouTube
+python detect.py --weights yolov5s.pt --source 'rtsp://example.com/media.mp4' # RTSP, RTMP, HTTP stream
 ```
 
 </details>
