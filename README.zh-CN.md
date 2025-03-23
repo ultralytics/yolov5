@@ -183,8 +183,8 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
     <img src="https://github.com/ultralytics/assets/raw/main/partners/logo-neuralmagic.png" width="10%" alt="NeuralMagic logo"></a>
 </div>
 
-|                                                         Ultralytics HUB 🚀                                                         |                                                               W&B                                                               |                                                                       Comet ⭐ 新版                                                                        |                                              Neural Magic                                              |
-| :--------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------: |
+|                                             Ultralytics HUB 🚀                                             |                                                   W&B                                                    |                                                   Comet ⭐ 新版                                                    |                                           Neural Magic                                            |
+| :--------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------: |
 | 简化 YOLO 工作流：使用 [Ultralytics HUB](https://www.ultralytics.com/hub) 轻松标注、训练和部署。立即试用！ | 使用 [Weights & Biases](https://docs.wandb.ai/guides/integrations/ultralytics/) 跟踪实验、超参数和结果。 | 永久免费，[Comet](https://bit.ly/yolov5-readme-comet) 让您保存 YOLOv5 模型、恢复训练，并以交互方式可视化和调试预测 | 通过 [Neural Magic DeepSparse](https://bit.ly/yolov5-neuralmagic) 将 YOLO11 推理速度提升多达 6 倍 |
 
 ## <div align="center">Ultralytics HUB</div>
@@ -302,9 +302,7 @@ python segment/predict.py --weights yolov5m-seg.pt --source data/images/bus.jpg
 ```
 
 ```python
-model = torch.hub.load(
-    "ultralytics/yolov5", "custom", "yolov5m-seg.pt"
-)  # 从 PyTorch Hub 加载（注意：暂不支持推理）
+model = torch.hub.load("ultralytics/yolov5", "custom", "yolov5m-seg.pt")  # 从 PyTorch Hub 加载（注意：暂不支持推理）
 ```
 
 | ![zidane](https://user-images.githubusercontent.com/26833433/203113421-decef4c4-183d-4a0a-a6c2-6435b33bc5d3.jpg) | ![bus](https://user-images.githubusercontent.com/26833433/203113416-11fe0025-69f7-4874-a0a6-65d0bfe2999a.jpg) |
