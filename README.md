@@ -1,7 +1,7 @@
 <div align="center">
   <p>
-    <a href="https://www.ultralytics.com/events/yolovision" target="_blank">
-      <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-yolov8.png"></a>
+    <a href="https://www.ultralytics.com/blog/all-you-need-to-know-about-ultralytics-yolo11-and-its-applications" target="_blank">
+      <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-yolov8.png" alt="Ultralytics YOLO banner"></a>
   </p>
 
 [中文](https://docs.ultralytics.com/zh) | [한국어](https://docs.ultralytics.com/ko) | [日本語](https://docs.ultralytics.com/ja) | [Русский](https://docs.ultralytics.com/ru) | [Deutsch](https://docs.ultralytics.com/de) | [Français](https://docs.ultralytics.com/fr) | [Español](https://docs.ultralytics.com/es) | [Português](https://docs.ultralytics.com/pt) | [Türkçe](https://docs.ultralytics.com/tr) | [Tiếng Việt](https://docs.ultralytics.com/vi) | [العربية](https://docs.ultralytics.com/ar)
@@ -77,7 +77,7 @@ pip install -r requirements.txt # install
 
 </details>
 
-<details>
+<details open>
 <summary>Inference</summary>
 
 YOLOv5 [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading/) inference. [Models](https://github.com/ultralytics/yolov5/tree/master/models) download automatically from the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases).
@@ -85,17 +85,17 @@ YOLOv5 [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_m
 ```python
 import torch
 
-# Model
-model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # or yolov5n - yolov5x6, custom
+# Load YOLOv5 model (options: yolov5n, yolov5s, yolov5m, yolov5l, yolov5x)
+model = torch.hub.load("ultralytics/yolov5", "yolov5s")
 
-# Images
-img = "https://ultralytics.com/images/zidane.jpg"  # or file, Path, PIL, OpenCV, numpy, list
+# Input source (URL, file, PIL, OpenCV, numpy array, or list)
+img = "https://ultralytics.com/images/zidane.jpg"
 
-# Inference
+# Perform inference (handles batching, resizing, normalization)
 results = model(img)
 
-# Results
-results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
+# Process results (options: .print(), .show(), .save(), .crop(), .pandas())
+results.print()
 ```
 
 </details>
@@ -106,16 +106,16 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 `detect.py` runs inference on a variety of sources, downloading [models](https://github.com/ultralytics/yolov5/tree/master/models) automatically from the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) and saving results to `runs/detect`.
 
 ```bash
-python detect.py --weights yolov5s.pt --source 0 # webcam
-img.jpg                                          # image
-vid.mp4                                          # video
-screen                                           # screenshot
-path/                                            # directory
-list.txt                                         # list of images
-list.streams                                     # list of streams
-'path/*.jpg'                                     # glob
-'https://youtu.be/LNwODJXcvt4'                   # YouTube
-'rtsp://example.com/media.mp4'                   # RTSP, RTMP, HTTP stream
+python detect.py --weights yolov5s.pt --source 0                              # webcam
+python detect.py --weights yolov5s.pt --source img.jpg                        # image
+python detect.py --weights yolov5s.pt --source vid.mp4                        # video
+python detect.py --weights yolov5s.pt --source screen                         # screenshot
+python detect.py --weights yolov5s.pt --source path/                          # directory
+python detect.py --weights yolov5s.pt --source list.txt                       # list of images
+python detect.py --weights yolov5s.pt --source list.streams                   # list of streams
+python detect.py --weights yolov5s.pt --source 'path/*.jpg'                   # glob
+python detect.py --weights yolov5s.pt --source 'https://youtu.be/LNwODJXcvt4' # YouTube
+python detect.py --weights yolov5s.pt --source 'rtsp://example.com/media.mp4' # RTSP, RTMP, HTTP stream
 ```
 
 </details>
@@ -127,10 +127,10 @@ The commands below reproduce YOLOv5 [COCO](https://github.com/ultralytics/yolov5
 
 ```bash
 python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml --batch-size 128
-yolov5s 64
-yolov5m 40
-yolov5l 24
-yolov5x 16
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5s.yaml --batch-size 64
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5m.yaml --batch-size 40
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5l.yaml --batch-size 24
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --batch-size 16
 ```
 
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
