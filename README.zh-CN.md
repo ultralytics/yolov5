@@ -73,7 +73,7 @@ cd yolov5
 pip install -r requirements.txt # install
 ```
 
-</details>
+</details open>
 
 <details>
 <summary>推理</summary>
@@ -83,17 +83,17 @@ pip install -r requirements.txt # install
 ```python
 import torch
 
-# Model
-model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # or yolov5n - yolov5x6, custom
+# 加载 YOLOv5 模型 (选项: yolov5n, yolov5s, yolov5m, yolov5l, yolov5x)
+model = torch.hub.load("ultralytics/yolov5", "yolov5s")
 
-# Images
-img = "https://ultralytics.com/images/zidane.jpg"  # or file, Path, PIL, OpenCV, numpy, list
+# 输入源 (URL, 文件, PIL, OpenCV, numpy 数组, 或列表)
+img = "https://ultralytics.com/images/zidane.jpg"
 
-# Inference
+# 执行推理 (自动处理批处理, 调整大小, 标准化)
 results = model(img)
 
-# Results
-results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
+# 处理结果 (选项: .print(), .show(), .save(), .crop(), .pandas())
+results.print()
 ```
 
 </details>

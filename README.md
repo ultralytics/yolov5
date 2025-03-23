@@ -77,7 +77,7 @@ pip install -r requirements.txt # install
 
 </details>
 
-<details>
+<details open>
 <summary>Inference</summary>
 
 YOLOv5 [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading/) inference. [Models](https://github.com/ultralytics/yolov5/tree/master/models) download automatically from the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases).
@@ -85,17 +85,17 @@ YOLOv5 [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_m
 ```python
 import torch
 
-# Model
-model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # or yolov5n - yolov5x6, custom
+# Load YOLOv5 model (options: yolov5n, yolov5s, yolov5m, yolov5l, yolov5x)
+model = torch.hub.load("ultralytics/yolov5", "yolov5s")
 
-# Images
-img = "https://ultralytics.com/images/zidane.jpg"  # or file, Path, PIL, OpenCV, numpy, list
+# Input source (URL, file, PIL, OpenCV, numpy array, or list)
+img = "https://ultralytics.com/images/zidane.jpg"
 
-# Inference
+# Perform inference (handles batching, resizing, normalization)
 results = model(img)
 
-# Results
-results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
+# Process results (options: .print(), .show(), .save(), .crop(), .pandas())
+results.print()
 ```
 
 </details>
