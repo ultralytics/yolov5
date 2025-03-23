@@ -107,15 +107,15 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 
 ```bash
 python detect.py --weights yolov5s.pt --source 0 # webcam
-img.jpg                                          # image
-vid.mp4                                          # video
-screen                                           # screenshot
-path/                                            # directory
-list.txt                                         # list of images
-list.streams                                     # list of streams
-'path/*.jpg'                                     # glob
-'https://youtu.be/LNwODJXcvt4'                   # YouTube
-'rtsp://example.com/media.mp4'                   # RTSP, RTMP, HTTP stream
+python detect.py --weights yolov5s.pt --source img.jpg                                          # image
+python detect.py --weights yolov5s.pt --source vid.mp4                                          # video
+python detect.py --weights yolov5s.pt --source screen                                           # screenshot
+python detect.py --weights yolov5s.pt --source path/                                            # directory
+python detect.py --weights yolov5s.pt --source list.txt                                         # list of images
+python detect.py --weights yolov5s.pt --source list.streams                                     # list of streams
+python detect.py --weights yolov5s.pt --source 'path/*.jpg'                                     # glob
+python detect.py --weights yolov5s.pt --source 'https://youtu.be/LNwODJXcvt4'                   # YouTube
+python detect.py --weights yolov5s.pt --source 'rtsp://example.com/media.mp4'                   # RTSP, RTMP, HTTP stream
 ```
 
 </details>
