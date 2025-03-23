@@ -1,7 +1,7 @@
 <div align="center">
   <p>
-    <a href="https://www.ultralytics.com/events/yolovision" target="_blank">
-      <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-yolov8.png"></a>
+    <a href="https://www.ultralytics.com/blog/all-you-need-to-know-about-ultralytics-yolo11-and-its-applications" target="_blank">
+      <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-yolov8.png" alt="Ultralytics YOLO banner"></a>
   </p>
 
 [中文](https://docs.ultralytics.com/zh) | [한국어](https://docs.ultralytics.com/ko) | [日本語](https://docs.ultralytics.com/ja) | [Русский](https://docs.ultralytics.com/ru) | [Deutsch](https://docs.ultralytics.com/de) | [Français](https://docs.ultralytics.com/fr) | [Español](https://docs.ultralytics.com/es) | [Português](https://docs.ultralytics.com/pt) | [Türkçe](https://docs.ultralytics.com/tr) | [Tiếng Việt](https://docs.ultralytics.com/vi) | [العربية](https://docs.ultralytics.com/ar)
@@ -68,9 +68,9 @@ pip install ultralytics
 克隆 repo，并要求在 [**Python>=3.8.0**](https://www.python.org/) 环境中安装 [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) ，且要求 [**PyTorch>=1.8**](https://pytorch.org/get-started/locally/) 。
 
 ```bash
-git clone https://github.com/ultralytics/yolov5  # clone
+git clone https://github.com/ultralytics/yolov5 # clone
 cd yolov5
-pip install -r requirements.txt  # install
+pip install -r requirements.txt # install
 ```
 
 </details>
@@ -104,16 +104,16 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 `detect.py` 在各种来源上运行推理， [模型](https://github.com/ultralytics/yolov5/tree/master/models) 自动从 最新的YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载，并将结果保存到 `runs/detect` 。
 
 ```bash
-python detect.py --weights yolov5s.pt --source 0                               # webcam
-                                               img.jpg                         # image
-                                               vid.mp4                         # video
-                                               screen                          # screenshot
-                                               path/                           # directory
-                                               list.txt                        # list of images
-                                               list.streams                    # list of streams
-                                               'path/*.jpg'                    # glob
-                                               'https://youtu.be/LNwODJXcvt4'  # YouTube
-                                               'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+python detect.py --weights yolov5s.pt --source 0                              # webcam
+python detect.py --weights yolov5s.pt --source img.jpg                        # image
+python detect.py --weights yolov5s.pt --source vid.mp4                        # video
+python detect.py --weights yolov5s.pt --source screen                         # screenshot
+python detect.py --weights yolov5s.pt --source path/                          # directory
+python detect.py --weights yolov5s.pt --source list.txt                       # list of images
+python detect.py --weights yolov5s.pt --source list.streams                   # list of streams
+python detect.py --weights yolov5s.pt --source 'path/*.jpg'                   # glob
+python detect.py --weights yolov5s.pt --source 'https://youtu.be/LNwODJXcvt4' # YouTube
+python detect.py --weights yolov5s.pt --source 'rtsp://example.com/media.mp4' # RTSP, RTMP, HTTP stream
 ```
 
 </details>
@@ -125,11 +125,11 @@ python detect.py --weights yolov5s.pt --source 0                               #
 将自动的从 YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载。 YOLOv5n/s/m/l/x 在 V100 GPU 的训练时间为 1/2/4/6/8 天（ [多GPU](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training/) 训练速度更快）。 尽可能使用更大的 `--batch-size` ，或通过 `--batch-size -1` 实现 YOLOv5 [自动批处理](https://github.com/ultralytics/yolov5/pull/5092) 。下方显示的 batchsize 适用于 V100-16GB。
 
 ```bash
-python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml  --batch-size 128
-                                                                 yolov5s                    64
-                                                                 yolov5m                    40
-                                                                 yolov5l                    24
-                                                                 yolov5x                    16
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml --batch-size 128
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5s.yaml --batch-size 64
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5m.yaml --batch-size 40
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5l.yaml --batch-size 24
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --batch-size 16
 ```
 
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
@@ -290,8 +290,8 @@ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train
 在 COCO 数据集上验证 YOLOv5s-seg mask mAP：
 
 ```bash
-bash data/scripts/get_coco.sh --val --segments  # 下载 COCO val segments 数据集 (780MB, 5000 images)
-python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640  # 验证
+bash data/scripts/get_coco.sh --val --segments                            # 下载 COCO val segments 数据集 (780MB, 5000 images)
+python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640 # 验证
 ```
 
 ### 预测
@@ -380,8 +380,8 @@ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/trai
 在 ImageNet-1k 数据集上验证 YOLOv5m-cls 的准确性：
 
 ```bash
-bash data/scripts/get_imagenet.sh --val  # download ImageNet val split (6.3G, 50000 images)
-python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224  # validate
+bash data/scripts/get_imagenet.sh --val                                               # download ImageNet val split (6.3G, 50000 images)
+python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224 # validate
 ```
 
 ### 预测
