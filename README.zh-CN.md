@@ -105,15 +105,15 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 
 ```bash
 python detect.py --weights yolov5s.pt --source 0 # webcam
-img.jpg                                          # image
-vid.mp4                                          # video
-screen                                           # screenshot
-path/                                            # directory
-list.txt                                         # list of images
-list.streams                                     # list of streams
-'path/*.jpg'                                     # glob
-'https://youtu.be/LNwODJXcvt4'                   # YouTube
-'rtsp://example.com/media.mp4'                   # RTSP, RTMP, HTTP stream
+python detect.py --weights yolov5s.pt --source img.jpg                                          # image
+python detect.py --weights yolov5s.pt --source vid.mp4                                          # video
+python detect.py --weights yolov5s.pt --source screen                                           # screenshot
+python detect.py --weights yolov5s.pt --source path/                                            # directory
+python detect.py --weights yolov5s.pt --source list.txt                                         # list of images
+python detect.py --weights yolov5s.pt --source list.streams                                     # list of streams
+python detect.py --weights yolov5s.pt --source 'path/*.jpg'                                     # glob
+python detect.py --weights yolov5s.pt --source 'https://youtu.be/LNwODJXcvt4'                   # YouTube
+python detect.py --weights yolov5s.pt --source 'rtsp://example.com/media.mp4'                   # RTSP, RTMP, HTTP stream
 ```
 
 </details>
@@ -126,10 +126,10 @@ list.streams                                     # list of streams
 
 ```bash
 python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5n.yaml --batch-size 128
-yolov5s 64
-yolov5m 40
-yolov5l 24
-yolov5x 16
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5s.yaml --batch-size 64
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5m.yaml --batch-size 40
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5l.yaml --batch-size 24
+python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --batch-size 16
 ```
 
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
