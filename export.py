@@ -510,7 +510,7 @@ def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):
         $ pip install paddlepaddle x2paddle
         ```
     """
-    check_requirements(("paddlepaddle<3.0.0", "x2paddle"))
+    check_requirements(("paddlepaddle>=3.0.0", "x2paddle"))
     import x2paddle
     from x2paddle.convert import pytorch2paddle
 
