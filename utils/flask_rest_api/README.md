@@ -1,30 +1,36 @@
-# Flask REST API
+<a href="https://www.ultralytics.com/"><img src="https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics_Logotype_Original.svg" width="320" alt="Ultralytics logo"></a>
 
-[REST](https://en.wikipedia.org/wiki/Representational_state_transfer) [API](https://en.wikipedia.org/wiki/API)s are commonly used to expose Machine Learning (ML) models to other services. This folder contains an example REST API created using Flask to expose the YOLOv5s model from [PyTorch Hub](https://pytorch.org/hub/ultralytics_yolov5/).
+# Flask REST API for YOLOv5
 
-## Requirements
+[Representational State Transfer (REST)](https://en.wikipedia.org/wiki/Representational_state_transfer) [Application Programming Interfaces (APIs)](https://en.wikipedia.org/wiki/API) are a standard way to expose [Machine Learning (ML)](https://www.ultralytics.com/glossary/machine-learning-ml) models for consumption by other services or applications. This directory provides an example REST API built with [Flask](https://flask.palletsprojects.com/en/stable/) to serve the Ultralytics [YOLOv5s](https://docs.ultralytics.com/models/yolov5/) model loaded directly from [PyTorch Hub](https://pytorch.org/hub/ultralytics_yolov5/). This allows you to easily integrate YOLOv5 object detection capabilities into your web applications or microservices.
 
-[Flask](https://palletsprojects.com/projects/flask/) is required. Install with:
+## 💻 Requirements
 
-```shell
-$ pip install Flask
-```
-
-## Run
-
-After Flask installation run:
+The primary requirement is the [Flask](https://flask.palletsprojects.com/en/stable/) web framework. Install it using pip:
 
 ```shell
-$ python3 restapi.py --port 5000
+pip install Flask
 ```
 
-Then use [curl](https://curl.se/) to perform a request:
+You will also need `torch` and `yolov5` which are implicitly handled when loading the model from PyTorch Hub in the script. Ensure you have a working Python environment.
+
+## ▶️ Run the API
+
+Once Flask is installed, you can start the API server:
 
 ```shell
-$ curl -X POST -F image=@zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'
+python restapi.py --port 5000
 ```
 
-The model inference results are returned as a JSON response:
+The server will start listening on the specified port (default is 5000). You can then send inference requests to the API endpoint using tools like [curl](https://curl.se/) or any HTTP client.
+
+To test the API with an image file (e.g., `zidane.jpg` from the `yolov5/data/images` directory):
+
+```shell
+curl -X POST -F image=@../data/images/zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'
+```
+
+The API processes the image using the YOLOv5s model and returns the detection results in [JSON](https://www.json.org/json-en.html) format. Each object in the JSON array represents a detected object with its class ID, confidence score, bounding box coordinates (normalized), and class name.
 
 ```json
 [
@@ -67,4 +73,8 @@ The model inference results are returned as a JSON response:
 ]
 ```
 
-An example python script to perform inference using [requests](https://docs.python-requests.org/en/master/) is given in `example_request.py`
+An example Python script, `example_request.py`, demonstrates how to perform inference using the popular [requests](https://requests.readthedocs.io/en/latest/) library. This script provides a simple way to interact with the running API programmatically.
+
+## 🤝 Contribute
+
+Contributions to enhance this Flask API example are welcome! Whether it's adding support for different YOLO models, improving error handling, or adding new features, feel free to fork the repository, make your changes, and submit a pull request. Check out the main [Ultralytics YOLOv5 repository](https://github.com/ultralytics/yolov5) for more details on contributing.
