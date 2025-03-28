@@ -29,10 +29,12 @@ pip install comet_ml
 You can configure Comet in two ways:
 
 1.  **Environment Variables:** Set your credentials directly in your environment.
+
     ```shell
     export COMET_API_KEY=<Your Comet API Key>
     export COMET_PROJECT_NAME=<Your Comet Project Name> # Defaults to 'yolov5' if not set
     ```
+
     Find your API key in your [Comet Account Settings](https://www.comet.com/docs/v2/guides/getting-started/quickstart/#get-an-api-key?utm_source=yolov5&utm_medium=partner&utm_campaign=partner_yolov5_2022&utm_content=github_readme).
 
 2.  **Configuration File:** Create a `.comet.config` file in your working directory with the following content:
@@ -200,7 +202,7 @@ To use a dataset stored in Comet Artifacts, update the `path` in your dataset `y
 # contents of artifact.yaml
 path: "comet://<workspace_name>/<artifact_name>:<artifact_version_or_alias>"
 train: images/train # Adjust subdirectory if needed
-val: images/val   # Adjust subdirectory if needed
+val: images/val # Adjust subdirectory if needed
 
 # Other dataset configurations...
 ```
@@ -259,8 +261,8 @@ python utils/loggers/comet/hpo.py \
 Execute multiple sweep trials concurrently using the `comet optimizer` command:
 
 ```shell
-comet optimizer -j <num_workers> utils/loggers/comet/hpo.py \
-  utils/loggers/comet/optimizer_config.json
+comet optimizer -j \
+  utils/loggers/comet/optimizer_config.json < num_workers > utils/loggers/comet/hpo.py
 ```
 
 Replace `<num_workers>` with the desired number of parallel processes.
