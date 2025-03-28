@@ -261,8 +261,8 @@ python utils/loggers/comet/hpo.py \
 Execute multiple sweep trials concurrently using the `comet optimizer` command:
 
 ```shell
-comet optimizer -j <num_workers> \
-  utils/loggers/comet/optimizer_config.json utils/loggers/comet/hpo.py
+comet optimizer -j \
+  utils/loggers/comet/hpo.py < num_workers > utils/loggers/comet/optimizer_config.json
 ```
 
 Replace `<num_workers>` with the desired number of parallel processes.
