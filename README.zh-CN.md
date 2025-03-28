@@ -70,9 +70,9 @@ pip install ultralytics
 克隆仓库并在 [**Python>=3.8.0**](https://www.python.org/) 环境中安装 [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) 文件中的依赖，包括 [**PyTorch>=1.8**](https://pytorch.org/get-started/locally/)。
 
 ```bash
-git clone https://github.com/ultralytics/yolov5 # 克隆仓库
+git clone https://github.com/ultralytics/yolov5 # clone
 cd yolov5
-pip install -r requirements.txt # 安装依赖
+pip install -r requirements.txt # install
 ```
 
 </details>
@@ -290,6 +290,7 @@ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 segment/train
 
 ```bash
 bash data/scripts/get_coco.sh --val --segments                            # 下载 COCO val 分割集（780MB，5000 张图）
+>>>>>>> origin/ma
 python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640 # 验证
 ```
 
@@ -380,8 +381,8 @@ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/trai
 在 ImageNet-1k 数据集上验证 YOLOv5m-cls 的准确率：
 
 ```bash
-bash data/scripts/get_imagenet.sh --val                                               # 下载 ImageNet 验证集（6.3G，50000 张图）
-python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224 # 验证
+bash data/scripts/get_imagenet.sh --val                                               # download ImageNet val split (6.3G, 50000 images)
+python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224 # validate
 ```
 
 ### 预测
