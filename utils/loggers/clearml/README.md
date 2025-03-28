@@ -6,15 +6,15 @@
 
 ## ℹ️ About ClearML
 
-[ClearML](https://clear.ml/) is an [open-source](https://github.com/clearml/clearml) MLOps platform designed to streamline your machine learning workflow and save you valuable time ⏱️. Integrating ClearML with Ultralytics YOLOv5 allows you to leverage a powerful suite of tools:
+[ClearML](https://clear.ml/) is an [open-source](https://github.com/clearml/clearml) MLOps platform designed to streamline your machine learning workflow and save valuable time ⏱️. Integrating ClearML with [Ultralytics YOLOv5](https://docs.ultralytics.com/models/yolov5/) allows you to leverage a powerful suite of tools:
 
-- **Experiment Management:** 🔨 Track every [YOLOv5](https://docs.ultralytics.com/models/yolov5/) training run, including parameters, metrics, and outputs. See the [Ultralytics ClearML integration guide](https://docs.ultralytics.com/integrations/clearml/) for more details.
+- **Experiment Management:** 🔨 Track every YOLOv5 [training run](https://docs.ultralytics.com/modes/train/), including parameters, metrics, and outputs. See the [Ultralytics ClearML integration guide](https://docs.ultralytics.com/integrations/clearml/) for more details.
 - **Data Versioning:** 🔧 Version and easily access your custom training data using the integrated ClearML Data Versioning Tool, similar to concepts in [DVC integration](https://docs.ultralytics.com/integrations/dvc/).
 - **Remote Execution:** 🔦 [Remotely train and monitor](https://docs.ultralytics.com/hub/cloud-training/) your YOLOv5 models using ClearML Agent.
 - **Hyperparameter Optimization:** 🔬 Achieve optimal [Mean Average Precision (mAP)](https://docs.ultralytics.com/guides/yolo-performance-metrics/) using ClearML's [Hyperparameter Optimization](https://docs.ultralytics.com/guides/hyperparameter-tuning/) capabilities.
 - **Model Deployment:** 🔭 Turn your trained YOLOv5 model into an API with just a few commands using ClearML Serving, complementing [Ultralytics deployment options](https://docs.ultralytics.com/guides/model-deployment-options/).
 
-You can choose to use only the experiment manager or combine multiple tools into a comprehensive MLOps pipeline.
+You can choose to use only the experiment manager or combine multiple tools into a comprehensive [MLOps](https://www.ultralytics.com/glossary/machine-learning-operations-mlops) pipeline.
 
 ![ClearML scalars dashboard](https://raw.githubusercontent.com/thepycoder/clearml_screenshots/main/experiment_manager_with_compare.gif)
 
@@ -69,7 +69,7 @@ ClearML automatically captures comprehensive information about your training run
 - Hyperparameters and configuration settings
 - Model checkpoints (use `--save-period n` to save every `n` epochs)
 - Console output logs
-- Performance metrics ([mAP_0.5](https://docs.ultralytics.com/guides/yolo-performance-metrics/), mAP_0.5:0.95, [precision, recall](https://docs.ultralytics.com/guides/yolo-performance-metrics/), [losses](https://docs.ultralytics.com/reference/utils/loss/), [learning rates](https://www.ultralytics.com/glossary/learning-rate), etc.)
+- Performance metrics (mAP_0.5, mAP_0.5:0.95, [precision, recall](https://docs.ultralytics.com/guides/yolo-performance-metrics/), [losses](https://docs.ultralytics.com/reference/utils/loss/), [learning rates](https://www.ultralytics.com/glossary/learning-rate), etc.)
 - System details (machine specs, runtime, creation date)
 - Generated plots (e.g., label correlogram, [confusion matrix](https://www.ultralytics.com/glossary/confusion-matrix))
 - Images with bounding boxes per epoch
