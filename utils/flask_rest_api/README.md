@@ -1,30 +1,36 @@
-# Flask REST API
+<a href="https://www.ultralytics.com/"><img src="https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics_Logotype_Original.svg" width="320" alt="Ultralytics logo"></a>
 
-[REST](https://en.wikipedia.org/wiki/Representational_state_transfer) [API](https://en.wikipedia.org/wiki/API)s are commonly used to expose Machine Learning (ML) models to other services. This folder contains an example REST API created using Flask to expose the YOLOv5s model from [PyTorch Hub](https://pytorch.org/hub/ultralytics_yolov5/).
+# Flask REST API for YOLOv5
 
-## Requirements
+[Representational State Transfer (REST)](https://en.wikipedia.org/wiki/Representational_state_transfer) [Application Programming Interfaces (APIs)](https://en.wikipedia.org/wiki/API) provide a standardized way to expose [Machine Learning (ML)](https://www.ultralytics.com/glossary/machine-learning-ml) models for use by other services or applications. This directory contains an example REST API built with the [Flask](https://flask.palletsprojects.com/en/stable/) web framework to serve the [Ultralytics YOLOv5s](https://docs.ultralytics.com/models/yolov5/) model, loaded directly from [PyTorch Hub](https://pytorch.org/hub/ultralytics_yolov5/). This setup allows you to easily integrate YOLOv5 [object detection](https://docs.ultralytics.com/tasks/detect/) capabilities into your web applications or microservices, aligning with common [model deployment options](https://docs.ultralytics.com/guides/model-deployment-options/).
 
-[Flask](https://palletsprojects.com/projects/flask/) is required. Install with:
+## 💻 Requirements
 
-```shell
-$ pip install Flask
-```
-
-## Run
-
-After Flask installation run:
+The primary requirement is the [Flask](https://flask.palletsprojects.com/en/stable/) web framework. You can install it using pip:
 
 ```shell
-$ python3 restapi.py --port 5000
+pip install Flask
 ```
 
-Then use [curl](https://curl.se/) to perform a request:
+You will also need `torch` and `yolov5`. These are implicitly handled by the script when it loads the model from PyTorch Hub. Ensure you have a functioning Python environment set up.
+
+## ▶️ Run the API
+
+Once Flask is installed, you can start the API server using the following command:
 
 ```shell
-$ curl -X POST -F image=@zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'
+python restapi.py --port 5000
 ```
 
-The model inference results are returned as a JSON response:
+The server will begin listening on the specified port (defaulting to 5000). You can then send inference requests to the API endpoint using tools like [curl](https://curl.se/) or any other HTTP client.
+
+To test the API with a local image file (e.g., `zidane.jpg` located in the `yolov5/data/images` directory relative to the script):
+
+```shell
+curl -X POST -F image=@../data/images/zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'
+```
+
+The API processes the submitted image using the YOLOv5s model and returns the detection results in [JSON](https://www.json.org/json-en.html) format. Each object within the JSON array represents a detected item, including its class ID, confidence score, normalized [bounding box](https://www.ultralytics.com/glossary/bounding-box) coordinates (`xcenter`, `ycenter`, `width`, `height`), and class name.
 
 ```json
 [
@@ -67,4 +73,8 @@ The model inference results are returned as a JSON response:
 ]
 ```
 
-An example python script to perform inference using [requests](https://docs.python-requests.org/en/master/) is given in `example_request.py`
+An example Python script, `example_request.py`, is included to demonstrate how to perform inference using the popular [requests](https://requests.readthedocs.io/en/latest/) library. This script offers a straightforward method for interacting with the running API programmatically.
+
+## 🤝 Contribute
+
+Contributions to enhance this Flask API example are highly encouraged! Whether you're interested in adding support for different YOLO models, improving error handling, or implementing new features, please feel free to fork the repository, apply your changes, and submit a pull request. For more comprehensive contribution guidelines, please refer to the main [Ultralytics YOLOv5 repository](https://github.com/ultralytics/yolov5) and the general [Ultralytics documentation](https://docs.ultralytics.com/).
