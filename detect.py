@@ -1,14 +1,11 @@
-
 import argparse
 import csv
 import os
 import platform
 import sys
-import paho.mqtt.client as mqtt
-import json
-import time
 from pathlib import Path
 
+import paho.mqtt.client as mqtt
 import torch
 
 FILE = Path(__file__).resolve()
@@ -43,14 +40,17 @@ MQTT_BROKER = "broker.hivemq.com"
 MQTT_PORT = 1883
 MQTT_TOPIC = "Automation001"
 
+
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected to MQTT broker successfully.")
     else:
         print(f"Failed to connect to MQTT broker, return code {rc}")
 
+
 def on_publish(client, userdata, mid):
     print(f"Message {mid} published.")
+
 
 # Initialize MQTT client
 client = mqtt.Client()
@@ -67,49 +67,53 @@ RECOGNITION_THRESHOLD = 0.7
 # Buffer to store objects detected over last N frames
 focus_buffer = deque(maxlen=WINDOW_SIZE)  # Track objects over last 5 frames
 
+
 def get_focused_object(detections, img_shape):
     """
-    Determines the object the user is focusing on by finding the detection
-    closest to the center of the frame and ensuring persistence over frames.
-    
+    Determines the object the user is focusing on by finding the detection closest to the center of the frame and
+    ensuring persistence over frames.
+
     :param detections: Tensor of shape (N, 6) containing [x1, y1, x2, y2, confidence, class]
     :param img_shape: Shape of the original image (height, width, channels)
     :return: The most consistently detected object (class ID) or None if no stable focus.
     """
     if len(detections) == 0:
         return 80  # No objects detected
-    
+
     # Step 1: Filter out low-confidence detections
     detections = detections[detections[:, 4] > 0.5]  # Keep only confidence > 50%
-    
+
     if len(detections) == 0:
         return 80  # No confident detections
-    
+
     # Step 2: Calculate object centroids
     image_center = torch.tensor([img_shape[1] / 2, img_shape[0] / 2])  # (x_center, y_center)
-    centroids = torch.stack([(detections[:, 0] + detections[:, 2]) / 2,
-                             (detections[:, 1] + detections[:, 3]) / 2], dim=1)
-    
+    centroids = torch.stack(
+        [(detections[:, 0] + detections[:, 2]) / 2, (detections[:, 1] + detections[:, 3]) / 2], dim=1
+    )
+
     # Step 3: Find the object closest to the center
     distances = torch.norm(centroids - image_center, dim=1)  # Euclidean distance
     min_distance_index = torch.argmin(distances)  # Index of the closest object
-    
+
     focused_object = int(detections[min_distance_index, 5])  # Get class ID of the focused object
-    
+
     # Step 4: Maintain a sliding window of detected objects
     focus_buffer.append(focused_object)
-    
+
     # Step 5: Determine the most frequently appearing object in buffer
     focus_counts = {obj: focus_buffer.count(obj) for obj in set(focus_buffer)}
     most_frequent_object = max(focus_counts, key=focus_counts.get)  # Object appearing most in buffer
-    
+
     # Only return if it appears in at least 60% of frames in the buffer
     if focus_counts[most_frequent_object] >= RECOGNITION_THRESHOLD * len(focus_buffer):
         return most_frequent_object
     else:
         return 80  # No stable focus object
 
-# 80 class corresponds 
+
+# 80 class corresponds
+
 
 @smart_inference_mode()
 def run(
@@ -143,7 +147,6 @@ def run(
     dnn=False,  # use OpenCV DNN for ONNX inference
     vid_stride=1,  # video frame-rate stride
 ):
-   
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -161,7 +164,7 @@ def run(
     device = select_device(device)
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
     stride, names, pt = model.stride, model.names, model.pt
-    names[80] = 'none'
+    names[80] = "none"
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Dataloader
@@ -225,7 +228,6 @@ def run(
 
         # Process predictions
         for i, det in enumerate(pred):  # per image
-            
             seen += 1
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i], im0s[i].copy(), dataset.count
@@ -255,7 +257,7 @@ def run(
                     label = names[c] if hide_conf else f"{names[c]}"
                     confidence = float(conf)
                     confidence_str = f"{confidence:.2f}"
-                        
+
                     if confidence > 0.50:
                         msg = f"{label}"
                         # client.publish(MQTT_TOPIC, msg, retain=True)
@@ -310,12 +312,11 @@ def run(
                         save_path = str(Path(save_path).with_suffix(".mp4"))  # force *.mp4 suffix on results videos
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
                     vid_writer[i].write(im0)
-            
 
         # Print time (inference-only)
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1e3:.1f}ms")
 
-        if cv2.waitKey(1) == ord('q'):
+        if cv2.waitKey(1) == ord("q"):
             cv2.destroyAllWindows
             # raise StopIteration
             break
@@ -331,7 +332,6 @@ def run(
 
 
 def parse_opt():
-   
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s.pt", help="model path or triton URL")
     parser.add_argument("--source", type=str, default=ROOT / "data/images", help="file/dir/URL/glob/screen/0(webcam)")
@@ -374,7 +374,6 @@ def parse_opt():
 
 
 def main(opt):
-   
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
     run(**vars(opt))
 
