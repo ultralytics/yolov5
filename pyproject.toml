@@ -145,3 +145,6 @@ close-quotes-on-newline = true
 [tool.codespell]
 ignore-words-list = "crate,nd,strack,dota,ane,segway,fo,gool,winn,commend"
 skip = '*.csv,*venv*,docs/??/,docs/mkdocs_??.yml'
+
+[tool.setuptools.packages]
+find = { include = ["models", "data", "segment", "classify"] }
