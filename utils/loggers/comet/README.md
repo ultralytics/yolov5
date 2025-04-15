@@ -102,14 +102,14 @@ Customize Comet's logging behavior using command-line flags or environment varia
 
 ```shell
 # Environment Variables for Comet Configuration
-export COMET_MODE=online # 'online' or 'offline'. Default: online
-export COMET_MODEL_NAME=YOUR_MODEL_NAME # Name for the saved model. Default: yolov5
-export COMET_LOG_CONFUSION_MATRIX=false # Disable confusion matrix logging. Default: true
-export COMET_MAX_IMAGE_UPLOADS=NUMBER # Max prediction images to log. Default: 100
-export COMET_LOG_PER_CLASS_METRICS=true # Log metrics per class. Default: false
+export COMET_MODE=online                                    # 'online' or 'offline'. Default: online
+export COMET_MODEL_NAME=YOUR_MODEL_NAME                     # Name for the saved model. Default: yolov5
+export COMET_LOG_CONFUSION_MATRIX=false                     # Disable confusion matrix logging. Default: true
+export COMET_MAX_IMAGE_UPLOADS=NUMBER                       # Max prediction images to log. Default: 100
+export COMET_LOG_PER_CLASS_METRICS=true                     # Log metrics per class. Default: false
 export COMET_DEFAULT_CHECKPOINT_FILENAME=checkpoint_file.pt # Checkpoint for resuming. Default: 'last.pt'
-export COMET_LOG_BATCH_LEVEL_METRICS=true # Log training metrics per batch. Default: false
-export COMET_LOG_PREDICTIONS=true # Disable prediction logging if set to false. Default: true
+export COMET_LOG_BATCH_LEVEL_METRICS=true                   # Log training metrics per batch. Default: false
+export COMET_LOG_PREDICTIONS=true                           # Disable prediction logging if set to false. Default: true
 ```
 
 For more configuration options, see the [Comet documentation](https://www.comet.com/docs/v2/).
