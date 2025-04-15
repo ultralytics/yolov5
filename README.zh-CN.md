@@ -181,7 +181,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 - **[多 GPU 训练](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training/)**：使用多个 GPU 加速训练。
 - **[PyTorch Hub 集成](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading/)** 🌟 **新增**：使用 PyTorch Hub 轻松加载模型。
 - **[模型导出 (TFLite, ONNX, CoreML, TensorRT)](https://docs.ultralytics.com/yolov5/tutorials/model_export/)** 🚀：将您的模型转换为各种部署格式，如 [ONNX](https://onnx.ai/) 或 [TensorRT](https://developer.nvidia.com/tensorrt)。
-- **[NVIDIA Jetson 部署](https://docs.ultralytics.com/yolov5/tutorials/running_on_jetson_nano/)** 🌟 **新增**：在 [NVIDIA Jetson](https://developer.nvidia.com/embedded-computing) 设备上部署 YOLOv5。
+- **[NVIDIA Jetson 部署](https://docs.ultralytics.com/guides/nvidia-jetson/)** 🌟 **新增**：在 [NVIDIA Jetson](https://developer.nvidia.com/embedded-computing) 设备上部署 YOLOv5。
 - **[测试时增强 (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation/)**：使用 TTA 提高预测准确性。
 - **[模型集成](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling/)**：组合多个模型以获得更好的性能。
 - **[模型剪枝/稀疏化](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity/)**：优化模型的大小和速度。
@@ -191,7 +191,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 - **[Ultralytics HUB 训练](https://www.ultralytics.com/hub)** 🚀 **推荐**：使用 Ultralytics HUB 训练和部署 YOLO 模型。
 - **[ClearML 日志记录](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration/)**：与 [ClearML](https://clear.ml/) 集成以进行实验跟踪。
 - **[Neural Magic DeepSparse 集成](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization/)**：使用 DeepSparse 加速推理。
-- **[Comet 日志记录](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration/)** 🌟 **新增**：使用 [Comet ML](https://www.comet.com/) 记录实验。
+- **[Comet 日志记录](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration/)** 🌟 **新增**：使用 [Comet ML](https://www.comet.com/site/) 记录实验。
 
 </details>
 
@@ -219,9 +219,9 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
     <img src="https://github.com/ultralytics/assets/raw/main/partners/logo-neuralmagic.png" width="10%" alt="Neural Magic logo"></a>
 </div>
 
-|                                            Ultralytics HUB 🌟                                            |                                              Weights & Biases                                               |                                                           Comet                                                            |                                                      Neural Magic                                                       |
-| :------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------: |
-| 简化 YOLO 工作流程：使用 [Ultralytics HUB](https://hub.ultralytics.com) 轻松标注、训练和部署。立即试用！ | 使用 [Weights & Biases](https://docs.ultralytics.com/integrations/weights-biases/) 跟踪实验、超参数和结果。 | 永久免费的 [Comet ML](https://docs.ultralytics.com/integrations/comet/) 让您保存 YOLO 模型、恢复训练并交互式地可视化预测。 | 使用 [Neural Magic DeepSparse](https://docs.ultralytics.com/integrations/neural-magic/) 将 YOLO 推理速度提高多达 6 倍。 |
+|                                            Ultralytics HUB 🌟                                             |                                              Weights & Biases                                               |                                                           Comet                                                            |                                                      Neural Magic                                                       |
+| :-------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------: |
+| 简化 YOLO 工作流程：使用 [Ultralytics HUB](https://hub.ultralytics.com/) 轻松标注、训练和部署。立即试用！ | 使用 [Weights & Biases](https://docs.ultralytics.com/integrations/weights-biases/) 跟踪实验、超参数和结果。 | 永久免费的 [Comet ML](https://docs.ultralytics.com/integrations/comet/) 让您保存 YOLO 模型、恢复训练并交互式地可视化预测。 | 使用 [Neural Magic DeepSparse](https://docs.ultralytics.com/integrations/neural-magic/) 将 YOLO 推理速度提高多达 6 倍。 |
 
 ## ⭐ Ultralytics HUB
 
@@ -244,7 +244,7 @@ YOLOv5 的设计旨在简单易用。我们优先考虑实际性能和可访问�
   <summary>图表说明</summary>
 
 - **COCO AP val** 表示在 [交并比 (IoU)](https://www.ultralytics.com/glossary/intersection-over-union-iou) 阈值从 0.5 到 0.95 范围内的[平均精度均值 (mAP)](https://www.ultralytics.com/glossary/mean-average-precision-map)，在包含 5000 张图像的 [COCO val2017 数据集](https://docs.ultralytics.com/datasets/detect/coco/)上，使用各种推理尺寸（256 到 1536 像素）测量得出。
-- **GPU Speed** 使用批处理大小为 32 的 [AWS p3.2xlarge V100 实例](https://aws.amazon.com/ec2/instance-types/p3/)，测量在 [COCO val2017 数据集](https://docs.ultralytics.com/datasets/detect/coco/)上每张图像的平均推理时间。
+- **GPU Speed** 使用批处理大小为 32 的 [AWS p3.2xlarge V100 实例](https://aws.amazon.com/ec2/instance-types/p4/)，测量在 [COCO val2017 数据集](https://docs.ultralytics.com/datasets/detect/coco/)上每张图像的平均推理时间。
 - **EfficientDet** 数据来源于 [google/automl 仓库](https://github.com/google/automl)，批处理大小为 8。
 - **复现**这些结果请使用命令：`python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
 
@@ -273,7 +273,7 @@ YOLOv5 的设计旨在简单易用。我们优先考虑实际性能和可访问�
 
 - 所有预训练权重均使用默认设置训练了 300 个周期。Nano (n) 和 Small (s) 模型使用 [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) 超参数，而 Medium (m)、Large (l) 和 Extra-Large (x) 模型使用 [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml)。
 - **mAP<sup>val</sup>** 值表示在 [COCO val2017 数据集](https://docs.ultralytics.com/datasets/detect/coco/)上的单模型、单尺度性能。<br>复现请使用：`python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
-- **速度**指标是在 [AWS p3.2xlarge V100 实例](https://aws.amazon.com/ec2/instance-types/p3/)上对 COCO val 图像进行平均测量的。不包括非极大值抑制 (NMS) 时间（约 1 毫秒/图像）。<br>复现请使用：`python val.py --data coco.yaml --img 640 --task speed --batch 1`
+- **速度**指标是在 [AWS p3.2xlarge V100 实例](https://aws.amazon.com/ec2/instance-types/p4/)上对 COCO val 图像进行平均测量的。不包括非极大值抑制 (NMS) 时间（约 1 毫秒/图像）。<br>复现请使用：`python val.py --data coco.yaml --img 640 --task speed --batch 1`
 - **TTA** ([测试时增强](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation/)) 包括反射和尺度增强以提高准确性。<br>复现请使用：`python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
