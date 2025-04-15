@@ -33,6 +33,7 @@ jobs:
           retry_delay_seconds: 60
           retries: 2
           run: |
+            set -o pipefail  # preserve exit code from lychee command in pipeline
             lychee \
             --scheme 'https' \
             --timeout 60 \
@@ -54,6 +55,7 @@ jobs:
           retry_delay_seconds: 60
           retries: 2
           run: |
+            set -o pipefail  # preserve exit code from lychee command in pipeline
             lychee \
             --scheme 'https' \
             --timeout 60 \
