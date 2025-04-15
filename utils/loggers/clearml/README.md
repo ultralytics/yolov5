@@ -29,20 +29,20 @@ To get started:
 
 1. **Install the ClearML Python package:**
 
-    ```bash
-    pip install clearml
-    ```
+   ```bash
+   pip install clearml
+   ```
 
-    _Note: The `clearml` package is included in the YOLO requirements._
+   _Note: The `clearml` package is included in the YOLO requirements._
 
 2. **Connect the ClearML SDK to your server:**  
    [Create credentials](https://app.clear.ml/settings/workspace-configuration) (Settings → Workspace → Create new credentials), then run:
 
-    ```bash
-    clearml-init
-    ```
+   ```bash
+   clearml-init
+   ```
 
-    Follow the prompts to complete setup.
+   Follow the prompts to complete setup.
 
 For a general Ultralytics setup, see the [Quickstart Guide](https://docs.ultralytics.com/quickstart/).
 
