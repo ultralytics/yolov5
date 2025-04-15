@@ -37,8 +37,8 @@ You can configure Comet in two ways:
    Set your credentials directly in your environment.
 
    ```shell
-   export COMET_API_KEY=<Your Comet API Key>
-   export COMET_PROJECT_NAME=<Your Comet Project Name> # Defaults to 'yolov5' if not set
+   export COMET_API_KEY=YOUR_COMET_API_KEY
+   export COMET_PROJECT_NAME=YOUR_COMET_PROJECT_NAME # Defaults to 'yolov5' if not set
    ```
 
    Find your API key in your [Comet Account Settings](https://www.comet.com/site/).
@@ -48,8 +48,8 @@ You can configure Comet in two ways:
 
    ```ini
    [comet]
-   api_key=<Your Comet API Key>
-   project_name=<Your Comet Project Name> # Defaults to 'yolov5' if not set
+   api_key=YOUR_COMET_API_KEY
+   project_name=YOUR_COMET_PROJECT_NAME # Defaults to 'yolov5' if not set
    ```
 
 ### Run the Training Script
@@ -102,14 +102,14 @@ Customize Comet's logging behavior using command-line flags or environment varia
 
 ```shell
 # Environment Variables for Comet Configuration
-export COMET_MODE=online # 'online' or 'offline'. Default: online
-export COMET_MODEL_NAME=<your_model_name> # Name for the saved model. Default: yolov5
-export COMET_LOG_CONFUSION_MATRIX=false # Disable confusion matrix logging. Default: true
-export COMET_MAX_IMAGE_UPLOADS=<number> # Max prediction images to log. Default: 100
-export COMET_LOG_PER_CLASS_METRICS=true # Log metrics per class. Default: false
-export COMET_DEFAULT_CHECKPOINT_FILENAME=<checkpoint_file.pt> # Checkpoint for resuming. Default: 'last.pt'
-export COMET_LOG_BATCH_LEVEL_METRICS=true # Log training metrics per batch. Default: false
-export COMET_LOG_PREDICTIONS=true # Disable prediction logging if set to false. Default: true
+export COMET_MODE=online                                    # 'online' or 'offline'. Default: online
+export COMET_MODEL_NAME=YOUR_MODEL_NAME                     # Name for the saved model. Default: yolov5
+export COMET_LOG_CONFUSION_MATRIX=false                     # Disable confusion matrix logging. Default: true
+export COMET_MAX_IMAGE_UPLOADS=NUMBER                       # Max prediction images to log. Default: 100
+export COMET_LOG_PER_CLASS_METRICS=true                     # Log metrics per class. Default: false
+export COMET_DEFAULT_CHECKPOINT_FILENAME=checkpoint_file.pt # Checkpoint for resuming. Default: 'last.pt'
+export COMET_LOG_BATCH_LEVEL_METRICS=true                   # Log training metrics per batch. Default: false
+export COMET_LOG_PREDICTIONS=true                           # Disable prediction logging if set to false. Default: true
 ```
 
 For more configuration options, see the [Comet documentation](https://www.comet.com/docs/v2/).
@@ -208,7 +208,7 @@ To use a dataset stored in Comet Artifacts, update the `path` in your dataset YA
 
 ```yaml
 # contents of artifact.yaml
-path: "comet://<workspace_name>/<artifact_name>:<artifact_version_or_alias>"
+path: "comet://WORKSPACE_NAME/ARTIFACT_NAME:ARTIFACT_VERSION_OR_ALIAS"
 train: images/train # Adjust subdirectory if needed
 val: images/val # Adjust subdirectory if needed
 
@@ -231,13 +231,13 @@ Artifacts track data lineage, showing which experiments used specific dataset ve
 
 ## 🔄 Resuming Training Runs
 
-If a training run is interrupted (for example, due to connection issues), you can resume it using the `--resume` flag with the Comet Run Path (`comet://<your_workspace>/<your_project>/<experiment_id>`).
+If a training run is interrupted (for example, due to connection issues), you can resume it using the `--resume` flag with the Comet Run Path (`comet://YOUR_WORKSPACE/YOUR_PROJECT/EXPERIMENT_ID`).
 
 This restores the model state, hyperparameters, arguments, and downloads necessary Artifacts, continuing logging to the existing Comet Experiment. Learn more about [resuming runs in the Comet documentation](https://www.comet.com/docs/v2/guides/experiment-management/resume-experiment/).
 
 ```shell
 python train.py \
-  --resume "comet://<your_workspace>/<your_project>/<experiment_id>"
+  --resume "comet://YOUR_WORKSPACE/YOUR_PROJECT/EXPERIMENT_ID"
 ```
 
 ## 🔍 Hyperparameter Optimization (HPO)
@@ -270,10 +270,10 @@ Execute multiple sweep trials concurrently using the `comet optimizer` command:
 
 ```shell
 comet optimizer -j \
-  utils/loggers/comet/hpo.py < num_workers > utils/loggers/comet/optimizer_config.json
+  utils/loggers/comet/hpo.py NUM_WORKERS utils/loggers/comet/optimizer_config.json
 ```
 
-Replace `<num_workers>` with the desired number of parallel processes.
+Replace `NUM_WORKERS` with the desired number of parallel processes.
 
 ### Visualizing HPO Results
 
