@@ -47,7 +47,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     Notes:
         For more information on model loading and customization, visit the
-        [YOLOv5 PyTorch Hub Documentation](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading).
+        [YOLOv5 PyTorch Hub Documentation](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading/).
     """
     from pathlib import Path
 
@@ -210,7 +210,7 @@ def yolov5s(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
 
     Notes:
         For more details on model loading and customization, visit
-        the [YOLOv5 PyTorch Hub Documentation](https://pytorch.org/hub/ultralytics_yolov5).
+        the [YOLOv5 PyTorch Hub Documentation](https://pytorch.org/hub/ultralytics_yolov5/).
     """
     return _create("yolov5s", pretrained, channels, classes, autoshape, _verbose, device)
 
@@ -438,7 +438,7 @@ def yolov5l6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
         ```
 
     Note:
-        Refer to [PyTorch Hub Documentation](https://pytorch.org/hub/ultralytics_yolov5) for additional usage instructions.
+        Refer to [PyTorch Hub Documentation](https://pytorch.org/hub/ultralytics_yolov5/) for additional usage instructions.
     """
     return _create("yolov5l6", pretrained, channels, classes, autoshape, _verbose, device)
 
