@@ -6,17 +6,26 @@
 # └── datasets
 #     └── coco128  ← downloads here
 
-
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: D:/lzy/yolov5/yolov5/data_org/yolo_dataset  # dataset root dir
-train: train/images  # train images (relative to 'path') 128 images
-val: valid/images  # val images (relative to 'path') 128 images
+path: D:/lzy/yolov5/yolov5/data_org/yolo_dataset # dataset root dir
+train: train/images # train images (relative to 'path') 128 images
+val: valid/images # val images (relative to 'path') 128 images
 test: test/images # test images (optional)
 
 # Classes
-nc: 11  # number of classes
-names: ['animasls', 'cat', 'chicken', 'cow', 'dog', 'fox', 
-        'goat', 'horse', 'person', 'recoon', 'skunk']  # class names
-
+nc: 11 # number of classes
+names: [
+    "animasls",
+    "cat",
+    "chicken",
+    "cow",
+    "dog",
+    "fox",
+    "goat",
+    "horse",
+    "person",
+    "recoon",
+    "skunk",
+  ] # class names
 
 # Download script/URL (optional)
