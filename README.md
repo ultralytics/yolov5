@@ -181,7 +181,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 - **[Multi-GPU Training](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training/)**: Speed up training using multiple GPUs.
 - **[PyTorch Hub Integration](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading/)** 🌟 **NEW**: Easily load models using PyTorch Hub.
 - **[Model Export (TFLite, ONNX, CoreML, TensorRT)](https://docs.ultralytics.com/yolov5/tutorials/model_export/)** 🚀: Convert your models to various deployment formats like [ONNX](https://onnx.ai/) or [TensorRT](https://developer.nvidia.com/tensorrt).
-- **[NVIDIA Jetson Deployment](https://docs.ultralytics.com/yolov5/tutorials/running_on_jetson_nano/)** 🌟 **NEW**: Deploy YOLOv5 on [NVIDIA Jetson](https://developer.nvidia.com/embedded-computing) devices.
+- **[NVIDIA Jetson Deployment](https://docs.ultralytics.com/guides/nvidia-jetson/)** 🌟 **NEW**: Deploy YOLOv5 on [NVIDIA Jetson](https://developer.nvidia.com/embedded-computing) devices.
 - **[Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation/)**: Enhance prediction accuracy with TTA.
 - **[Model Ensembling](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling/)**: Combine multiple models for better performance.
 - **[Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity/)**: Optimize models for size and speed.
@@ -191,7 +191,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 - **[Ultralytics HUB Training](https://www.ultralytics.com/hub)** 🚀 **RECOMMENDED**: Train and deploy YOLO models using Ultralytics HUB.
 - **[ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration/)**: Integrate with [ClearML](https://clear.ml/) for experiment tracking.
 - **[Neural Magic DeepSparse Integration](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization/)**: Accelerate inference with DeepSparse.
-- **[Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration/)** 🌟 **NEW**: Log experiments using [Comet ML](https://www.comet.com/).
+- **[Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration/)** 🌟 **NEW**: Log experiments using [Comet ML](https://www.comet.com/site/).
 
 </details>
 
@@ -219,9 +219,9 @@ Our key integrations with leading AI platforms extend the functionality of Ultra
     <img src="https://github.com/ultralytics/assets/raw/main/partners/logo-neuralmagic.png" width="10%" alt="Neural Magic logo"></a>
 </div>
 
-|                                                       Ultralytics HUB 🌟                                                       |                                                          Weights & Biases                                                           |                                                                              Comet                                                                              |                                                        Neural Magic                                                         |
-| :----------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------: |
-| Streamline YOLO workflows: Label, train, and deploy effortlessly with [Ultralytics HUB](https://hub.ultralytics.com). Try now! | Track experiments, hyperparameters, and results with [Weights & Biases](https://docs.ultralytics.com/integrations/weights-biases/). | Free forever, [Comet ML](https://docs.ultralytics.com/integrations/comet/) lets you save YOLO models, resume training, and interactively visualize predictions. | Run YOLO inference up to 6x faster with [Neural Magic DeepSparse](https://docs.ultralytics.com/integrations/neural-magic/). |
+|                                                       Ultralytics HUB 🌟                                                        |                                                          Weights & Biases                                                           |                                                                              Comet                                                                              |                                                        Neural Magic                                                         |
+| :-----------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------: |
+| Streamline YOLO workflows: Label, train, and deploy effortlessly with [Ultralytics HUB](https://hub.ultralytics.com/). Try now! | Track experiments, hyperparameters, and results with [Weights & Biases](https://docs.ultralytics.com/integrations/weights-biases/). | Free forever, [Comet ML](https://docs.ultralytics.com/integrations/comet/) lets you save YOLO models, resume training, and interactively visualize predictions. | Run YOLO inference up to 6x faster with [Neural Magic DeepSparse](https://docs.ultralytics.com/integrations/neural-magic/). |
 
 ## ⭐ Ultralytics HUB
 
@@ -244,7 +244,7 @@ YOLOv5 is designed for simplicity and ease of use. We prioritize real-world perf
   <summary>Figure Notes</summary>
 
 - **COCO AP val** denotes the [mean Average Precision (mAP)](https://www.ultralytics.com/glossary/mean-average-precision-map) at [Intersection over Union (IoU)](https://www.ultralytics.com/glossary/intersection-over-union-iou) thresholds from 0.5 to 0.95, measured on the 5,000-image [COCO val2017 dataset](https://docs.ultralytics.com/datasets/detect/coco/) across various inference sizes (256 to 1536 pixels).
-- **GPU Speed** measures the average inference time per image on the [COCO val2017 dataset](https://docs.ultralytics.com/datasets/detect/coco/) using an [AWS p3.2xlarge V100 instance](https://aws.amazon.com/ec2/instance-types/p3/) with a batch size of 32.
+- **GPU Speed** measures the average inference time per image on the [COCO val2017 dataset](https://docs.ultralytics.com/datasets/detect/coco/) using an [AWS p3.2xlarge V100 instance](https://aws.amazon.com/ec2/instance-types/p4/) with a batch size of 32.
 - **EfficientDet** data is sourced from the [google/automl repository](https://github.com/google/automl) at batch size 8.
 - **Reproduce** these results using the command: `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
 
@@ -273,7 +273,7 @@ This table shows the performance metrics for various YOLOv5 models trained on th
 
 - All checkpoints were trained for 300 epochs using default settings. Nano (n) and Small (s) models use [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyperparameters, while Medium (m), Large (l), and Extra-Large (x) models use [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
 - **mAP<sup>val</sup>** values represent single-model, single-scale performance on the [COCO val2017 dataset](https://docs.ultralytics.com/datasets/detect/coco/).<br>Reproduce using: `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
-- **Speed** metrics are averaged over COCO val images using an [AWS p3.2xlarge V100 instance](https://aws.amazon.com/ec2/instance-types/p3/). Non-Maximum Suppression (NMS) time (~1 ms/image) is not included.<br>Reproduce using: `python val.py --data coco.yaml --img 640 --task speed --batch 1`
+- **Speed** metrics are averaged over COCO val images using an [AWS p3.2xlarge V100 instance](https://aws.amazon.com/ec2/instance-types/p4/). Non-Maximum Suppression (NMS) time (~1 ms/image) is not included.<br>Reproduce using: `python val.py --data coco.yaml --img 640 --task speed --batch 1`
 - **TTA** ([Test Time Augmentation](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation/)) includes reflection and scale augmentations for improved accuracy.<br>Reproduce using: `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
