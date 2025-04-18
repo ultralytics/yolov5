@@ -1,0 +1,120 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# ImageNet-1k dataset https://www.image-net.org/index.php by Stanford University
+# Simplified class names from https://github.com/anishathalye/imagenet-simple-labels
+# Example usage: python classify/train.py --data imagenet
+# parent
+# ├── yolov5
+# └── datasets
+#     └── imagenet100  ← downloads here
+
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ../datasets/imagenet100 # dataset root dir
+train: train # train images (relative to 'path') 1281167 images
+val: val # val images (relative to 'path') 50000 images
+test: # test images (optional)
+
+# Classes
+names:
+  0: tench
+  1: goldfish
+  2: great white shark
+  3: tiger shark
+  4: hammerhead shark
+  5: electric ray
+  6: stingray
+  7: cock
+  8: hen
+  9: ostrich
+  10: brambling
+  11: goldfinch
+  12: house finch
+  13: junco
+  14: indigo bunting
+  15: American robin
+  16: bulbul
+  17: jay
+  18: magpie
+  19: chickadee
+  20: American dipper
+  21: kite
+  22: bald eagle
+  23: vulture
+  24: great grey owl
+  25: fire salamander
+  26: smooth newt
+  27: newt
+  28: spotted salamander
+  29: axolotl
+  30: American bullfrog
+  31: tree frog
+  32: tailed frog
+  33: loggerhead sea turtle
+  34: leatherback sea turtle
+  35: mud turtle
+  36: terrapin
+  37: box turtle
+  38: banded gecko
+  39: green iguana
+  40: Carolina anole
+  41: desert grassland whiptail lizard
+  42: agama
+  43: frilled-necked lizard
+  44: alligator lizard
+  45: Gila monster
+  46: European green lizard
+  47: chameleon
+  48: Komodo dragon
+  49: Nile crocodile
+  50: American alligator
+  51: triceratops
+  52: worm snake
+  53: ring-necked snake
+  54: eastern hog-nosed snake
+  55: smooth green snake
+  56: kingsnake
+  57: garter snake
+  58: water snake
+  59: vine snake
+  60: night snake
+  61: boa constrictor
+  62: African rock python
+  63: Indian cobra
+  64: green mamba
+  65: sea snake
+  66: Saharan horned viper
+  67: eastern diamondback rattlesnake
+  68: sidewinder
+  69: trilobite
+  70: harvestman
+  71: scorpion
+  72: yellow garden spider
+  73: barn spider
+  74: European garden spider
+  75: southern black widow
+  76: tarantula
+  77: wolf spider
+  78: tick
+  79: centipede
+  80: black grouse
+  81: ptarmigan
+  82: ruffed grouse
+  83: prairie grouse
+  84: peacock
+  85: quail
+  86: partridge
+  87: grey parrot
+  88: macaw
+  89: sulphur-crested cockatoo
+  90: lorikeet
+  91: coucal
+  92: bee eater
+  93: hornbill
+  94: hummingbird
+  95: jacamar
+  96: toucan
+  97: duck
+  98: red-breasted merganser
+  99: goose
+# Download script/URL (optional)
+download: data/scripts/get_imagenet100.sh

@@ -1,0 +1,135 @@
+{
+  "algorithm": "random",
+  "parameters": {
+    "anchor_t": {
+      "type": "discrete",
+      "values": [2, 8]
+    },
+    "batch_size": {
+      "type": "discrete",
+      "values": [16, 32, 64]
+    },
+    "box": {
+      "type": "discrete",
+      "values": [0.02, 0.2]
+    },
+    "cls": {
+      "type": "discrete",
+      "values": [0.2]
+    },
+    "cls_pw": {
+      "type": "discrete",
+      "values": [0.5]
+    },
+    "copy_paste": {
+      "type": "discrete",
+      "values": [1]
+    },
+    "degrees": {
+      "type": "discrete",
+      "values": [0, 45]
+    },
+    "epochs": {
+      "type": "discrete",
+      "values": [5]
+    },
+    "fl_gamma": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "fliplr": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "flipud": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "hsv_h": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "hsv_s": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "hsv_v": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "iou_t": {
+      "type": "discrete",
+      "values": [0.7]
+    },
+    "lr0": {
+      "type": "discrete",
+      "values": [1e-5, 0.1]
+    },
+    "lrf": {
+      "type": "discrete",
+      "values": [0.01, 1]
+    },
+    "mixup": {
+      "type": "discrete",
+      "values": [1]
+    },
+    "momentum": {
+      "type": "discrete",
+      "values": [0.6]
+    },
+    "mosaic": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "obj": {
+      "type": "discrete",
+      "values": [0.2]
+    },
+    "obj_pw": {
+      "type": "discrete",
+      "values": [0.5]
+    },
+    "optimizer": {
+      "type": "categorical",
+      "values": ["SGD", "Adam", "AdamW"]
+    },
+    "perspective": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "scale": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "shear": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "translate": {
+      "type": "discrete",
+      "values": [0]
+    },
+    "warmup_bias_lr": {
+      "type": "discrete",
+      "values": [0, 0.2]
+    },
+    "warmup_epochs": {
+      "type": "discrete",
+      "values": [5]
+    },
+    "warmup_momentum": {
+      "type": "discrete",
+      "values": [0, 0.95]
+    },
+    "weight_decay": {
+      "type": "discrete",
+      "values": [0, 0.001]
+    }
+  },
+  "spec": {
+    "maxCombo": 0,
+    "metric": "metrics/mAP_0.5",
+    "objective": "maximize"
+  },
+  "trials": 1
+}

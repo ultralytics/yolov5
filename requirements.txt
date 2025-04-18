@@ -1,5 +1,7 @@
-# pip install -r requirements.txt
+# YOLOv5 requirements
+# Usage: pip install -r requirements.txt
 
+<<<<<<< HEAD
 # Base ----------------------------------------
 matplotlib==3.2.2
 numpy==1.18.5
@@ -20,18 +22,51 @@ tensorboard==2.4.1
 # Plotting ------------------------------------
 pandas==1.1.4
 seaborn==0.11.0
+=======
+# Base ------------------------------------------------------------------------
+gitpython>=3.1.30
+matplotlib>=3.3
+numpy>=1.23.5
+opencv-python>=4.1.1
+pillow>=10.3.0
+psutil  # system resources
+PyYAML>=5.3.1
+requests>=2.32.2
+scipy>=1.4.1
+thop>=0.1.1  # FLOPs computation
+torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
+torchvision>=0.9.0
+tqdm>=4.66.3
+ultralytics>=8.2.34  # https://ultralytics.com
+# protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
-# Export --------------------------------------
-# coremltools>=4.1  # CoreML export
-# onnx>=1.9.0  # ONNX export
-# onnx-simplifier>=0.3.6  # ONNX simplifier
-# scikit-learn==0.19.2  # CoreML quantization
-# tensorflow>=2.4.1  # TFLite export
+# Logging ---------------------------------------------------------------------
+# tensorboard>=2.4.1
+# clearml>=1.2.0
+# comet
+
+# Plotting --------------------------------------------------------------------
+pandas>=1.1.4
+seaborn>=0.11.0
+>>>>>>> f4d8a84c3855fcad94bdb1104c48d3804adc7b10
+
+# Export ----------------------------------------------------------------------
+# coremltools>=6.0  # CoreML export
+# onnx>=1.10.0  # ONNX export
+# onnx-simplifier>=0.4.1  # ONNX simplifier
+# nvidia-pyindex  # TensorRT export
+# nvidia-tensorrt  # TensorRT export
+# scikit-learn<=1.1.2  # CoreML quantization
+# tensorflow>=2.4.0,<=2.13.1  # TF exports (-cpu, -aarch64, -macos)
 # tensorflowjs>=3.9.0  # TF.js export
+# openvino-dev>=2023.0  # OpenVINO export
 
-# Extras --------------------------------------
+# Deploy ----------------------------------------------------------------------
+setuptools>=70.0.0 # Snyk vulnerability fix
+# tritonclient[all]~=2.24.0
+
+# Extras ----------------------------------------------------------------------
+# ipython  # interactive notebook
+# mss  # screenshots
 # albumentations>=1.0.3
-# Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
-# pycocotools>=2.0  # COCO mAP
-# roboflow
-thop  # FLOPs computation
+# pycocotools>=2.0.6  # COCO mAP

@@ -1,0 +1,41 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# Hyperparameters for VOC training
+# python train.py --batch 128 --weights yolov5m6.pt --data VOC.yaml --epochs 50 --img 512 --hyp hyp.scratch-med.yaml --evolve
+# See Hyperparameter Evolution tutorial for details https://github.com/ultralytics/yolov5#tutorials
+
+# YOLOv5 Hyperparameter Evolution Results
+# Best generation: 467
+# Last generation: 996
+#    metrics/precision,       metrics/recall,      metrics/mAP_0.5, metrics/mAP_0.5:0.95,         val/box_loss,         val/obj_loss,         val/cls_loss
+#              0.87729,              0.85125,              0.91286,              0.72664,            0.0076739,            0.0042529,            0.0013865
+
+lr0: 0.00334
+lrf: 0.15135
+momentum: 0.74832
+weight_decay: 0.00025
+warmup_epochs: 3.3835
+warmup_momentum: 0.59462
+warmup_bias_lr: 0.18657
+box: 0.02
+cls: 0.21638
+cls_pw: 0.5
+obj: 0.51728
+obj_pw: 0.67198
+iou_t: 0.2
+anchor_t: 3.3744
+fl_gamma: 0.0
+hsv_h: 0.01041
+hsv_s: 0.54703
+hsv_v: 0.27739
+degrees: 0.0
+translate: 0.04591
+scale: 0.75544
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.5
+mosaic: 0.85834
+mixup: 0.04266
+copy_paste: 0.0
+anchors: 3.412
