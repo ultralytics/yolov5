@@ -1,7 +1,5 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-"""
-Image augmentation functions
-"""
+"""Image augmentation functions."""
 
 import logging
 import math
@@ -10,7 +8,7 @@ import random
 import cv2
 import numpy as np
 
-from utils.general import colorstr, segment2box, resample_segments, check_version
+from utils.general import check_version, colorstr, resample_segments, segment2box
 from utils.metrics import bbox_ioa
 
 
@@ -20,28 +18,32 @@ class Albumentations:
         self.transform = None
         try:
             import albumentations as A
-            check_version(A.__version__, '1.0.3')  # version requirement
 
-            self.transform = A.Compose([
-                A.Blur(p=0.01),
-                A.MedianBlur(p=0.01),
-                A.ToGray(p=0.01),
-                A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(p=0.0),
-                A.RandomGamma(p=0.0),
-                A.ImageCompression(quality_lower=75, p=0.0)],
-                bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+            check_version(A.__version__, "1.0.3")  # version requirement
 
-            logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
+            self.transform = A.Compose(
+                [
+                    A.Blur(p=0.01),
+                    A.MedianBlur(p=0.01),
+                    A.ToGray(p=0.01),
+                    A.CLAHE(p=0.01),
+                    A.RandomBrightnessContrast(p=0.0),
+                    A.RandomGamma(p=0.0),
+                    A.ImageCompression(quality_lower=75, p=0.0),
+                ],
+                bbox_params=A.BboxParams(format="yolo", label_fields=["class_labels"]),
+            )
+
+            logging.info(colorstr("albumentations: ") + ", ".join(f"{x}" for x in self.transform.transforms if x.p))
         except ImportError:  # package not installed, skip
             pass
         except Exception as e:
-            logging.info(colorstr('albumentations: ') + f'{e}')
+            logging.info(colorstr("albumentations: ") + f"{e}")
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
             new = self.transform(image=im, bboxes=labels[:, 1:], class_labels=labels[:, 0])  # transformed
-            im, labels = new['image'], np.array([[c, *b] for c, b in zip(new['class_labels'], new['bboxes'])])
+            im, labels = new["image"], np.array([[c, *b] for c, b in zip(new["class_labels"], new["bboxes"])])
         return im, labels
 
 
@@ -78,7 +80,7 @@ def replicate(im, labels):
     boxes = labels[:, 1:].astype(int)
     x1, y1, x2, y2 = boxes.T
     s = ((x2 - x1) + (y2 - y1)) / 2  # side length (pixels)
-    for i in s.argsort()[:round(s.size * 0.5)]:  # smallest indices
+    for i in s.argsort()[: round(s.size * 0.5)]:  # smallest indices
         x1b, y1b, x2b, y2b = boxes[i]
         bh, bw = y2b - y1b, x2b - x1b
         yc, xc = int(random.uniform(0, h - bh)), int(random.uniform(0, w - bw))  # offset x, y
@@ -122,8 +124,9 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
     return im, ratio, (dw, dh)
 
 
-def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
-                       border=(0, 0)):
+def random_perspective(
+    im, targets=(), segments=(), degrees=10, translate=0.1, scale=0.1, shear=10, perspective=0.0, border=(0, 0)
+):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 

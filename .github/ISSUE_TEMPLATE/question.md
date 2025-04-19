@@ -1,10 +1,9 @@
 ---
 name: "❓Question"
 about: Ask a general question
-title: ''
+title: ""
 labels: question
-assignees: ''
-
+assignees: ""
 ---
 
 ## ❔Question

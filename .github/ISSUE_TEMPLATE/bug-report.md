@@ -1,10 +1,9 @@
 ---
 name: "🐛 Bug report"
 about: Create a report to help us improve
-title: ''
+title: ""
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
 Before submitting a bug report, please be aware that your issue **must be reproducible** with all of the following,

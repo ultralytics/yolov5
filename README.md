@@ -46,7 +46,7 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
  open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 </p>
 
-<!-- 
+<!--
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
 <img width="800" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-api.png"></a>
 -->
@@ -65,6 +65,7 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on tr
 [**Python>=3.6.0**](https://www.python.org/) is required with all
 [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) installed including
 [**PyTorch>=1.7**](https://pytorch.org/get-started/locally/):
+
 <!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
 
 ```bash
@@ -85,10 +86,10 @@ from the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases)
 import torch
 
 # Model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5m, yolov5l, yolov5x, custom
+model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # or yolov5m, yolov5l, yolov5x, custom
 
 # Images
-img = 'https://ultralytics.com/images/zidane.jpg'  # or file, Path, PIL, OpenCV, numpy, list
+img = "https://ultralytics.com/images/zidane.jpg"  # or file, Path, PIL, OpenCV, numpy, list
 
 # Inference
 results = model(img)
@@ -99,8 +100,6 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 
 </details>
 
-
-
 <details>
 <summary>Inference with detect.py</summary>
 
@@ -109,12 +108,12 @@ the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and 
 
 ```bash
 $ python detect.py --source 0  # webcam
-                            file.jpg  # image 
-                            file.mp4  # video
-                            path/  # directory
-                            path/*.jpg  # glob
-                            'https://youtu.be/NUsoVlDFqZg'  # YouTube
-                            'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+file.jpg                       # image
+file.mp4                       # video
+path/                          # directory
+path/*.jpg                     # glob
+'https://youtu.be/NUsoVlDFqZg' # YouTube
+'rtsp://example.com/media.mp4' # RTSP, RTMP, HTTP stream
 ```
 
 </details>
@@ -129,32 +128,32 @@ largest `--batch-size` your GPU allows (batch sizes shown for 16 GB devices).
 
 ```bash
 $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 64
-                                         yolov5m                                40
-                                         yolov5l                                24
-                                         yolov5x                                16
+yolov5m 40
+yolov5l 24
+yolov5x 16
 ```
 
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
 
-</details>  
+</details>
 
 <details open>
 <summary>Tutorials</summary>
 
-* [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)&nbsp; 🚀 RECOMMENDED
-* [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)&nbsp; ☘️
+- [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)&nbsp; 🚀 RECOMMENDED
+- [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)&nbsp; ☘️
   RECOMMENDED
-* [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)&nbsp; 🌟 NEW
-* [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)&nbsp; 🌟 NEW
-* [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
-* [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)&nbsp; ⭐ NEW
-* [TorchScript, ONNX, CoreML Export](https://github.com/ultralytics/yolov5/issues/251) 🚀
-* [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
-* [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
-* [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
-* [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607)
-* [Transfer Learning with Frozen Layers](https://github.com/ultralytics/yolov5/issues/1314)&nbsp; ⭐ NEW
-* [TensorRT Deployment](https://github.com/wang-xinyu/tensorrtx)
+- [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)&nbsp; 🌟 NEW
+- [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)&nbsp; 🌟 NEW
+- [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
+- [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)&nbsp; ⭐ NEW
+- [TorchScript, ONNX, CoreML Export](https://github.com/ultralytics/yolov5/issues/251) 🚀
+- [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
+- [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
+- [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
+- [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607)
+- [Transfer Learning with Frozen Layers](https://github.com/ultralytics/yolov5/issues/1314)&nbsp; ⭐ NEW
+- [TensorRT Deployment](https://github.com/wang-xinyu/tensorrtx)
 
 </details>
 
@@ -178,7 +177,7 @@ Get started in seconds with our verified environments. Click each icon below for
     <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="15%"/>
     </a>
-</div>  
+</div>
 
 ## <div align="center">Integrations</div>
 
@@ -191,10 +190,9 @@ Get started in seconds with our verified environments. Click each icon below for
     </a>
 </div>
 
-|Weights and Biases|Roboflow ⭐ NEW|
-|:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |
-
+|                                                                    Weights and Biases                                                                     |                                                              Roboflow ⭐ NEW                                                               |
+| :-------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------: |
+| Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) | Label and automatically export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |
 
 <!-- ## <div align="center">Compete and Win</div>
 
@@ -216,10 +214,10 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 <details>
   <summary>Figure Notes (click to expand)</summary>
 
-* **COCO AP val** denotes mAP@0.5:0.95 metric measured on the 5000-image [COCO val2017](http://cocodataset.org) dataset over various inference sizes from 256 to 1536.
-* **GPU Speed** measures average inference time per image on [COCO val2017](http://cocodataset.org) dataset using a [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100 instance at batch-size 32.
-* **EfficientDet** data from [google/automl](https://github.com/google/automl) at batch size 8.
-* **Reproduce** by `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
+- **COCO AP val** denotes mAP@0.5:0.95 metric measured on the 5000-image [COCO val2017](http://cocodataset.org) dataset over various inference sizes from 256 to 1536.
+- **GPU Speed** measures average inference time per image on [COCO val2017](http://cocodataset.org) dataset using a [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100 instance at batch-size 32.
+- **EfficientDet** data from [google/automl](https://github.com/google/automl) at batch size 8.
+- **Reproduce** by `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
 </details>
 
 ### Pretrained Checkpoints
@@ -227,27 +225,27 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 [assets]: https://github.com/ultralytics/yolov5/releases
 [TTA]: https://github.com/ultralytics/yolov5/issues/303
 
-|Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>CPU b1<br>(ms) |Speed<br><sup>V100 b1<br>(ms) |Speed<br><sup>V100 b32<br>(ms) |params<br><sup>(M) |FLOPs<br><sup>@640 (B)
-|---                    |---  |---    |---    |---    |---    |---    |---    |---
-|[YOLOv5n][assets]      |640  |28.4   |46.0   |**45** |**6.3**|**0.6**|**1.9**|**4.5**
-|[YOLOv5s][assets]      |640  |37.2   |56.0   |98     |6.4    |0.9    |7.2    |16.5
-|[YOLOv5m][assets]      |640  |45.2   |63.9   |224    |8.2    |1.7    |21.2   |49.0
-|[YOLOv5l][assets]      |640  |48.8   |67.2   |430    |10.1   |2.7    |46.5   |109.1
-|[YOLOv5x][assets]      |640  |50.7   |68.9   |766    |12.1   |4.8    |86.7   |205.7
-|                       |     |       |       |       |       |       |       |
-|[YOLOv5n6][assets]     |1280 |34.0   |50.7   |153    |8.1    |2.1    |3.2    |4.6
-|[YOLOv5s6][assets]     |1280 |44.5   |63.0   |385    |8.2    |3.6    |16.8   |12.6
-|[YOLOv5m6][assets]     |1280 |51.0   |69.0   |887    |11.1   |6.8    |35.7   |50.0
-|[YOLOv5l6][assets]     |1280 |53.6   |71.6   |1784   |15.8   |10.5   |76.8   |111.4
-|[YOLOv5x6][assets]<br>+ [TTA][TTA]|1280<br>1536 |54.7<br>**55.4** |**72.4**<br>72.3 |3136<br>- |26.2<br>- |19.4<br>- |140.7<br>- |209.8<br>- 
+| Model                              | size<br><sup>(pixels) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Speed<br><sup>CPU b1<br>(ms) | Speed<br><sup>V100 b1<br>(ms) | Speed<br><sup>V100 b32<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@640 (B) |
+| ---------------------------------- | --------------------- | ----------------------- | ------------------ | ---------------------------- | ----------------------------- | ------------------------------ | ------------------ | ---------------------- |
+| [YOLOv5n][assets]                  | 640                   | 28.4                    | 46.0               | **45**                       | **6.3**                       | **0.6**                        | **1.9**            | **4.5**                |
+| [YOLOv5s][assets]                  | 640                   | 37.2                    | 56.0               | 98                           | 6.4                           | 0.9                            | 7.2                | 16.5                   |
+| [YOLOv5m][assets]                  | 640                   | 45.2                    | 63.9               | 224                          | 8.2                           | 1.7                            | 21.2               | 49.0                   |
+| [YOLOv5l][assets]                  | 640                   | 48.8                    | 67.2               | 430                          | 10.1                          | 2.7                            | 46.5               | 109.1                  |
+| [YOLOv5x][assets]                  | 640                   | 50.7                    | 68.9               | 766                          | 12.1                          | 4.8                            | 86.7               | 205.7                  |
+|                                    |                       |                         |                    |                              |                               |                                |                    |
+| [YOLOv5n6][assets]                 | 1280                  | 34.0                    | 50.7               | 153                          | 8.1                           | 2.1                            | 3.2                | 4.6                    |
+| [YOLOv5s6][assets]                 | 1280                  | 44.5                    | 63.0               | 385                          | 8.2                           | 3.6                            | 16.8               | 12.6                   |
+| [YOLOv5m6][assets]                 | 1280                  | 51.0                    | 69.0               | 887                          | 11.1                          | 6.8                            | 35.7               | 50.0                   |
+| [YOLOv5l6][assets]                 | 1280                  | 53.6                    | 71.6               | 1784                         | 15.8                          | 10.5                           | 76.8               | 111.4                  |
+| [YOLOv5x6][assets]<br>+ [TTA][TTA] | 1280<br>1536          | 54.7<br>**55.4**        | **72.4**<br>72.3   | 3136<br>-                    | 26.2<br>-                     | 19.4<br>-                      | 140.7<br>-         | 209.8<br>-             |
 
 <details>
   <summary>Table Notes (click to expand)</summary>
 
-* All checkpoints are trained to 300 epochs with default settings and hyperparameters.
-* **mAP<sup>val</sup>** values are for single-model single-scale on [COCO val2017](http://cocodataset.org) dataset.<br>Reproduce by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
-* **Speed** averaged over COCO val images using a [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) instance. NMS times (~1 ms/img) not included.<br>Reproduce by `python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45`
-* **TTA** [Test Time Augmentation](https://github.com/ultralytics/yolov5/issues/303) includes reflection and scale augmentations.<br>Reproduce by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+- All checkpoints are trained to 300 epochs with default settings and hyperparameters.
+- **mAP<sup>val</sup>** values are for single-model single-scale on [COCO val2017](http://cocodataset.org) dataset.<br>Reproduce by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
+- **Speed** averaged over COCO val images using a [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) instance. NMS times (~1 ms/img) not included.<br>Reproduce by `python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45`
+- **TTA** [Test Time Augmentation](https://github.com/ultralytics/yolov5/issues/303) includes reflection and scale augmentations.<br>Reproduce by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
@@ -255,7 +253,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 We love your input! We want to make contributing to YOLOv5 as easy and transparent as possible. Please see
 our [Contributing Guide](CONTRIBUTING.md) to get started, and fill out
-the [YOLOv5 Survey](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) to provide 
+the [YOLOv5 Survey](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) to provide
 thoughts and feedback on your experience with YOLOv5. Thank you!
 
 ## <div align="center">Contact</div>

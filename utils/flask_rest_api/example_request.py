@@ -1,4 +1,5 @@
-"""Perform test request"""
+"""Perform test request."""
+
 import pprint
 
 import requests

@@ -1,60 +1,64 @@
 📚 This guide explains how to use **Weights & Biases** (W&B) with YOLOv5 🚀. UPDATED 29 September 2021.
-* [About Weights & Biases](#about-weights-&-biases)
-* [First-Time Setup](#first-time-setup)
-* [Viewing runs](#viewing-runs)
-* [Advanced Usage: Dataset Versioning and Evaluation](#advanced-usage)
-* [Reports: Share your work with the world!](#reports)
+
+- [About Weights & Biases](#about-weights-&-biases)
+- [First-Time Setup](#first-time-setup)
+- [Viewing runs](#viewing-runs)
+- [Advanced Usage: Dataset Versioning and Evaluation](#advanced-usage)
+- [Reports: Share your work with the world!](#reports)
 
 ## About Weights & Biases
+
 Think of [W&B](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) like GitHub for machine learning models. With a few lines of code, save everything you need to debug, compare and reproduce your models — architecture, hyperparameters, git commits, model weights, GPU usage, and even datasets and predictions.
 
 Used by top researchers including teams at OpenAI, Lyft, Github, and MILA, W&B is part of the new standard of best practices for machine learning. How W&B can help you optimize your machine learning workflows:
 
- * [Debug](https://wandb.ai/wandb/getting-started/reports/Visualize-Debug-Machine-Learning-Models--VmlldzoyNzY5MDk#Free-2) model performance in real time
- * [GPU usage](https://wandb.ai/wandb/getting-started/reports/Visualize-Debug-Machine-Learning-Models--VmlldzoyNzY5MDk#System-4) visualized automatically
- * [Custom charts](https://wandb.ai/wandb/customizable-charts/reports/Powerful-Custom-Charts-To-Debug-Model-Peformance--VmlldzoyNzY4ODI) for powerful, extensible visualization
- * [Share insights](https://wandb.ai/wandb/getting-started/reports/Visualize-Debug-Machine-Learning-Models--VmlldzoyNzY5MDk#Share-8) interactively with collaborators
- * [Optimize hyperparameters](https://docs.wandb.com/sweeps) efficiently
- * [Track](https://docs.wandb.com/artifacts) datasets, pipelines, and production models
+- [Debug](https://wandb.ai/wandb/getting-started/reports/Visualize-Debug-Machine-Learning-Models--VmlldzoyNzY5MDk#Free-2) model performance in real time
+- [GPU usage](https://wandb.ai/wandb/getting-started/reports/Visualize-Debug-Machine-Learning-Models--VmlldzoyNzY5MDk#System-4) visualized automatically
+- [Custom charts](https://wandb.ai/wandb/customizable-charts/reports/Powerful-Custom-Charts-To-Debug-Model-Peformance--VmlldzoyNzY4ODI) for powerful, extensible visualization
+- [Share insights](https://wandb.ai/wandb/getting-started/reports/Visualize-Debug-Machine-Learning-Models--VmlldzoyNzY5MDk#Share-8) interactively with collaborators
+- [Optimize hyperparameters](https://docs.wandb.com/sweeps) efficiently
+- [Track](https://docs.wandb.com/artifacts) datasets, pipelines, and production models
 
 ## First-Time Setup
+
 <details open>
  <summary> Toggle Details </summary>
 When you first train, W&B will prompt you to create a new account and will generate an **API key** for you. If you are an existing user you can retrieve your key from https://wandb.ai/authorize. This key is used to tell W&B where to log your data. You only need to supply your key once, and then it is remembered on the same device.
 
 W&B will create a cloud **project** (default is 'YOLOv5') for your training runs, and each new training run will be provided a unique run **name** within that project as project/name. You can also manually set your project and run name as:
 
- ```shell
- $ python train.py --project ... --name ...
- ```
+```shell
+$ python train.py --project ... --name ...
+```
 
 YOLOv5 notebook example: <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a> <a href="https://www.kaggle.com/ultralytics/yolov5"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open In Kaggle"></a>
 <img width="960" alt="Screen Shot 2021-09-29 at 10 23 13 PM" src="https://user-images.githubusercontent.com/26833433/135392431-1ab7920a-c49d-450a-b0b0-0c86ec86100e.png">
 
-
  </details>
 
 ## Viewing Runs
+
 <details open>
   <summary> Toggle Details </summary>
 Run information streams from your environment to the W&B cloud console as you train. This allows you to monitor and even cancel runs in <b>realtime</b> . All important information is logged:
 
- * Training & Validation losses
- * Metrics: Precision, Recall, mAP@0.5, mAP@0.5:0.95
- * Learning Rate over time
- * A bounding box debugging panel, showing the training progress over time
- * GPU: Type, **GPU Utilization**, power, temperature, **CUDA memory usage**
- * System: Disk I/0, CPU utilization, RAM memory usage
- * Your trained model as W&B Artifact
- * Environment: OS and Python types, Git repository and state, **training command**
+- Training & Validation losses
+- Metrics: Precision, Recall, mAP@0.5, mAP@0.5:0.95
+- Learning Rate over time
+- A bounding box debugging panel, showing the training progress over time
+- GPU: Type, **GPU Utilization**, power, temperature, **CUDA memory usage**
+- System: Disk I/0, CPU utilization, RAM memory usage
+- Your trained model as W&B Artifact
+- Environment: OS and Python types, Git repository and state, **training command**
 
 <p align="center"><img width="900" alt="Weights & Biases dashboard" src="https://user-images.githubusercontent.com/26833433/135390767-c28b050f-8455-4004-adb0-3b730386e2b2.png"></p>
-
 
 </details>
 
 ## Advanced Usage
+
 You can leverage W&B artifacts and Tables integration to easily visualize and manage your datasets, models and training evaluations. Here are some quick examples to get you started.
+
 <details open>
  <h3>1. Visualize and Version Datasets</h3>
  Log, visualize, dynamically query, and understand your data with <a href='https://docs.wandb.ai/guides/data-vis/tables'>W&B Tables</a>. You can use the following command to log your dataset as a W&B Table. This will generate a <code>{dataset}_wandb.yaml</code> file which can be used to train from dataset artifact.
@@ -87,7 +91,7 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
  </details>
   
    <h3> 4: Save model checkpoints as artifacts </h3>
-  To enable saving and versioning checkpoints of your experiment, pass `--save_period n` with the base cammand, where `n` represents checkpoint interval. 
+  To enable saving and versioning checkpoints of your experiment, pass `--save_period n` with the base command, where `n` represents checkpoint interval. 
   You can also log both the dataset and model checkpoints simultaneously. If not passed, only the final model will be logged
 
  <details>
@@ -123,12 +127,10 @@ Any run can be resumed using artifacts if the <code>--resume</code> argument sta
   
 </details>
 
-
  <h3> Reports </h3>
-W&B Reports can be created from your saved runs for sharing online. Once a report is created you will receive a link you can use to publically share your results. Here is an example report created from the COCO128 tutorial trainings of all four YOLOv5 models ([link](https://wandb.ai/glenn-jocher/yolov5_tutorial/reports/YOLOv5-COCO128-Tutorial-Results--VmlldzozMDI5OTY)).
+W&B Reports can be created from your saved runs for sharing online. Once a report is created you will receive a link you can use to publicly share your results. Here is an example report created from the COCO128 tutorial trainings of all four YOLOv5 models ([link](https://wandb.ai/glenn-jocher/yolov5_tutorial/reports/YOLOv5-COCO128-Tutorial-Results--VmlldzozMDI5OTY)).
  
 <img width="900" alt="Weights & Biases Reports" src="https://user-images.githubusercontent.com/26833433/135394029-a17eaf86-c6c1-4b1d-bb80-b90e83aaffa7.png">
-
 
 ## Environments
 
@@ -138,7 +140,6 @@ YOLOv5 may be run in any of the following up-to-date verified environments (with
 - **Google Cloud** Deep Learning VM. See [GCP Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart)
 - **Amazon** Deep Learning AMI. See [AWS Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/AWS-Quickstart)
 - **Docker Image**. See [Docker Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart) <a href="https://hub.docker.com/r/ultralytics/yolov5"><img src="https://img.shields.io/docker/pulls/ultralytics/yolov5?logo=docker" alt="Docker Pulls"></a>
-
 
 ## Status
 

@@ -1,7 +1,5 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-"""
-Experimental modules
-"""
+"""Experimental modules."""
 
 import numpy as np
 import torch
@@ -32,7 +30,7 @@ class Sum(nn.Module):
         self.weight = weight  # apply weights boolean
         self.iter = range(n - 1)  # iter object
         if weight:
-            self.w = nn.Parameter(-torch.arange(1., n) / 2, requires_grad=True)  # layer weights
+            self.w = nn.Parameter(-torch.arange(1.0, n) / 2, requires_grad=True)  # layer weights
 
     def forward(self, x):
         y = x[0]  # no weight
@@ -52,7 +50,7 @@ class MixConv2d(nn.Module):
         super().__init__()
         groups = len(k)
         if equal_ch:  # equal c_ per group
-            i = torch.linspace(0, groups - 1E-6, c2).floor()  # c2 indices
+            i = torch.linspace(0, groups - 1e-6, c2).floor()  # c2 indices
             c_ = [(i == g).sum() for g in range(groups)]  # intermediate channels
         else:  # equal weight.numel() per group
             b = [c2] + [0] * groups
@@ -93,10 +91,9 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
     for w in weights if isinstance(weights, list) else [weights]:
         ckpt = torch.load(attempt_download(w), map_location=map_location)  # load
         if fuse:
-            model.append(ckpt['ema' if ckpt.get('ema') else 'model'].float().fuse().eval())  # FP32 model
+            model.append(ckpt["ema" if ckpt.get("ema") else "model"].float().fuse().eval())  # FP32 model
         else:
-            model.append(ckpt['ema' if ckpt.get('ema') else 'model'].float().eval())  # without layer fuse
-
+            model.append(ckpt["ema" if ckpt.get("ema") else "model"].float().eval())  # without layer fuse
 
     # Compatibility updates
     for m in model.modules():
@@ -104,16 +101,16 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
             m.inplace = inplace  # pytorch 1.7.0 compatibility
             if type(m) is Detect:
                 if not isinstance(m.anchor_grid, list):  # new Detect Layer compatibility
-                    delattr(m, 'anchor_grid')
-                    setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
+                    delattr(m, "anchor_grid")
+                    setattr(m, "anchor_grid", [torch.zeros(1)] * m.nl)
         elif type(m) is Conv:
             m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
 
     if len(model) == 1:
         return model[-1]  # return model
     else:
-        print(f'Ensemble created with {weights}\n')
-        for k in ['names']:
+        print(f"Ensemble created with {weights}\n")
+        for k in ["names"]:
             setattr(model, k, getattr(model[-1], k))
         model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride
         return model  # return ensemble
