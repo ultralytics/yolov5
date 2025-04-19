@@ -212,6 +212,7 @@ def train(
 
     # Scheduler
     if opt.linear_lr:
+
         def lf(x):
             return (1 - x / (epochs - 1)) * (1.0 - hyp["lrf"]) + hyp["lrf"]  # linear
     else:
