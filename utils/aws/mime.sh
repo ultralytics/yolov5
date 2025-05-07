@@ -4,24 +4,29 @@
 # This script will run on every instance restart, not only on first start
 # --- DO NOT COPY ABOVE COMMENTS WHEN PASTING INTO USERDATA ---
 
-Content-Type: multipart/mixed; boundary="//"
+Content-Type: multipart/mixed
+boundary="//"
 MIME-Version: 1.0
 
 --//
-Content-Type: text/cloud-config; charset="us-ascii"
+Content-Type: text/cloud-config
+charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment; filename="cloud-config.txt"
+Content-Disposition: attachment
+filename="cloud-config.txt"
 
 #cloud-config
 cloud_final_modules:
 - [scripts-user, always]
 
 --//
-Content-Type: text/x-shellscript; charset="us-ascii"
+Content-Type: text/x-shellscript
+charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment; filename="userdata.txt"
+Content-Disposition: attachment
+filename="userdata.txt"
 
 #!/bin/bash
 # --- paste contents of userdata.sh here ---
