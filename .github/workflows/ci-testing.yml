@@ -30,7 +30,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: Install requirements
         run: |
-          uv pip install --system -r requirements.txt coremltools openvino-dev tensorflow --extra-index-url https://download.pytorch.org/whl/cpu
+          uv pip install --system -r requirements.txt coremltools openvino-dev tensorflow --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
           yolo checks
           uv pip list
       - name: Benchmark DetectionModel
@@ -72,7 +72,7 @@ jobs:
           if [ "${{ matrix.torch }}" == "1.8.0" ]; then
             torch="torch==1.8.0 torchvision==0.9.0"
           fi
-          uv pip install --system -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu
+          uv pip install --system -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
         shell: bash # for Windows compatibility
       - name: Check environment
         run: |
