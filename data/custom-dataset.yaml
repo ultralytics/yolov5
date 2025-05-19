@@ -1,0 +1,33 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# custom-dataset
+# Example usage: python json2txt.py --data custom-dataset.yaml
+# parent
+# ├── yolov5
+# └── datasets
+#     └── custom-dataset
+
+path: ../datasets/custom-dataset # dataset root dir
+train: images/ # train images (relative to 'path')
+val: images/ # val images (relative to 'path')
+test: # test images (optional)
+
+# Classes
+names:
+  0: person
+  1: helmet
+  2: bicycle
+  3: tricycle
+  4: electric-bicycle
+  5: electric-tricycle
+  6: express-electric-tricycle
+  7: motorcycle
+  8: three-wheel-motorcycle
+  9: car
+  10: van
+  11: pickup-truck
+  12: bus
+  13: by-bus
+  14: box-truck
+  15: big-truck
+
