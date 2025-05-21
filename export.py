@@ -452,7 +452,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
 
             Extracts and preprocess input data from dataloader item for quantization.
 
-            Args:
+
                data_item: Tuple with data item produced by DataLoader during iteration
 
             Returns:
