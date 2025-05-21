@@ -39,12 +39,17 @@ jobs:
             --insecure \
             --accept 403,429,500,502,999 \
             --exclude-all-private \
-            --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
+            --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|x\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
             --exclude-path '**/ci.yaml' \
             --github-token ${{ secrets.GITHUB_TOKEN }} \
             --header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.183 Safari/537.36" \
             './**/*.md' \
             './**/*.html' | tee -a $GITHUB_STEP_SUMMARY
+
+            # Raise error if broken links found
+            if ! grep -q "0 Errors" $GITHUB_STEP_SUMMARY; then
+              exit 1
+            fi
 
       - name: Test Markdown, HTML, YAML, Python and Notebook links with retry
         if: github.event_name == 'workflow_dispatch'
@@ -60,7 +65,7 @@ jobs:
             --insecure \
             --accept 429,999 \
             --exclude-all-private \
-            --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
+            --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|x\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
             --exclude-path '**/ci.yaml' \
             --github-token ${{ secrets.GITHUB_TOKEN }} \
             --header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.183 Safari/537.36" \
@@ -70,3 +75,8 @@ jobs:
             './**/*.yaml' \
             './**/*.py' \
             './**/*.ipynb' | tee -a $GITHUB_STEP_SUMMARY
+
+            # Raise error if broken links found
+            if ! grep -q "0 Errors" $GITHUB_STEP_SUMMARY; then
+              exit 1
+            fi
