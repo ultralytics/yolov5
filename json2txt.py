@@ -64,6 +64,8 @@ def main(opt):
 
     for image_file in glob.glob(str(Path(train_path) / "**" / "*.*"), recursive=True):
         label_file = sb.join(image_file.rsplit(sa, 1)).rsplit(".", 1)[0] + ".json"
+        if not os.path.exists(label_file):
+            continue
         label_file2 = sb.join(image_file.rsplit(sa, 1)).rsplit(".", 1)[0] + ".txt"
         with open(label_file, "r", errors="ignore") as fin:
             label_dict = json.load(fin)
@@ -76,6 +78,10 @@ def main(opt):
                     x1y1, x2y2 = bbox_dict["points"]
                     xl, yt = x1y1  # top-left point
                     xr, yb = x2y2  # bottom-right point
+                    if xr < xl:
+                        xl, xr = xr, xl
+                    if yb < yt:
+                        yt, yb = yb, yt
                     LOGGER.info(f"i: {i}, cls: {cls}, xl: {xl}, yt: {yt}, xr: {xr}, yb: {yb}")
                     bbox_w, bbox_h = xr-xl, yb-yt
                     xc, yc = xl+bbox_w/2, yt+bbox_h/2
