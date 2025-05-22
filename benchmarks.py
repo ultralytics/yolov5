@@ -100,11 +100,11 @@ def run(
     device = select_device(device)
     model_type = type(attempt_load(weights, fuse=False))  # DetectionModel, SegmentationModel, etc.
     for i, row in export.export_formats().iterrows():
-        name = row['name']
-        f = row['file']
-        suffix = row['suffix']
-        cpu = row['cpu']
-        gpu = row['gpu']
+        name = row["name"]
+        f = row["file"]
+        suffix = row["suffix"]
+        cpu = row["cpu"]
+        gpu = row["gpu"]
         # index, (name, file, suffix, CPU, GPU)
         try:
             assert i not in (9, 10), "inference not supported"  # Edge TPU and TF.js are unsupported
