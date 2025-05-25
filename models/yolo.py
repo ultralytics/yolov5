@@ -90,18 +90,16 @@ class DetectRAYOLO(nn.Module):
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.scale_thresholds = [810, 1620]
 
-
-
     def forward(self, x, H):
         """Processes input through YOLOv5 layers, altering shape for detection: `x(bs, 3, ny, nx, 85)`."""
         z = []  # inference output
         H4, H5 = self.scale_thresholds
 
-        if H > H5: 
+        if H > H5:
             decrease_heads = 0
-        if H5 >= H and H >= H4: 
+        if H5 >= H and H >= H4:
             decrease_heads = 1
-        if H4 > H: 
+        if H4 > H:
             decrease_heads = 2
 
         for i in range(self.nl - decrease_heads):
@@ -124,7 +122,7 @@ class DetectRAYOLO(nn.Module):
                     wh = (wh * 2) ** 2 * self.anchor_grid[i]  # wh
                     y = torch.cat((xy, wh, conf), 4)
                 z.append(y.view(bs, self.na * nx * ny, self.no))
-        x = x[:self.nl - decrease_heads] 
+        x = x[: self.nl - decrease_heads]
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
     def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, "1.10.0")):
@@ -401,13 +399,15 @@ class DetectionModel(BaseModel):
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
 
 
-
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
 
 
 class DetectionModelRaYOLO(BaseModel):
-    """YOLOv5 detection model class for object detection tasks, supporting custom configurations and anchors. 
-    We always assume the same model configuration."""
+    """
+    YOLOv5 detection model class for object detection tasks, supporting custom configurations and anchors.
+
+    We always assume the same model configuration.
+    """
 
     def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, anchors=None):
         """Initializes YOLOv5 model with configuration file, input channels, number of classes, and custom anchors."""
@@ -433,7 +433,6 @@ class DetectionModelRaYOLO(BaseModel):
         self.names = [str(i) for i in range(self.yaml["nc"])]  # default names
         self.inplace = self.yaml.get("inplace", True)
         self.scale_thresholds = [810, 1620]
-        
 
         # Build strides, anchors
         m = self.model[-1]  # Detect()
@@ -442,11 +441,11 @@ class DetectionModelRaYOLO(BaseModel):
             def _forward(x):
                 """Passes the input 'x' through the model and returns the processed output."""
                 return self.forward(x)[0] if isinstance(m, Segment) else self.forward(x)
-            
+
             s = 256  # 2x min stride
             m.inplace = self.inplace
             m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
-            
+
             check_anchor_order(m)
             n = m.stride.shape[0]  # e.g., 3
             m.anchors[:n] = m.anchors[:n] / m.stride[:n].view(-1, 1, 1)
@@ -462,41 +461,41 @@ class DetectionModelRaYOLO(BaseModel):
         """Performs single-scale or augmented inference and may include profiling or visualization."""
         if augment:
             return self._forward_augment(x)  # augmented inference, None
-        
+
         H4, H5 = self.scale_thresholds
         batch_size = x.shape[0]
 
-        assert batch_size == 1 # as is stated in the paper 
+        assert batch_size == 1  # as is stated in the paper
         skip_at, resume_at, jump_to_end = None, None, None
         H = x.shape[2]
 
-        if H > H5: 
+        if H > H5:
             skip_at, resume_at, jump_to_end = None, None, None
-        if H5 >= H and H >= H4: 
+        if H5 >= H and H >= H4:
             skip_at = 8
-            resume_at = 14 
+            resume_at = 14
             jump_to_end = 37
-        if H4 > H: 
+        if H4 > H:
             skip_at = 6
             resume_at = 18
             jump_to_end = 34
-        
+
         y, dt = [], []  # outputs
         for i, m in enumerate(self.model):
-            if i > skip_at and i < resume_at: 
+            if i > skip_at and i < resume_at:
                 y.append([None])
                 continue
-            if i >= jump_to_end and i < len(self.model) - 1: 
+            if i >= jump_to_end and i < len(self.model) - 1:
                 y.append([None])
                 continue
 
-            if m.f != -1: # and i < resume_at:  # if not from previous layer
+            if m.f != -1:  # and i < resume_at:  # if not from previous layer
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
-            if i == resume_at:     
-                x = torch.cat([y[skip_at], y[skip_at]], dim=1)     
+            if i == resume_at:
+                x = torch.cat([y[skip_at], y[skip_at]], dim=1)
             elif isinstance(m, DetectRAYOLO):
                 x = m.forward(x, H)
-            else:    
+            else:
                 x = m(x)  # run
             if profile:
                 self._profile_one_layer(m, x, dt)
@@ -504,10 +503,8 @@ class DetectionModelRaYOLO(BaseModel):
             y.append(x if m.i in self.save else None)  # save output
             if visualize:
                 feature_visualization(x, m.type, m.i, save_dir=visualize)
-            
 
         return x
-
 
     def _forward_augment(self, x):
         """Performs augmented inference across different scales and flips, returning combined detections."""
@@ -572,6 +569,7 @@ class DetectionModelRaYOLO(BaseModel):
 
 
 RAModel = DetectionModelRaYOLO
+
 
 class SegmentationModel(DetectionModel):
     """YOLOv5 segmentation model for object detection and segmentation tasks with configurable parameters."""

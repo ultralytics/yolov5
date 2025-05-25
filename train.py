@@ -24,6 +24,7 @@ import time
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
+
 from freeze_layers import set_model_grad_status
 
 try:
@@ -59,7 +60,6 @@ from utils.general import (
     check_amp,
     check_dataset,
     check_file,
-    check_git_info,
     check_git_status,
     check_img_size,
     check_requirements,
@@ -99,7 +99,6 @@ LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable
 RANK = int(os.getenv("RANK", -1))
 WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
 GIT_INFO = None  # check_git_info()  # disabled to avoid git remote errors
-
 
 
 def train(hyp, opt, device, callbacks):
@@ -216,8 +215,8 @@ def train(hyp, opt, device, callbacks):
             weights = attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location="cpu")  # load checkpoint to CPU to avoid CUDA memory leak
         model = Model(cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device)  # create
-        if opt.ra_yolo: 
-            model = RAModel(cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device) 
+        if opt.ra_yolo:
+            model = RAModel(cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device)
         exclude = ["anchor"] if (cfg or hyp.get("anchors")) and not resume else []  # exclude keys
         csd = ckpt["model"].float().state_dict()  # checkpoint state_dict as FP32
         csd = intersect_dicts(csd, model.state_dict(), exclude=exclude)  # intersect
@@ -225,8 +224,8 @@ def train(hyp, opt, device, callbacks):
         LOGGER.info(f"Transferred {len(csd)}/{len(model.state_dict())} items from {weights}")  # report
     else:
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device)  # create
-        if opt.ra_yolo: 
-            model = RAModel(cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device) 
+        if opt.ra_yolo:
+            model = RAModel(cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device)
     amp = check_amp(model)  # check AMP
 
     # Freeze
