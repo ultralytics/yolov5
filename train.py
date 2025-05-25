@@ -24,6 +24,7 @@ import time
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
+from freeze_layers import set_model_grad_status
 
 try:
     import comet_ml  # must be imported before torch (if installed)
@@ -314,7 +315,7 @@ def train(hyp, opt, device, callbacks):
         val_loader = create_dataloader(
             val_path,
             imgsz,
-            batch_size // WORLD_SIZE * 2,
+            batch_size,
             gs,
             single_cls,
             hyp=hyp,
@@ -394,6 +395,9 @@ def train(hyp, opt, device, callbacks):
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device, non_blocking=True).float() / 255  # uint8 to float32, 0-255 to 0.0-1.0
 
+            if opt.ra_yolo:
+                set_model_grad_status(imgs, model)
+
             # Warmup
             if ni <= nw:
                 xi = [0, nw]  # x interp
@@ -461,7 +465,7 @@ def train(hyp, opt, device, callbacks):
             if not noval or final_epoch:  # Calculate mAP
                 results, maps, _ = validate.run(
                     data_dict,
-                    batch_size=batch_size // WORLD_SIZE * 2,
+                    batch_size=batch_size,
                     imgsz=imgsz,
                     half=amp,
                     model=ema.ema,

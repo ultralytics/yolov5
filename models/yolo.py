@@ -81,7 +81,6 @@ class DetectRAYOLO(nn.Module):
         super().__init__()
         self.nc = nc  # number of classes
         self.no = nc + 5  # number of outputs per anchor
-        print(len(anchors))
         self.nl = len(anchors)  # number of detection layers
         self.na = len(anchors[0]) // 2  # number of anchors
         self.grid = [torch.empty(0) for _ in range(self.nl)]  # init grid
@@ -125,8 +124,8 @@ class DetectRAYOLO(nn.Module):
                     wh = (wh * 2) ** 2 * self.anchor_grid[i]  # wh
                     y = torch.cat((xy, wh, conf), 4)
                 z.append(y.view(bs, self.na * nx * ny, self.no))
-
-        return x[:self.nl - decrease_heads] if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
+        x = x[:self.nl - decrease_heads] 
+        return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
     def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, "1.10.0")):
         """Generates a mesh grid for anchor boxes with optional compatibility for torch versions < 1.10."""
@@ -496,12 +495,8 @@ class DetectionModelRaYOLO(BaseModel):
             if i == resume_at:     
                 x = torch.cat([y[skip_at], y[skip_at]], dim=1)     
             elif isinstance(m, DetectRAYOLO):
-                print(i, m)
                 x = m.forward(x, H)
-                
-            else:
-                # print(x)
-                print(i, m)
+            else:    
                 x = m(x)  # run
             if profile:
                 self._profile_one_layer(m, x, dt)

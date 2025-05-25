@@ -260,6 +260,7 @@ def run(
         half &= device.type != "cpu"  # half precision only supported on CUDA
         model.half() if half else model.float()
     else:  # called directly
+        
         device = select_device(device, batch_size=batch_size)
 
         # Directories
@@ -289,7 +290,7 @@ def run(
     nc = 1 if single_cls else int(data["nc"])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10, device=device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
-
+    
     # Dataloader
     if not training:
         if pt and not single_cls:  # check --weights are trained on --data
