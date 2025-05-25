@@ -137,6 +137,7 @@ class ComputeLoss:
         self.device = device
 
     def __call__(self, p, targets):  # predictions, targets
+        
         """Performs forward pass, calculating class, box, and object loss for given predictions and targets."""
         lcls = torch.zeros(1, device=self.device)  # class loss
         lbox = torch.zeros(1, device=self.device)  # box loss
@@ -214,7 +215,8 @@ class ComputeLoss:
             * g
         )  # offsets
 
-        for i in range(self.nl):
+        print(self.nl)
+        for i in range(len(p)):
             anchors, shape = self.anchors[i], p[i].shape
             gain[2:6] = torch.tensor(shape)[[3, 2, 3, 2]]  # xyxy gain
 

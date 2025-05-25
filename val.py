@@ -188,7 +188,7 @@ def process_batch(detections, labels, iouv):
 def run(
     data,
     weights=None,  # model.pt path(s)
-    batch_size=32,  # batch size
+    batch_size=1,  # batch size
     imgsz=640,  # inference size (pixels)
     conf_thres=0.001,  # confidence threshold
     iou_thres=0.6,  # NMS IoU threshold

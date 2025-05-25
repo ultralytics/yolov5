@@ -46,7 +46,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import val as validate  # for end-of-epoch mAP
 from models.experimental import attempt_load
-from models.yolo import Model
+from models.yolo import Model, RAModel
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
@@ -97,7 +97,8 @@ from utils.torch_utils import (
 LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv("RANK", -1))
 WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
-GIT_INFO = check_git_info()
+GIT_INFO = None  # check_git_info()  # disabled to avoid git remote errors
+
 
 
 def train(hyp, opt, device, callbacks):
@@ -214,6 +215,8 @@ def train(hyp, opt, device, callbacks):
             weights = attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location="cpu")  # load checkpoint to CPU to avoid CUDA memory leak
         model = Model(cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device)  # create
+        if opt.ra_yolo: 
+            model = RAModel(cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device) 
         exclude = ["anchor"] if (cfg or hyp.get("anchors")) and not resume else []  # exclude keys
         csd = ckpt["model"].float().state_dict()  # checkpoint state_dict as FP32
         csd = intersect_dicts(csd, model.state_dict(), exclude=exclude)  # intersect
@@ -221,6 +224,8 @@ def train(hyp, opt, device, callbacks):
         LOGGER.info(f"Transferred {len(csd)}/{len(model.state_dict())} items from {weights}")  # report
     else:
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device)  # create
+        if opt.ra_yolo: 
+            model = RAModel(cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")).to(device) 
     amp = check_amp(model)  # check AMP
 
     # Freeze
@@ -602,6 +607,7 @@ def parse_opt(known=False):
     parser.add_argument("--save-period", type=int, default=-1, help="Save checkpoint every x epochs (disabled if < 1)")
     parser.add_argument("--seed", type=int, default=0, help="Global training seed")
     parser.add_argument("--local_rank", type=int, default=-1, help="Automatic DDP Multi-GPU argument, do not modify")
+    parser.add_argument("--ra_yolo", type=bool, default=False, help="Run with RA_YOLO variant")
 
     # Logger arguments
     parser.add_argument("--entity", default=None, help="Entity")
