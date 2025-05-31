@@ -9,7 +9,7 @@
 #     ├── yolov5m.pt
 #     └── ...
 
-python - <<EOF
+python - << EOF
 from utils.downloads import attempt_download
 
 p5 = list('nsmlx')  # P5 models

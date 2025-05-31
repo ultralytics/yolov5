@@ -86,13 +86,11 @@ dependencies = [
 dev = [
     "ipython",
     "check-manifest",
-    "pre-commit",
     "pytest",
     "pytest-cov",
     "coverage[toml]",
     "mkdocs-material",
     "mkdocstrings[python]",
-    "mkdocs-redirects", # for 301 redirects
     "mkdocs-ultralytics-plugin>=0.0.34", # for meta descriptions and images, dates and authors
 ]
 export = [
