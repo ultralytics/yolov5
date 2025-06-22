@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Activation functions."""
 
 import torch
@@ -7,6 +7,8 @@ import torch.nn.functional as F
 
 
 class SiLU(nn.Module):
+    """Applies the Sigmoid-weighted Linear Unit (SiLU) activation function, also known as Swish."""
+
     @staticmethod
     def forward(x):
         """
@@ -18,6 +20,8 @@ class SiLU(nn.Module):
 
 
 class Hardswish(nn.Module):
+    """Applies the Hardswish activation function, which is efficient for mobile and embedded devices."""
+
     @staticmethod
     def forward(x):
         """
@@ -38,7 +42,11 @@ class Mish(nn.Module):
 
 
 class MemoryEfficientMish(nn.Module):
+    """Efficiently applies the Mish activation function using custom autograd for reduced memory usage."""
+
     class F(torch.autograd.Function):
+        """Implements a custom autograd function for memory-efficient Mish activation."""
+
         @staticmethod
         def forward(ctx, x):
             """Applies the Mish activation function, a smooth ReLU alternative, to the input tensor `x`."""

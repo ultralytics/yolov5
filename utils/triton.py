@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Utils to interact with the Triton Inference Server."""
 
 import typing
@@ -18,7 +18,7 @@ class TritonRemoteModel:
     def __init__(self, url: str):
         """
         Keyword Arguments:
-        url: Fully qualified address of the Triton server - for e.g. grpc://localhost:8000
+        url: Fully qualified address of the Triton server - for e.g. grpc://localhost:8000.
         """
         parsed_url = urlparse(url)
         if parsed_url.scheme == "grpc":

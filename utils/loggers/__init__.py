@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Logging utils."""
 
 import json
@@ -76,7 +76,8 @@ def _json_default(value):
 
 
 class Loggers:
-    # YOLOv5 Loggers class
+    """Initializes and manages various logging utilities for tracking YOLOv5 training and validation metrics."""
+
     def __init__(self, save_dir=None, weights=None, opt=None, hyp=None, logger=None, include=LOGGERS):
         """Initializes loggers for YOLOv5 training and validation metrics, paths, and options."""
         self.save_dir = save_dir
@@ -349,7 +350,7 @@ class Loggers:
 class GenericLogger:
     """
     YOLOv5 General purpose logger for non-task specific logging
-    Usage: from utils.loggers import GenericLogger; logger = GenericLogger(...)
+    Usage: from utils.loggers import GenericLogger; logger = GenericLogger(...).
 
     Arguments:
         opt:             Run arguments

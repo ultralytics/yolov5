@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """
 Train a YOLOv5 classifier model on a classification dataset.
 
@@ -201,10 +201,10 @@ def train(opt, device):
     scaler = amp.GradScaler(enabled=cuda)
     val = test_dir.stem  # 'val' or 'test'
     LOGGER.info(
-        f'Image sizes {imgsz} train, {imgsz} test\n'
-        f'Using {nw * WORLD_SIZE} dataloader workers\n'
+        f"Image sizes {imgsz} train, {imgsz} test\n"
+        f"Using {nw * WORLD_SIZE} dataloader workers\n"
         f"Logging results to {colorstr('bold', save_dir)}\n"
-        f'Starting {opt.model} training on {data} dataset with {nc} classes for {epochs} epochs...\n\n'
+        f"Starting {opt.model} training on {data} dataset with {nc} classes for {epochs} epochs...\n\n"
         f"{'Epoch':>10}{'GPU_mem':>10}{'train_loss':>12}{f'{val}_loss':>12}{'top1_acc':>12}{'top5_acc':>12}"
     )
     for epoch in range(epochs):  # loop over the dataset multiple times
@@ -290,13 +290,13 @@ def train(opt, device):
     # Train complete
     if RANK in {-1, 0} and final_epoch:
         LOGGER.info(
-            f'\nTraining complete ({(time.time() - t0) / 3600:.3f} hours)'
+            f"\nTraining complete ({(time.time() - t0) / 3600:.3f} hours)"
             f"\nResults saved to {colorstr('bold', save_dir)}"
-            f'\nPredict:         python classify/predict.py --weights {best} --source im.jpg'
-            f'\nValidate:        python classify/val.py --weights {best} --data {data_dir}'
-            f'\nExport:          python export.py --weights {best} --include onnx'
+            f"\nPredict:         python classify/predict.py --weights {best} --source im.jpg"
+            f"\nValidate:        python classify/val.py --weights {best} --data {data_dir}"
+            f"\nExport:          python export.py --weights {best} --include onnx"
             f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{best}')"
-            f'\nVisualize:       https://netron.app\n'
+            f"\nVisualize:       https://netron.app\n"
         )
 
         # Plot examples

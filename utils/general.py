@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """General utils."""
 
 import contextlib
@@ -173,8 +173,7 @@ def user_config_dir(dir="Ultralytics", env_var="YOLOV5_CONFIG_DIR"):
     """Returns user configuration directory path, preferring environment variable `YOLOV5_CONFIG_DIR` if set, else OS-
     specific.
     """
-    env = os.getenv(env_var)
-    if env:
+    if env := os.getenv(env_var):
         path = Path(env)  # use environment variable
     else:
         cfg = {"Windows": "AppData/Roaming", "Linux": ".config", "Darwin": "Library/Application Support"}  # 3 OS dirs
@@ -188,7 +187,8 @@ CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
 
 
 class Profile(contextlib.ContextDecorator):
-    # YOLOv5 Profile class. Usage: @Profile() decorator or 'with Profile():' context manager
+    """Context manager and decorator for profiling code execution time, with optional CUDA synchronization."""
+
     def __init__(self, t=0.0, device: torch.device = None):
         """Initializes a profiling context for YOLOv5 with optional timing threshold and device specification."""
         self.t = t
@@ -213,7 +213,8 @@ class Profile(contextlib.ContextDecorator):
 
 
 class Timeout(contextlib.ContextDecorator):
-    # YOLOv5 Timeout class. Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
+    """Enforces a timeout on code execution, raising TimeoutError if the specified duration is exceeded."""
+
     def __init__(self, seconds, *, timeout_msg="", suppress_timeout_errors=True):
         """Initializes a timeout context/decorator with defined seconds, optional message, and error suppression."""
         self.seconds = int(seconds)
@@ -239,7 +240,8 @@ class Timeout(contextlib.ContextDecorator):
 
 
 class WorkingDirectory(contextlib.ContextDecorator):
-    # Usage: @WorkingDirectory(dir) decorator or 'with WorkingDirectory(dir):' context manager
+    """Context manager/decorator to temporarily change the working directory within a 'with' statement or decorator."""
+
     def __init__(self, new_dir):
         """Initializes a context manager/decorator to temporarily change the working directory."""
         self.dir = new_dir  # new dir
@@ -493,9 +495,9 @@ def check_file(file, suffix=""):
             assert Path(file).exists() and Path(file).stat().st_size > 0, f"File download failed: {url}"  # check
         return file
     elif file.startswith("clearml://"):  # ClearML Dataset ID
-        assert (
-            "clearml" in sys.modules
-        ), "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        assert "clearml" in sys.modules, (
+            "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        )
         return file
     else:  # search
         files = []

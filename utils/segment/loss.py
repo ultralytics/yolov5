@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 import torch
 import torch.nn as nn
@@ -12,7 +12,8 @@ from .general import crop_mask
 
 
 class ComputeLoss:
-    # Compute losses
+    """Computes the YOLOv5 model's loss components including classification, objectness, box, and mask losses."""
+
     def __init__(self, model, autobalance=False, overlap=False):
         """Initializes the compute loss function for YOLOv5 models with options for autobalancing and overlap
         handling.
@@ -60,8 +61,7 @@ class ComputeLoss:
             b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
             tobj = torch.zeros(pi.shape[:4], dtype=pi.dtype, device=self.device)  # target obj
 
-            n = b.shape[0]  # number of targets
-            if n:
+            if n := b.shape[0]:
                 pxy, pwh, _, pcls, pmask = pi[b, a, gj, gi].split((2, 2, 1, self.nc, nm), 1)  # subset of predictions
 
                 # Box regression

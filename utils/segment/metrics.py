@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Model validation metrics."""
 
 import numpy as np
@@ -54,6 +54,8 @@ def ap_per_class_box_and_mask(
 
 
 class Metric:
+    """Computes performance metrics like precision, recall, F1 score, and average precision for model evaluation."""
+
     def __init__(self) -> None:
         """Initializes performance metric attributes for precision, recall, F1 score, average precision, and class
         indices.
@@ -127,7 +129,7 @@ class Metric:
         return (self.mp, self.mr, self.map50, self.map)
 
     def class_result(self, i):
-        """Class-aware result, return p[i], r[i], ap50[i], ap[i]"""
+        """Class-aware result, return p[i], r[i], ap50[i], ap[i]."""
         return (self.p[i], self.r[i], self.ap50[i], self.ap[i])
 
     def get_maps(self, nc):
@@ -140,7 +142,7 @@ class Metric:
     def update(self, results):
         """
         Args:
-            results: tuple(p, r, ap, f1, ap_class)
+            results: tuple(p, r, ap, f1, ap_class).
         """
         p, r, all_ap, f1, ap_class_index = results
         self.p = p
@@ -163,7 +165,7 @@ class Metrics:
     def update(self, results):
         """
         Args:
-            results: Dict{'boxes': Dict{}, 'masks': Dict{}}
+            results: Dict{'boxes': Dict{}, 'masks': Dict{}}.
         """
         self.metric_box.update(list(results["boxes"].values()))
         self.metric_mask.update(list(results["masks"].values()))

@@ -1,4 +1,5 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # Hyperparameters for Objects365 training
 # python train.py --weights yolov5m.pt --data Objects365.yaml --evolve
 # See Hyperparameter Evolution tutorial for details https://github.com/ultralytics/yolov5#tutorials

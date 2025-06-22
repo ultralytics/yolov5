@@ -1,4 +1,4 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Plotting utils."""
 
 import contextlib
@@ -29,7 +29,8 @@ matplotlib.use("Agg")  # for writing to files only
 
 
 class Colors:
-    # Ultralytics color palette https://ultralytics.com/
+    """Provides an RGB color palette derived from Ultralytics color scheme for visualization tasks."""
+
     def __init__(self):
         """
         Initializes the Colors class with a palette derived from Ultralytics color scheme, converting hex codes to RGB.
@@ -81,7 +82,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detec
     module_type:    Module type
     stage:          Module stage within model
     n:              Maximum number of feature maps to plot
-    save_dir:       Directory to save results
+    save_dir:       Directory to save results.
     """
     if ("Detect" not in module_type) and (
         "Segment" not in module_type
@@ -182,7 +183,7 @@ def plot_images(images, targets, paths=None, fname="images.jpg", names=None):
     # Annotate
     fs = int((h + w) * ns * 0.01)  # font size
     annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs, pil=True, example=names)
-    for i in range(i + 1):
+    for i in range(bs):
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
         if paths:
