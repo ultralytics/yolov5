@@ -6,10 +6,10 @@
 import os
 import sys
 from pathlib import Path
-from ultralytics.utils.patches import torch_load
 
 import torch
 import yaml
+from ultralytics.utils.patches import torch_load
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[2]  # YOLOv5 root directory
