@@ -1128,10 +1128,11 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
 
     Examples:
         ```python
+        from ultralytics.utils.patches import torch_load
         from pathlib import Path
         import torch
 
-        model = torch.load('yolov5s.pt')  # Load YOLOv5 model
+        model = torch_load('yolov5s.pt')  # Load YOLOv5 model
         im = torch.zeros((1, 3, 640, 640))  # Example input tensor
 
         names = {0: "person", 1: "bicycle", 2: "car", ...}  # Define class names
