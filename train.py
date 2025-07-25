@@ -319,7 +319,7 @@ def train(hyp, opt, device, callbacks):
             rect=True,
             rank=-1,
             workers=workers * 2,
-            pad=0.5,
+            pad=0.0,
             prefix=colorstr("val: "),
         )[0]
 
