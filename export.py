@@ -510,7 +510,7 @@ def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):
         $ pip install paddlepaddle x2paddle
         ```
     """
-    check_requirements(("paddlepaddle", "x2paddle"))
+    check_requirements(("paddlepaddle>=3.0.0", "x2paddle"))
     import x2paddle
     from x2paddle.convert import pytorch2paddle
 
@@ -1067,7 +1067,7 @@ def add_tflite_metadata(file, metadata, num_outputs):
     Note:
         TFLite metadata can include information such as model name, version, author, and other relevant details.
         For more details on the structure of the metadata, refer to TensorFlow Lite
-        [metadata guidelines](https://www.tensorflow.org/lite/models/convert/metadata).
+        [metadata guidelines](https://ai.google.dev/edge/litert/models/metadata).
     """
     with contextlib.suppress(ImportError):
         # check_requirements('tflite_support')
@@ -1128,10 +1128,11 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
 
     Examples:
         ```python
+        from ultralytics.utils.patches import torch_load
         from pathlib import Path
         import torch
 
-        model = torch.load('yolov5s.pt')  # Load YOLOv5 model
+        model = torch_load('yolov5s.pt')  # Load YOLOv5 model
         im = torch.zeros((1, 3, 640, 640))  # Example input tensor
 
         names = {0: "person", 1: "bicycle", 2: "car", ...}  # Define class names
