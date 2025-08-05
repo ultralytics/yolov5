@@ -28,8 +28,8 @@ from zipfile import ZipFile, is_zipfile
 
 import cv2
 import numpy as np
-import pandas as pd
 import packaging
+import pandas as pd
 import torch
 import torchvision
 import yaml
