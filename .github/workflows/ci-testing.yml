@@ -4,6 +4,9 @@
 
 name: YOLOv5 CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [master]
