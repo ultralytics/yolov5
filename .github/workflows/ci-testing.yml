@@ -33,7 +33,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: Install requirements
         run: |
-          uv pip install --system -r requirements.txt coremltools openvino-dev tensorflow --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
+          uv pip install --system -r requirements.txt coremltools openvino-dev tensorflow<=2.19.0 --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
           yolo checks
           uv pip list
       - name: Benchmark DetectionModel
