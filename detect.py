@@ -31,11 +31,18 @@ Usage - formats:
 import argparse
 import csv
 import os
+import pathlib
 import platform
 import sys
 from pathlib import Path
 
 import torch
+
+# Updating PosixPath on Windows for compatibility
+if sys.platform == "win32":
+    temp = pathlib.PosixPath
+    pathlib.PosixPath = pathlib.WindowsPath
+    del temp
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
