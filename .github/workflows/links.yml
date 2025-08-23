@@ -38,7 +38,7 @@ jobs:
             --accept 100..=103,200..=299,401,403,429,500,502,999 \
             --exclude-all-private \
             --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|x\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
-            --exclude-path '**/ci.yaml' \
+            --exclude-path './**/ci.yaml' \
             --github-token ${{ secrets.GITHUB_TOKEN }} \
             --header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.183 Safari/537.36" \
             './**/*.md' \
@@ -64,7 +64,7 @@ jobs:
             --accept 100..=103,200..=299,429,999 \
             --exclude-all-private \
             --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|x\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
-            --exclude-path '**/ci.yaml' \
+            --exclude-path './**/ci.yaml' \
             --github-token ${{ secrets.GITHUB_TOKEN }} \
             --header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.183 Safari/537.36" \
             './**/*.md' \
