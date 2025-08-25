@@ -26,7 +26,7 @@ jobs:
         python-version: ["3.11"] # requires python<=3.11
         model: [yolov5n]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -64,7 +64,7 @@ jobs:
             model: yolov5n
             torch: "1.8.0" # min torch version CI https://pypi.org/project/torchvision/
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -144,7 +144,7 @@ jobs:
     steps:
       - name: Check for failure and notify
         if: (needs.Benchmarks.result == 'failure' || needs.Tests.result == 'failure' || needs.Benchmarks.result == 'cancelled' || needs.Tests.result == 'cancelled') && github.repository == 'ultralytics/yolov5' && (github.event_name == 'schedule' || github.event_name == 'push') && github.run_attempt == '1'
-        uses: slackapi/slack-github-action@v2.1.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
           webhook-type: incoming-webhook
           webhook: ${{ secrets.SLACK_WEBHOOK_URL_YOLO }}
