@@ -16,10 +16,7 @@ class TritonRemoteModel:
     """
 
     def __init__(self, url: str):
-        """
-        Keyword Arguments:
-        url: Fully qualified address of the Triton server - for e.g. grpc://localhost:8000.
-        """
+        """Keyword Arguments:"""
         parsed_url = urlparse(url)
         if parsed_url.scheme == "grpc":
             from tritonclient.grpc import InferenceServerClient, InferInput
