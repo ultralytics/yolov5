@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # Dependabot for package version updates
@@ -26,3 +27,28 @@ updates:
       - glenn-jocher
     labels:
       - dependencies
+=======
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "04:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - glenn-jocher
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - glenn-jocher
+    labels:
+      - dependencies
+>>>>>>> 37e22266 (Fist commit)

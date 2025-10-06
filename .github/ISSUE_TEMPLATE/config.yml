@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 blank_issues_enabled: true
@@ -11,3 +12,13 @@ contact_links:
   - name: 🎧 Discord
     url: https://ultralytics.com/discord
     about: Ask on Ultralytics Discord
+=======
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Forum
+    url: https://community.ultralytics.com/
+    about: Ask on Ultralytics Community Forum
+  - name: Stack Overflow
+    url: https://stackoverflow.com/search?q=YOLOv5
+    about: Ask on Stack Overflow with 'YOLOv5' tag
+>>>>>>> 37e22266 (Fist commit)
