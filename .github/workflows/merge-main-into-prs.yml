@@ -4,6 +4,9 @@
 # Action runs on updates to main branch so when one PR merges to main all others update
 
 name: Merge main into PRs
+permissions:
+  contents: read
+  pull-requests: write
 
 on:
   workflow_dispatch:
