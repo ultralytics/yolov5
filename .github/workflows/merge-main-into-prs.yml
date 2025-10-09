@@ -5,6 +5,10 @@
 
 name: Merge main into PRs
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   workflow_dispatch:
   # push:
