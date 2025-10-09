@@ -3,6 +3,8 @@
 # Builds ultralytics/yolov5:latest images on DockerHub https://hub.docker.com/r/ultralytics/yolov5
 
 name: Publish Docker Images
+permissions:
+  contents: read
 
 on:
   push:
