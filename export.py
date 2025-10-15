@@ -328,7 +328,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
         export_onnx(model, im, file_path, opset=12, dynamic=True, simplify=True)
         ```
     """
-    check_requirements("onnx>=1.12.0")
+    check_requirements(("onnx>=1.12.0", "onnxscript"))
     import onnx
 
     LOGGER.info(f"\n{prefix} starting export with onnx {onnx.__version__}...")
