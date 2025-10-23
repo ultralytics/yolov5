@@ -8,17 +8,17 @@ updates:
   - package-ecosystem: pip
     directory: "/"
     schedule:
-      interval: monthly
+      interval: weekly
       time: "04:00"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 10
     labels:
       - dependencies
 
   - package-ecosystem: github-actions
     directory: "/.github/workflows"
     schedule:
-      interval: monthly
+      interval: weekly
       time: "04:00"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 5
     labels:
       - dependencies
