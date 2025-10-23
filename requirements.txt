@@ -2,6 +2,7 @@
 # Usage: pip install -r requirements.txt
 
 # Base ------------------------------------------------------------------------
+pyttsx3
 gitpython>=3.1.30
 matplotlib>=3.3
 numpy>=1.23.5
