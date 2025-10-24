@@ -110,7 +110,7 @@ class iOSModel(torch.nn.Module):
             involves dividing by the image width if the image is square; otherwise, additional conditions might apply.
         """
         super().__init__()
-        b, c, h, w = im.shape  # batch, channel, height, width
+        _b, _c, h, w = im.shape  # batch, channel, height, width
         self.model = model
         self.nc = model.nc  # number of classes
         if w == h:
@@ -418,8 +418,8 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
         the specified file path.
     """
     check_requirements("openvino-dev>=2023.0")  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-    import openvino.runtime as ov  # noqa
-    from openvino.tools import mo  # noqa
+    import openvino.runtime as ov
+    from openvino.tools import mo
 
     LOGGER.info(f"\n{prefix} starting export with openvino {ov.__version__}...")
     f = str(file).replace(file.suffix, f"_{'int8_' if int8 else ''}openvino_model{os.sep}")
@@ -443,8 +443,6 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
                 data[task], imgsz=imgsz, batch_size=1, stride=32, pad=0.5, single_cls=False, rect=False, workers=workers
             )[0]
             return dataloader
-
-        # noqa: F811
 
         def transform_fn(data_item):
             """
@@ -885,7 +883,7 @@ def export_tflite(
     import tensorflow as tf
 
     LOGGER.info(f"\n{prefix} starting export with tensorflow {tf.__version__}...")
-    batch_size, ch, *imgsz = list(im.shape)  # BCHW
+    _batch_size, _ch, *imgsz = list(im.shape)  # BCHW
     f = str(file).replace(".pt", "-fp16.tflite")
 
     converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
@@ -1148,7 +1146,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
 
     f = file.with_suffix(".mlmodel") if mlmodel else file.with_suffix(".mlpackage")
     print(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
-    batch_size, ch, h, w = list(im.shape)  # BCHW
+    _batch_size, _ch, h, w = list(im.shape)  # BCHW
     t = time.time()
 
     # YOLOv5 Output shapes
@@ -1165,7 +1163,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
 
     # Checks
     nx, ny = spec.description.input[0].type.imageType.width, spec.description.input[0].type.imageType.height
-    na, nc = out0_shape
+    _na, nc = out0_shape
     # na, nc = out0.type.multiArrayType.shape  # number anchors, classes
     assert len(names) == nc, f"{len(names)} names found for nc={nc}"  # check
 

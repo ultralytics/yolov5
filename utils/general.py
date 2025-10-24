@@ -1,6 +1,8 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """General utils."""
 
+from __future__ import annotations
+
 import contextlib
 import glob
 import inspect
@@ -23,7 +25,6 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from subprocess import check_output
 from tarfile import is_tarfile
-from typing import Optional
 from zipfile import ZipFile, is_zipfile
 
 import cv2
@@ -262,7 +263,7 @@ def methods(instance):
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
-def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
+def print_args(args: dict | None = None, show_file=True, show_func=False):
     """Logs the arguments of the calling function, with options to include the filename and function name."""
     x = inspect.currentframe().f_back  # previous frame
     file, _, func, _, _ = inspect.getframeinfo(x)
@@ -556,7 +557,7 @@ def check_dataset(data, autodownload=True):
                 data[k] = [str((path / x).resolve()) for x in data[k]]
 
     # Parse yaml
-    train, val, test, s = (data.get(x) for x in ("train", "val", "test", "download"))
+    _train, val, _test, s = (data.get(x) for x in ("train", "val", "test", "download"))
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):

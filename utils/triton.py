@@ -1,7 +1,8 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Utils to interact with the Triton Inference Server."""
 
-import typing
+from __future__ import annotations
+
 from urllib.parse import urlparse
 
 import torch
@@ -54,7 +55,7 @@ class TritonRemoteModel:
         """Returns the model runtime."""
         return self.metadata.get("backend", self.metadata.get("platform"))
 
-    def __call__(self, *args, **kwargs) -> typing.Union[torch.Tensor, tuple[torch.Tensor, ...]]:
+    def __call__(self, *args, **kwargs) -> torch.Tensor | tuple[torch.Tensor, ...]:
         """
         Invokes the model.
 

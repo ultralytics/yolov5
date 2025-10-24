@@ -87,13 +87,13 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detec
     if ("Detect" not in module_type) and (
         "Segment" not in module_type
     ):  # 'Detect' for Object Detect task,'Segment' for Segment task
-        batch, channels, height, width = x.shape  # batch, channels, height, width
+        _batch, channels, height, width = x.shape  # batch, channels, height, width
         if height > 1 and width > 1:
             f = save_dir / f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
 
             blocks = torch.chunk(x[0].cpu(), channels, dim=0)  # select batch index 0, block by channels
             n = min(n, channels)  # number of plots
-            fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
+            _fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)
             ax = ax.ravel()
             plt.subplots_adjust(wspace=0.05, hspace=0.05)
             for i in range(n):
@@ -246,7 +246,7 @@ def plot_val_txt():
     ax.set_aspect("equal")
     plt.savefig("hist2d.png", dpi=300)
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
+    _fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
     ax[0].hist(cx, bins=600)
     ax[1].hist(cy, bins=600)
     plt.savefig("hist1d.png", dpi=200)
@@ -260,7 +260,7 @@ def plot_targets_txt():
     """
     x = np.loadtxt("targets.txt", dtype=np.float32).T
     s = ["x targets", "y targets", "width targets", "height targets"]
-    fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
+    _fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
     ax = ax.ravel()
     for i in range(4):
         ax[i].hist(x[i], bins=100, label=f"{x[i].mean():.3g} +/- {x[i].std():.3g}")
@@ -281,7 +281,7 @@ def plot_val_study(file="", dir="", x=None):
     if plot2:
         ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)[1].ravel()
 
-    fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
+    _fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
     # for f in [save_dir / f'study_coco_{x}.txt' for x in ['yolov5n6', 'yolov5s6', 'yolov5m6', 'yolov5l6', 'yolov5x6']]:
     for f in sorted(save_dir.glob("study*.txt")):
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
@@ -380,7 +380,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     )  # select batch index 0, block by channels
     n = min(len(blocks), nmax)  # number of plots
     m = min(8, round(n**0.5))  # 8 x 8 default
-    fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
+    _fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
     ax = ax.ravel() if m > 1 else [ax]
     # plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):

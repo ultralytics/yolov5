@@ -145,7 +145,7 @@ class WandbLogger:
             aliases=[
                 "latest",
                 "last",
-                f"epoch {str(self.current_epoch)}",
+                f"epoch {self.current_epoch!s}",
                 "best" if best_model else "",
             ],
         )
