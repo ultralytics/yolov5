@@ -444,7 +444,6 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
             )[0]
             return dataloader
 
-
         def transform_fn(data_item):
             """
             Quantization transform function.

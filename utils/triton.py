@@ -1,5 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Utils to interact with the Triton Inference Server."""
+
 from __future__ import annotations
 
 from urllib.parse import urlparse
