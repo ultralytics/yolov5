@@ -14,7 +14,7 @@ def crop_mask(masks, boxes):
         - masks should be a size [n, h, w] tensor of masks
         - boxes should be a size [n, 4] tensor of bbox coords in relative point form
     """
-    n, h, w = masks.shape
+    _n, h, w = masks.shape
     x1, y1, x2, y2 = torch.chunk(boxes[:, :, None], 4, 1)  # x1 shape(1,1,n)
     r = torch.arange(w, device=masks.device, dtype=x1.dtype)[None, None, :]  # rows shape(1,w,1)
     c = torch.arange(h, device=masks.device, dtype=x1.dtype)[None, :, None]  # cols shape(h,1,1)
