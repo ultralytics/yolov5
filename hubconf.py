@@ -240,7 +240,7 @@ def yolov5m(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
         import torch
 
         model = torch.hub.load('ultralytics/yolov5', 'yolov5m')  # Load YOLOv5-medium from Ultralytics repository
-        model = torch.hub.load('ultralytics/yolov5: master', 'yolov5m') # Load from the master branch
+        model = torch.hub.load('ultralytics/yolov5:master', 'yolov5m')  # Load from the master branch
         model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5m.pt')  # Load a custom/local YOLOv5-medium model
         model = torch.hub.load('.', 'custom', 'yolov5m.pt', source='local')  # Load from a local repository
         ```
