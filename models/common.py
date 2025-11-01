@@ -297,7 +297,9 @@ class SPP(nn.Module):
     """Implements Spatial Pyramid Pooling (SPP) for feature extraction, ref: https://arxiv.org/abs/1406.4729."""
 
     def __init__(self, c1, c2, k=(5, 9, 13)):
-        """Initializes SPP layer with Spatial Pyramid Pooling, ref: https://arxiv.org/abs/1406.4729, args: c1 (input channels), c2 (output channels), k (kernel sizes)."""
+        """Initializes SPP layer with Spatial Pyramid Pooling, ref: https://arxiv.org/abs/1406.4729, args: c1 (input
+        channels), c2 (output channels), k (kernel sizes).
+        """
         super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -379,7 +381,9 @@ class GhostBottleneck(nn.Module):
     """Efficient bottleneck layer using Ghost Convolutions, see https://github.com/huawei-noah/ghostnet."""
 
     def __init__(self, c1, c2, k=3, s=1):
-        """Initializes GhostBottleneck with ch_in `c1`, ch_out `c2`, kernel size `k`, stride `s`; see https://github.com/huawei-noah/ghostnet."""
+        """Initializes GhostBottleneck with ch_in `c1`, ch_out `c2`, kernel size `k`, stride `s`; see
+        https://github.com/huawei-noah/ghostnet.
+        """
         super().__init__()
         c_ = c2 // 2
         self.conv = nn.Sequential(
@@ -431,8 +435,7 @@ class Expand(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        """Processes input tensor x to expand spatial dimensions by redistributing channels, requiring C / gain^2 ==
-        0.
+        """Processes input tensor x to expand spatial dimensions by redistributing channels, requiring C / gain^2 == 0.
         """
         b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
@@ -450,8 +453,7 @@ class Concat(nn.Module):
         self.d = dimension
 
     def forward(self, x):
-        """Concatenates a list of tensors along a specified dimension; `x` is a list of tensors, `dimension` is an
-        int.
+        """Concatenates a list of tensors along a specified dimension; `x` is a list of tensors, `dimension` is an int.
         """
         return torch.cat(x, self.d)
 

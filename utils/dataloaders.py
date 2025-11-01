@@ -406,8 +406,7 @@ class LoadImages:
         return path, im, im0, self.cap, s
 
     def _new_video(self, path):
-        """Initializes a new video capture object with path, frame count adjusted by stride, and orientation
-        metadata.
+        """Initializes a new video capture object with path, frame count adjusted by stride, and orientation metadata.
         """
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
@@ -1056,8 +1055,7 @@ class LoadImagesAndLabels(Dataset):
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def flatten_recursive(path=DATASETS_DIR / "coco128"):
-    """Flattens a directory by copying all files from subdirectories to a new top-level directory, preserving
-    filenames.
+    """Flattens a directory by copying all files from subdirectories to a new top-level directory, preserving filenames.
     """
     new_path = Path(f"{path!s}_flat")
     if os.path.exists(new_path):
@@ -1107,8 +1105,8 @@ def extract_boxes(path=DATASETS_DIR / "coco128"):
 
 
 def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), annotated_only=False):
-    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    Usage: from utils.dataloaders import *; autosplit().
+    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files Usage: from utils.dataloaders
+    import *; autosplit().
 
     Arguments:
         path:            Path to images directory
@@ -1300,8 +1298,7 @@ class HUBDatasetStats:
         return self.stats
 
     def process_images(self):
-        """Compresses images for Ultralytics HUB across 'train', 'val', 'test' splits and saves to specified
-        directory.
+        """Compresses images for Ultralytics HUB across 'train', 'val', 'test' splits and saves to specified directory.
         """
         for split in "train", "val", "test":
             if self.data.get(split) is None:

@@ -110,8 +110,8 @@ def run(
         conf_thres (float): Confidence threshold for detections. Default is 0.25.
         iou_thres (float): Intersection Over Union (IOU) threshold for non-max suppression. Default is 0.45.
         max_det (int): Maximum number of detections per image. Default is 1000.
-        device (str): CUDA device identifier (e.g., '0' or '0,1,2,3') or 'cpu'. Default is an empty string, which uses the
-            best available device.
+        device (str): CUDA device identifier (e.g., '0' or '0,1,2,3') or 'cpu'. Default is an empty string, which uses
+            the best available device.
         view_img (bool): If True, display inference results using OpenCV. Default is False.
         save_txt (bool): If True, save results in a text file. Default is False.
         save_csv (bool): If True, save results in a CSV file. Default is False.
@@ -125,8 +125,8 @@ def run(
         update (bool): If True, update all models' weights. Default is False.
         project (str | Path): Directory to save results. Default is 'runs/detect'.
         name (str): Name of the current experiment; used to create a subdirectory within 'project'. Default is 'exp'.
-        exist_ok (bool): If True, existing directories with the same name are reused instead of being incremented. Default is
-            False.
+        exist_ok (bool): If True, existing directories with the same name are reused instead of being incremented.
+            Default is False.
         line_thickness (int): Thickness of bounding box lines in pixels. Default is 3.
         hide_labels (bool): If True, do not display labels on bounding boxes. Default is False.
         hide_conf (bool): If True, do not display confidence scores on bounding boxes. Default is False.
@@ -340,7 +340,8 @@ def parse_opt():
         --save-conf (bool, optional): Flag to save confidences in labels saved via --save-txt. Defaults to False.
         --save-crop (bool, optional): Flag to save cropped prediction boxes. Defaults to False.
         --nosave (bool, optional): Flag to prevent saving images/videos. Defaults to False.
-        --classes (list[int], optional): List of classes to filter results by, e.g., '--classes 0 2 3'. Defaults to None.
+        --classes (list[int], optional): List of classes to filter results by, e.g., '--classes 0 2 3'. Defaults to
+            None.
         --agnostic-nms (bool, optional): Flag for class-agnostic NMS. Defaults to False.
         --augment (bool, optional): Flag for augmented inference. Defaults to False.
         --visualize (bool, optional): Flag for visualizing features. Defaults to False.
@@ -359,7 +360,7 @@ def parse_opt():
     Returns:
         argparse.Namespace: Parsed command-line arguments as an argparse.Namespace object.
 
-    Example:
+    Examples:
         ```python
         from ultralytics import YOLOv5
         args = YOLOv5.parse_opt()
@@ -416,7 +417,7 @@ def main(opt):
     Returns:
         None
 
-    Note:
+    Notes:
         This function performs essential pre-execution checks and initiates the YOLOv5 detection process based on user-specified
         options. Refer to the usage guide and examples for more information about different sources and formats at:
         https://github.com/ultralytics/ultralytics

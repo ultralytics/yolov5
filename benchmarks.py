@@ -77,12 +77,7 @@ def run(
     Returns:
         None. Logs information about the benchmark results, including the format, size, mAP50-95, and inference time.
 
-    Notes:
-        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML,
-            TensorFlow SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js
-            are unsupported.
-
-    Example:
+    Examples:
         ```python
         $ python benchmarks.py --weights yolov5s.pt --img 640
         ```
@@ -95,6 +90,11 @@ def run(
 
         Run benchmarks:
           $ python benchmarks.py --weights yolov5s.pt --img 640
+
+    Notes:
+        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML,
+            TensorFlow SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js
+            are unsupported.
     """
     y, t = [], time.time()
     device = select_device(device)
@@ -167,8 +167,10 @@ def test(
         weights (Path | str): Path to the model weights file (.pt format). Default is 'ROOT / "yolov5s.pt"'.
         imgsz (int): Inference image size (in pixels). Default is 640.
         batch_size (int): Batch size for testing. Default is 1.
-        data (Path | str): Path to the dataset configuration file (.yaml format). Default is 'ROOT / "data/coco128.yaml"'.
-        device (str): Device for running the tests, can be 'cpu' or a specific CUDA device ('0', '0,1,2,3', etc.). Default is an empty string.
+        data (Path | str): Path to the dataset configuration file (.yaml format). Default is 'ROOT /
+            "data/coco128.yaml"'.
+        device (str): Device for running the tests, can be 'cpu' or a specific CUDA device ('0', '0,1,2,3', etc.).
+            Default is an empty string.
         half (bool): Use FP16 half-precision for inference if True. Default is False.
         test (bool): Test export formats only without running inference. Default is False.
         pt_only (bool): Test only the PyTorch model if True. Default is False.
@@ -262,13 +264,14 @@ def main(opt):
     Executes YOLOv5 benchmark tests or main training/inference routines based on the provided command-line arguments.
 
     Args:
-        opt (argparse.Namespace): Parsed command-line arguments including options for weights, image size, batch size, data
+        opt (argparse.Namespace): Parsed command-line arguments including options for weights, image size, batch size,
+            data
             configuration, device, and other flags for inference settings.
 
     Returns:
         None: This function does not return any value. It leverages side-effects such as logging and running benchmarks.
 
-    Example:
+    Examples:
         ```python
         if __name__ == "__main__":
             opt = parse_opt()

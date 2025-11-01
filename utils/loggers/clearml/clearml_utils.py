@@ -81,7 +81,6 @@ class ClearmlLogger:
         Arguments:
         opt (namespace) -- Commandline arguments for this run
         hyp (dict) -- Hyperparameters for this run
-
         """
         self.current_epoch = 0
         # Keep tracked of amount of logged images to enforce a limit
