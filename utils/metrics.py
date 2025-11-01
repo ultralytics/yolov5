@@ -142,6 +142,7 @@ class ConfusionMatrix:
         Arguments:
             detections (Array[N, 6]), x1, y1, x2, y2, conf, class
             labels (Array[M, 5]), class, x1, y1, x2, y2
+
         Returns:
             None, updates confusion matrix accordingly
         """

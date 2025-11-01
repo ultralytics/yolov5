@@ -78,9 +78,11 @@ class Metric:
 
     @property
     def ap(self):
-        """AP@0.5:0.95
-        Return:
-            (nc, ) or [].
+        """
+        AP@0.5:0.95
+
+        Returns:
+            (nc, ) or []
         """
         return self.all_ap.mean(1) if len(self.all_ap) else []
 
@@ -156,8 +158,7 @@ class Metrics:
     """Metric for boxes and masks."""
 
     def __init__(self) -> None:
-        """Initializes Metric objects for bounding boxes and masks to compute performance metrics in the Metrics
-        class.
+        """Initializes Metric objects for bounding boxes and masks to compute performance metrics in the Metrics class.
         """
         self.metric_box = Metric()
         self.metric_mask = Metric()
