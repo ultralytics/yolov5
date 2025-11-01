@@ -116,10 +116,12 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
 
 def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, overlap=False, masks=False):
     """
-    Return correct prediction matrix
+    Return correct prediction matrix.
+
     Arguments:
         detections (array[N, 6]), x1, y1, x2, y2, conf, class
         labels (array[M, 5]), class, x1, y1, x2, y2
+
     Returns:
         correct (array[N, 10]), for 10 IoU levels.
     """
@@ -184,8 +186,7 @@ def run(
     compute_loss=None,
     callbacks=Callbacks(),
 ):
-    """Validates a YOLOv5 segmentation model on specified dataset, producing metrics, plots, and optional JSON
-    output.
+    """Validates a YOLOv5 segmentation model on specified dataset, producing metrics, plots, and optional JSON output.
     """
     if save_json:
         check_requirements("pycocotools>=2.0.6")

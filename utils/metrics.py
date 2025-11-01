@@ -31,14 +31,16 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
     Compute the average precision, given the recall and precision curves.
 
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
-    # Arguments
+
+    Arguments:
         tp:  True positives (nparray, nx1 or nx10).
         conf:  Objectness value from 0-1 (nparray).
         pred_cls:  Predicted object classes (nparray).
         target_cls:  True object classes (nparray).
         plot:  Plot precision-recall curve at mAP@0.5
         save_dir:  Plot save directory
-    # Returns
+
+    Returns:
         The average precision as computed in py-faster-rcnn.
     """
     # Sort by objectness

@@ -50,10 +50,9 @@ class WandbLogger:
         - Setup training processes if job_type is 'Training'.
 
         Arguments:
-        opt (namespace) -- Commandline arguments for this run
-        run_id (str) -- Run ID of W&B run to be resumed
-        job_type (str) -- To set the job_type for this run
-
+            opt (namespace) -- Commandline arguments for this run
+            run_id (str) -- Run ID of W&B run to be resumed
+            job_type (str) -- To set the job_type for this run
         """
         # Pre-training routine --
         self.job_type = job_type
@@ -91,8 +90,7 @@ class WandbLogger:
           - Setup log_dict, initialize bbox_interval.
 
         Arguments:
-        opt (namespace) -- commandline arguments for this run
-
+            opt (namespace) -- commandline arguments for this run
         """
         self.log_dict, self.current_epoch = {}, 0
         self.bbox_interval = opt.bbox_interval
