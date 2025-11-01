@@ -368,7 +368,7 @@ def yolov5s6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
         import torch
 
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s6')
-        model = torch.hub.load('ultralytics/yolov5: master', 'yolov5s6') # load from a specific branch
+        model = torch.hub.load('ultralytics/yolov5:master', 'yolov5s6')  # load from a specific branch
         model = torch.hub.load('ultralytics/yolov5', 'custom', 'path/to/yolov5s6.pt')  # custom/local model
         model = torch.hub.load('.', 'custom', 'path/to/yolov5s6.pt', source='local')  # local repo model
         ```
