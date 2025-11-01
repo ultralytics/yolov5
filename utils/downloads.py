@@ -86,9 +86,7 @@ def safe_download(file, url, url2=None, min_bytes=1e0, error_msg=""):
 
 
 def attempt_download(file, repo="ultralytics/yolov5", release="v7.0"):
-    """Downloads a file from GitHub release assets or via direct URL if not found locally, supporting backup
-    versions.
-    """
+    """Downloads a file from GitHub release assets or via direct URL if not found locally, supporting backup versions."""
     from utils.general import LOGGER
 
     def github_assets(repository, version="latest"):

@@ -44,9 +44,7 @@ def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):
 
 
 def smartCrossEntropyLoss(label_smoothing=0.0):
-    """Returns a CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower
-    versions.
-    """
+    """Returns a CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower versions."""
     if check_version(torch.__version__, "1.10.0"):
         return nn.CrossEntropyLoss(label_smoothing=label_smoothing)
     if label_smoothing > 0:
@@ -156,12 +154,14 @@ def time_sync():
 
 
 def profile(input, ops, n=10, device=None):
-    """YOLOv5 speed/memory/FLOPs profiler
-    Usage:
-        input = torch.randn(16, 3, 640, 640)
-        m1 = lambda x: x * torch.sigmoid(x)
-        m2 = nn.SiLU()
-        profile(input, [m1, m2], n=100)  # profile over 100 iterations.
+    """
+    YOLOv5 speed/memory/FLOPs profiler.
+
+    Examples:
+        >>> input = torch.randn(16, 3, 640, 640)
+        >>> m1 = lambda x: x * torch.sigmoid(x)
+        >>> m2 = nn.SiLU()
+        >>> profile(input, [m1, m2], n=100)  # profile over 100 iterations.
     """
     results = []
     if not isinstance(device, torch.device):
@@ -239,9 +239,7 @@ def find_modules(model, mclass=nn.Conv2d):
 
 
 def sparsity(model):
-    """Calculates and returns the global sparsity of a model as the ratio of zero-valued parameters to total
-    parameters.
-    """
+    """Calculates and returns the global sparsity of a model as the ratio of zero-valued parameters to total parameters."""
     a, b = 0, 0
     for p in model.parameters():
         a += p.numel()
@@ -448,9 +446,9 @@ class EarlyStopping:
 
 
 class ModelEMA:
-    """Updated Exponential Moving Average (EMA) from https://github.com/rwightman/pytorch-image-models
-    Keeps a moving average of everything in the model state_dict (parameters and buffers)
-    For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage.
+    """Updated Exponential Moving Average (EMA) from https://github.com/rwightman/pytorch-image-models Keeps a moving
+    average of everything in the model state_dict (parameters and buffers) For EMA details
+    see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage.
     """
 
     def __init__(self, model, decay=0.9999, tau=2000, updates=0):

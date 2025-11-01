@@ -31,14 +31,16 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
     Compute the average precision, given the recall and precision curves.
 
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
-    # Arguments
+
+    Arguments:
         tp:  True positives (nparray, nx1 or nx10).
         conf:  Objectness value from 0-1 (nparray).
         pred_cls:  Predicted object classes (nparray).
         target_cls:  True object classes (nparray).
         plot:  Plot precision-recall curve at mAP@0.5
         save_dir:  Plot save directory
-    # Returns
+
+    Returns:
         The average precision as computed in py-faster-rcnn.
     """
     # Sort by objectness
@@ -95,12 +97,16 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
 
 
 def compute_ap(recall, precision):
-    """Compute the average precision, given the recall and precision curves
-    # Arguments
-        recall:    The recall curve (list)
+    """Compute the average precision, given the recall and precision curves.
+
+    Arguments:
+        recall: The recall curve (list)
         precision: The precision curve (list)
-    # Returns
-        Average precision, precision curve, recall curve.
+
+    Returns:
+        Average precision
+        precision curve
+        recall curve
     """
     # Append sentinel values to beginning and end
     mrec = np.concatenate(([0.0], recall, [1.0]))
@@ -140,6 +146,7 @@ class ConfusionMatrix:
         Arguments:
             detections (Array[N, 6]), x1, y1, x2, y2, conf, class
             labels (Array[M, 5]), class, x1, y1, x2, y2
+
         Returns:
             None, updates confusion matrix accordingly
         """
@@ -299,10 +306,15 @@ def bbox_ioa(box1, box2, eps=1e-7):
     """
     Returns the intersection over box2 area given box1, box2.
 
-    Boxes are x1y1x2y2
-    box1:       np.array of shape(4)
-    box2:       np.array of shape(nx4)
-    returns:    np.array of shape(n)
+    Args:
+        box1: np.array of shape(4)
+        box2: np.array of shape(nx4)
+
+    Returns:
+        np.array of shape(n)
+
+    Notes:
+        - Boxes are x1y1x2y2
     """
     # Get the coordinates of bounding boxes
     b1_x1, b1_y1, b1_x2, b1_y2 = box1

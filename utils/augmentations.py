@@ -329,9 +329,7 @@ def classify_albumentations(
     auto_aug=False,
 ):
     # YOLOv5 classification Albumentations (optional, only used if package is installed)
-    """Sets up and returns Albumentations transforms for YOLOv5 classification tasks depending on augmentation
-    settings.
-    """
+    """Sets up and returns Albumentations transforms for YOLOv5 classification tasks depending on augmentation settings."""
     prefix = colorstr("albumentations: ")
     try:
         import albumentations as A
