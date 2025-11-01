@@ -50,7 +50,7 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=False):
         proto_out: [mask_dim, mask_h, mask_w]
         out_masks: [n, mask_dim], n is number of masks after nms
         bboxes: [n, 4], n is number of masks after nms
-        shape:input_image_size, (h, w).
+        shape: input_image_size, (h, w).
 
     Returns:
         h, w, n
@@ -127,11 +127,11 @@ def mask_iou(mask1, mask2, eps=1e-7):
         mask1: [N, n] m1 means number of predicted objects
         mask2: [M, n] m2 means number of gt objects
 
-    Notes:
-        - n means image_w, x image_h.
-
     Returns:
         masks iou, [N, M]
+
+    Notes:
+        - n means image_w, x image_h.
     """
     intersection = torch.matmul(mask1, mask2.t()).clamp(0)
     union = (mask1.sum(1)[:, None] + mask2.sum(1)[None]) - intersection  # (area1 + area2) - intersection
@@ -140,16 +140,15 @@ def mask_iou(mask1, mask2, eps=1e-7):
 
 def masks_iou(mask1, mask2, eps=1e-7):
     """
-
     Args:
         mask1: [N, n] m1 means number of predicted objects
         mask2: [N, n] m2 means number of gt objects
 
-    Notes:
-        - n means image_w, x image_h.
-
     Returns:
         masks iou, (N, )
+
+    Notes:
+        - n means image_w, x image_h.
     """
     intersection = (mask1 * mask2).sum(1).clamp(0)  # (N, )
     union = (mask1.sum(1) + mask2.sum(1))[None] - intersection  # (area1 + area2) - intersection
