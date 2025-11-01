@@ -234,6 +234,7 @@ def yolov5m(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
 
     Returns:
         torch.nn.Module: The instantiated YOLOv5-medium model.
+
     Examples:
         ```python
         import torch
@@ -243,6 +244,7 @@ def yolov5m(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
         model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5m.pt')  # Load a custom/local YOLOv5-medium model
         model = torch.hub.load('.', 'custom', 'yolov5m.pt', source='local')  # Load from a local repository
         ```
+
     Notes:
         For more information, visit https://pytorch.org/hub/ultralytics_yolov5.
     """
@@ -356,6 +358,11 @@ def yolov5s6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
 
     Returns:
         torch.nn.Module: The YOLOv5-small-P6 model instance.
+
+    Raises:
+        Exception: If there is an error during model creation or loading, with a suggestion to visit the YOLOv5
+            tutorials for help.
+
     Examples:
         ```python
         import torch
@@ -365,10 +372,6 @@ def yolov5s6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
         model = torch.hub.load('ultralytics/yolov5', 'custom', 'path/to/yolov5s6.pt')  # custom/local model
         model = torch.hub.load('.', 'custom', 'path/to/yolov5s6.pt', source='local')  # local repo model
         ```
-
-    Raises:
-        Exception: If there is an error during model creation or loading, with a suggestion to visit the YOLOv5
-            tutorials for help.
 
     Notes:
         - For more information, refer to the PyTorch Hub models documentation at https://pytorch.org/hub/ultralytics_yolov5
