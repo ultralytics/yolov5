@@ -406,8 +406,7 @@ class LoadImages:
         return path, im, im0, self.cap, s
 
     def _new_video(self, path):
-        """Initializes a new video capture object with path, frame count adjusted by stride, and orientation metadata.
-        """
+        """Initializes a new video capture object with path, frame count adjusted by stride, and orientation metadata."""
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT) / self.vid_stride)
@@ -1055,8 +1054,7 @@ class LoadImagesAndLabels(Dataset):
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def flatten_recursive(path=DATASETS_DIR / "coco128"):
-    """Flattens a directory by copying all files from subdirectories to a new top-level directory, preserving filenames.
-    """
+    """Flattens a directory by copying all files from subdirectories to a new top-level directory, preserving filenames."""
     new_path = Path(f"{path!s}_flat")
     if os.path.exists(new_path):
         shutil.rmtree(new_path)  # delete output folder
@@ -1298,8 +1296,7 @@ class HUBDatasetStats:
         return self.stats
 
     def process_images(self):
-        """Compresses images for Ultralytics HUB across 'train', 'val', 'test' splits and saves to specified directory.
-        """
+        """Compresses images for Ultralytics HUB across 'train', 'val', 'test' splits and saves to specified directory."""
         for split in "train", "val", "test":
             if self.data.get(split) is None:
                 continue

@@ -125,7 +125,7 @@ def mask_iou(mask1, mask2, eps=1e-7):
     """
     Args:
         mask1: [N, n] m1 means number of predicted objects
-        mask2: [M, n] m2 means number of gt objects
+        mask2: [M, n] m2 means number of gt objects.
 
     Returns:
         masks iou, [N, M]
@@ -142,7 +142,7 @@ def masks_iou(mask1, mask2, eps=1e-7):
     """
     Args:
         mask1: [N, n] m1 means number of predicted objects
-        mask2: [N, n] m2 means number of gt objects
+        mask2: [N, n] m2 means number of gt objects.
 
     Returns:
         masks iou, (N, )

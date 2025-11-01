@@ -435,8 +435,7 @@ class Expand(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        """Processes input tensor x to expand spatial dimensions by redistributing channels, requiring C / gain^2 == 0.
-        """
+        """Processes input tensor x to expand spatial dimensions by redistributing channels, requiring C / gain^2 == 0."""
         b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
         x = x.view(b, s, s, c // s**2, h, w)  # x(1,2,2,16,80,80)
@@ -453,8 +452,7 @@ class Concat(nn.Module):
         self.d = dimension
 
     def forward(self, x):
-        """Concatenates a list of tensors along a specified dimension; `x` is a list of tensors, `dimension` is an int.
-        """
+        """Concatenates a list of tensors along a specified dimension; `x` is a list of tensors, `dimension` is an int."""
         return torch.cat(x, self.d)
 
 

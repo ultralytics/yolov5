@@ -79,7 +79,7 @@ class Metric:
     @property
     def ap(self):
         """
-        AP@0.5:0.95
+        AP@0.5:0.95.
 
         Returns:
             (nc, ) or []
@@ -158,8 +158,7 @@ class Metrics:
     """Metric for boxes and masks."""
 
     def __init__(self) -> None:
-        """Initializes Metric objects for bounding boxes and masks to compute performance metrics in the Metrics class.
-        """
+        """Initializes Metric objects for bounding boxes and masks to compute performance metrics in the Metrics class."""
         self.metric_box = Metric()
         self.metric_mask = Metric()
 
