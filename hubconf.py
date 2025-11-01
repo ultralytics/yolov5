@@ -259,8 +259,8 @@ def yolov5l(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
         classes (int): Number of model classes. Default is 80.
         autoshape (bool): Apply YOLOv5 .autoshape() wrapper to model. Default is True.
         _verbose (bool): Print all information to screen. Default is True.
-        device (str | torch.device | None): Device to use for model parameters, e.g., 'cpu', 'cuda', or a torch.device instance.
-            Default is None.
+        device (str | torch.device | None): Device to use for model parameters, e.g., 'cpu', 'cuda', or a torch.device
+            instance. Default is None.
 
     Returns:
         YOLOv5 model (torch.nn.Module): The YOLOv5-large model instantiated with specified configurations and possibly
@@ -288,17 +288,17 @@ def yolov5x(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
         pretrained (bool): If True, loads pretrained weights into the model. Defaults to True.
         channels (int): Number of input channels for the model. Defaults to 3.
         classes (int): Number of model classes for object detection. Defaults to 80.
-        autoshape (bool): If True, applies the YOLOv5 .autoshape() wrapper for handling different input formats. Defaults to
-            True.
+        autoshape (bool): If True, applies the YOLOv5 .autoshape() wrapper for handling different input formats.
+            Defaults to True.
         _verbose (bool): If True, prints detailed information during model loading. Defaults to True.
-        device (str | torch.device | None): Device specification for computing the model, e.g., 'cpu', 'cuda:0', torch.device('cuda').
-            Defaults to None.
+        device (str | torch.device | None): Device specification for computing the model, e.g., 'cpu', 'cuda:0',
+            torch.device('cuda'). Defaults to None.
 
     Returns:
-        torch.nn.Module: The YOLOv5-xlarge model loaded with the specified parameters, optionally with pretrained weights and
-        autoshaping applied.
+        torch.nn.Module: The YOLOv5-xlarge model loaded with the specified parameters, optionally with pretrained
+            weights and autoshaping applied.
 
-    Example:
+    Examples:
         ```python
         import torch
         model = torch.hub.load('ultralytics/yolov5', 'yolov5x')
@@ -326,7 +326,7 @@ def yolov5n6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
     Returns:
         torch.nn.Module: YOLOv5-nano-P6 model loaded with the specified configurations.
 
-    Example:
+    Examples:
         ```python
         import torch
         model = yolov5n6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device='cuda')
@@ -350,8 +350,8 @@ def yolov5s6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
         autoshape (bool): If True, applies YOLOv5 .autoshape() wrapper to the model, allowing for varied input formats.
             Default is True.
         _verbose (bool): If True, prints detailed information during model loading. Default is True.
-        device (str | torch.device | None): Device specification for model parameters (e.g., 'cpu', 'cuda', or torch.device).
-            Default is None, which selects an available device automatically.
+        device (str | torch.device | None): Device specification for model parameters (e.g., 'cpu', 'cuda', or
+            torch.device). Default is None, which selects an available device automatically.
 
     Returns:
         torch.nn.Module: The YOLOv5-small-P6 model instance.
@@ -361,17 +361,17 @@ def yolov5s6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
         import torch
 
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s6')
-        model = torch.hub.load('ultralytics/yolov5:master', 'yolov5s6')  # load from a specific branch
+        model = torch.hub.load('ultralytics/yolov5: master', 'yolov5s6') # load from a specific branch
         model = torch.hub.load('ultralytics/yolov5', 'custom', 'path/to/yolov5s6.pt')  # custom/local model
         model = torch.hub.load('.', 'custom', 'path/to/yolov5s6.pt', source='local')  # local repo model
         ```
 
-    Notes:
-        - For more information, refer to the PyTorch Hub models documentation at https://pytorch.org/hub/ultralytics_yolov5
-
     Raises:
         Exception: If there is an error during model creation or loading, with a suggestion to visit the YOLOv5
             tutorials for help.
+
+    Notes:
+        - For more information, refer to the PyTorch Hub models documentation at https://pytorch.org/hub/ultralytics_yolov5
     """
     return _create("yolov5s6", pretrained, channels, classes, autoshape, _verbose, device)
 
@@ -393,10 +393,10 @@ def yolov5m6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
 
     Returns:
         torch.nn.Module: The YOLOv5-medium-P6 model.
+        Refer to the PyTorch Hub models documentation: https://pytorch.org/hub/ultralytics_yolov5 for
+        additional details.
 
-    Refer to the PyTorch Hub models documentation: https://pytorch.org/hub/ultralytics_yolov5 for additional details.
-
-    Example:
+    Examples:
         ```python
         import torch
 
@@ -420,15 +420,16 @@ def yolov5l6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
         pretrained (bool, optional): If True, load pretrained weights into the model. Default is True.
         channels (int, optional): Number of input channels. Default is 3.
         classes (int, optional): Number of model classes. Default is 80.
-        autoshape (bool, optional): If True, apply YOLOv5 .autoshape() wrapper to the model for input flexibility. Default is True.
+        autoshape (bool, optional): If True, apply YOLOv5 .autoshape() wrapper to the model for input flexibility.
+            Default is True.
         _verbose (bool, optional): If True, print all information to the screen. Default is True.
-        device (str | torch.device | None, optional): Device to use for model parameters, e.g., 'cpu', 'cuda', or torch.device.
-            If None, automatically selects the best available device. Default is None.
+        device (str | torch.device | None, optional): Device to use for model parameters, e.g., 'cpu', 'cuda', or
+            torch.device. If None, automatically selects the best available device. Default is None.
 
     Returns:
         torch.nn.Module: The instantiated YOLOv5-large-P6 model.
 
-    Example:
+    Examples:
         ```python
         import torch
         model = torch.hub.load('ultralytics/yolov5', 'yolov5l6')  # official model
@@ -437,7 +438,7 @@ def yolov5l6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
         model = torch.hub.load('.', 'custom', 'path/to/yolov5l6.pt', source='local')  # local repository
         ```
 
-    Note:
+    Notes:
         Refer to [PyTorch Hub Documentation](https://pytorch.org/hub/ultralytics_yolov5/) for additional usage instructions.
     """
     return _create("yolov5l6", pretrained, channels, classes, autoshape, _verbose, device)
@@ -460,13 +461,13 @@ def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
     Returns:
         torch.nn.Module: The instantiated YOLOv5-xlarge-P6 model.
 
-    Example:
+    Examples:
         ```python
         import torch
         model = torch.hub.load('ultralytics/yolov5', 'yolov5x6')  # load the YOLOv5-xlarge-P6 model
         ```
 
-    Note:
+    Notes:
         For more information on YOLOv5 models, visit the official documentation:
         https://docs.ultralytics.com/yolov5
     """
