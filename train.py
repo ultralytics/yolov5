@@ -116,9 +116,6 @@ def train(hyp, opt, device, callbacks):
     Returns:
         None
 
-    Notes:
-        Models and datasets download automatically from the latest YOLOv5 release.
-
     Examples:
         Single-GPU training:
         ```bash
@@ -136,6 +133,9 @@ def train(hyp, opt, device, callbacks):
         - Models: https://github.com/ultralytics/yolov5/tree/master/models
         - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
         - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+
+    Notes:
+        Models and datasets download automatically from the latest YOLOv5 release.
     """
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = (
         Path(opt.save_dir),

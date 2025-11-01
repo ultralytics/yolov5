@@ -79,11 +79,11 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detect/exp")):
     """
     Args:
-        x:              Features to be visualized
-        module_type:    Module type
-        stage:          Module stage within model
-        n:              Maximum number of feature maps to plot
-        save_dir:       Directory to save results.
+        x: Features to be visualized
+        module_type: Module type
+        stage: Module stage within model
+        n: Maximum number of feature maps to plot
+        save_dir: Directory to save results.
     """
     if ("Detect" not in module_type) and (
         "Segment" not in module_type

@@ -310,11 +310,11 @@ def bbox_ioa(box1, box2, eps=1e-7):
         box1: np.array of shape(4)
         box2: np.array of shape(nx4)
 
-    Notes:
-        - Boxes are x1y1x2y2
-
     Returns:
         np.array of shape(n)
+
+    Notes:
+        - Boxes are x1y1x2y2
     """
     # Get the coordinates of bounding boxes
     b1_x1, b1_y1, b1_x2, b1_y2 = box1
