@@ -62,8 +62,7 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 
 def save_one_txt(predn, save_conf, shape, file):
-    """
-    Saves one detection result to a txt file in normalized xywh format, optionally including confidence.
+    """Saves one detection result to a txt file in normalized xywh format, optionally including confidence.
 
     Args:
         predn (torch.Tensor): Predicted bounding boxes and associated confidence scores and classes in xyxy format,
@@ -95,12 +94,11 @@ def save_one_txt(predn, save_conf, shape, file):
 
 
 def save_one_json(predn, jdict, path, class_map):
-    """
-    Saves a single JSON detection result, including image ID, category ID, bounding box, and confidence score.
+    """Saves a single JSON detection result, including image ID, category ID, bounding box, and confidence score.
 
     Args:
         predn (torch.Tensor): Predicted detections in xyxy format with shape (n, 6) where n is the number of detections.
-                              The tensor should contain [x_min, y_min, x_max, y_max, confidence, class_id] for each detection.
+            The tensor should contain [x_min, y_min, x_max, y_max, confidence, class_id] for each detection.
         jdict (list[dict]): List to collect JSON formatted detection results.
         path (pathlib.Path): Path object of the image file, used to extract image_id.
         class_map (dict[int, int]): Mapping from model class indices to dataset-specific category IDs.
@@ -142,12 +140,11 @@ def save_one_json(predn, jdict, path, class_map):
 
 
 def process_batch(detections, labels, iouv):
-    """
-    Return a correct prediction matrix given detections and labels at various IoU thresholds.
+    """Return a correct prediction matrix given detections and labels at various IoU thresholds.
 
     Args:
-        detections (np.ndarray): Array of shape (N, 6) where each row corresponds to a detection with format
-            [x1, y1, x2, y2, conf, class].
+        detections (np.ndarray): Array of shape (N, 6) where each row corresponds to a detection with format [x1, y1,
+            x2, y2, conf, class].
         labels (np.ndarray): Array of shape (M, 5) where each row corresponds to a ground truth label with format
             [class, x1, y1, x2, y2].
         iouv (np.ndarray): Array of IoU thresholds to evaluate at.
@@ -215,8 +212,7 @@ def run(
     callbacks=Callbacks(),
     compute_loss=None,
 ):
-    """
-    Evaluates a YOLOv5 model on a dataset and logs performance metrics.
+    """Evaluates a YOLOv5 model on a dataset and logs performance metrics.
 
     Args:
         data (str | dict): Path to a dataset YAML file or a dataset dictionary.
@@ -469,8 +465,7 @@ def run(
 
 
 def parse_opt():
-    """
-    Parse command-line options for configuring YOLOv5 model inference.
+    """Parse command-line options for configuring YOLOv5 model inference.
 
     Args:
         data (str, optional): Path to the dataset YAML file. Default is 'data/coco128.yaml'.
@@ -548,15 +543,13 @@ def parse_opt():
 
 
 def main(opt):
-    """
-    Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided options.
+    """Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided options.
 
     Args:
-        opt (argparse.Namespace): Parsed command-line options.
-            This includes values for parameters like 'data', 'weights', 'batch_size', 'imgsz', 'conf_thres',
-            'iou_thres', 'max_det', 'task', 'device', 'workers', 'single_cls', 'augment', 'verbose', 'save_txt',
-            'save_hybrid', 'save_conf', 'save_json', 'project', 'name', 'exist_ok', 'half', and 'dnn', essential
-            for configuring the YOLOv5 tasks.
+        opt (argparse.Namespace): Parsed command-line options. This includes values for parameters like 'data',
+            'weights', 'batch_size', 'imgsz', 'conf_thres', 'iou_thres', 'max_det', 'task', 'device', 'workers',
+            'single_cls', 'augment', 'verbose', 'save_txt', 'save_hybrid', 'save_conf', 'save_json', 'project', 'name',
+            'exist_ok', 'half', and 'dnn', essential for configuring the YOLOv5 tasks.
 
     Returns:
         None

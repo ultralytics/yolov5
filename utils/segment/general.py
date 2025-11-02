@@ -7,12 +7,11 @@ import torch.nn.functional as F
 
 
 def crop_mask(masks, boxes):
-    """
-    "Crop" predicted masks by zeroing out everything not in the predicted bbox. Vectorized by Chong (thanks Chong).
+    """Crop predicted masks by zeroing out everything not in the predicted bbox.
 
     Args:
         - masks should be a size [n, h, w] tensor of masks
-        - boxes should be a size [n, 4] tensor of bbox coords in relative point form
+        - boxes should be a size [n, 4] tensor of bbox coords in relative point form.
     """
     _n, h, w = masks.shape
     x1, y1, x2, y2 = torch.chunk(boxes[:, :, None], 4, 1)  # x1 shape(1,1,n)
@@ -23,8 +22,7 @@ def crop_mask(masks, boxes):
 
 
 def process_mask_upsample(protos, masks_in, bboxes, shape):
-    """
-    Crop after upsample.
+    """Crop after upsample.
 
     Args:
         protos: [mask_dim, mask_h, mask_w]
@@ -43,8 +41,7 @@ def process_mask_upsample(protos, masks_in, bboxes, shape):
 
 
 def process_mask(protos, masks_in, bboxes, shape, upsample=False):
-    """
-    Crop before upsample.
+    """Crop before upsample.
 
     Args:
         proto_out: [mask_dim, mask_h, mask_w]
@@ -72,8 +69,7 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=False):
 
 
 def process_mask_native(protos, masks_in, bboxes, shape):
-    """
-    Crop after upsample.
+    """Crop after upsample.
 
     Args:
         protos: [mask_dim, mask_h, mask_w]

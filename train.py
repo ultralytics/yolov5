@@ -103,8 +103,7 @@ GIT_INFO = check_git_info()
 
 
 def train(hyp, opt, device, callbacks):
-    """
-    Train a YOLOv5 model on a custom dataset using specified hyperparameters, options, and device, managing datasets,
+    """Train a YOLOv5 model on a custom dataset using specified hyperparameters, options, and device, managing datasets,
     model architecture, loss computation, and optimizer steps.
 
     Args:
@@ -545,8 +544,7 @@ def train(hyp, opt, device, callbacks):
 
 
 def parse_opt(known=False):
-    """
-    Parse command-line arguments for YOLOv5 training, validation, and testing.
+    """Parse command-line arguments for YOLOv5 training, validation, and testing.
 
     Args:
         known (bool, optional): If True, parses known arguments, ignoring the unknown. Defaults to False.
@@ -620,8 +618,7 @@ def parse_opt(known=False):
 
 
 def main(opt, callbacks=Callbacks()):
-    """
-    Runs the main entry point for training or hyperparameter evolution with specified options and optional callbacks.
+    """Runs the main entry point for training or hyperparameter evolution with specified options and optional callbacks.
 
     Args:
         opt (argparse.Namespace): The command-line arguments parsed for YOLOv5 training and evolution.
@@ -890,8 +887,7 @@ def main(opt, callbacks=Callbacks()):
 
 
 def generate_individual(input_ranges, individual_length):
-    """
-    Generate an individual with random hyperparameters within specified ranges.
+    """Generate an individual with random hyperparameters within specified ranges.
 
     Args:
         input_ranges (list[tuple[float, float]]): List of tuples where each tuple contains the lower and upper bounds
@@ -921,8 +917,7 @@ def generate_individual(input_ranges, individual_length):
 
 
 def run(**kwargs):
-    """
-    Execute YOLOv5 training with specified options, allowing optional overrides through keyword arguments.
+    """Execute YOLOv5 training with specified options, allowing optional overrides through keyword arguments.
 
     Args:
         weights (str, optional): Path to initial weights. Defaults to ROOT / 'yolov5s.pt'.

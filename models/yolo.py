@@ -315,8 +315,7 @@ class DetectionModel(BaseModel):
         return y
 
     def _initialize_biases(self, cf=None):
-        """
-        Initializes biases for YOLOv5's Detect() module, optionally using class frequencies (cf).
+        """Initializes biases for YOLOv5's Detect() module, optionally using class frequencies (cf).
 
         For details see https://arxiv.org/abs/1708.02002 section 3.3.
         """

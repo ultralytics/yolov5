@@ -27,18 +27,17 @@ def smooth(y, f=0.05):
 
 
 def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names=(), eps=1e-16, prefix=""):
-    """
-    Compute the average precision, given the recall and precision curves.
+    """Compute the average precision, given the recall and precision curves.
 
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
 
-    Arguments:
-        tp:  True positives (nparray, nx1 or nx10).
-        conf:  Objectness value from 0-1 (nparray).
-        pred_cls:  Predicted object classes (nparray).
-        target_cls:  True object classes (nparray).
-        plot:  Plot precision-recall curve at mAP@0.5
-        save_dir:  Plot save directory
+    Args:
+        tp: True positives (nparray, nx1 or nx10).
+        conf: Objectness value from 0-1 (nparray).
+        pred_cls: Predicted object classes (nparray).
+        target_cls: True object classes (nparray).
+        plot: Plot precision-recall curve at mAP@0.5
+        save_dir: Plot save directory
 
     Returns:
         The average precision as computed in py-faster-rcnn.
@@ -99,7 +98,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
 def compute_ap(recall, precision):
     """Compute the average precision, given the recall and precision curves.
 
-    Arguments:
+    Args:
         recall: The recall curve (list)
         precision: The precision curve (list)
 
@@ -138,14 +137,13 @@ class ConfusionMatrix:
         self.iou_thres = iou_thres
 
     def process_batch(self, detections, labels):
-        """
-        Return intersection-over-union (Jaccard index) of boxes.
+        """Return intersection-over-union (Jaccard index) of boxes.
 
         Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
 
-        Arguments:
-            detections (Array[N, 6]), x1, y1, x2, y2, conf, class
-            labels (Array[M, 5]), class, x1, y1, x2, y2
+        Args:
+            detections (Array[N, 6]): x1, y1, x2, y2, conf, class
+            labels (Array[M, 5]): class, x1, y1, x2, y2
 
         Returns:
             None, updates confusion matrix accordingly
@@ -235,8 +233,7 @@ class ConfusionMatrix:
 
 
 def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
-    """
-    Calculates IoU, GIoU, DIoU, or CIoU between two boxes, supporting xywh/xyxy formats.
+    """Calculates IoU, GIoU, DIoU, or CIoU between two boxes, supporting xywh/xyxy formats.
 
     Input shapes are box1(1,4) to box2(n,4).
     """
@@ -281,18 +278,16 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
 
 def box_iou(box1, box2, eps=1e-7):
     # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
-    """
-    Return intersection-over-union (Jaccard index) of boxes.
+    """Return intersection-over-union (Jaccard index) of boxes.
 
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
 
-    Arguments:
-        box1 (Tensor[N, 4])
-        box2 (Tensor[M, 4])
+    Args:
+        box1: (Tensor[N, 4])
+        box2: (Tensor[M, 4])
 
     Returns:
-        iou (Tensor[N, M]): the NxM matrix containing the pairwise
-            IoU values for every element in boxes1 and boxes2
+        iou (Tensor[N, M]): the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
     # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
     (a1, a2), (b1, b2) = box1.unsqueeze(1).chunk(2, 2), box2.unsqueeze(0).chunk(2, 2)
@@ -303,8 +298,7 @@ def box_iou(box1, box2, eps=1e-7):
 
 
 def bbox_ioa(box1, box2, eps=1e-7):
-    """
-    Returns the intersection over box2 area given box1, box2.
+    """Returns the intersection over box2 area given box1, box2.
 
     Args:
         box1: np.array of shape(4)
