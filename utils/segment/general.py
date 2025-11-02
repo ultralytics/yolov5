@@ -8,9 +8,10 @@ import torch.nn.functional as F
 
 def crop_mask(masks, boxes):
     """Crop predicted masks by zeroing out everything not in the predicted bbox.
+
     Args:
         - masks should be a size [n, h, w] tensor of masks
-        - boxes should be a size [n, 4] tensor of bbox coords in relative point form
+        - boxes should be a size [n, 4] tensor of bbox coords in relative point form.
     """
     _n, h, w = masks.shape
     x1, y1, x2, y2 = torch.chunk(boxes[:, :, None], 4, 1)  # x1 shape(1,1,n)
