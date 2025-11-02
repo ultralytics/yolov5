@@ -367,7 +367,7 @@ class TFSPPF(keras.layers.Layer):
     """Implements a fast spatial pyramid pooling layer for TensorFlow with optimized feature extraction."""
 
     def __init__(self, c1, c2, k=5, w=None):
-        """Initializes a fast spatial pyramid pooling layer with customizable in/out channels, kernel size, and weights."""
+        """Initialize a fast spatial pyramid pooling layer with customizable channels, kernel size, and weights."""
         super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
@@ -467,7 +467,7 @@ class TFProto(keras.layers.Layer):
     """Implements convolutional and upsampling layers for feature extraction in YOLOv5 segmentation."""
 
     def __init__(self, c1, c_=256, c2=32, w=None):
-        """Initializes TFProto layer with convolutional and upsampling layers for feature extraction and transformation."""
+        """Initialize TFProto layer with convolutional and upsampling for feature extraction and transformation."""
         super().__init__()
         self.cv1 = TFConv(c1, c_, k=3, w=w.cv1)
         self.upsample = TFUpsample(None, scale_factor=2, mode="nearest")
@@ -600,7 +600,7 @@ class TFModel:
     """Implements YOLOv5 model in TensorFlow, supporting TensorFlow, Keras, and TFLite formats for object detection."""
 
     def __init__(self, cfg="yolov5s.yaml", ch=3, nc=None, model=None, imgsz=(640, 640)):
-        """Initializes TF YOLOv5 model with specified configuration, channels, classes, model instance, and input size."""
+        """Initialize TF YOLOv5 model with specified channels, classes, model instance, and input size."""
         super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -660,7 +660,7 @@ class TFModel:
 
     @staticmethod
     def _xywh2xyxy(xywh):
-        """Converts bounding box format from [x, y, w, h] to [x1, y1, x2, y2], where xy1=top-left and xy2=bottom- right."""
+        """Convert box format from [x, y, w, h] to [x1, y1, x2, y2], where xy1=top-left and xy2=bottom- right."""
         x, y, w, h = tf.split(xywh, num_or_size_splits=4, axis=-1)
         return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
 
@@ -726,7 +726,7 @@ def activations(act=nn.SiLU):
 
 
 def representative_dataset_gen(dataset, ncalib=100):
-    """Generates a representative dataset for calibration by yielding transformed numpy arrays from the input dataset."""
+    """Generate representative dataset for calibration by yielding transformed numpy arrays from the input dataset."""
     for n, (path, img, im0s, vid_cap, string) in enumerate(dataset):
         im = np.transpose(img, [1, 2, 0])
         im = np.expand_dims(im, axis=0).astype(np.float32)

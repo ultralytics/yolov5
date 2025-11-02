@@ -100,7 +100,7 @@ def save_one_json(predn, jdict, path, class_map):
 
     Args:
         predn (torch.Tensor): Predicted detections in xyxy format with shape (n, 6) where n is the number of detections.
-                              The tensor should contain [x_min, y_min, x_max, y_max, confidence, class_id] for each detection.
+            The tensor should contain [x_min, y_min, x_max, y_max, confidence, class_id] for each detection.
         jdict (list[dict]): List to collect JSON formatted detection results.
         path (pathlib.Path): Path object of the image file, used to extract image_id.
         class_map (dict[int, int]): Mapping from model class indices to dataset-specific category IDs.
@@ -146,8 +146,8 @@ def process_batch(detections, labels, iouv):
     Return a correct prediction matrix given detections and labels at various IoU thresholds.
 
     Args:
-        detections (np.ndarray): Array of shape (N, 6) where each row corresponds to a detection with format
-            [x1, y1, x2, y2, conf, class].
+        detections (np.ndarray): Array of shape (N, 6) where each row corresponds to a detection with format [x1, y1,
+            x2, y2, conf, class].
         labels (np.ndarray): Array of shape (M, 5) where each row corresponds to a ground truth label with format
             [class, x1, y1, x2, y2].
         iouv (np.ndarray): Array of IoU thresholds to evaluate at.
@@ -552,11 +552,10 @@ def main(opt):
     Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided options.
 
     Args:
-        opt (argparse.Namespace): Parsed command-line options.
-            This includes values for parameters like 'data', 'weights', 'batch_size', 'imgsz', 'conf_thres',
-            'iou_thres', 'max_det', 'task', 'device', 'workers', 'single_cls', 'augment', 'verbose', 'save_txt',
-            'save_hybrid', 'save_conf', 'save_json', 'project', 'name', 'exist_ok', 'half', and 'dnn', essential
-            for configuring the YOLOv5 tasks.
+        opt (argparse.Namespace): Parsed command-line options. This includes values for parameters like 'data',
+            'weights', 'batch_size', 'imgsz', 'conf_thres', 'iou_thres', 'max_det', 'task', 'device', 'workers',
+            'single_cls', 'augment', 'verbose', 'save_txt', 'save_hybrid', 'save_conf', 'save_json', 'project', 'name',
+            'exist_ok', 'half', and 'dnn', essential for configuring the YOLOv5 tasks.
 
     Returns:
         None

@@ -113,8 +113,8 @@ def custom(path="path/to/model.pt", autoshape=True, _verbose=True, device=None):
         path (str): Path to the custom model file (e.g., 'path/to/model.pt').
         autoshape (bool): Apply YOLOv5 .autoshape() wrapper to model if True, enabling compatibility with various input
             types (default is True).
-        _verbose (bool): If True, prints all informational messages to the screen; otherwise, operates silently
-            (default is True).
+        _verbose (bool): If True, prints all informational messages to the screen; otherwise, operates silently (default
+            is True).
         device (str | torch.device | None): Device to load the model on, e.g., 'cpu', 'cuda', torch.device('cuda:0'),
             etc. (default is None, which automatically selects the best available device).
 
@@ -267,7 +267,7 @@ def yolov5l(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
 
     Returns:
         YOLOv5 model (torch.nn.Module): The YOLOv5-large model instantiated with specified configurations and possibly
-        pretrained weights.
+            pretrained weights.
 
     Examples:
         ```python
@@ -388,11 +388,11 @@ def yolov5m6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
         pretrained (bool): If True, loads pretrained weights. Default is True.
         channels (int): Number of input channels. Default is 3.
         classes (int): Number of model classes. Default is 80.
-        autoshape (bool): Apply YOLOv5 .autoshape() wrapper to the model for file/URI/PIL/cv2/np inputs and NMS.
-            Default is True.
+        autoshape (bool): Apply YOLOv5 .autoshape() wrapper to the model for file/URI/PIL/cv2/np inputs and NMS. Default
+            is True.
         _verbose (bool): If True, prints detailed information to the screen. Default is True.
-        device (str | torch.device | None): Device to use for model parameters. Default is None, which uses the
-            best available device.
+        device (str | torch.device | None): Device to use for model parameters. Default is None, which uses the best
+            available device.
 
     Returns:
         torch.nn.Module: The YOLOv5-medium-P6 model.

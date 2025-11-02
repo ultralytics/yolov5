@@ -158,7 +158,7 @@ class Metrics:
     """Metric for boxes and masks."""
 
     def __init__(self) -> None:
-        """Initializes Metric objects for bounding boxes and masks to compute performance metrics in the Metrics class."""
+        """Initialize Metric objects for bounding boxes and masks to compute performance metrics."""
         self.metric_box = Metric()
         self.metric_mask = Metric()
 

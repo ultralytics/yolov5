@@ -44,7 +44,7 @@ def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):
 
 
 def smartCrossEntropyLoss(label_smoothing=0.0):
-    """Returns a CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower versions."""
+    """Return CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower versions."""
     if check_version(torch.__version__, "1.10.0"):
         return nn.CrossEntropyLoss(label_smoothing=label_smoothing)
     if label_smoothing > 0:
@@ -239,7 +239,7 @@ def find_modules(model, mclass=nn.Conv2d):
 
 
 def sparsity(model):
-    """Calculates and returns the global sparsity of a model as the ratio of zero-valued parameters to total parameters."""
+    """Calculate global sparsity of a model as the ratio of zero-valued parameters to total parameters."""
     a, b = 0, 0
     for p in model.parameters():
         a += p.numel()

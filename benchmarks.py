@@ -265,8 +265,7 @@ def main(opt):
 
     Args:
         opt (argparse.Namespace): Parsed command-line arguments including options for weights, image size, batch size,
-            data
-            configuration, device, and other flags for inference settings.
+            data configuration, device, and other flags for inference settings.
 
     Returns:
         None: This function does not return any value. It leverages side-effects such as logging and running benchmarks.

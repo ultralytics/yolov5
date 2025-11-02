@@ -128,9 +128,9 @@ class iOSModel(torch.nn.Module):
             x (torch.Tensor): Input tensor containing the image data with shape (batch, channels, height, width).
 
         Returns:
-            torch.Tensor: Concatenated tensor with normalized coordinates (xywh), confidence scores (conf),
-            and class probabilities (cls), having shape (N, 4 + 1 + C), where N is the number of predictions,
-            and C is the number of classes.
+            torch.Tensor: Concatenated tensor with normalized coordinates (xywh), confidence scores (conf), and class
+                probabilities (cls), having shape (N, 4 + 1 + C), where N is the number of predictions, and C is the
+                number of classes.
 
         Examples:
             ```python
@@ -147,9 +147,9 @@ def export_formats():
     Returns a DataFrame of supported YOLOv5 model export formats and their properties.
 
     Returns:
-        pandas.DataFrame: A DataFrame containing supported export formats and their properties. The DataFrame
-        includes columns for format name, CLI argument suffix, file extension or directory name, and boolean flags
-        indicating if the export format supports training and detection.
+        pandas.DataFrame: A DataFrame containing supported export formats and their properties. The DataFrame includes
+            columns for format name, CLI argument suffix, file extension or directory name, and boolean flags indicating
+            if the export format supports training and detection.
 
     Examples:
         ```python
@@ -238,9 +238,9 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr("TorchScript:"
         prefix (str): Optional prefix for log messages. Default is 'TorchScript:'.
 
     Returns:
-        (str | None, torch.jit.ScriptModule | None): A tuple containing the file path of the exported model
-            (as a string) and the TorchScript model (as a torch.jit.ScriptModule). If the export fails, both elements
-            of the tuple will be None.
+        (str | None, torch.jit.ScriptModule | None): A tuple containing the file path of the exported model (as a
+            string) and the TorchScript model (as a torch.jit.ScriptModule). If the export fails, both elements of the
+            tuple will be None.
 
     Examples:
         ```python
@@ -396,8 +396,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
 
     Returns:
         (str, openvino.runtime.Model | None): The OpenVINO model file path and openvino.runtime.Model object if export
-            is
-            successful; otherwise, None.
+            is successful; otherwise, None.
 
     Examples:
         ```python
@@ -485,8 +484,8 @@ def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):
         prefix (str): Prefix for logging information.
 
     Returns:
-        tuple (str, None): A tuple where the first element is the path to the saved PaddlePaddle model, and the
-        second element is None.
+        tuple (str, None): A tuple where the first element is the path to the saved PaddlePaddle model, and the second
+            element is None.
 
     Examples:
         ```python
