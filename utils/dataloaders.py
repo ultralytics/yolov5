@@ -118,8 +118,7 @@ def exif_transpose(image):
 
 
 def seed_worker(worker_id):
-    """
-    Sets the seed for a dataloader worker to ensure reproducibility, based on PyTorch's randomness notes.
+    """Sets the seed for a dataloader worker to ensure reproducibility, based on PyTorch's randomness notes.
 
     See https://pytorch.org/docs/stable/notes/randomness.html#dataloader.
     """
@@ -219,8 +218,7 @@ def create_dataloader(
 
 
 class InfiniteDataLoader(dataloader.DataLoader):
-    """
-    Dataloader that reuses workers.
+    """Dataloader that reuses workers.
 
     Uses same syntax as vanilla DataLoader
     """
@@ -244,8 +242,7 @@ class InfiniteDataLoader(dataloader.DataLoader):
 
 
 class _RepeatSampler:
-    """
-    Sampler that repeats forever.
+    """Sampler that repeats forever.
 
     Args:
         sampler (Sampler)
@@ -265,8 +262,7 @@ class LoadScreenshots:
     """Loads and processes screenshots for YOLOv5 detection from specified screen regions using mss."""
 
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
-        """
-        Initializes a screenshot dataloader for YOLOv5 with specified source region, image size, stride, auto, and
+        """Initializes a screenshot dataloader for YOLOv5 with specified source region, image size, stride, auto, and
         transforms.
 
         Source = [screen_number left top width height] (pixels)
@@ -844,8 +840,7 @@ class LoadImagesAndLabels(Dataset):
         return torch.from_numpy(img), labels_out, self.im_files[index], shapes
 
     def load_image(self, i):
-        """
-        Loads an image by index, returning the image, its original dimensions, and resized dimensions.
+        """Loads an image by index, returning the image, its original dimensions, and resized dimensions.
 
         Returns (im, original hw, resized hw)
         """
@@ -1064,8 +1059,7 @@ def flatten_recursive(path=DATASETS_DIR / "coco128"):
 
 
 def extract_boxes(path=DATASETS_DIR / "coco128"):
-    """
-    Converts a detection dataset to a classification dataset, creating a directory for each class and extracting
+    """Converts a detection dataset to a classification dataset, creating a directory for each class and extracting
     bounding boxes.
 
     Example: from utils.dataloaders import *; extract_boxes()
@@ -1181,8 +1175,7 @@ def verify_image_label(args):
 
 
 class HUBDatasetStats:
-    """
-    Class for generating HUB dataset JSON and `-hub` dataset directory.
+    """Class for generating HUB dataset JSON and `-hub` dataset directory.
 
     Arguments:
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
@@ -1310,8 +1303,7 @@ class HUBDatasetStats:
 
 # Classification dataloaders -------------------------------------------------------------------------------------------
 class ClassificationDataset(torchvision.datasets.ImageFolder):
-    """
-    YOLOv5 Classification Dataset.
+    """YOLOv5 Classification Dataset.
 
     Arguments:
         root:  Dataset path

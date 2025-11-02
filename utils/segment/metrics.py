@@ -68,8 +68,7 @@ class Metric:
 
     @property
     def ap50(self):
-        """
-        AP@0.5 of all classes.
+        """AP@0.5 of all classes.
 
         Return:
             (nc, ) or [].
@@ -78,8 +77,7 @@ class Metric:
 
     @property
     def ap(self):
-        """
-        AP@0.5:0.95.
+        """AP@0.5:0.95.
 
         Returns:
             (nc, ) or []
@@ -88,8 +86,7 @@ class Metric:
 
     @property
     def mp(self):
-        """
-        Mean precision of all classes.
+        """Mean precision of all classes.
 
         Return:
             float.
@@ -98,8 +95,7 @@ class Metric:
 
     @property
     def mr(self):
-        """
-        Mean recall of all classes.
+        """Mean recall of all classes.
 
         Return:
             float.
@@ -108,8 +104,7 @@ class Metric:
 
     @property
     def map50(self):
-        """
-        Mean AP@0.5 of all classes.
+        """Mean AP@0.5 of all classes.
 
         Return:
             float.
@@ -118,8 +113,7 @@ class Metric:
 
     @property
     def map(self):
-        """
-        Mean AP@0.5:0.95 of all classes.
+        """Mean AP@0.5:0.95 of all classes.
 
         Return:
             float.

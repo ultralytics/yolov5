@@ -60,8 +60,7 @@ def run(
     pt_only=False,  # test PyTorch only
     hard_fail=False,  # throw error on benchmark failure
 ):
-    """
-    Run YOLOv5 benchmarks on multiple export formats and log results for model performance evaluation.
+    """Run YOLOv5 benchmarks on multiple export formats and log results for model performance evaluation.
 
     Args:
         weights (Path | str): Path to the model weights file (default: ROOT / "yolov5s.pt").
@@ -160,8 +159,7 @@ def test(
     pt_only=False,  # test PyTorch only
     hard_fail=False,  # throw error on benchmark failure
 ):
-    """
-    Run YOLOv5 export tests for all supported formats and log the results, including export statuses.
+    """Run YOLOv5 export tests for all supported formats and log the results, including export statuses.
 
     Args:
         weights (Path | str): Path to the model weights file (.pt format). Default is 'ROOT / "yolov5s.pt"'.
@@ -221,8 +219,7 @@ def test(
 
 
 def parse_opt():
-    """
-    Parses command-line arguments for YOLOv5 model inference configuration.
+    """Parses command-line arguments for YOLOv5 model inference configuration.
 
     Args:
         weights (str): The path to the weights file. Defaults to 'ROOT / "yolov5s.pt"'.
@@ -260,8 +257,7 @@ def parse_opt():
 
 
 def main(opt):
-    """
-    Executes YOLOv5 benchmark tests or main training/inference routines based on the provided command-line arguments.
+    """Executes YOLOv5 benchmark tests or main training/inference routines based on the provided command-line arguments.
 
     Args:
         opt (argparse.Namespace): Parsed command-line arguments including options for weights, image size, batch size,

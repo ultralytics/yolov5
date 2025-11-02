@@ -67,8 +67,7 @@ def download_model_checkpoint(opt, experiment):
 
 
 def set_opt_parameters(opt, experiment):
-    """
-    Update the opts Namespace with parameters from Comet's ExistingExperiment when resuming a run.
+    """Update the opts Namespace with parameters from Comet's ExistingExperiment when resuming a run.
 
     Args:
         opt (argparse.Namespace): Namespace of command line options
@@ -98,8 +97,7 @@ def set_opt_parameters(opt, experiment):
 
 
 def check_comet_weights(opt):
-    """
-    Downloads model weights from Comet and updates the weights path to point to saved weights location.
+    """Downloads model weights from Comet and updates the weights path to point to saved weights location.
 
     Args:
         opt (argparse.Namespace): Command Line arguments passed to YOLOv5 training script
@@ -122,8 +120,7 @@ def check_comet_weights(opt):
 
 
 def check_comet_resume(opt):
-    """
-    Restores run parameters to its original state based on the model checkpoint and logged Experiment parameters.
+    """Restores run parameters to its original state based on the model checkpoint and logged Experiment parameters.
 
     Args:
         opt (argparse.Namespace): Command Line arguments passed to YOLOv5 training script

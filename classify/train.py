@@ -365,8 +365,7 @@ def main(opt):
 
 
 def run(**kwargs):
-    """
-    Executes YOLOv5 model training or inference with specified parameters, returning updated options.
+    """Executes YOLOv5 model training or inference with specified parameters, returning updated options.
 
     Example: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')
     """

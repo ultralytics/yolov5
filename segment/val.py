@@ -83,8 +83,7 @@ def save_one_txt(predn, save_conf, shape, file):
 
 
 def save_one_json(predn, jdict, path, class_map, pred_masks):
-    """
-    Saves a JSON file with detection results including bounding boxes, category IDs, scores, and segmentation masks.
+    """Saves a JSON file with detection results including bounding boxes, category IDs, scores, and segmentation masks.
 
     Example JSON result: {"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}.
     """
@@ -115,8 +114,7 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
 
 
 def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, overlap=False, masks=False):
-    """
-    Return correct prediction matrix.
+    """Return correct prediction matrix.
 
     Arguments:
         detections (array[N, 6]), x1, y1, x2, y2, conf, class

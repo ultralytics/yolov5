@@ -154,8 +154,7 @@ def time_sync():
 
 
 def profile(input, ops, n=10, device=None):
-    """
-    YOLOv5 speed/memory/FLOPs profiler.
+    """YOLOv5 speed/memory/FLOPs profiler.
 
     Examples:
         >>> input = torch.randn(16, 3, 640, 640)
@@ -259,8 +258,7 @@ def prune(model, amount=0.3):
 
 
 def fuse_conv_and_bn(conv, bn):
-    """
-    Fuses Conv2d and BatchNorm2d layers into a single Conv2d layer.
+    """Fuses Conv2d and BatchNorm2d layers into a single Conv2d layer.
 
     See https://tehnokv.com/posts/fusing-batchnorm-and-conv/.
     """
@@ -293,8 +291,7 @@ def fuse_conv_and_bn(conv, bn):
 
 
 def model_info(model, verbose=False, imgsz=640):
-    """
-    Prints model summary including layers, parameters, gradients, and FLOPs; imgsz may be int or list.
+    """Prints model summary including layers, parameters, gradients, and FLOPs; imgsz may be int or list.
 
     Example: img_size=640 or img_size=[640, 320]
     """
@@ -347,8 +344,7 @@ def copy_attr(a, b, include=(), exclude=()):
 
 
 def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):
-    """
-    Initializes YOLOv5 smart optimizer with 3 parameter groups for different decay configurations.
+    """Initializes YOLOv5 smart optimizer with 3 parameter groups for different decay configurations.
 
     Groups are 0) weights with decay, 1) weights no decay, 2) biases no decay.
     """

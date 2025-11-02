@@ -63,8 +63,7 @@ def construct_dataset(clearml_info_string):
 
 
 class ClearmlLogger:
-    """
-    Log training runs, datasets, models, and predictions to ClearML.
+    """Log training runs, datasets, models, and predictions to ClearML.
 
     This logger sends information to ClearML at app.clear.ml or to your own hosted server. By default, this information
     includes hyperparameters, system configuration and metrics, model metrics, code information and basic data metrics
@@ -74,9 +73,8 @@ class ClearmlLogger:
     """
 
     def __init__(self, opt, hyp):
-        """
-        - Initialize ClearML Task, this object will capture the experiment
-        - Upload dataset version to ClearML Data if opt.upload_dataset is True.
+        """- Initialize ClearML Task, this object will capture the experiment - Upload dataset version to ClearML Data
+        if opt.upload_dataset is True.
 
         Arguments:
         opt (namespace) -- Commandline arguments for this run
@@ -127,8 +125,7 @@ class ClearmlLogger:
                 opt.data = self.data_dict
 
     def log_scalars(self, metrics, epoch):
-        """
-        Log scalars/metrics to ClearML.
+        """Log scalars/metrics to ClearML.
 
         Arguments:
         metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
@@ -139,8 +136,7 @@ class ClearmlLogger:
             self.task.get_logger().report_scalar(title, series, v, epoch)
 
     def log_model(self, model_path, model_name, epoch=0):
-        """
-        Log model weights to ClearML.
+        """Log model weights to ClearML.
 
         Arguments:
         model_path (PosixPath or str) Path to the model weights
@@ -152,8 +148,7 @@ class ClearmlLogger:
         )
 
     def log_summary(self, metrics):
-        """
-        Log final metrics to a summary table.
+        """Log final metrics to a summary table.
 
         Arguments:
         metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
@@ -162,8 +157,7 @@ class ClearmlLogger:
             self.task.get_logger().report_single_value(k, v)
 
     def log_plot(self, title, plot_path):
-        """
-        Log image as plot in the plot section of ClearML.
+        """Log image as plot in the plot section of ClearML.
 
         Arguments:
         title (str) Title of the plot
@@ -177,8 +171,7 @@ class ClearmlLogger:
         self.task.get_logger().report_matplotlib_figure(title, "", figure=fig, report_interactive=False)
 
     def log_debug_samples(self, files, title="Debug Samples"):
-        """
-        Log files (images) as debug samples in the ClearML task.
+        """Log files (images) as debug samples in the ClearML task.
 
         Arguments:
         files (List(PosixPath)) a list of file paths in PosixPath format
@@ -193,8 +186,7 @@ class ClearmlLogger:
                 )
 
     def log_image_with_boxes(self, image_path, boxes, class_names, image, conf_threshold=0.25):
-        """
-        Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
+        """Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
 
         Arguments:
         image_path (PosixPath) the path the original image file

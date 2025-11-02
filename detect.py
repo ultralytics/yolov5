@@ -98,8 +98,7 @@ def run(
     dnn=False,  # use OpenCV DNN for ONNX inference
     vid_stride=1,  # video frame-rate stride
 ):
-    """
-    Runs YOLOv5 detection inference on various sources like images, videos, directories, streams, etc.
+    """Runs YOLOv5 detection inference on various sources like images, videos, directories, streams, etc.
 
     Args:
         weights (str | Path): Path to the model weights file or a Triton URL. Default is 'yolov5s.pt'.
@@ -322,8 +321,7 @@ def run(
 
 
 def parse_opt():
-    """
-    Parse command-line arguments for YOLOv5 detection, allowing custom inference options and model configurations.
+    """Parse command-line arguments for YOLOv5 detection, allowing custom inference options and model configurations.
 
     Args:
         --weights (str | list[str], optional): Model path or Triton URL. Defaults to ROOT / 'yolov5s.pt'.
@@ -408,8 +406,7 @@ def parse_opt():
 
 
 def main(opt):
-    """
-    Executes YOLOv5 model inference based on provided command-line arguments, validating dependencies before running.
+    """Executes YOLOv5 model inference based on provided command-line arguments, validating dependencies before running.
 
     Args:
         opt (argparse.Namespace): Command-line arguments for YOLOv5 detection. See function `parse_opt` for details.

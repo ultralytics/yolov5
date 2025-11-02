@@ -12,8 +12,7 @@ from ..general import resample_segments, segment2box
 
 
 def mixup(im, labels, segments, im2, labels2, segments2):
-    """
-    Applies MixUp augmentation blending two images, labels, and segments with a random ratio.
+    """Applies MixUp augmentation blending two images, labels, and segments with a random ratio.
 
     See https://arxiv.org/pdf/1710.09412.pdf
     """

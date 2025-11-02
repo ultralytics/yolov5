@@ -62,8 +62,7 @@ except (ImportError, AssertionError):
 
 
 def _json_default(value):
-    """
-    Format `value` for JSON serialization (e.g. unwrap tensors).
+    """Format `value` for JSON serialization (e.g. unwrap tensors).
 
     Fall back to strings.
     """
@@ -348,9 +347,8 @@ class Loggers:
 
 
 class GenericLogger:
-    """
-    YOLOv5 General purpose logger for non-task specific logging Usage: from utils.loggers import GenericLogger; logger =
-    GenericLogger(...).
+    """YOLOv5 General purpose logger for non-task specific logging Usage: from utils.loggers import GenericLogger;
+    logger = GenericLogger(...).
 
     Arguments:
         opt:             Run arguments
