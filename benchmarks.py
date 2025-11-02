@@ -81,7 +81,6 @@ def run(
         $ python benchmarks.py --weights yolov5s.pt --img 640
         ```
 
-    Usage:
         Install required packages:
           $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU support
           $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow   # GPU support
@@ -182,17 +181,16 @@ def test(
         $ python benchmarks.py --weights yolov5s.pt --img 640
         ```
 
-    Notes:
-        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow
-        SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js are unsupported.
-
-    Usage:
         Install required packages:
             $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU support
             $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow   # GPU support
             $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
         Run export tests:
             $ python benchmarks.py --weights yolov5s.pt --img 640
+
+    Notes:
+        Supported export formats and models include PyTorch, TorchScript, ONNX, OpenVINO, TensorRT, CoreML, TensorFlow
+        SavedModel, TensorFlow GraphDef, TensorFlow Lite, and TensorFlow Edge TPU. Edge TPU and TF.js are unsupported.
     """
     y, t = [], time.time()
     device = select_device(device)

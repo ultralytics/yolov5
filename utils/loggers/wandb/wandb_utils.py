@@ -46,12 +46,12 @@ class WandbLogger:
         """- Initialize WandbLogger instance - Upload dataset if opt.upload_dataset is True - Setup training processes
         if job_type is 'Training'.
 
-        Arguments:
-            opt (namespace) -- Commandline arguments for this run
-            run_id (str) -- Run ID of W&B run to be resumed
-            job_type (str) -- To set the job_type for this run
+        Args:
+            opt (namespace): Commandline arguments for this run:
+            run_id (str): Run ID of W&B run to be resumed
+            job_type (str): To set the job_type for this run
         """
-        # Pre-training routine --
+        # Pre-training routine
         self.job_type = job_type
         self.wandb, self.wandb_run = wandb, wandb.run if wandb else None
         self.val_artifact, self.train_artifact = None, None
@@ -85,8 +85,8 @@ class WandbLogger:
         run if resumed and the paths of dataset artifact if downloaded - Setup log_dict,
         initialize bbox_interval.
 
-        Arguments:
-            opt (namespace) -- commandline arguments for this run
+        Args:
+            opt (namespace): commandline arguments for this run
         """
         self.log_dict, self.current_epoch = {}, 0
         self.bbox_interval = opt.bbox_interval
@@ -113,12 +113,12 @@ class WandbLogger:
     def log_model(self, path, opt, epoch, fitness_score, best_model=False):
         """Log the model checkpoint as W&B artifact.
 
-        Arguments:
-        path (Path)   -- Path of directory containing the checkpoints
-        opt (namespace) -- Command line arguments for this run
-        epoch (int)  -- Current epoch number
-        fitness_score (float) -- fitness score for current epoch
-        best_model (boolean) -- Boolean representing if the current checkpoint is the best yet.
+        Args:
+            path (Path): Path of directory containing the checkpoints
+            opt (namespace): Command line arguments for this run
+            epoch (int): Current epoch number
+            fitness_score (float): fitness score for current epoch
+            best_model (boolean): Boolean representing if the current checkpoint is the best yet.
         """
         model_artifact = wandb.Artifact(
             f"run_{wandb.run.id}_model",
@@ -151,8 +151,8 @@ class WandbLogger:
     def log(self, log_dict):
         """Save the metrics to the logging dictionary.
 
-        Arguments:
-        log_dict (Dict) -- metrics/media to be logged in current step
+        Args:
+            log_dict (Dict): metrics/media to be logged in current step
         """
         if self.wandb_run:
             for key, value in log_dict.items():
@@ -161,8 +161,8 @@ class WandbLogger:
     def end_epoch(self):
         """Commit the log_dict, model artifacts and Tables to W&B and flush the log_dict.
 
-        Arguments:
-        best_result (boolean): Boolean representing if the result of this evaluation is best or not
+        Args:
+            best_result (boolean): Boolean representing if the result of this evaluation is best or not
         """
         if self.wandb_run:
             with all_logging_disabled():

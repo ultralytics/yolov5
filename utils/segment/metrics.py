@@ -70,7 +70,7 @@ class Metric:
     def ap50(self):
         """AP@0.5 of all classes.
 
-        Return:
+        Returns:
             (nc, ) or [].
         """
         return self.all_ap[:, 0] if len(self.all_ap) else []
@@ -88,7 +88,7 @@ class Metric:
     def mp(self):
         """Mean precision of all classes.
 
-        Return:
+        Returns:
             float.
         """
         return self.p.mean() if len(self.p) else 0.0
@@ -97,7 +97,7 @@ class Metric:
     def mr(self):
         """Mean recall of all classes.
 
-        Return:
+        Returns:
             float.
         """
         return self.r.mean() if len(self.r) else 0.0
@@ -106,7 +106,7 @@ class Metric:
     def map50(self):
         """Mean AP@0.5 of all classes.
 
-        Return:
+        Returns:
             float.
         """
         return self.all_ap[:, 0].mean() if len(self.all_ap) else 0.0
@@ -115,7 +115,7 @@ class Metric:
     def map(self):
         """Mean AP@0.5:0.95 of all classes.
 
-        Return:
+        Returns:
             float.
         """
         return self.all_ap.mean() if len(self.all_ap) else 0.0

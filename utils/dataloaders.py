@@ -1100,10 +1100,10 @@ def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), ann
     """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files Usage: from utils.dataloaders
     import *; autosplit().
 
-    Arguments:
-        path:            Path to images directory
-        weights:         Train, val, test weights (list, tuple)
-        annotated_only:  Only use images with an annotated txt file
+    Args:
+        path: Path to images directory
+        weights: Train, val, test weights (list, tuple)
+        annotated_only: Only use images with an annotated txt file
     """
     path = Path(path)  # images dir
     files = sorted(x for x in path.rglob("*.*") if x.suffix[1:].lower() in IMG_FORMATS)  # image files only
@@ -1177,11 +1177,11 @@ def verify_image_label(args):
 class HUBDatasetStats:
     """Class for generating HUB dataset JSON and `-hub` dataset directory.
 
-    Arguments:
-        path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
-        autodownload:   Attempt to download dataset if not found locally
+    Args:
+        path: Path to data.yaml or data.zip (with data.yaml inside data.zip)
+        autodownload: Attempt to download dataset if not found locally
 
-    Usage
+            Usage
         from utils.dataloaders import HUBDatasetStats
         stats = HUBDatasetStats('coco128.yaml', autodownload=True)  # usage 1
         stats = HUBDatasetStats('path/to/coco128.zip')  # usage 2
@@ -1305,9 +1305,9 @@ class HUBDatasetStats:
 class ClassificationDataset(torchvision.datasets.ImageFolder):
     """YOLOv5 Classification Dataset.
 
-    Arguments:
-        root:  Dataset path
-        transform:  torchvision transforms, used by default
+    Args:
+        root: Dataset path
+        transform: torchvision transforms, used by default
         album_transform: Albumentations transforms, used if installed
     """
 
