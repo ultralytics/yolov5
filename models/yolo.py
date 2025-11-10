@@ -315,8 +315,7 @@ class DetectionModel(BaseModel):
         return y
 
     def _initialize_biases(self, cf=None):
-        """
-        Initializes biases for YOLOv5's Detect() module, optionally using class frequencies (cf).
+        """Initializes biases for YOLOv5's Detect() module, optionally using class frequencies (cf).
 
         For details see https://arxiv.org/abs/1708.02002 section 3.3.
         """
@@ -338,7 +337,9 @@ class SegmentationModel(DetectionModel):
     """YOLOv5 segmentation model for object detection and segmentation tasks with configurable parameters."""
 
     def __init__(self, cfg="yolov5s-seg.yaml", ch=3, nc=None, anchors=None):
-        """Initializes a YOLOv5 segmentation model with configurable params: cfg (str) for configuration, ch (int) for channels, nc (int) for num classes, anchors (list)."""
+        """Initializes a YOLOv5 segmentation model with configurable params: cfg (str) for configuration, ch (int) for
+        channels, nc (int) for num classes, anchors (list).
+        """
         super().__init__(cfg, ch, nc, anchors)
 
 
@@ -451,7 +452,7 @@ def parse_model(d, ch):
         t = str(m)[8:-2].replace("__main__.", "")  # module type
         np = sum(x.numel() for x in m_.parameters())  # number params
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
-        LOGGER.info(f"{i:>3}{str(f):>18}{n_:>3}{np:10.0f}  {t:<40}{str(args):<30}")  # print
+        LOGGER.info(f"{i:>3}{f!s:>18}{n_:>3}{np:10.0f}  {t:<40}{args!s:<30}")  # print
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
         if i == 0:

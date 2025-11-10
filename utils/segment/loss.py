@@ -15,9 +15,7 @@ class ComputeLoss:
     """Computes the YOLOv5 model's loss components including classification, objectness, box, and mask losses."""
 
     def __init__(self, model, autobalance=False, overlap=False):
-        """Initializes the compute loss function for YOLOv5 models with options for autobalancing and overlap
-        handling.
-        """
+        """Initialize compute loss function for YOLOv5 models with options for autobalancing and overlap handling."""
         self.sort_obj_iou = False
         self.overlap = overlap
         device = next(model.parameters()).device  # get model device

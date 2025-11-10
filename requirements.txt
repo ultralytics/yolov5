@@ -39,6 +39,7 @@ seaborn>=0.11.0
 # openvino-dev>=2023.0  # OpenVINO export
 
 # Deploy ----------------------------------------------------------------------
+packaging  # Migration of deprecated pkg_resources packages
 setuptools>=70.0.0 # Snyk vulnerability fix
 # tritonclient[all]~=2.24.0
 
@@ -47,3 +48,4 @@ setuptools>=70.0.0 # Snyk vulnerability fix
 # mss  # screenshots
 # albumentations>=1.0.3
 # pycocotools>=2.0.6  # COCO mAP
+urllib3>=2.5.0 ; python_version > "3.8" # not directly required, pinned by Snyk to avoid a vulnerability

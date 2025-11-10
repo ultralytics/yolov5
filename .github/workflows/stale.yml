@@ -7,9 +7,13 @@ on:
 
 jobs:
   stale:
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 

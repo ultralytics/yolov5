@@ -32,8 +32,8 @@ class Colors:
     """Provides an RGB color palette derived from Ultralytics color scheme for visualization tasks."""
 
     def __init__(self):
-        """
-        Initializes the Colors class with a palette derived from Ultralytics color scheme, converting hex codes to RGB.
+        """Initializes the Colors class with a palette derived from Ultralytics color scheme, converting hex codes to
+        RGB.
 
         Colors derived from `hex = matplotlib.colors.TABLEAU_COLORS.values()`.
         """
@@ -78,22 +78,23 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 
 def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detect/exp")):
     """
-    x:              Features to be visualized
-    module_type:    Module type
-    stage:          Module stage within model
-    n:              Maximum number of feature maps to plot
-    save_dir:       Directory to save results.
+    Args:
+        x: Features to be visualized
+        module_type: Module type
+        stage: Module stage within model
+        n: Maximum number of feature maps to plot
+        save_dir: Directory to save results.
     """
     if ("Detect" not in module_type) and (
         "Segment" not in module_type
     ):  # 'Detect' for Object Detect task,'Segment' for Segment task
-        batch, channels, height, width = x.shape  # batch, channels, height, width
+        _batch, channels, height, width = x.shape  # batch, channels, height, width
         if height > 1 and width > 1:
             f = save_dir / f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
 
             blocks = torch.chunk(x[0].cpu(), channels, dim=0)  # select batch index 0, block by channels
             n = min(n, channels)  # number of plots
-            fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
+            _fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)
             ax = ax.ravel()
             plt.subplots_adjust(wspace=0.05, hspace=0.05)
             for i in range(n):
@@ -107,8 +108,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detec
 
 
 def hist2d(x, y, n=100):
-    """
-    Generates a logarithmic 2D histogram, useful for visualizing label or evolution distributions.
+    """Generates a logarithmic 2D histogram, useful for visualizing label or evolution distributions.
 
     Used in used in labels.png and evolve.png.
     """
@@ -231,8 +231,7 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=""):
 
 
 def plot_val_txt():
-    """
-    Plots 2D and 1D histograms of bounding box centers from 'val.txt' using matplotlib, saving as 'hist2d.png' and
+    """Plots 2D and 1D histograms of bounding box centers from 'val.txt' using matplotlib, saving as 'hist2d.png' and
     'hist1d.png'.
 
     Example: from utils.plots import *; plot_val()
@@ -246,21 +245,20 @@ def plot_val_txt():
     ax.set_aspect("equal")
     plt.savefig("hist2d.png", dpi=300)
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
+    _fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
     ax[0].hist(cx, bins=600)
     ax[1].hist(cy, bins=600)
     plt.savefig("hist1d.png", dpi=200)
 
 
 def plot_targets_txt():
-    """
-    Plots histograms of object detection targets from 'targets.txt', saving the figure as 'targets.jpg'.
+    """Plots histograms of object detection targets from 'targets.txt', saving the figure as 'targets.jpg'.
 
     Example: from utils.plots import *; plot_targets_txt()
     """
     x = np.loadtxt("targets.txt", dtype=np.float32).T
     s = ["x targets", "y targets", "width targets", "height targets"]
-    fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
+    _fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
     ax = ax.ravel()
     for i in range(4):
         ax[i].hist(x[i], bins=100, label=f"{x[i].mean():.3g} +/- {x[i].std():.3g}")
@@ -270,8 +268,7 @@ def plot_targets_txt():
 
 
 def plot_val_study(file="", dir="", x=None):
-    """
-    Plots validation study results from 'study*.txt' files in a directory or a specific file, comparing model
+    """Plots validation study results from 'study*.txt' files in a directory or a specific file, comparing model
     performance and speed.
 
     Example: from utils.plots import *; plot_val_study()
@@ -281,7 +278,7 @@ def plot_val_study(file="", dir="", x=None):
     if plot2:
         ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)[1].ravel()
 
-    fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
+    _fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
     # for f in [save_dir / f'study_coco_{x}.txt' for x in ['yolov5n6', 'yolov5s6', 'yolov5m6', 'yolov5l6', 'yolov5x6']]:
     for f in sorted(save_dir.glob("study*.txt")):
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
@@ -380,7 +377,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     )  # select batch index 0, block by channels
     n = min(len(blocks), nmax)  # number of plots
     m = min(8, round(n**0.5))  # 8 x 8 default
-    fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
+    _fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
     ax = ax.ravel() if m > 1 else [ax]
     # plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
@@ -401,8 +398,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
 
 
 def plot_evolve(evolve_csv="path/to/evolve.csv"):
-    """
-    Plots hyperparameter evolution results from a given CSV, saving the plot and displaying best results.
+    """Plots hyperparameter evolution results from a given CSV, saving the plot and displaying best results.
 
     Example: from utils.plots import *; plot_evolve()
     """
@@ -432,8 +428,7 @@ def plot_evolve(evolve_csv="path/to/evolve.csv"):
 
 
 def plot_results(file="path/to/results.csv", dir=""):
-    """
-    Plots training results from a 'results.csv' file; accepts file path and directory as arguments.
+    """Plots training results from a 'results.csv' file; accepts file path and directory as arguments.
 
     Example: from utils.plots import *; plot_results('path/to/results.csv')
     """
@@ -463,8 +458,7 @@ def plot_results(file="path/to/results.csv", dir=""):
 
 
 def profile_idetection(start=0, stop=0, labels=(), save_dir=""):
-    """
-    Plots per-image iDetection logs, comparing metrics like storage and performance over time.
+    """Plots per-image iDetection logs, comparing metrics like storage and performance over time.
 
     Example: from utils.plots import *; profile_idetection()
     """

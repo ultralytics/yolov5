@@ -56,8 +56,7 @@ class Albumentations:
 
 
 def normalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD, inplace=False):
-    """
-    Applies ImageNet normalization to RGB images in BCHW format, modifying them in-place if specified.
+    """Applies ImageNet normalization to RGB images in BCHW format, modifying them in-place if specified.
 
     Example: y = (x - mean) / std
     """
@@ -99,8 +98,7 @@ def hist_equalize(im, clahe=True, bgr=False):
 
 
 def replicate(im, labels):
-    """
-    Replicates half of the smallest object labels in an image for data augmentation.
+    """Replicates half of the smallest object labels in an image for data augmentation.
 
     Returns augmented image and labels.
     """
@@ -132,7 +130,7 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
 
     # Compute padding
     ratio = r, r  # width, height ratios
-    new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+    new_unpad = round(shape[1] * r), round(shape[0] * r)
     dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
     if auto:  # minimum rectangle
         dw, dh = np.mod(dw, stride), np.mod(dh, stride)  # wh padding
@@ -146,8 +144,8 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
 
     if shape[::-1] != new_unpad:  # resize
         im = cv2.resize(im, new_unpad, interpolation=cv2.INTER_LINEAR)
-    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
-    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+    top, bottom = round(dh - 0.1), round(dh + 0.1)
+    left, right = round(dw - 0.1), round(dw + 0.1)
     im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return im, ratio, (dw, dh)
 
@@ -235,14 +233,13 @@ def random_perspective(
 
 
 def copy_paste(im, labels, segments, p=0.5):
-    """
-    Applies Copy-Paste augmentation by flipping and merging segments and labels on an image.
+    """Applies Copy-Paste augmentation by flipping and merging segments and labels on an image.
 
     Details at https://arxiv.org/abs/2012.07177.
     """
     n = len(segments)
     if p and n:
-        h, w, c = im.shape  # height, width, channels
+        _h, w, _c = im.shape  # height, width, channels
         im_new = np.zeros(im.shape, np.uint8)
         for j in random.sample(range(n), k=round(p * n)):
             l, s = labels[j], segments[j]
@@ -261,8 +258,7 @@ def copy_paste(im, labels, segments, p=0.5):
 
 
 def cutout(im, labels, p=0.5):
-    """
-    Applies cutout augmentation to an image with optional label adjustment, using random masks of varying sizes.
+    """Applies cutout augmentation to an image with optional label adjustment, using random masks of varying sizes.
 
     Details at https://arxiv.org/abs/1708.04552.
     """
@@ -292,8 +288,7 @@ def cutout(im, labels, p=0.5):
 
 
 def mixup(im, labels, im2, labels2):
-    """
-    Applies MixUp augmentation by blending images and labels.
+    """Applies MixUp augmentation by blending images and labels.
 
     See https://arxiv.org/pdf/1710.09412.pdf for details.
     """
@@ -304,8 +299,7 @@ def mixup(im, labels, im2, labels2):
 
 
 def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):
-    """
-    Filters bounding box candidates by minimum width-height threshold `wh_thr` (pixels), aspect ratio threshold
+    """Filters bounding box candidates by minimum width-height threshold `wh_thr` (pixels), aspect ratio threshold
     `ar_thr`, and area ratio threshold `area_thr`.
 
     box1(4,n) is before augmentation, box2(4,n) is after augmentation.
@@ -329,9 +323,7 @@ def classify_albumentations(
     auto_aug=False,
 ):
     # YOLOv5 classification Albumentations (optional, only used if package is installed)
-    """Sets up and returns Albumentations transforms for YOLOv5 classification tasks depending on augmentation
-    settings.
-    """
+    """Sets up Albumentations transforms for YOLOv5 classification tasks depending on augmentation settings."""
     prefix = colorstr("albumentations: ")
     try:
         import albumentations as A
@@ -383,8 +375,7 @@ class LetterBox:
         self.stride = stride  # used with auto
 
     def __call__(self, im):
-        """
-        Resizes and pads input image `im` (HWC format) to specified dimensions, maintaining aspect ratio.
+        """Resizes and pads input image `im` (HWC format) to specified dimensions, maintaining aspect ratio.
 
         im = np.array HWC
         """
@@ -407,8 +398,7 @@ class CenterCrop:
         self.h, self.w = (size, size) if isinstance(size, int) else size
 
     def __call__(self, im):
-        """
-        Applies center crop to the input image and resizes it to a specified size, maintaining aspect ratio.
+        """Applies center crop to the input image and resizes it to a specified size, maintaining aspect ratio.
 
         im = np.array HWC
         """
@@ -427,8 +417,7 @@ class ToTensor:
         self.half = half
 
     def __call__(self, im):
-        """
-        Converts BGR np.array image from HWC to RGB CHW format, and normalizes to [0, 1], with support for FP16 if
+        """Converts BGR np.array image from HWC to RGB CHW format, and normalizes to [0, 1], with support for FP16 if
         `half=True`.
 
         im = np.array HWC in BGR order

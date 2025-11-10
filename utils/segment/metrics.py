@@ -68,58 +68,54 @@ class Metric:
 
     @property
     def ap50(self):
-        """
-        AP@0.5 of all classes.
+        """AP@0.5 of all classes.
 
-        Return:
+        Returns:
             (nc, ) or [].
         """
         return self.all_ap[:, 0] if len(self.all_ap) else []
 
     @property
     def ap(self):
-        """AP@0.5:0.95
-        Return:
-            (nc, ) or [].
+        """AP@0.5:0.95.
+
+        Returns:
+            (nc, ) or []
         """
         return self.all_ap.mean(1) if len(self.all_ap) else []
 
     @property
     def mp(self):
-        """
-        Mean precision of all classes.
+        """Mean precision of all classes.
 
-        Return:
+        Returns:
             float.
         """
         return self.p.mean() if len(self.p) else 0.0
 
     @property
     def mr(self):
-        """
-        Mean recall of all classes.
+        """Mean recall of all classes.
 
-        Return:
+        Returns:
             float.
         """
         return self.r.mean() if len(self.r) else 0.0
 
     @property
     def map50(self):
-        """
-        Mean AP@0.5 of all classes.
+        """Mean AP@0.5 of all classes.
 
-        Return:
+        Returns:
             float.
         """
         return self.all_ap[:, 0].mean() if len(self.all_ap) else 0.0
 
     @property
     def map(self):
-        """
-        Mean AP@0.5:0.95 of all classes.
+        """Mean AP@0.5:0.95 of all classes.
 
-        Return:
+        Returns:
             float.
         """
         return self.all_ap.mean() if len(self.all_ap) else 0.0
@@ -156,9 +152,7 @@ class Metrics:
     """Metric for boxes and masks."""
 
     def __init__(self) -> None:
-        """Initializes Metric objects for bounding boxes and masks to compute performance metrics in the Metrics
-        class.
-        """
+        """Initialize Metric objects for bounding boxes and masks to compute performance metrics."""
         self.metric_box = Metric()
         self.metric_mask = Metric()
 

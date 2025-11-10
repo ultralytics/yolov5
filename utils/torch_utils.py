@@ -44,9 +44,7 @@ def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):
 
 
 def smartCrossEntropyLoss(label_smoothing=0.0):
-    """Returns a CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower
-    versions.
-    """
+    """Return CrossEntropyLoss with optional label smoothing for torch>=1.10.0; warns if smoothing on lower versions."""
     if check_version(torch.__version__, "1.10.0"):
         return nn.CrossEntropyLoss(label_smoothing=label_smoothing)
     if label_smoothing > 0:
@@ -156,12 +154,13 @@ def time_sync():
 
 
 def profile(input, ops, n=10, device=None):
-    """YOLOv5 speed/memory/FLOPs profiler
-    Usage:
-        input = torch.randn(16, 3, 640, 640)
-        m1 = lambda x: x * torch.sigmoid(x)
-        m2 = nn.SiLU()
-        profile(input, [m1, m2], n=100)  # profile over 100 iterations.
+    """YOLOv5 speed/memory/FLOPs profiler.
+
+    Examples:
+        >>> input = torch.randn(16, 3, 640, 640)
+        >>> m1 = lambda x: x * torch.sigmoid(x)
+        >>> m2 = nn.SiLU()
+        >>> profile(input, [m1, m2], n=100)  # profile over 100 iterations.
     """
     results = []
     if not isinstance(device, torch.device):
@@ -199,7 +198,7 @@ def profile(input, ops, n=10, device=None):
                 mem = torch.cuda.memory_reserved() / 1e9 if torch.cuda.is_available() else 0  # (GB)
                 s_in, s_out = (tuple(x.shape) if isinstance(x, torch.Tensor) else "list" for x in (x, y))  # shapes
                 p = sum(x.numel() for x in m.parameters()) if isinstance(m, nn.Module) else 0  # parameters
-                print(f"{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{str(s_in):>24s}{str(s_out):>24s}")
+                print(f"{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{s_in!s:>24s}{s_out!s:>24s}")
                 results.append([p, flops, mem, tf, tb, s_in, s_out])
             except Exception as e:
                 print(e)
@@ -239,9 +238,7 @@ def find_modules(model, mclass=nn.Conv2d):
 
 
 def sparsity(model):
-    """Calculates and returns the global sparsity of a model as the ratio of zero-valued parameters to total
-    parameters.
-    """
+    """Calculate global sparsity of a model as the ratio of zero-valued parameters to total parameters."""
     a, b = 0, 0
     for p in model.parameters():
         a += p.numel()
@@ -261,8 +258,7 @@ def prune(model, amount=0.3):
 
 
 def fuse_conv_and_bn(conv, bn):
-    """
-    Fuses Conv2d and BatchNorm2d layers into a single Conv2d layer.
+    """Fuses Conv2d and BatchNorm2d layers into a single Conv2d layer.
 
     See https://tehnokv.com/posts/fusing-batchnorm-and-conv/.
     """
@@ -295,8 +291,7 @@ def fuse_conv_and_bn(conv, bn):
 
 
 def model_info(model, verbose=False, imgsz=640):
-    """
-    Prints model summary including layers, parameters, gradients, and FLOPs; imgsz may be int or list.
+    """Prints model summary including layers, parameters, gradients, and FLOPs; imgsz may be int or list.
 
     Example: img_size=640 or img_size=[640, 320]
     """
@@ -349,8 +344,7 @@ def copy_attr(a, b, include=(), exclude=()):
 
 
 def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):
-    """
-    Initializes YOLOv5 smart optimizer with 3 parameter groups for different decay configurations.
+    """Initializes YOLOv5 smart optimizer with 3 parameter groups for different decay configurations.
 
     Groups are 0) weights with decay, 1) weights no decay, 2) biases no decay.
     """
@@ -448,9 +442,9 @@ class EarlyStopping:
 
 
 class ModelEMA:
-    """Updated Exponential Moving Average (EMA) from https://github.com/rwightman/pytorch-image-models
-    Keeps a moving average of everything in the model state_dict (parameters and buffers)
-    For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage.
+    """Updated Exponential Moving Average (EMA) from https://github.com/rwightman/pytorch-image-models Keeps a moving
+    average of everything in the model state_dict (parameters and buffers) For EMA details
+    see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage.
     """
 
     def __init__(self, model, decay=0.9999, tau=2000, updates=0):

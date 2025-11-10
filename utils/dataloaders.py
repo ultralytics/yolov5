@@ -118,8 +118,7 @@ def exif_transpose(image):
 
 
 def seed_worker(worker_id):
-    """
-    Sets the seed for a dataloader worker to ensure reproducibility, based on PyTorch's randomness notes.
+    """Sets the seed for a dataloader worker to ensure reproducibility, based on PyTorch's randomness notes.
 
     See https://pytorch.org/docs/stable/notes/randomness.html#dataloader.
     """
@@ -219,8 +218,7 @@ def create_dataloader(
 
 
 class InfiniteDataLoader(dataloader.DataLoader):
-    """
-    Dataloader that reuses workers.
+    """Dataloader that reuses workers.
 
     Uses same syntax as vanilla DataLoader
     """
@@ -244,8 +242,7 @@ class InfiniteDataLoader(dataloader.DataLoader):
 
 
 class _RepeatSampler:
-    """
-    Sampler that repeats forever.
+    """Sampler that repeats forever.
 
     Args:
         sampler (Sampler)
@@ -265,8 +262,7 @@ class LoadScreenshots:
     """Loads and processes screenshots for YOLOv5 detection from specified screen regions using mss."""
 
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
-        """
-        Initializes a screenshot dataloader for YOLOv5 with specified source region, image size, stride, auto, and
+        """Initializes a screenshot dataloader for YOLOv5 with specified source region, image size, stride, auto, and
         transforms.
 
         Source = [screen_number left top width height] (pixels)
@@ -406,9 +402,7 @@ class LoadImages:
         return path, im, im0, self.cap, s
 
     def _new_video(self, path):
-        """Initializes a new video capture object with path, frame count adjusted by stride, and orientation
-        metadata.
-        """
+        """Initialize a new video capture object with path, frame count adjusted by stride, and orientation metadata."""
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT) / self.vid_stride)
@@ -846,8 +840,7 @@ class LoadImagesAndLabels(Dataset):
         return torch.from_numpy(img), labels_out, self.im_files[index], shapes
 
     def load_image(self, i):
-        """
-        Loads an image by index, returning the image, its original dimensions, and resized dimensions.
+        """Loads an image by index, returning the image, its original dimensions, and resized dimensions.
 
         Returns (im, original hw, resized hw)
         """
@@ -1056,20 +1049,17 @@ class LoadImagesAndLabels(Dataset):
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def flatten_recursive(path=DATASETS_DIR / "coco128"):
-    """Flattens a directory by copying all files from subdirectories to a new top-level directory, preserving
-    filenames.
-    """
-    new_path = Path(f"{str(path)}_flat")
+    """Flatten a directory by copying all files from subdirs to a new top-level directory, preserving filenames."""
+    new_path = Path(f"{path!s}_flat")
     if os.path.exists(new_path):
         shutil.rmtree(new_path)  # delete output folder
     os.makedirs(new_path)  # make new output folder
-    for file in tqdm(glob.glob(f"{str(Path(path))}/**/*.*", recursive=True)):
+    for file in tqdm(glob.glob(f"{Path(path)!s}/**/*.*", recursive=True)):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
 def extract_boxes(path=DATASETS_DIR / "coco128"):
-    """
-    Converts a detection dataset to a classification dataset, creating a directory for each class and extracting
+    """Converts a detection dataset to a classification dataset, creating a directory for each class and extracting
     bounding boxes.
 
     Example: from utils.dataloaders import *; extract_boxes()
@@ -1107,13 +1097,13 @@ def extract_boxes(path=DATASETS_DIR / "coco128"):
 
 
 def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), annotated_only=False):
-    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    Usage: from utils.dataloaders import *; autosplit().
+    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files Usage: from utils.dataloaders
+    import *; autosplit().
 
-    Arguments:
-        path:            Path to images directory
-        weights:         Train, val, test weights (list, tuple)
-        annotated_only:  Only use images with an annotated txt file
+    Args:
+        path: Path to images directory
+        weights: Train, val, test weights (list, tuple)
+        annotated_only: Only use images with an annotated txt file
     """
     path = Path(path)  # images dir
     files = sorted(x for x in path.rglob("*.*") if x.suffix[1:].lower() in IMG_FORMATS)  # image files only
@@ -1185,14 +1175,13 @@ def verify_image_label(args):
 
 
 class HUBDatasetStats:
-    """
-    Class for generating HUB dataset JSON and `-hub` dataset directory.
+    """Class for generating HUB dataset JSON and `-hub` dataset directory.
 
-    Arguments:
-        path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
-        autodownload:   Attempt to download dataset if not found locally
+    Args:
+        path: Path to data.yaml or data.zip (with data.yaml inside data.zip)
+        autodownload: Attempt to download dataset if not found locally
 
-    Usage
+            Usage
         from utils.dataloaders import HUBDatasetStats
         stats = HUBDatasetStats('coco128.yaml', autodownload=True)  # usage 1
         stats = HUBDatasetStats('path/to/coco128.zip')  # usage 2
@@ -1300,9 +1289,7 @@ class HUBDatasetStats:
         return self.stats
 
     def process_images(self):
-        """Compresses images for Ultralytics HUB across 'train', 'val', 'test' splits and saves to specified
-        directory.
-        """
+        """Compress images across 'train', 'val', 'test' splits and saves to specified directory."""
         for split in "train", "val", "test":
             if self.data.get(split) is None:
                 continue
@@ -1316,12 +1303,11 @@ class HUBDatasetStats:
 
 # Classification dataloaders -------------------------------------------------------------------------------------------
 class ClassificationDataset(torchvision.datasets.ImageFolder):
-    """
-    YOLOv5 Classification Dataset.
+    """YOLOv5 Classification Dataset.
 
-    Arguments:
-        root:  Dataset path
-        transform:  torchvision transforms, used by default
+    Args:
+        root: Dataset path
+        transform: torchvision transforms, used by default
         album_transform: Albumentations transforms, used if installed
     """
 
@@ -1334,7 +1320,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         self.album_transforms = classify_albumentations(augment, imgsz) if augment else None
         self.cache_ram = cache is True or cache == "ram"
         self.cache_disk = cache == "disk"
-        self.samples = [list(x) + [Path(x[0]).with_suffix(".npy"), None] for x in self.samples]  # file, index, npy, im
+        self.samples = [[*list(x), Path(x[0]).with_suffix(".npy"), None] for x in self.samples]  # file, index, npy, im
 
     def __getitem__(self, i):
         """Fetches and transforms an image sample by index, supporting RAM/disk caching and Augmentations."""

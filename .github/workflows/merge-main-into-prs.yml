@@ -5,6 +5,10 @@
 
 name: Merge main into PRs
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   workflow_dispatch:
   # push:
@@ -17,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
           cache: "pip"
