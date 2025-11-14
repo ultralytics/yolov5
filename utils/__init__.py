@@ -44,8 +44,7 @@ def threaded(func):
 
 
 def join_threads(verbose=False):
-    """
-    Joins all daemon threads, optionally printing their names if verbose is True.
+    """Joins all daemon threads, optionally printing their names if verbose is True.
 
     Example: atexit.register(lambda: join_threads())
     """

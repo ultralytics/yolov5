@@ -113,8 +113,7 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname="images.jpg"
 
 
 def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
-    """
-    Plots training results from CSV files, plotting best or last result highlights based on `best` parameter.
+    """Plots training results from CSV files, plotting best or last result highlights based on `best` parameter.
 
     Example: from utils.plots import *; plot_results('path/to/results.csv')
     """

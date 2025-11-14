@@ -87,8 +87,7 @@ class Ensemble(nn.ModuleList):
 
 
 def attempt_load(weights, device=None, inplace=True, fuse=True):
-    """
-    Loads and fuses an ensemble or single YOLOv5 model from weights, handling device placement and model adjustments.
+    """Loads and fuses an ensemble or single YOLOv5 model from weights, handling device placement and model adjustments.
 
     Example inputs: weights=[a,b,c] or a single model weights=[a] or weights=a.
     """

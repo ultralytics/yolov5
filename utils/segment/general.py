@@ -7,8 +7,7 @@ import torch.nn.functional as F
 
 
 def crop_mask(masks, boxes):
-    """
-    "Crop" predicted masks by zeroing out everything not in the predicted bbox. Vectorized by Chong (thanks Chong).
+    """"Crop" predicted masks by zeroing out everything not in the predicted bbox. Vectorized by Chong (thanks Chong).
 
     Args:
         - masks should be a size [n, h, w] tensor of masks
@@ -23,12 +22,8 @@ def crop_mask(masks, boxes):
 
 
 def process_mask_upsample(protos, masks_in, bboxes, shape):
-    """
-    Crop after upsample.
-    protos: [mask_dim, mask_h, mask_w]
-    masks_in: [n, mask_dim], n is number of masks after nms
-    bboxes: [n, 4], n is number of masks after nms
-    shape: input_image_size, (h, w).
+    """Crop after upsample. protos: [mask_dim, mask_h, mask_w] masks_in: [n, mask_dim], n is number of masks after nms
+    bboxes: [n, 4], n is number of masks after nms shape: input_image_size, (h, w).
 
     return: h, w, n
     """
@@ -40,12 +35,8 @@ def process_mask_upsample(protos, masks_in, bboxes, shape):
 
 
 def process_mask(protos, masks_in, bboxes, shape, upsample=False):
-    """
-    Crop before upsample.
-    proto_out: [mask_dim, mask_h, mask_w]
-    out_masks: [n, mask_dim], n is number of masks after nms
-    bboxes: [n, 4], n is number of masks after nms
-    shape:input_image_size, (h, w).
+    """Crop before upsample. proto_out: [mask_dim, mask_h, mask_w] out_masks: [n, mask_dim], n is number of masks after
+    nms bboxes: [n, 4], n is number of masks after nms shape:input_image_size, (h, w).
 
     return: h, w, n
     """
@@ -66,12 +57,8 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=False):
 
 
 def process_mask_native(protos, masks_in, bboxes, shape):
-    """
-    Crop after upsample.
-    protos: [mask_dim, mask_h, mask_w]
-    masks_in: [n, mask_dim], n is number of masks after nms
-    bboxes: [n, 4], n is number of masks after nms
-    shape: input_image_size, (h, w).
+    """Crop after upsample. protos: [mask_dim, mask_h, mask_w] masks_in: [n, mask_dim], n is number of masks after nms
+    bboxes: [n, 4], n is number of masks after nms shape: input_image_size, (h, w).
 
     return: h, w, n
     """
@@ -89,10 +76,7 @@ def process_mask_native(protos, masks_in, bboxes, shape):
 
 
 def scale_image(im1_shape, masks, im0_shape, ratio_pad=None):
-    """
-    img1_shape: model input shape, [h, w]
-    img0_shape: origin pic shape, [h, w, 3]
-    masks: [h, w, num].
+    """img1_shape: model input shape, [h, w] img0_shape: origin pic shape, [h, w, 3] masks: [h, w, num].
     """
     # Rescale coordinates (xyxy) from im1_shape to im0_shape
     if ratio_pad is None:  # calculate from im0_shape
@@ -117,10 +101,8 @@ def scale_image(im1_shape, masks, im0_shape, ratio_pad=None):
 
 
 def mask_iou(mask1, mask2, eps=1e-7):
-    """
-    mask1: [N, n] m1 means number of predicted objects
-    mask2: [M, n] m2 means number of gt objects
-    Note: n means image_w x image_h.
+    """mask1: [N, n] m1 means number of predicted objects mask2: [M, n] m2 means number of gt objects Note: n means
+    image_w x image_h.
 
     return: masks iou, [N, M]
     """
@@ -130,10 +112,8 @@ def mask_iou(mask1, mask2, eps=1e-7):
 
 
 def masks_iou(mask1, mask2, eps=1e-7):
-    """
-    mask1: [N, n] m1 means number of predicted objects
-    mask2: [N, n] m2 means number of gt objects
-    Note: n means image_w x image_h.
+    """mask1: [N, n] m1 means number of predicted objects mask2: [N, n] m2 means number of gt objects Note: n means
+    image_w x image_h.
 
     return: masks iou, (N, )
     """

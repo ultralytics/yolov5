@@ -7,6 +7,7 @@ This project integrates modern ConvNeXt backbones into the YOLOv5 framework to i
 **Goal:** Analyze whether architectural advances in ConvNeXt can improve YOLO's detection capability by systematically quantifying how a ConvNeXt backbone changes detection performance on standardized benchmarks.
 
 **Approach:**
+
 - Use YOLOv5s as baseline (easier to modify than YOLOv8)
 - Replace CSPDarknet backbone with ConvNeXt-Tiny from [timm library](https://github.com/huggingface/pytorch-image-models)
 - Load pretrained ConvNeXt weights from [HuggingFace](https://huggingface.co/timm/convnext_tiny.in12k_ft_in1k)
@@ -16,6 +17,7 @@ This project integrates modern ConvNeXt backbones into the YOLOv5 framework to i
 ## Dataset
 
 We use the MS-COCO dataset containing:
+
 - ~118,000 training images
 - ~5,000 validation images
 - 80 object categories with bounding box annotations
@@ -26,6 +28,7 @@ We use the MS-COCO dataset containing:
 ## Evaluation Metrics
 
 Performance measured using:
+
 - **mAP@[.5:.95]:** Mean Average Precision over IoU thresholds from 0.5 to 0.95
 - **mAP@0.5:** Mean Average Precision at IoU threshold of 0.5
 - **Precision & Recall:** Standard detection metrics
@@ -34,16 +37,17 @@ Performance measured using:
 
 YOLOv5s fine-tuned for 50 epochs on MS-COCO:
 
-| Metric | Official YOLOv5s | Our Baseline |
-|--------|------------------|--------------|
-| mAP@0.5:0.95 | 0.374 | **0.370** |
-| mAP@0.5 | 0.572 | **0.568** |
-| Precision | 0.672 | **0.651** |
-| Recall | 0.519 | **0.521** |
+| Metric       | Official YOLOv5s | Our Baseline |
+| ------------ | ---------------- | ------------ |
+| mAP@0.5:0.95 | 0.374            | **0.370**    |
+| mAP@0.5      | 0.572            | **0.568**    |
+| Precision    | 0.672            | **0.651**    |
+| Recall       | 0.519            | **0.521**    |
 
 ## Setup & Training
 
 ### Prerequisites
+
 - PyTorch
 - YOLOv5 dependencies
 - Access to COCO dataset
@@ -53,11 +57,13 @@ YOLOv5s fine-tuned for 50 epochs on MS-COCO:
 1. In `coco.yaml`, change the "path" variable to the path of the dataset. The COCO2017 Dataset is stored on SCC at `/projectnb/ec523bn/projects/ConvNeXt-YOLO/datasets`. In this case, change the path to `/projectnb/ec523bn/projects/ConvNeXt-YOLO/datasets/coco`.
 
 2. Run the training script with the following arguments:
+
 ```bash
 python train.py --img 640 --batch 16 --epochs 50 --data coco.yaml --weights yolov5s.pt --cache disk
 ```
 
 Notable changes from defaults:
+
 - Using `coco.yaml` instead of `coco128.yaml`
 - Using `--cache disk` instead of the RAM default because of the large dataset
 - Training for 50 epochs to establish baseline
@@ -65,6 +71,7 @@ Notable changes from defaults:
 ### ConvNeXt Integration (In Progress)
 
 Key code changes required:
+
 - Custom backbone class for ConvNeXt-Tiny
 - Modified model YAML configuration
 - Feature map alignment layers for channel compatibility

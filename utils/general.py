@@ -91,8 +91,8 @@ def is_colab():
 
 
 def is_jupyter():
-    """
-    Check if the current script is running inside a Jupyter Notebook. Verified on Colab, Jupyterlab, Kaggle, Paperspace.
+    """Check if the current script is running inside a Jupyter Notebook. Verified on Colab, Jupyterlab, Kaggle,
+    Paperspace.
 
     Returns:
         bool: True if running inside a Jupyter Notebook, False otherwise.
@@ -279,8 +279,7 @@ def print_args(args: dict | None = None, show_file=True, show_func=False):
 
 
 def init_seeds(seed=0, deterministic=False):
-    """
-    Initializes RNG seeds and sets deterministic options if specified.
+    """Initializes RNG seeds and sets deterministic options if specified.
 
     See https://pytorch.org/docs/stable/notes/randomness.html
     """
@@ -358,8 +357,7 @@ def check_online():
 
 
 def git_describe(path=ROOT):
-    """
-    Returns a human-readable git description of the repository at `path`, or an empty string on failure.
+    """Returns a human-readable git description of the repository at `path`, or an empty string on failure.
 
     Example output is 'fv5.0-5-g3e25f1e'. See https://git-scm.com/docs/git-describe.
     """
@@ -642,8 +640,7 @@ def unzip_file(file, path=None, exclude=(".DS_Store", "__MACOSX")):
 
 
 def url2file(url):
-    """
-    Converts a URL string to a valid filename by stripping protocol, domain, and any query parameters.
+    """Converts a URL string to a valid filename by stripping protocol, domain, and any query parameters.
 
     Example https://url.com/file.txt?auth -> file.txt
     """
@@ -713,8 +710,7 @@ def clean_str(s):
 
 
 def one_cycle(y1=0.0, y2=1.0, steps=100):
-    """
-    Generates a lambda for a sinusoidal ramp from y1 to y2 over 'steps'.
+    """Generates a lambda for a sinusoidal ramp from y1 to y2 over 'steps'.
 
     See https://arxiv.org/pdf/1812.01187.pdf for details.
     """
@@ -722,8 +718,7 @@ def one_cycle(y1=0.0, y2=1.0, steps=100):
 
 
 def colorstr(*input):
-    """
-    Colors a string using ANSI escape codes, e.g., colorstr('blue', 'hello world').
+    """Colors a string using ANSI escape codes, e.g., colorstr('blue', 'hello world').
 
     See https://en.wikipedia.org/wiki/ANSI_escape_code.
     """
@@ -779,8 +774,7 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
 
 
 def coco80_to_coco91_class():
-    """
-    Converts COCO 80-class index to COCO 91-class index used in the paper.
+    """Converts COCO 80-class index to COCO 91-class index used in the paper.
 
     Reference: https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
     """
@@ -1020,11 +1014,10 @@ def non_max_suppression(
     max_det=300,
     nm=0,  # number of masks
 ):
-    """
-    Non-Maximum Suppression (NMS) on inference results to reject overlapping detections.
+    """Non-Maximum Suppression (NMS) on inference results to reject overlapping detections.
 
     Returns:
-         list of detections, on (n,6) tensor per image [xyxy, conf, cls]
+        list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
     # Checks
     assert 0 <= conf_thres <= 1, f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
@@ -1123,8 +1116,7 @@ def non_max_suppression(
 
 
 def strip_optimizer(f="best.pt", s=""):
-    """
-    Strips optimizer and optionally saves checkpoint to finalize training; arguments are file path 'f' and save path
+    """Strips optimizer and optionally saves checkpoint to finalize training; arguments are file path 'f' and save path
     's'.
 
     Example: from utils.general import *; strip_optimizer()
@@ -1234,8 +1226,7 @@ def apply_classifier(x, model, img, im0):
 
 
 def increment_path(path, exist_ok=False, sep="", mkdir=False):
-    """
-    Generates an incremented file or directory path if it exists, with optional mkdir; args: path, exist_ok=False,
+    """Generates an incremented file or directory path if it exists, with optional mkdir; args: path, exist_ok=False,
     sep="", mkdir=False.
 
     Example: runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc

@@ -32,8 +32,8 @@ class Colors:
     """Provides an RGB color palette derived from Ultralytics color scheme for visualization tasks."""
 
     def __init__(self):
-        """
-        Initializes the Colors class with a palette derived from Ultralytics color scheme, converting hex codes to RGB.
+        """Initializes the Colors class with a palette derived from Ultralytics color scheme, converting hex codes to
+        RGB.
 
         Colors derived from `hex = matplotlib.colors.TABLEAU_COLORS.values()`.
         """
@@ -77,12 +77,8 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 
 
 def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detect/exp")):
-    """
-    x:              Features to be visualized
-    module_type:    Module type
-    stage:          Module stage within model
-    n:              Maximum number of feature maps to plot
-    save_dir:       Directory to save results.
+    """x: Features to be visualized module_type: Module type stage: Module stage within model n: Maximum number of
+    feature maps to plot save_dir: Directory to save results.
     """
     if ("Detect" not in module_type) and (
         "Segment" not in module_type
@@ -107,8 +103,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detec
 
 
 def hist2d(x, y, n=100):
-    """
-    Generates a logarithmic 2D histogram, useful for visualizing label or evolution distributions.
+    """Generates a logarithmic 2D histogram, useful for visualizing label or evolution distributions.
 
     Used in used in labels.png and evolve.png.
     """
@@ -231,8 +226,7 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=""):
 
 
 def plot_val_txt():
-    """
-    Plots 2D and 1D histograms of bounding box centers from 'val.txt' using matplotlib, saving as 'hist2d.png' and
+    """Plots 2D and 1D histograms of bounding box centers from 'val.txt' using matplotlib, saving as 'hist2d.png' and
     'hist1d.png'.
 
     Example: from utils.plots import *; plot_val()
@@ -253,8 +247,7 @@ def plot_val_txt():
 
 
 def plot_targets_txt():
-    """
-    Plots histograms of object detection targets from 'targets.txt', saving the figure as 'targets.jpg'.
+    """Plots histograms of object detection targets from 'targets.txt', saving the figure as 'targets.jpg'.
 
     Example: from utils.plots import *; plot_targets_txt()
     """
@@ -270,8 +263,7 @@ def plot_targets_txt():
 
 
 def plot_val_study(file="", dir="", x=None):
-    """
-    Plots validation study results from 'study*.txt' files in a directory or a specific file, comparing model
+    """Plots validation study results from 'study*.txt' files in a directory or a specific file, comparing model
     performance and speed.
 
     Example: from utils.plots import *; plot_val_study()
@@ -401,8 +393,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
 
 
 def plot_evolve(evolve_csv="path/to/evolve.csv"):
-    """
-    Plots hyperparameter evolution results from a given CSV, saving the plot and displaying best results.
+    """Plots hyperparameter evolution results from a given CSV, saving the plot and displaying best results.
 
     Example: from utils.plots import *; plot_evolve()
     """
@@ -432,8 +423,7 @@ def plot_evolve(evolve_csv="path/to/evolve.csv"):
 
 
 def plot_results(file="path/to/results.csv", dir=""):
-    """
-    Plots training results from a 'results.csv' file; accepts file path and directory as arguments.
+    """Plots training results from a 'results.csv' file; accepts file path and directory as arguments.
 
     Example: from utils.plots import *; plot_results('path/to/results.csv')
     """
@@ -463,8 +453,7 @@ def plot_results(file="path/to/results.csv", dir=""):
 
 
 def profile_idetection(start=0, stop=0, labels=(), save_dir=""):
-    """
-    Plots per-image iDetection logs, comparing metrics like storage and performance over time.
+    """Plots per-image iDetection logs, comparing metrics like storage and performance over time.
 
     Example: from utils.plots import *; profile_idetection()
     """

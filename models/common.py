@@ -58,8 +58,7 @@ from utils.torch_utils import copy_attr, smart_inference_mode
 
 
 def autopad(k, p=None, d=1):
-    """
-    Pads kernel to 'same' output shape, adjusting for optional dilation; returns padding size.
+    """Pads kernel to 'same' output shape, adjusting for optional dilation; returns padding size.
 
     `k`: kernel, `p`: padding, `d`: dilation.
     """
@@ -115,8 +114,7 @@ class TransformerLayer(nn.Module):
     """Transformer layer with multihead attention and linear layers, optimized by removing LayerNorm."""
 
     def __init__(self, c, num_heads):
-        """
-        Initializes a transformer layer, sans LayerNorm for performance, with multihead attention and linear layers.
+        """Initializes a transformer layer, sans LayerNorm for performance, with multihead attention and linear layers.
 
         See  as described in https://arxiv.org/abs/2010.11929.
         """
@@ -211,8 +209,7 @@ class CrossConv(nn.Module):
     """Implements a cross convolution layer with downsampling, expansion, and optional shortcut."""
 
     def __init__(self, c1, c2, k=3, s=1, g=1, e=1.0, shortcut=False):
-        """
-        Initializes CrossConv with downsampling, expanding, and optionally shortcutting; `c1` input, `c2` output
+        """Initializes CrossConv with downsampling, expanding, and optionally shortcutting; `c1` input, `c2` output
         channels.
 
         Inputs are ch_in, ch_out, kernel, stride, groups, expansion, shortcut.
@@ -297,7 +294,9 @@ class SPP(nn.Module):
     """Implements Spatial Pyramid Pooling (SPP) for feature extraction, ref: https://arxiv.org/abs/1406.4729."""
 
     def __init__(self, c1, c2, k=(5, 9, 13)):
-        """Initializes SPP layer with Spatial Pyramid Pooling, ref: https://arxiv.org/abs/1406.4729, args: c1 (input channels), c2 (output channels), k (kernel sizes)."""
+        """Initializes SPP layer with Spatial Pyramid Pooling, ref: https://arxiv.org/abs/1406.4729, args: c1 (input
+        channels), c2 (output channels), k (kernel sizes).
+        """
         super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -318,8 +317,7 @@ class SPPF(nn.Module):
     """Implements a fast Spatial Pyramid Pooling (SPPF) layer for efficient feature extraction in YOLOv5 models."""
 
     def __init__(self, c1, c2, k=5):
-        """
-        Initializes YOLOv5 SPPF layer with given channels and kernel size for YOLOv5 model, combining convolution and
+        """Initializes YOLOv5 SPPF layer with given channels and kernel size for YOLOv5 model, combining convolution and
         max pooling.
 
         Equivalent to SPP(k=(5, 9, 13)).
@@ -379,7 +377,9 @@ class GhostBottleneck(nn.Module):
     """Efficient bottleneck layer using Ghost Convolutions, see https://github.com/huawei-noah/ghostnet."""
 
     def __init__(self, c1, c2, k=3, s=1):
-        """Initializes GhostBottleneck with ch_in `c1`, ch_out `c2`, kernel size `k`, stride `s`; see https://github.com/huawei-noah/ghostnet."""
+        """Initializes GhostBottleneck with ch_in `c1`, ch_out `c2`, kernel size `k`, stride `s`; see
+        https://github.com/huawei-noah/ghostnet.
+        """
         super().__init__()
         c_ = c2 // 2
         self.conv = nn.Sequential(
@@ -421,9 +421,8 @@ class Expand(nn.Module):
     """Expands spatial dimensions by redistributing channels, e.g., from (1,64,80,80) to (1,16,160,160)."""
 
     def __init__(self, gain=2):
-        """
-        Initializes the Expand module to increase spatial dimensions by redistributing channels, with an optional gain
-        factor.
+        """Initializes the Expand module to increase spatial dimensions by redistributing channels, with an optional
+        gain factor.
 
         Example: x(1,64,80,80) to x(1,16,160,160).
         """
@@ -431,8 +430,7 @@ class Expand(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        """Processes input tensor x to expand spatial dimensions by redistributing channels, requiring C / gain^2 ==
-        0.
+        """Processes input tensor x to expand spatial dimensions by redistributing channels, requiring C / gain^2 == 0.
         """
         b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
@@ -450,8 +448,7 @@ class Concat(nn.Module):
         self.d = dimension
 
     def forward(self, x):
-        """Concatenates a list of tensors along a specified dimension; `x` is a list of tensors, `dimension` is an
-        int.
+        """Concatenates a list of tensors along a specified dimension; `x` is a list of tensors, `dimension` is an int.
         """
         return torch.cat(x, self.d)
 
@@ -786,8 +783,7 @@ class DetectMultiBackend(nn.Module):
 
     @staticmethod
     def _model_type(p="path/to/model.pt"):
-        """
-        Determines model type from file path or URL, supporting various export formats.
+        """Determines model type from file path or URL, supporting various export formats.
 
         Example: path='path/to/model.onnx' -> type=onnx
         """
@@ -839,8 +835,7 @@ class AutoShape(nn.Module):
             m.export = True  # do not output loss values
 
     def _apply(self, fn):
-        """
-        Applies to(), cpu(), cuda(), half() etc.
+        """Applies to(), cpu(), cuda(), half() etc.
 
         to model tensors excluding parameters or registered buffers.
         """
@@ -855,8 +850,7 @@ class AutoShape(nn.Module):
 
     @smart_inference_mode()
     def forward(self, ims, size=640, augment=False, profile=False):
-        """
-        Performs inference on inputs with optional augment & profiling.
+        """Performs inference on inputs with optional augment & profiling.
 
         Supports various formats including file, URI, OpenCV, PIL, numpy, torch.
         """
@@ -1002,16 +996,14 @@ class Detections:
 
     @TryExcept("Showing images is not supported in this environment")
     def show(self, labels=True):
-        """
-        Displays detection results with optional labels.
+        """Displays detection results with optional labels.
 
         Usage: show(labels=True)
         """
         self._run(show=True, labels=labels)  # show results
 
     def save(self, labels=True, save_dir="runs/detect/exp", exist_ok=False):
-        """
-        Saves detection results with optional labels to a specified directory.
+        """Saves detection results with optional labels to a specified directory.
 
         Usage: save(labels=True, save_dir='runs/detect/exp', exist_ok=False)
         """
@@ -1019,8 +1011,7 @@ class Detections:
         self._run(save=True, labels=labels, save_dir=save_dir)  # save results
 
     def crop(self, save=True, save_dir="runs/detect/exp", exist_ok=False):
-        """
-        Crops detection results, optionally saves them to a directory.
+        """Crops detection results, optionally saves them to a directory.
 
         Args: save (bool), save_dir (str), exist_ok (bool).
         """
@@ -1033,8 +1024,7 @@ class Detections:
         return self.ims
 
     def pandas(self):
-        """
-        Returns detections as pandas DataFrames for various box formats (xyxy, xyxyn, xywh, xywhn).
+        """Returns detections as pandas DataFrames for various box formats (xyxy, xyxyn, xywh, xywhn).
 
         Example: print(results.pandas().xyxy[0]).
         """
@@ -1047,8 +1037,7 @@ class Detections:
         return new
 
     def tolist(self):
-        """
-        Converts a Detections object into a list of individual detection results for iteration.
+        """Converts a Detections object into a list of individual detection results for iteration.
 
         Example: for result in results.tolist():
         """
