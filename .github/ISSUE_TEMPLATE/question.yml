@@ -1,31 +1,30 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 name: ❓ Question
-description: Ask a YOLOv5 question
-# title: " "
+description: "Ask an Ultralytics YOLOv5 question"
 labels: [question]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for asking a YOLOv5 ❓ Question!
+        Thank you for asking an Ultralytics YOLOv5 ❓ Question!
 
   - type: checkboxes
     attributes:
       label: Search before asking
       description: >
-        Please search the [issues](https://github.com/ultralytics/yolov5/issues) and [discussions](https://github.com/ultralytics/yolov5/discussions) to see if a similar question already exists.
+        Please search the Ultralytics YOLOv5 [docs](https://docs.ultralytics.com/yolov5/), [issues](https://github.com/ultralytics/yolov5/issues), and [Ultralytics discussions](https://github.com/orgs/ultralytics/discussions) to see if a similar question already exists.
       options:
         - label: >
-            I have searched the YOLOv5 [issues](https://github.com/ultralytics/yolov5/issues) and [discussions](https://github.com/ultralytics/yolov5/discussions) and found no similar questions.
+            I checked the docs, issues, and discussions and could not find an answer.
           required: true
 
   - type: textarea
     attributes:
       label: Question
-      description: What is your question?
+      description: What is your question? Provide as much detail as possible so we can assist with Ultralytics YOLOv5. Include code snippets, screenshots, logs, or links to notebooks/demos.
       placeholder: |
-        💡 ProTip! Include as much information as possible (screenshots, logs, tracebacks etc.) to receive the most helpful response.
+        💡 ProTip! Include as much information as possible (logs, tracebacks, screenshots, etc.) to receive the most helpful response.
     validations:
       required: true
 

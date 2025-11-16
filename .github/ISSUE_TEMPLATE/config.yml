@@ -2,12 +2,15 @@
 
 blank_issues_enabled: true
 contact_links:
-  - name: 📄 Docs
-    url: https://docs.ultralytics.com/yolov5
-    about: View Ultralytics YOLOv5 Docs
+  - name: 📘 YOLOv5 Docs
+    url: https://docs.ultralytics.com/yolov5/
+    about: Complete Ultralytics YOLOv5 documentation
   - name: 💬 Forum
     url: https://community.ultralytics.com/
-    about: Ask on Ultralytics Community Forum
+    about: Ask the Ultralytics community for workflow help
   - name: 🎧 Discord
     url: https://ultralytics.com/discord
-    about: Ask on Ultralytics Discord
+    about: Chat with the Ultralytics team and other builders
+  - name: ⌨️ Reddit
+    url: https://reddit.com/r/ultralytics
+    about: Discuss Ultralytics projects on Reddit

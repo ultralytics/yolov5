@@ -1,41 +1,40 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 name: 🚀 Feature Request
-description: Suggest a YOLOv5 idea
-# title: " "
+description: "Suggest an Ultralytics YOLOv5 improvement"
 labels: [enhancement]
+type: "feature"
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for submitting a YOLOv5 🚀 Feature Request!
+        Thank you for submitting an Ultralytics YOLOv5 🚀 Feature Request!
 
   - type: checkboxes
     attributes:
       label: Search before asking
       description: >
-        Please search the [issues](https://github.com/ultralytics/yolov5/issues) to see if a similar feature request already exists.
+        Please search the Ultralytics YOLOv5 [docs](https://docs.ultralytics.com/yolov5/) and [issues](https://github.com/ultralytics/yolov5/issues) to see if a similar feature request already exists.
       options:
         - label: >
-            I have searched the YOLOv5 [issues](https://github.com/ultralytics/yolov5/issues) and found no similar feature requests.
+            I have searched https://github.com/ultralytics/yolov5/issues and did not find a similar request.
           required: true
 
   - type: textarea
     attributes:
       label: Description
-      description: A short description of your feature.
+      description: Briefly describe the feature you would like to see added to Ultralytics YOLOv5.
       placeholder: |
-        What new feature would you like to see in YOLOv5?
+        What new capability or improvement are you proposing?
     validations:
       required: true
 
   - type: textarea
     attributes:
       label: Use case
-      description: |
-        Describe the use case of your feature request. It will help us understand and prioritize the feature request.
+      description: Explain how this feature would be used and who benefits from it. Screenshots or mockups are welcome.
       placeholder: |
-        How would this feature be used, and who would use it?
+        How would this feature improve your workflow?
 
   - type: textarea
     attributes:
@@ -46,7 +45,7 @@ body:
     attributes:
       label: Are you willing to submit a PR?
       description: >
-        (Optional) We encourage you to submit a [Pull Request](https://github.com/ultralytics/yolov5/pulls) (PR) to help improve YOLOv5 for everyone, especially if you have a good understanding of how to implement a fix or feature.
-        See the YOLOv5 [Contributing Guide](https://docs.ultralytics.com/help/contributing/) to get started.
+        (Optional) We encourage you to submit a [Pull Request](https://github.com/ultralytics/yolov5/pulls) to help improve Ultralytics YOLOv5.
+        See the Ultralytics [Contributing Guide](https://docs.ultralytics.com/help/contributing/) to get started.
       options:
         - label: Yes I'd like to help by submitting a PR!
