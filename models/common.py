@@ -17,6 +17,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import requests
+import timm
 import torch
 import torch.nn as nn
 from PIL import Image
@@ -1121,3 +1122,110 @@ class Classify(nn.Module):
         if isinstance(x, list):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
+
+class ConvNextTinyBackbone(nn.Module):
+    """
+    ConvNext-Tiny backbone wrapper for YOLOv5.
+    
+    This module:
+    1. Loads pretrained ConvNext-Tiny from timm
+    2. Extracts features at 3 scales: P3 (1/8), P4 (1/16), P5 (1/32)
+    3. Aligns channel dimensions to match YOLOv5's expectations
+    4. Returns P5 while making P3, P4 accessible for the neck
+    
+    Integration strategy:
+    - Replaces the CSPDarknet backbone layers in YOLOv5
+    - Maintains compatibility with existing FPN/PAN neck architecture
+    - Uses 1x1 convolutions to match channel dimensions
+    """
+    def __init__(self, c1=3, c2=512, pretrained=True):
+        """
+        Inputs:
+        (int) c1: The number of input channels, 3 for RGB
+        (int) c2: The number of output channels for P5
+        (bool) pretrained: Using pretraines weights or not
+        """
+        super.__init__()
+
+        print(f"Loading ConvNext-Tiny Backbone (pretrained={pretrained})")
+
+        # Load ConvNext-Tiny with feature pyramid extraction
+        # out_indices=[1,2,3] extracts features from stages 2, 3, 4
+        # These correspond to 1/8, 1/16, 1/32 spatial resolution
+        self.backbone = timm.create_model(
+            'convnext_tiny',
+            pretrained = pretrained,
+            features_only = True,
+            out_indices = [1, 2, 3]
+        )
+
+        # ConvNext-Tiny stage output channels: [96, 192, 384]
+        # YOLOv5s expects: [128, 256, 512]
+        # We use 1x1 convolutions to align dimensions
+        
+        # P3 alignment: 96 -> 128 channels (1/8 resolution)
+        self.p3_conv = nn.Conv2d(in_channels=96, out_channels=128, kernel_size=1, stride=1, padding=0, bias=False)
+        self.p3_bn = nn.BatchNorm2d(128)
+
+        # P4 alignment: 192 -> 256 (1/16 resolution)
+        self.p4_conv = nn.Conv2d(in_channels=192, out_channels=256, kernel_size=1, stride=1, padding=0, bias=False)
+        self.p4_bn = nn.BatchNorm2d(256)
+
+        # P5 alignment: 384 -> 512 (1/32 resolution)
+        self.p5_conv = nn.Conv2d(in_channels=384, out_channels=512, kernel_size=1, stride=1, padding=0, bia=False)
+
+        # SiLU activation (same as nn.SiLU(), used throughout YOLOv5)
+        self.act = nn.SiLU(inplace=True)
+
+        self.p3 = None
+        self.p4 = None
+        self.p5 = None
+
+    def forward(self, x):
+        """
+        Forward pass through ConvNext backbone.
+        
+        Args:
+            x: Input tensor of shape [B, 3, H, W]
+            
+        Returns:
+            p5: Deepest feature map [B, 512, H/32, W/32]
+            
+        Side effects:
+            Stores p3, p4, p5 as instance attributes for neck access
+        """
+        # Extract multi-scale features from ConvNext
+        # features is a list of 3 tensors at different resolutions
+        features = self.backbone(x)
+
+        # Process and align each feature map
+        # P3: 1/8 resolution, this is for small object detection
+        self.p3 = self.act(self.p3_bn(self.p3_conv(features[0])))
+
+        # P4: 1/16 resolution, this is for medium object detection
+        self.p4 = self.act(self.p4_bn(self.p4_conv(features[1])))
+
+        # P5: 1/32 resolution, this is for large object detection
+        self.p5 = self.act(self.p5_bn(self.p5_conv(features[2])))
+
+        # Return P5 as the primary output
+        # The neck will access p3 and p4 via layer indexing in the YAML
+        return self.p5
+    
+    # Helper function to get intermediate features (might need for debugging)
+    def get_convnext_feature(model, layer_idx, feature_name):
+        """
+        Retrieve stored feature from ConvNext backbone.
+    
+        Args:
+            model: YOLOv5 model instance
+            layer_idx: Index of ConvNextTinyBackbone layer
+            feature_name: 'p3', 'p4', or 'p5'
+        
+        Returns:
+            Feature tensor or None
+        """
+        backbone = model.model[layer_idx]
+        if isinstance(backbone, ConvNextTinyBackbone):
+            return getattr(backbone, feature_name, None)
+        return None
