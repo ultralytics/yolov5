@@ -48,6 +48,9 @@ from models.common import (
     GhostBottleneck,
     GhostConv,
     Proto,
+    ConvNextTiny,
+    ConvNextP3,
+    ConvNextP4
 )
 from models.experimental import MixConv2d
 from utils.autoanchor import check_anchor_order
@@ -444,9 +447,17 @@ def parse_model(d, ch):
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+        elif m is ConvNextTiny:
+            # ConvNextTiny: first arg is output channels (c2)
+            c2 = args[0] if args else 512
+        elif m in {ConvNextP3, ConvNextP4}:
+            # These helper modules retrieve stored features
+            # ConvNextP3 outputs 128 channels, ConvNextP4 outputs 256 channels
+            c2 = 128 if m is ConvNextP3 else 256
         else:
             c2 = ch[f]
 
+        print(f"Module: {m.__name__}, args: {args}")
         m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace("__main__.", "")  # module type
         np = sum(x.numel() for x in m_.parameters())  # number params

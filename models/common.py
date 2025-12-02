@@ -1123,109 +1123,125 @@ class Classify(nn.Module):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
 
-class ConvNextTinyBackbone(nn.Module):
-    """
-    ConvNext-Tiny backbone wrapper for YOLOv5.
-    
-    This module:
-    1. Loads pretrained ConvNext-Tiny from timm
-    2. Extracts features at 3 scales: P3 (1/8), P4 (1/16), P5 (1/32)
-    3. Aligns channel dimensions to match YOLOv5's expectations
-    4. Returns P5 while making P3, P4 accessible for the neck
-    
-    Integration strategy:
-    - Replaces the CSPDarknet backbone layers in YOLOv5
-    - Maintains compatibility with existing FPN/PAN neck architecture
-    - Uses 1x1 convolutions to match channel dimensions
-    """
-    def __init__(self, c1=3, c2=512, pretrained=True):
-        """
-        Inputs:
-        (int) c1: The number of input channels, 3 for RGB
-        (int) c2: The number of output channels for P5
-        (bool) pretrained: Using pretraines weights or not
-        """
-        super.__init__()
+# Global feature registry for ConvNext multi-scale outputs
+# Use a dict keyed by input tensor id to handle multiple forward passes
+_CONVNEXT_FEATURES = {}
 
-        print(f"Loading ConvNext-Tiny Backbone (pretrained={pretrained})")
-
-        # Load ConvNext-Tiny with feature pyramid extraction
-        # out_indices=[1,2,3] extracts features from stages 2, 3, 4
-        # These correspond to 1/8, 1/16, 1/32 spatial resolution
+class ConvNextTiny(nn.Module):
+    """
+    ConvNext-Tiny backbone for YOLOv5.
+    """
+    
+    def __init__(self, c1_or_c2=512, c2=None, pretrained=True):
+        super().__init__()
+        
+        # Handle both cases: (c1, c2) or just (c2,)
+        if c2 is None:
+            c2 = c1_or_c2
+            c1 = 3
+        else:
+            c1 = c1_or_c2
+        
+        print(f"Initializing ConvNext-Tiny (pretrained={pretrained})...")
+        print(f"  c1={c1} (ignored), c2={c2} (P5 output channels)")
+        
+        # Load ConvNext-Tiny from timm
         self.backbone = timm.create_model(
             'convnext_tiny',
-            pretrained = pretrained,
-            features_only = True,
-            out_indices = [1, 2, 3]
+            pretrained=pretrained,
+            features_only=True,
+            out_indices=[1, 2, 3]
         )
-
-        # ConvNext-Tiny stage output channels: [96, 192, 384]
-        # YOLOv5s expects: [128, 256, 512]
-        # We use 1x1 convolutions to align dimensions
         
-        # P3 alignment: 96 -> 128 channels (1/8 resolution)
-        self.p3_conv = nn.Conv2d(in_channels=96, out_channels=128, kernel_size=1, stride=1, padding=0, bias=False)
-        self.p3_bn = nn.BatchNorm2d(128)
-
-        # P4 alignment: 192 -> 256 (1/16 resolution)
-        self.p4_conv = nn.Conv2d(in_channels=192, out_channels=256, kernel_size=1, stride=1, padding=0, bias=False)
-        self.p4_bn = nn.BatchNorm2d(256)
-
-        # P5 alignment: 384 -> 512 (1/32 resolution)
-        self.p5_conv = nn.Conv2d(in_channels=384, out_channels=512, kernel_size=1, stride=1, padding=0, bia=False)
-
-        # SiLU activation (same as nn.SiLU(), used throughout YOLOv5)
-        self.act = nn.SiLU(inplace=True)
-
-        self.p3 = None
-        self.p4 = None
-        self.p5 = None
-
+        # Detect stage channels
+        with torch.no_grad():
+            dummy = torch.zeros(1, 3, 224, 224)
+            features = self.backbone(dummy)
+            stage_channels = [f.shape[1] for f in features]
+            print(f"  Stage channels: {stage_channels}")
+        
+        # Channel adapters
+        self.p3_adapter = nn.Sequential(
+            nn.Conv2d(stage_channels[0], 128, 1, bias=False),
+            nn.BatchNorm2d(128),
+            nn.SiLU(inplace=True)
+        )
+        
+        self.p4_adapter = nn.Sequential(
+            nn.Conv2d(stage_channels[1], 256, 1, bias=False),
+            nn.BatchNorm2d(256),
+            nn.SiLU(inplace=True)
+        )
+        
+        self.p5_adapter = nn.Sequential(
+            nn.Conv2d(stage_channels[2], c2, 1, bias=False),
+            nn.BatchNorm2d(c2),
+            nn.SiLU(inplace=True)
+        )
+        
     def forward(self, x):
-        """
-        Forward pass through ConvNext backbone.
+        """Extract features and store in global registry keyed by batch"""
+        global _CONVNEXT_FEATURES
         
-        Args:
-            x: Input tensor of shape [B, 3, H, W]
-            
-        Returns:
-            p5: Deepest feature map [B, 512, H/32, W/32]
-            
-        Side effects:
-            Stores p3, p4, p5 as instance attributes for neck access
-        """
-        # Extract multi-scale features from ConvNext
-        # features is a list of 3 tensors at different resolutions
+        # Get multi-scale features from ConvNext
         features = self.backbone(x)
-
-        # Process and align each feature map
-        # P3: 1/8 resolution, this is for small object detection
-        self.p3 = self.act(self.p3_bn(self.p3_conv(features[0])))
-
-        # P4: 1/16 resolution, this is for medium object detection
-        self.p4 = self.act(self.p4_bn(self.p4_conv(features[1])))
-
-        # P5: 1/32 resolution, this is for large object detection
-        self.p5 = self.act(self.p5_bn(self.p5_conv(features[2])))
-
-        # Return P5 as the primary output
-        # The neck will access p3 and p4 via layer indexing in the YAML
-        return self.p5
-    
-    # Helper function to get intermediate features (might need for debugging)
-    def get_convnext_feature(model, layer_idx, feature_name):
-        """
-        Retrieve stored feature from ConvNext backbone.
-    
-        Args:
-            model: YOLOv5 model instance
-            layer_idx: Index of ConvNextTinyBackbone layer
-            feature_name: 'p3', 'p4', or 'p5'
         
-        Returns:
-            Feature tensor or None
-        """
-        backbone = model.model[layer_idx]
-        if isinstance(backbone, ConvNextTinyBackbone):
-            return getattr(backbone, feature_name, None)
-        return None
+        # Adapt channel dimensions
+        p3 = self.p3_adapter(features[0])  # 1/8 scale, 128 channels
+        p4 = self.p4_adapter(features[1])  # 1/16 scale, 256 channels
+        p5 = self.p5_adapter(features[2])  # 1/32 scale, 512 channels
+        
+        # Store using the input tensor's data_ptr as key (unique per forward pass)
+        # This ensures we get the right features for the current input
+        key = x.data_ptr()
+        _CONVNEXT_FEATURES[key] = {'p3': p3, 'p4': p4, 'p5': p5}
+        
+        # Also store as 'latest' for easy access
+        _CONVNEXT_FEATURES['latest'] = key
+        
+        # Return P5 as primary output (deepest features)
+        return p5
+
+
+class ConvNextP4(nn.Module):
+    """
+    Helper module to extract P4 features from ConvNext.
+    """
+    
+    def __init__(self, c1=None, c2=None):
+        super().__init__()
+        
+    def forward(self, x):
+        """Retrieve P4 from global feature registry for current forward pass"""
+        global _CONVNEXT_FEATURES
+        
+        if _CONVNEXT_FEATURES and 'latest' in _CONVNEXT_FEATURES:
+            latest_key = _CONVNEXT_FEATURES['latest']
+            if latest_key in _CONVNEXT_FEATURES:
+                return _CONVNEXT_FEATURES[latest_key]['p4']
+        
+        # Fallback - should not happen
+        print("WARNING: ConvNextP4 could not find cached features!")
+        return x
+
+
+class ConvNextP3(nn.Module):
+    """
+    Helper module to extract P3 features from ConvNext.
+    """
+    
+    def __init__(self, c1=None, c2=None):
+        super().__init__()
+        
+    def forward(self, x):
+        """Retrieve P3 from global feature registry for current forward pass"""
+        global _CONVNEXT_FEATURES
+        
+        if _CONVNEXT_FEATURES and 'latest' in _CONVNEXT_FEATURES:
+            latest_key = _CONVNEXT_FEATURES['latest']
+            if latest_key in _CONVNEXT_FEATURES:
+                return _CONVNEXT_FEATURES[latest_key]['p3']
+        
+        # Fallback - should not happen
+        print("WARNING: ConvNextP3 could not find cached features!")
+        return x
