@@ -49,3 +49,4 @@ setuptools>=70.0.0 # Snyk vulnerability fix
 # albumentations>=1.0.3
 # pycocotools>=2.0.6  # COCO mAP
 urllib3>=2.5.0 ; python_version > "3.8" # not directly required, pinned by Snyk to avoid a vulnerability
+fonttools>=4.61.0 # not directly required, pinned by Snyk to avoid a vulnerability
