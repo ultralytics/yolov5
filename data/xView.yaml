@@ -125,7 +125,7 @@ download: |
                       # Write YOLO label
                       if id not in shapes:
                           shapes[id] = Image.open(file).size
-                      box = xyxy2xywhn(box[None].astype(np.float), w=shapes[id][0], h=shapes[id][1], clip=True)
+                      box = xyxy2xywhn(box[None].astype(np.float64), w=shapes[id][0], h=shapes[id][1], clip=True)
                       with open((labels / id).with_suffix('.txt'), 'a') as f:
                           f.write(f"{cls} {' '.join(f'{x:.6f}' for x in box[0])}\n")  # write label.txt
                   except Exception as e:
