@@ -725,7 +725,7 @@ class DetectMultiBackend(nn.Module):
             y = self.model.predict({"image": im})  # coordinates are xywh normalized
             if "confidence" in y:
                 box = xywh2xyxy(y["coordinates"] * [[w, h, w, h]])  # xyxy pixels
-                conf, cls = y["confidence"].max(1), y["confidence"].argmax(1).astype(np.float)
+                conf, cls = y["confidence"].max(1), y["confidence"].argmax(1).astype(float)
                 y = np.concatenate((box, conf.reshape(-1, 1), cls.reshape(-1, 1)), 1)
             else:
                 y = list(reversed(y.values()))  # reversed for segmentation models (pred, proto)
