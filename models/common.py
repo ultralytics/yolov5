@@ -661,6 +661,7 @@ class DetectMultiBackend(nn.Module):
             config = pdi.Config(str(model_file), str(params_file))
             if cuda:
                 config.enable_use_gpu(memory_pool_init_size_mb=2048, device_id=0)
+            config.disable_mkldnn()  # disable MKL-DNN for PIR compatibility
             predictor = pdi.create_predictor(config)
             input_handle = predictor.get_input_handle(predictor.get_input_names()[0])
             output_names = predictor.get_output_names()
