@@ -3,17 +3,17 @@
 # تحذير فوري عند أول كشف
 # ============================================
 
-import sys
-import time
-import threading
 import random
+import sys
+import threading
+import time
 from pathlib import Path
 
 import cv2
-import torch
 import pygame
-
+import torch
 from ultralytics.utils.plotting import Annotator
+
 from models.common import DetectMultiBackend
 from utils.dataloaders import LoadStreams
 from utils.general import check_img_size, non_max_suppression, scale_boxes
@@ -28,6 +28,7 @@ if str(ROOT) not in sys.path:
 # ---------------- Firebase ----------------
 try:
     from firebase_alerts import broadcast_animal_alert
+
     print("✅ Firebase alerts connected")
 except ImportError:
     print("❌ firebase_alerts.py not found")
@@ -35,6 +36,7 @@ except ImportError:
 
 # ---------------- Sound ----------------
 pygame.mixer.init()
+
 
 def play_alert_sound():
     try:
@@ -47,22 +49,17 @@ def play_alert_sound():
     except Exception as e:
         print(f"⚠️ Sound error: {e}")
 
+
 # ---------------- Alert Control ----------------
 last_alert_time = 0
 GLOBAL_COOLDOWN = 5  # ثواني (غيّرها لـ 0 لو بدك بكل فريم)
 
 TARGET_ANIMALS = ["camel", "cow", "dog", "horse", "sheep"]
 
+
 # ---------------- Main ----------------
 @smart_inference_mode()
-def run(
-    weights=ROOT / "best.pt",
-    source="0",
-    imgsz=(640, 640),
-    conf_thres=0.6,
-    iou_thres=0.45,
-    device=""
-):
+def run(weights=ROOT / "best.pt", source="0", imgsz=(640, 640), conf_thres=0.6, iou_thres=0.45, device=""):
     global last_alert_time
 
     device = select_device(device)
@@ -113,16 +110,9 @@ def run(
 
                         print(f"⚠️ ALERT: {label} detected ({dist}m)")
 
-                        threading.Thread(
-                            target=play_alert_sound,
-                            daemon=True
-                        ).start()
+                        threading.Thread(target=play_alert_sound, daemon=True).start()
 
-                        threading.Thread(
-                            target=broadcast_animal_alert,
-                            args=(label, dist),
-                            daemon=True
-                        ).start()
+                        threading.Thread(target=broadcast_animal_alert, args=(label, dist), daemon=True).start()
 
             cv2.imshow("Animal Detection - Press Q to quit", im0)
             if cv2.waitKey(1) & 0xFF == ord("q"):
