@@ -56,7 +56,7 @@ pip install ultralytics
 ```
 
 <div align="center">
-  <a href="https://www.ultralytics.com/yolo" target="_blank">
+  <a href="https://platform.ultralytics.com/ultralytics/yolo26" target="_blank">
   <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/refs/heads/main/yolo/performance-comparison.png" alt="Ultralytics YOLO 性能比较"></a>
 </div>
 
