@@ -1,6 +1,6 @@
 <div align="center">
   <p>
-    <a href="https://platform.ultralytics/ultralytics/yolo26" target="_blank">
+    <a href="https://platform.ultralytics.com/ultralytics/yolo26" target="_blank">
       <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-yolov8.png" alt="Ultralytics YOLO 横幅"></a>
   </p>
 
