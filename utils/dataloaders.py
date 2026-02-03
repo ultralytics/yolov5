@@ -1251,7 +1251,7 @@ class HUBDatasetStats:
             cv2.imwrite(str(f_new), im)
 
     def get_json(self, save=False, verbose=False):
-        """Generates dataset JSON for Ultralytics HUB, optionally saves or prints it; save=bool, verbose=bool."""
+        """Generates dataset JSON for Ultralytics Platform, optionally saves or prints it; save=bool, verbose=bool."""
 
         def _round(labels):
             """Rounds class labels to integers and coordinates to 4 decimal places for improved label accuracy."""
