@@ -1,152 +1,152 @@
-# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+# # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-# YOLOv5 Continuous Integration (CI) GitHub Actions tests
+# # YOLOv5 Continuous Integration (CI) GitHub Actions tests
 
-name: YOLOv5 CI
+# name: YOLOv5 CI
 
-permissions:
-  contents: read
+# permissions:
+#   contents: read
 
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
-  schedule:
-    - cron: "0 0 * * *" # runs at 00:00 UTC every day
-  workflow_dispatch:
+# on:
+#   push:
+#     branches: [master]
+#   pull_request:
+#     branches: [master]
+#   schedule:
+#     - cron: "0 0 * * *" # runs at 00:00 UTC every day
+#   workflow_dispatch:
 
-jobs:
-  Benchmarks:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.11"] # requires python<=3.11
-        model: [yolov5n]
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@v7
-      - name: Install requirements
-        run: |
-          uv pip install --system -r requirements.txt coremltools openvino-dev "tensorflow<=2.19.0" "keras>=3.5.0,<=3.12.0" --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
-          yolo checks
-          uv pip list
-      - name: Benchmark DetectionModel
-        run: |
-          python benchmarks.py --data coco128.yaml --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
-      - name: Benchmark SegmentationModel
-        run: |
-          python benchmarks.py --data coco128-seg.yaml --weights ${{ matrix.model }}-seg.pt --img 320 --hard-fail 0.22
-      - name: Test predictions
-        run: |
-          python export.py --weights ${{ matrix.model }}-cls.pt --include onnx --img 224
-          python detect.py --weights ${{ matrix.model }}.onnx --img 320
-          python segment/predict.py --weights ${{ matrix.model }}-seg.onnx --img 320
-          python classify/predict.py --weights ${{ matrix.model }}-cls.onnx --img 224
+# jobs:
+#   Benchmarks:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ubuntu-latest]
+#         python-version: ["3.11"] # requires python<=3.11
+#         model: [yolov5n]
+#     steps:
+#       - uses: actions/checkout@v6
+#       - uses: actions/setup-python@v6
+#         with:
+#           python-version: ${{ matrix.python-version }}
+#       - uses: astral-sh/setup-uv@v7
+#       - name: Install requirements
+#         run: |
+#           uv pip install --system -r requirements.txt coremltools openvino-dev "tensorflow<=2.19.0" "keras>=3.5.0,<=3.12.0" --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
+#           yolo checks
+#           uv pip list
+#       - name: Benchmark DetectionModel
+#         run: |
+#           python benchmarks.py --data coco128.yaml --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
+#       - name: Benchmark SegmentationModel
+#         run: |
+#           python benchmarks.py --data coco128-seg.yaml --weights ${{ matrix.model }}-seg.pt --img 320 --hard-fail 0.22
+#       - name: Test predictions
+#         run: |
+#           python export.py --weights ${{ matrix.model }}-cls.pt --include onnx --img 224
+#           python detect.py --weights ${{ matrix.model }}.onnx --img 320
+#           python segment/predict.py --weights ${{ matrix.model }}-seg.onnx --img 320
+#           python classify/predict.py --weights ${{ matrix.model }}-cls.onnx --img 224
 
-  Tests:
-    timeout-minutes: 60
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-14] # macos-latest bug https://github.com/ultralytics/yolov5/pull/9049
-        python-version: ["3.11"]
-        model: [yolov5n]
-        include:
-          - os: ubuntu-latest
-            python-version: "3.8" # torch 1.8.0 requires python >=3.6, <=3.8
-            model: yolov5n
-            torch: "1.8.0" # min torch version CI https://pypi.org/project/torchvision/
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@v7
-      - name: Install requirements
-        run: |
-          torch=""
-          if [ "${{ matrix.torch }}" == "1.8.0" ]; then
-            torch="torch==1.8.0 torchvision==0.9.0"
-          fi
-          uv pip install --system -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
-        shell: bash # for Windows compatibility
-      - name: Check environment
-        run: |
-          yolo checks
-          pip list
-      - name: Test detection
-        shell: bash # for Windows compatibility
-        run: |
-          # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
-          m=${{ matrix.model }}  # official weights
-          b=runs/train/exp/weights/best  # best.pt checkpoint
-          python train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
-          for d in cpu; do  # devices
-            for w in $m $b; do  # weights
-              python val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
-              python detect.py --imgsz 64 --weights $w.pt --device $d  # detect
-            done
-          done
-          python hubconf.py --model $m  # hub
-          # python models/tf.py --weights $m.pt  # build TF model
-          python models/yolo.py --cfg $m.yaml  # build PyTorch model
-          python export.py --weights $m.pt --img 64 --include torchscript  # export
-          python - <<EOF
-          import torch
-          im = torch.zeros([1, 3, 64, 64])
-          for path in '$m', '$b':
-              model = torch.hub.load('.', 'custom', path=path, source='local')
-              print(model('data/images/bus.jpg'))
-              model(im)  # warmup, build grids for trace
-              torch.jit.trace(model, [im])
-          EOF
-      - name: Test segmentation
-        shell: bash # for Windows compatibility
-        run: |
-          m=${{ matrix.model }}-seg  # official weights
-          b=runs/train-seg/exp/weights/best  # best.pt checkpoint
-          python segment/train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
-          python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg $m.yaml --epochs 1 --device cpu  # train
-          for d in cpu; do  # devices
-            for w in $m $b; do  # weights
-              python segment/val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
-              python segment/predict.py --imgsz 64 --weights $w.pt --device $d  # predict
-              python export.py --weights $w.pt --img 64 --include torchscript --device $d  # export
-            done
-          done
-      - name: Test classification
-        shell: bash # for Windows compatibility
-        run: |
-          m=${{ matrix.model }}-cls.pt  # official weights
-          b=runs/train-cls/exp/weights/best.pt  # best.pt checkpoint
-          python classify/train.py --imgsz 32 --model $m --data mnist160 --epochs 1  # train
-          python classify/val.py --imgsz 32 --weights $b --data ../datasets/mnist160  # val
-          python classify/predict.py --imgsz 32 --weights $b --source ../datasets/mnist160/test/7/60.png  # predict
-          python classify/predict.py --imgsz 32 --weights $m --source data/images/bus.jpg  # predict
-          python export.py --weights $b --img 64 --include torchscript  # export
-          python - <<EOF
-          import torch
-          for path in '$m', '$b':
-              model = torch.hub.load('.', 'custom', path=path, source='local')
-          EOF
+#   Tests:
+#     timeout-minutes: 60
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ubuntu-latest, windows-latest, macos-14] # macos-latest bug https://github.com/ultralytics/yolov5/pull/9049
+#         python-version: ["3.11"]
+#         model: [yolov5n]
+#         include:
+#           - os: ubuntu-latest
+#             python-version: "3.8" # torch 1.8.0 requires python >=3.6, <=3.8
+#             model: yolov5n
+#             torch: "1.8.0" # min torch version CI https://pypi.org/project/torchvision/
+#     steps:
+#       - uses: actions/checkout@v6
+#       - uses: actions/setup-python@v6
+#         with:
+#           python-version: ${{ matrix.python-version }}
+#       - uses: astral-sh/setup-uv@v7
+#       - name: Install requirements
+#         run: |
+#           torch=""
+#           if [ "${{ matrix.torch }}" == "1.8.0" ]; then
+#             torch="torch==1.8.0 torchvision==0.9.0"
+#           fi
+#           uv pip install --system -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
+#         shell: bash # for Windows compatibility
+#       - name: Check environment
+#         run: |
+#           yolo checks
+#           pip list
+#       - name: Test detection
+#         shell: bash # for Windows compatibility
+#         run: |
+#           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
+#           m=${{ matrix.model }}  # official weights
+#           b=runs/train/exp/weights/best  # best.pt checkpoint
+#           python train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
+#           for d in cpu; do  # devices
+#             for w in $m $b; do  # weights
+#               python val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
+#               python detect.py --imgsz 64 --weights $w.pt --device $d  # detect
+#             done
+#           done
+#           python hubconf.py --model $m  # hub
+#           # python models/tf.py --weights $m.pt  # build TF model
+#           python models/yolo.py --cfg $m.yaml  # build PyTorch model
+#           python export.py --weights $m.pt --img 64 --include torchscript  # export
+#           python - <<EOF
+#           import torch
+#           im = torch.zeros([1, 3, 64, 64])
+#           for path in '$m', '$b':
+#               model = torch.hub.load('.', 'custom', path=path, source='local')
+#               print(model('data/images/bus.jpg'))
+#               model(im)  # warmup, build grids for trace
+#               torch.jit.trace(model, [im])
+#           EOF
+#       - name: Test segmentation
+#         shell: bash # for Windows compatibility
+#         run: |
+#           m=${{ matrix.model }}-seg  # official weights
+#           b=runs/train-seg/exp/weights/best  # best.pt checkpoint
+#           python segment/train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
+#           python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg $m.yaml --epochs 1 --device cpu  # train
+#           for d in cpu; do  # devices
+#             for w in $m $b; do  # weights
+#               python segment/val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
+#               python segment/predict.py --imgsz 64 --weights $w.pt --device $d  # predict
+#               python export.py --weights $w.pt --img 64 --include torchscript --device $d  # export
+#             done
+#           done
+#       - name: Test classification
+#         shell: bash # for Windows compatibility
+#         run: |
+#           m=${{ matrix.model }}-cls.pt  # official weights
+#           b=runs/train-cls/exp/weights/best.pt  # best.pt checkpoint
+#           python classify/train.py --imgsz 32 --model $m --data mnist160 --epochs 1  # train
+#           python classify/val.py --imgsz 32 --weights $b --data ../datasets/mnist160  # val
+#           python classify/predict.py --imgsz 32 --weights $b --source ../datasets/mnist160/test/7/60.png  # predict
+#           python classify/predict.py --imgsz 32 --weights $m --source data/images/bus.jpg  # predict
+#           python export.py --weights $b --img 64 --include torchscript  # export
+#           python - <<EOF
+#           import torch
+#           for path in '$m', '$b':
+#               model = torch.hub.load('.', 'custom', path=path, source='local')
+#           EOF
 
-  Summary:
-    runs-on: ubuntu-latest
-    needs: [Benchmarks, Tests]
-    if: always()
-    steps:
-      - name: Check for failure and notify
-        if: (needs.Benchmarks.result == 'failure' || needs.Tests.result == 'failure' || needs.Benchmarks.result == 'cancelled' || needs.Tests.result == 'cancelled') && github.repository == 'ultralytics/yolov5' && (github.event_name == 'schedule' || github.event_name == 'push') && github.run_attempt == '1'
-        uses: slackapi/slack-github-action@v2.1.1
-        with:
-          webhook-type: incoming-webhook
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL_YOLO }}
-          payload: |
-            text: "<!channel> GitHub Actions error for ${{ github.workflow }} ❌\n\n\n*Repository:* https://github.com/${{ github.repository }}\n*Action:* https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\n*Author:* ${{ github.actor }}\n*Event:* ${{ github.event_name }}\n"
+#   Summary:
+#     runs-on: ubuntu-latest
+#     needs: [Benchmarks, Tests]
+#     if: always()
+#     steps:
+#       - name: Check for failure and notify
+#         if: (needs.Benchmarks.result == 'failure' || needs.Tests.result == 'failure' || needs.Benchmarks.result == 'cancelled' || needs.Tests.result == 'cancelled') && github.repository == 'ultralytics/yolov5' && (github.event_name == 'schedule' || github.event_name == 'push') && github.run_attempt == '1'
+#         uses: slackapi/slack-github-action@v2.1.1
+#         with:
+#           webhook-type: incoming-webhook
+#           webhook: ${{ secrets.SLACK_WEBHOOK_URL_YOLO }}
+#           payload: |
+#             text: "<!channel> GitHub Actions error for ${{ github.workflow }} ❌\n\n\n*Repository:* https://github.com/${{ github.repository }}\n*Action:* https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\n*Author:* ${{ github.actor }}\n*Event:* ${{ github.event_name }}\n"
