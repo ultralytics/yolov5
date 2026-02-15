@@ -197,7 +197,7 @@ class ConfusionMatrix:
         return tp[:-1], fp[:-1]  # remove background class
 
     @TryExcept("WARNING ⚠️ ConfusionMatrix plot failure")
-    def plot(self, normalize=True, save_dir="", names=()):
+    def plot(self, normalize=False, save_dir="", names=()):
         """Plots confusion matrix using seaborn, optional normalization; can save plot to specified directory."""
         import seaborn as sn
 
