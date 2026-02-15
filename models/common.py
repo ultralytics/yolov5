@@ -1109,3 +1109,130 @@ class Classify(nn.Module):
         if isinstance(x, list):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
+
+class SELayer(nn.Module):
+    """Squeeze-and-Excitation (SE) block."""
+    def __init__(self, channels: int, reduction: int = 16):
+        super().__init__()
+        mid = max(1, channels // reduction)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(channels, mid, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Linear(mid, channels, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1, 1)
+        return x * y
+
+
+class SEBottleneck(nn.Module):
+    """
+    Bottleneck + SE. Aman dipakai di dalam C3SE karena biasanya c1 == c2 (hidden channels).
+    Signature mengikuti Bottleneck: (c1, c2, shortcut, g, e).
+    """
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, se_reduction=16):
+        super().__init__()
+        c_ = int(c2 * e)
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c_, c2, 3, 1, g=g)
+        self.add = shortcut and c1 == c2
+        self.se = SELayer(c2, reduction=se_reduction)
+
+    def forward(self, x):
+        y = self.cv2(self.cv1(x))
+        y = self.se(y)
+        return x + y if self.add else y
+
+
+class C3SE(C3):
+    """C3 module with SEBottleneck() inside (drop-in replacement for C3)."""
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, se_reduction=16):
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)
+        self.m = nn.Sequential(*(SEBottleneck(c_, c_, shortcut, g, e=1.0, se_reduction=se_reduction) for _ in range(n)))
+
+
+class ChannelAttention(nn.Module):
+    """CBAM Channel Attention."""
+    def __init__(self, in_planes: int, ratio: int = 16):
+        super().__init__()
+        mid = max(1, in_planes // ratio)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+        self.f1 = nn.Conv2d(in_planes, mid, 1, bias=False)
+        self.relu = nn.ReLU(inplace=True)
+        self.f2 = nn.Conv2d(mid, in_planes, 1, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = self.f2(self.relu(self.f1(self.avg_pool(x))))
+        max_out = self.f2(self.relu(self.f1(self.max_pool(x))))
+        return self.sigmoid(avg_out + max_out)
+
+
+class SpatialAttention(nn.Module):
+    """CBAM Spatial Attention."""
+    def __init__(self, kernel_size: int = 7):
+        super().__init__()
+        assert kernel_size in (3, 7), "kernel_size must be 3 or 7"
+        padding = 3 if kernel_size == 7 else 1
+        self.conv = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        x = torch.cat([avg_out, max_out], dim=1)
+        x = self.conv(x)
+        return self.sigmoid(x)
+
+
+class CBAM(nn.Module):
+    """
+    CBAM block as a standalone layer (can be inserted in YAML).
+    Signature dibuat kompatibel dengan pola YOLOv5: (c1, c2, ...)
+    Umumnya dipakai dengan c1 == c2.
+    """
+    def __init__(self, c1, c2=None, ratio=16, kernel_size=7):
+        super().__init__()
+        c2 = c1 if c2 is None else c2
+        assert c1 == c2, "CBAM layer expects c1 == c2 (no channel change)."
+        self.ca = ChannelAttention(c1, ratio=ratio)
+        self.sa = SpatialAttention(kernel_size=kernel_size)
+
+    def forward(self, x):
+        x = self.ca(x) * x
+        x = self.sa(x) * x
+        return x
+
+
+class CBAMBottleneck(nn.Module):
+    """Bottleneck + CBAM (used inside C3CBAM)."""
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, ratio=16, kernel_size=7):
+        super().__init__()
+        c_ = int(c2 * e)
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c_, c2, 3, 1, g=g)
+        self.add = shortcut and c1 == c2
+        self.ca = ChannelAttention(c2, ratio=ratio)
+        self.sa = SpatialAttention(kernel_size=kernel_size)
+
+    def forward(self, x):
+        y = self.cv2(self.cv1(x))
+        y = self.ca(y) * y
+        y = self.sa(y) * y
+        return x + y if self.add else y
+
+
+class C3CBAM(C3):
+    """C3 module with CBAMBottleneck() inside (drop-in replacement for C3)."""
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, ratio=16, kernel_size=7):
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)
+        self.m = nn.Sequential(*(CBAMBottleneck(c_, c_, shortcut, g, e=1.0, ratio=ratio, kernel_size=kernel_size)
+                                 for _ in range(n)))
