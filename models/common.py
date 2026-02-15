@@ -1110,7 +1110,7 @@ class Classify(nn.Module):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
 
-class SELayer(nn.Module):
+class SE(nn.Module):
     """Squeeze-and-Excitation (SE) block."""
     def __init__(self, channels: int, reduction: int = 16):
         super().__init__()
@@ -1141,7 +1141,7 @@ class SEBottleneck(nn.Module):
         self.cv1 = Conv(c1, c_, 1, 1)
         self.cv2 = Conv(c_, c2, 3, 1, g=g)
         self.add = shortcut and c1 == c2
-        self.se = SELayer(c2, reduction=se_reduction)
+        self.se = SE(c2, reduction=se_reduction)
 
     def forward(self, x):
         y = self.cv2(self.cv1(x))
