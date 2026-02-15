@@ -421,6 +421,12 @@ def parse_model(d, ch):
             nn.ConvTranspose2d,
             DWConvTranspose2d,
             C3x,
+            SE,
+            SEBottleneck,
+            C3SE,
+            CBAM,
+            CBAMBottleneck,
+            C3CBAM
         }:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
@@ -434,6 +440,8 @@ def parse_model(d, ch):
             args = [ch[f]]
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
+        elif m is Concat_bifpn:
+            c2 = max([ch[x] for x in f])
         # TODO: channel, gw, gd
         elif m in {Detect, Segment}:
             args.append([ch[x] for x in f])
