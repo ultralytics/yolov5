@@ -4,6 +4,14 @@ Validate a trained YOLOv5 detection model on a detection dataset.
 
 Usage:
     $ python val.py --weights yolov5s.pt --data coco128.yaml --img 640
+
+This revised version adds:
+    --save-per-image         Save 1 visualization JPG per image (pred + labels)
+    --save-per-image-limit   Limit number of images saved (default -1 = all)
+
+Outputs (when --save-per-image is used):
+    runs/val/exp*/per_image/pred/<image_stem>.jpg
+    runs/val/exp*/per_image/labels/<image_stem>.jpg
 """
 
 import argparse
@@ -121,58 +129,65 @@ def run(
     plots=True,
     callbacks=Callbacks(),
     compute_loss=None,
-    plots_all=False,        # ✅ NEW: save plots for all batches
-    plot_interval=1,        # ✅ NEW: save plots every N batches
+    # NEW:
+    save_per_image=False,
+    save_per_image_limit=-1,
 ):
     """Evaluates a YOLOv5 model on a dataset and logs performance metrics."""
-    # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
-        device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
-        half &= device.type != "cpu"  # half precision only supported on CUDA
+        device, pt, jit, engine = next(model.parameters()).device, True, False, False
+        half &= device.type != "cpu"
         model.half() if half else model.float()
     else:  # called directly
         device = select_device(device, batch_size=batch_size)
 
         # Directories
-        save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-        (save_dir / "labels" if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+        save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)
+        (save_dir / "labels" if save_txt else save_dir).mkdir(parents=True, exist_ok=True)
+
+        # NEW: per-image visualization folders
+        per_img_pred_dir = save_dir / "per_image" / "pred"
+        per_img_lbl_dir = save_dir / "per_image" / "labels"
+        if save_per_image:
+            per_img_pred_dir.mkdir(parents=True, exist_ok=True)
+            per_img_lbl_dir.mkdir(parents=True, exist_ok=True)
 
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
-        imgsz = check_img_size(imgsz, s=stride)  # check image size
-        half = model.fp16  # FP16 supported on limited backends with CUDA
+        imgsz = check_img_size(imgsz, s=stride)
+        half = model.fp16
         if engine:
             batch_size = model.batch_size
         else:
             device = model.device
             if not (pt or jit):
-                batch_size = 1  # export.py models default to batch-size 1
+                batch_size = 1
                 LOGGER.info(f"Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models")
 
         # Data
-        data = check_dataset(data)  # check
+        data = check_dataset(data)
 
     # Configure
     model.eval()
     cuda = device.type != "cpu"
-    is_coco = isinstance(data.get("val"), str) and data["val"].endswith(f"coco{os.sep}val2017.txt")  # COCO dataset
-    nc = 1 if single_cls else int(data["nc"])  # number of classes
-    iouv = torch.linspace(0.5, 0.95, 10, device=device)  # iou vector for mAP@0.5:0.95
+    is_coco = isinstance(data.get("val"), str) and data["val"].endswith(f"coco{os.sep}val2017.txt")
+    nc = 1 if single_cls else int(data["nc"])
+    iouv = torch.linspace(0.5, 0.95, 10, device=device)
     niou = iouv.numel()
 
     # Dataloader
     if not training:
-        if pt and not single_cls:  # check --weights are trained on --data
+        if pt and not single_cls:
             ncm = model.model.nc
             assert ncm == nc, (
-                f"{weights} ({ncm} classes) trained on different --data than what you passed ({nc} "
-                f"classes). Pass correct combination of --weights and --data that are trained together."
+                f"{weights} ({ncm} classes) trained on different --data than what you passed ({nc} classes). "
+                f"Pass correct combination of --weights and --data that are trained together."
             )
-        model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz))  # warmup
-        pad, rect = (0.0, False) if task == "speed" else (0.5, pt)  # square inference for benchmarks
-        task = task if task in ("train", "val", "test") else "val"  # path to train/val/test images
+        model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz))
+        pad, rect = (0.0, False) if task == "speed" else (0.5, pt)
+        task = task if task in ("train", "val", "test") else "val"
         dataloader = create_dataloader(
             data[task],
             imgsz,
@@ -187,17 +202,20 @@ def run(
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
-    names = model.names if hasattr(model, "names") else model.module.names  # get class names
-    if isinstance(names, (list, tuple)):  # old format
+    names = model.names if hasattr(model, "names") else model.module.names
+    if isinstance(names, (list, tuple)):
         names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
     s = ("%22s" + "%11s" * 6) % ("Class", "Images", "Instances", "P", "R", "mAP50", "mAP50-95")
     tp, fp, p, r, f1, mp, mr, map50, ap50, map = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-    dt = Profile(device=device), Profile(device=device), Profile(device=device)  # profiling times
+    dt = Profile(device=device), Profile(device=device), Profile(device=device)
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
     callbacks.run("on_val_start")
-    pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
+    pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)
+
+    # NEW: counter for how many images already saved (per-image mode)
+    per_image_saved = 0
 
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         callbacks.run("on_val_batch_start")
@@ -205,9 +223,9 @@ def run(
             if cuda:
                 im = im.to(device, non_blocking=True)
                 targets = targets.to(device)
-            im = im.half() if half else im.float()  # uint8 to fp16/32
-            im /= 255  # 0 - 255 to 0.0 - 1.0
-            nb, _, height, width = im.shape  # batch size, channels, height, width
+            im = im.half() if half else im.float()
+            im /= 255
+            nb, _, height, width = im.shape
 
         # Inference
         with dt[1]:
@@ -215,11 +233,11 @@ def run(
 
         # Loss
         if compute_loss:
-            loss += compute_loss(train_out, targets)[1]  # box, obj, cls
+            loss += compute_loss(train_out, targets)[1]
 
         # NMS
-        targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
-        lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
+        targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)
+        lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []
         with dt[2]:
             preds = non_max_suppression(
                 preds, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls, max_det=max_det
@@ -228,9 +246,9 @@ def run(
         # Metrics
         for si, pred in enumerate(preds):
             labels = targets[targets[:, 0] == si, 1:]
-            nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
+            nl, npr = labels.shape[0], pred.shape[0]
             path, shape = Path(paths[si]), shapes[si][0]
-            correct = torch.zeros(npr, niou, dtype=torch.bool, device=device)  # init
+            correct = torch.zeros(npr, niou, dtype=torch.bool, device=device)
             seen += 1
 
             if npr == 0:
@@ -238,55 +256,76 @@ def run(
                     stats.append((correct, *torch.zeros((2, 0), device=device), labels[:, 0]))
                     if plots:
                         confusion_matrix.process_batch(detections=None, labels=labels[:, 0])
+                # Even if no predictions, we still may want to save label-only image in per-image mode
+                if plots and save_per_image:
+                    if save_per_image_limit < 0 or per_image_saved < save_per_image_limit:
+                        im1 = im[si:si + 1]
+                        t1 = targets[targets[:, 0] == si].clone()
+                        if len(t1):
+                            t1[:, 0] = 0
+                        plot_images(im1, t1, [str(path)], per_img_lbl_dir / f"{path.stem}.jpg", names)
+                        # pred image (no detections) – still saved for parity
+                        plot_images(im1, output_to_target([pred]), [str(path)], per_img_pred_dir / f"{path.stem}.jpg", names)
+                        per_image_saved += 1
                 continue
 
             # Predictions
             if single_cls:
                 pred[:, 5] = 0
             predn = pred.clone()
-            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
+            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])
 
             # Evaluate
             if nl:
-                tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
-                scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
-                labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
+                tbox = xywh2xyxy(labels[:, 1:5])
+                scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])
+                labelsn = torch.cat((labels[:, 0:1], tbox), 1)
                 correct = process_batch(predn, labelsn, iouv)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
-            stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
+
+            stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))
 
             # Save/log
             if save_txt:
                 (save_dir / "labels").mkdir(parents=True, exist_ok=True)
                 save_one_txt(predn, save_conf, shape, file=save_dir / "labels" / f"{path.stem}.txt")
             if save_json:
-                save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
+                save_one_json(predn, jdict, path, class_map)
             callbacks.run("on_val_image_end", pred, predn, path, names, im[si])
 
-        # ✅ Plot images (SAVE ALL if --plots-all)
-        if plots:
-            # default YOLOv5 behavior: only first 3 batches
-            do_plot = (batch_i < 3) if not plots_all else True
-            # optional interval control
-            do_plot = do_plot and (plot_interval > 0) and (batch_i % plot_interval == 0)
+            # NEW: Save per-image visualization (1 JPG per image)
+            if plots and save_per_image:
+                if save_per_image_limit < 0 or per_image_saved < save_per_image_limit:
+                    im1 = im[si:si + 1]
+                    t1 = targets[targets[:, 0] == si].clone()
+                    if len(t1):
+                        t1[:, 0] = 0  # reset index for single-image batch
 
-            if do_plot:
-                plot_images(im, targets, paths, save_dir / f"val_batch{batch_i}_labels.jpg", names)  # labels
-                plot_images(im, output_to_target(preds), paths, save_dir / f"val_batch{batch_i}_pred.jpg", names)  # pred
+                    # Save GT overlay
+                    plot_images(im1, t1, [str(path)], per_img_lbl_dir / f"{path.stem}.jpg", names)
+                    # Save prediction overlay
+                    plot_images(im1, output_to_target([pred]), [str(path)], per_img_pred_dir / f"{path.stem}.jpg", names)
+
+                    per_image_saved += 1
+
+        # Batch grid plots (keep original behavior ONLY if not using per-image)
+        if plots and (not save_per_image) and batch_i < 3:
+            plot_images(im, targets, paths, save_dir / f"val_batch{batch_i}_labels.jpg", names)
+            plot_images(im, output_to_target(preds), paths, save_dir / f"val_batch{batch_i}_pred.jpg", names)
 
         callbacks.run("on_val_batch_end", batch_i, im, targets, paths, shapes, preds)
 
     # Compute metrics
-    stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
+    stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]
     if len(stats) and stats[0].any():
         tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
-        ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
+        ap50, ap = ap[:, 0], ap.mean(1)
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
-    nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
+    nt = np.bincount(stats[3].astype(int), minlength=nc)
 
     # Print results
-    pf = "%22s" + "%11i" * 2 + "%11.3g" * 4  # print format
+    pf = "%22s" + "%11i" * 2 + "%11.3g" * 4
     LOGGER.info(pf % ("all", seen, nt.sum(), mp, mr, map50, map))
     if nt.sum() == 0:
         LOGGER.warning(f"WARNING ⚠️ no labels found in {task} set, can not compute metrics without labels")
@@ -297,7 +336,7 @@ def run(
             LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
 
     # Print speeds
-    t = tuple(x.t / seen * 1e3 for x in dt)  # speeds per image
+    t = tuple(x.t / seen * 1e3 for x in dt)
     if not training:
         shape = (batch_size, 3, imgsz, imgsz)
         LOGGER.info(f"Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}" % t)
@@ -309,11 +348,11 @@ def run(
 
     # Save JSON
     if save_json and len(jdict):
-        w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ""  # weights
-        anno_json = str(Path("../datasets/coco/annotations/instances_val2017.json"))  # annotations
+        w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ""
+        anno_json = str(Path("../datasets/coco/annotations/instances_val2017.json"))
         if not os.path.exists(anno_json):
             anno_json = os.path.join(data["path"], "annotations", "instances_val2017.json")
-        pred_json = str(save_dir / f"{w}_predictions.json")  # predictions
+        pred_json = str(save_dir / f"{w}_predictions.json")
         LOGGER.info(f"\nEvaluating pycocotools mAP... saving {pred_json}...")
         with open(pred_json, "w") as f:
             json.dump(jdict, f)
@@ -323,8 +362,8 @@ def run(
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
-            anno = COCO(anno_json)  # init annotations api
-            pred = anno.loadRes(pred_json)  # init predictions api
+            anno = COCO(anno_json)
+            pred = anno.loadRes(pred_json)
             eval = COCOeval(anno, pred, "bbox")
             if is_coco:
                 eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.im_files]
@@ -336,10 +375,14 @@ def run(
             LOGGER.info(f"pycocotools unable to run: {e}")
 
     # Return results
-    model.float()  # for training
+    model.float()
     if not training:
-        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ""
-        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
+        s2 = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ""
+        extra = ""
+        if save_per_image:
+            extra = f"\nPer-image visualizations saved to {save_dir / 'per_image'} (pred/labels)"
+        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s2}{extra}")
+
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
@@ -347,7 +390,7 @@ def run(
 
 
 def parse_opt():
-    """Parse command-line options for configuring YOLOv5 model inference."""
+    """Parse command-line options for configuring YOLOv5 validation."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default=ROOT / "data/coco128.yaml", help="dataset.yaml path")
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s.pt", help="model path(s)")
@@ -372,12 +415,21 @@ def parse_opt():
     parser.add_argument("--half", action="store_true", help="use FP16 half-precision inference")
     parser.add_argument("--dnn", action="store_true", help="use OpenCV DNN for ONNX inference")
 
-    # ✅ NEW FLAGS
-    parser.add_argument("--plots-all", action="store_true", help="save val_batch*.jpg for ALL batches (not only first 3)")
-    parser.add_argument("--plot-interval", type=int, default=1, help="save plots every N batches (default=1)")
+    # NEW:
+    parser.add_argument(
+        "--save-per-image",
+        action="store_true",
+        help="save per-image visualization (1 jpg per image) for predictions and labels",
+    )
+    parser.add_argument(
+        "--save-per-image-limit",
+        type=int,
+        default=-1,
+        help="limit number of images saved (default=-1 means all)",
+    )
 
     opt = parser.parse_args()
-    opt.data = check_yaml(opt.data)  # check YAML
+    opt.data = check_yaml(opt.data)
     opt.save_json |= opt.data.endswith("coco.yaml")
     opt.save_txt |= opt.save_hybrid
     print_args(vars(opt))
