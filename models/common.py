@@ -1110,8 +1110,10 @@ class Classify(nn.Module):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
 
+
 class SE(nn.Module):
     """Squeeze-and-Excitation (SE) block."""
+
     def __init__(self, channels: int, reduction: int = 16):
         super().__init__()
         mid = max(1, channels // reduction)
@@ -1120,7 +1122,7 @@ class SE(nn.Module):
             nn.Linear(channels, mid, bias=False),
             nn.ReLU(inplace=True),
             nn.Linear(mid, channels, bias=False),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
@@ -1131,10 +1133,10 @@ class SE(nn.Module):
 
 
 class SEBottleneck(nn.Module):
+    """Bottleneck + SE. Aman dipakai di dalam C3SE karena biasanya c1 == c2 (hidden channels). Signature mengikuti
+    Bottleneck: (c1, c2, shortcut, g, e).
     """
-    Bottleneck + SE. Aman dipakai di dalam C3SE karena biasanya c1 == c2 (hidden channels).
-    Signature mengikuti Bottleneck: (c1, c2, shortcut, g, e).
-    """
+
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, se_reduction=16):
         super().__init__()
         c_ = int(c2 * e)
@@ -1151,6 +1153,7 @@ class SEBottleneck(nn.Module):
 
 class C3SE(C3):
     """C3 module with SEBottleneck() inside (drop-in replacement for C3)."""
+
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, se_reduction=16):
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
@@ -1159,6 +1162,7 @@ class C3SE(C3):
 
 class ChannelAttention(nn.Module):
     """CBAM Channel Attention."""
+
     def __init__(self, in_planes: int, ratio: int = 16):
         super().__init__()
         mid = max(1, in_planes // ratio)
@@ -1177,6 +1181,7 @@ class ChannelAttention(nn.Module):
 
 class SpatialAttention(nn.Module):
     """CBAM Spatial Attention."""
+
     def __init__(self, kernel_size: int = 7):
         super().__init__()
         assert kernel_size in (3, 7), "kernel_size must be 3 or 7"
@@ -1193,11 +1198,10 @@ class SpatialAttention(nn.Module):
 
 
 class CBAM(nn.Module):
+    """CBAM block as a standalone layer (can be inserted in YAML). Signature dibuat kompatibel dengan pola YOLOv5: (c1,
+    c2, ...) Umumnya dipakai dengan c1 == c2.
     """
-    CBAM block as a standalone layer (can be inserted in YAML).
-    Signature dibuat kompatibel dengan pola YOLOv5: (c1, c2, ...)
-    Umumnya dipakai dengan c1 == c2.
-    """
+
     def __init__(self, c1, c2=None, ratio=16, kernel_size=7):
         super().__init__()
         c2 = c1 if c2 is None else c2
@@ -1213,6 +1217,7 @@ class CBAM(nn.Module):
 
 class CBAMBottleneck(nn.Module):
     """Bottleneck + CBAM (used inside C3CBAM)."""
+
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, ratio=16, kernel_size=7):
         super().__init__()
         c_ = int(c2 * e)
@@ -1231,8 +1236,10 @@ class CBAMBottleneck(nn.Module):
 
 class C3CBAM(C3):
     """C3 module with CBAMBottleneck() inside (drop-in replacement for C3)."""
+
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, ratio=16, kernel_size=7):
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
-        self.m = nn.Sequential(*(CBAMBottleneck(c_, c_, shortcut, g, e=1.0, ratio=ratio, kernel_size=kernel_size)
-                                 for _ in range(n)))
+        self.m = nn.Sequential(
+            *(CBAMBottleneck(c_, c_, shortcut, g, e=1.0, ratio=ratio, kernel_size=kernel_size) for _ in range(n))
+        )

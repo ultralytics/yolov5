@@ -259,13 +259,15 @@ def run(
                 # Even if no predictions, we still may want to save label-only image in per-image mode
                 if plots and save_per_image:
                     if save_per_image_limit < 0 or per_image_saved < save_per_image_limit:
-                        im1 = im[si:si + 1]
+                        im1 = im[si : si + 1]
                         t1 = targets[targets[:, 0] == si].clone()
                         if len(t1):
                             t1[:, 0] = 0
                         plot_images(im1, t1, [str(path)], per_img_lbl_dir / f"{path.stem}.jpg", names)
                         # pred image (no detections) – still saved for parity
-                        plot_images(im1, output_to_target([pred]), [str(path)], per_img_pred_dir / f"{path.stem}.jpg", names)
+                        plot_images(
+                            im1, output_to_target([pred]), [str(path)], per_img_pred_dir / f"{path.stem}.jpg", names
+                        )
                         per_image_saved += 1
                 continue
 
@@ -297,7 +299,7 @@ def run(
             # NEW: Save per-image visualization (1 JPG per image)
             if plots and save_per_image:
                 if save_per_image_limit < 0 or per_image_saved < save_per_image_limit:
-                    im1 = im[si:si + 1]
+                    im1 = im[si : si + 1]
                     t1 = targets[targets[:, 0] == si].clone()
                     if len(t1):
                         t1[:, 0] = 0  # reset index for single-image batch
@@ -305,7 +307,9 @@ def run(
                     # Save GT overlay
                     plot_images(im1, t1, [str(path)], per_img_lbl_dir / f"{path.stem}.jpg", names)
                     # Save prediction overlay
-                    plot_images(im1, output_to_target([pred]), [str(path)], per_img_pred_dir / f"{path.stem}.jpg", names)
+                    plot_images(
+                        im1, output_to_target([pred]), [str(path)], per_img_pred_dir / f"{path.stem}.jpg", names
+                    )
 
                     per_image_saved += 1
 
@@ -437,7 +441,8 @@ def parse_opt():
 
 
 def main(opt):
-    """Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided options."""
+    """Executes YOLOv5 tasks like training, validation, testing, speed, and study benchmarks based on provided options.
+    """
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
 
     if opt.task in ("train", "val", "test"):

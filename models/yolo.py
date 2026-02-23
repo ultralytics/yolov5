@@ -27,14 +27,19 @@ if platform.system() != "Windows":
 
 from models.common import (
     C3,
+    C3CBAM,
+    C3SE,
     C3SPP,
     C3TR,
+    CBAM,
+    SE,
     SPP,
     SPPF,
     Bottleneck,
     BottleneckCSP,
     C3Ghost,
     C3x,
+    CBAMBottleneck,
     Classify,
     Concat,
     Contract,
@@ -48,12 +53,7 @@ from models.common import (
     GhostBottleneck,
     GhostConv,
     Proto,
-    SE,
     SEBottleneck,
-    C3SE,
-    CBAM,
-    CBAMBottleneck,    
-    C3CBAM
 )
 from models.experimental import MixConv2d
 from utils.autoanchor import check_anchor_order
@@ -432,7 +432,7 @@ def parse_model(d, ch):
             C3SE,
             CBAM,
             CBAMBottleneck,
-            C3CBAM
+            C3CBAM,
         }:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
