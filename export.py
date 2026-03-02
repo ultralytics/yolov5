@@ -58,7 +58,10 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-from torch.utils.mobile_optimizer import optimize_for_mobile
+try:
+    from torch.utils.mobile_optimizer import optimize_for_mobile
+except ImportError:
+    optimize_for_mobile = None
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
