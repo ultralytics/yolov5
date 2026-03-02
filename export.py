@@ -58,6 +58,7 @@ from pathlib import Path
 
 import pandas as pd
 import torch
+
 try:
     from torch.utils.mobile_optimizer import optimize_for_mobile
 except ImportError:

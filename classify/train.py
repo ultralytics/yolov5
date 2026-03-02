@@ -23,11 +23,11 @@ from datetime import datetime
 from pathlib import Path
 
 import torch
+import torch.amp
 import torch.distributed as dist
 import torch.hub as hub
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
-import torch.amp
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
