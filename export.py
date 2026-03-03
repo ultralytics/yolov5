@@ -62,7 +62,13 @@ import torch
 try:
     from torch.utils.mobile_optimizer import optimize_for_mobile
 except ImportError:
-    optimize_for_mobile = None
+
+    def optimize_for_mobile(*args, **kwargs):
+        """Raise ImportError when torch.utils.mobile_optimizer is unavailable."""
+        raise ImportError(
+            "optimize_for_mobile is not available in this version of PyTorch. "
+            "Please install a version of PyTorch that includes mobile_optimizer support."
+        )
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
