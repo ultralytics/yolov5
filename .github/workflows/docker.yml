@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0 # copy full .git directory to access full git history in Docker images
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
