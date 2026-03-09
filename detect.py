@@ -154,7 +154,7 @@ def run(
     screenshot = source.lower().startswith("screen")
 
     # 2. Perform the validation
-    if not (webcam or screenshot or is_url or Path(source).exists()):
+    if not (webcam or screenshot or is_url or any(c in source for c in "*?[]") or Path(source).exists()):
         raise FileNotFoundError(f"Source path '{source}' does not exist. Please check your path.")
 
     save_img = not nosave and not source.endswith(".txt")  # save inference images
