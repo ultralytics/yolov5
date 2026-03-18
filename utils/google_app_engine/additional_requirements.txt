@@ -1,6 +1,6 @@
 # add these requirements in your app on top of the existing ones
 pip==26.0
-Flask==2.3.2
+Flask==3.1.3
 gunicorn==23.0.0
 werkzeug>=3.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
 zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
