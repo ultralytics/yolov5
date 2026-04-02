@@ -36,7 +36,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push arm64 image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         continue-on-error: true
         with:
           context: .
@@ -46,7 +46,7 @@ jobs:
           tags: ultralytics/yolov5:latest-arm64
 
       - name: Build and push CPU image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         continue-on-error: true
         with:
           context: .
@@ -55,7 +55,7 @@ jobs:
           tags: ultralytics/yolov5:latest-cpu
 
       - name: Build and push GPU image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         continue-on-error: true
         with:
           context: .
