@@ -77,6 +77,11 @@ jobs:
           fi
           uv pip install --system -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
         shell: bash # for Windows compatibility
+      - name: Update macOS security policy
+        if: runner.os == 'macOS'
+        run: |  # fix occasional torch multiprocessing failure
+          xattr -dr com.apple.quarantine $(python -c "import torch; import os; print(os.path.dirname(torch.__file__))")
+          chmod +x $(python -c "import torch; print(torch.__file__.replace('__init__.py', 'bin/torch_shm_manager'))")
       - name: Check environment
         run: |
           yolo checks
