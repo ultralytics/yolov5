@@ -35,7 +35,7 @@ from utils.armadillo_general import (
     increment_path,
     make_divisible,
     non_max_suppression,
-    scale_coords, 
+    scale_boxes, 
     xywh2xyxy,
     xyxy2xywh,
     yaml_load,
@@ -902,7 +902,7 @@ class AutoShape(nn.Module):
                     max_det=self.max_det,
                 )  # NMS
                 for i in range(n):
-                    scale_coords(shape1, y[i][:, :4], shape0[i])
+                    scale_boxes(shape1, y[i][:, :4], shape0[i])
 
             return Detections(ims, y, files, dt, self.names, x.shape)
 
