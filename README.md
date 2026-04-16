@@ -224,7 +224,7 @@ Our key integrations with leading AI platforms extend the functionality of Ultra
 
 ## ⭐ Ultralytics Platform
 
-Experience seamless AI development with [Ultralytics Platform](https://platform.ultralytics.com) ⭐, the ultimate platform for building, training, and deploying [computer vision](https://www.ultralytics.com/glossary/computer-vision-cv) models. Visualize datasets, train [YOLOv5](https://docs.ultralytics.com/models/yolov5/) and [YOLOv8](https://docs.ultralytics.com/models/yolov8/) 🚀 models, and deploy them to real-world applications without writing any code. Transform images into actionable insights using our cutting-edge tools and user-friendly [Ultralytics App](https://www.ultralytics.com/). Start your journey for **Free** today!
+Experience seamless AI development with [Ultralytics Platform](https://platform.ultralytics.com) ⭐, the ultimate platform for building, training, and deploying [computer vision](https://www.ultralytics.com/glossary/computer-vision-cv) models. Visualize datasets, train [YOLOv5](https://docs.ultralytics.com/models/yolov5/) and [YOLOv8](https://docs.ultralytics.com/models/yolov8/) 🚀 models, and deploy them to real-world applications without writing any code. Transform images into actionable insights using our cutting-edge tools and user-friendly [Ultralytics App](https://www.ultralytics.com/app-install). Start your journey for **Free** today!
 
 <a align="center" href="https://platform.ultralytics.com" target="_blank">
 <img width="100%" src="https://github.com/ultralytics/assets/raw/main/im/ultralytics-hub.png" alt="Ultralytics Platform Platform Screenshot"></a>
