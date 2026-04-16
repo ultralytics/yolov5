@@ -3,7 +3,7 @@
 # Resume all interrupted trainings in yolov5/ dir including DDP trainings
 # Usage: $ python utils/aws/resume.py
 
-import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -34,10 +34,20 @@ for last in path.rglob("*/**/last.pt"):
 
     if ddp:  # multi-GPU
         port += 1
-        cmd = f"python -m torch.distributed.run --nproc_per_node {nd} --master_port {port} train.py --resume {last}"
+        cmd = [
+            "python",
+            "-m",
+            "torch.distributed.run",
+            "--nproc_per_node",
+            str(nd),
+            "--master_port",
+            str(port),
+            "train.py",
+            "--resume",
+            str(last),
+        ]
     else:  # single-GPU
-        cmd = f"python train.py --resume {last}"
+        cmd = ["python", "train.py", "--resume", str(last)]
 
-    cmd += " > /dev/null 2>&1 &"  # redirect output to dev/null and run in daemon thread
-    print(cmd)
-    os.system(cmd)
+    print(" ".join(cmd))
+    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # run in daemon thread
