@@ -77,6 +77,11 @@ jobs:
           fi
           uv pip install --system -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
         shell: bash # for Windows compatibility
+      - name: Update macOS security policy
+        if: runner.os == 'macOS'
+        run: |  # fix occasional torch multiprocessing failure
+          xattr -dr com.apple.quarantine $(python -c "import torch; import os; print(os.path.dirname(torch.__file__))")
+          chmod +x $(python -c "import torch; print(torch.__file__.replace('__init__.py', 'bin/torch_shm_manager'))")
       - name: Check environment
         run: |
           yolo checks
@@ -144,7 +149,7 @@ jobs:
     steps:
       - name: Check for failure and notify
         if: (needs.Benchmarks.result == 'failure' || needs.Tests.result == 'failure' || needs.Benchmarks.result == 'cancelled' || needs.Tests.result == 'cancelled') && github.repository == 'ultralytics/yolov5' && (github.event_name == 'schedule' || github.event_name == 'push') && github.run_attempt == '1'
-        uses: slackapi/slack-github-action@v3.0.1
+        uses: slackapi/slack-github-action@v3.0.2
         with:
           webhook-type: incoming-webhook
           webhook: ${{ secrets.SLACK_WEBHOOK_URL_YOLO }}
