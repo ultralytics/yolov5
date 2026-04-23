@@ -6,7 +6,7 @@
 name: Merge main into PRs
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 on:
