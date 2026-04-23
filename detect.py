@@ -33,6 +33,7 @@ import csv
 import os
 import platform
 import sys
+from glob import glob, has_magic
 from pathlib import Path
 
 import torch
@@ -153,12 +154,13 @@ def run(
     webcam = source.isnumeric() or source.endswith(".streams") or (is_url and not is_file)
     screenshot = source.lower().startswith("screen")
 
-    # 2. Perform the validation
-    if not (webcam or screenshot or is_url or any(c in source for c in "*?[]") or Path(source).exists()):
-        raise FileNotFoundError(f"Source path '{source}' does not exist. Please check your path.")
+    if not (webcam or screenshot or is_url) and not (
+        Path(source).exists() or (has_magic(source) and glob(source, recursive=True))
+    ):
+        raise FileNotFoundError(f"Source path '{source}' does not exist")
 
     save_img = not nosave and not source.endswith(".txt")  # save inference images
-            
+
     if is_url and is_file:
         source = check_file(source)  # download
 

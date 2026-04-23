@@ -451,12 +451,6 @@ def train(hyp, opt, device, callbacks):
         scheduler.step()
 
         if RANK in {-1, 0}:
-             # 1. Log completion to terminal
-            LOGGER.info(f"{colorstr('bold', f'Epoch {epoch + 1}/{epochs}')} completed.")
-            
-            # 2. Run the end-of-epoch callbacks
-            callbacks.run("on_train_epoch_end", epoch=epoch)
-            
             # mAP
             callbacks.run("on_train_epoch_end", epoch=epoch)
             ema.update_attr(model, include=["yaml", "nc", "hyp", "names", "stride", "class_weights"])
