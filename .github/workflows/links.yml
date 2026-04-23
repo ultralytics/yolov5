@@ -11,7 +11,7 @@
 name: Check Broken links
 
 permissions:
-  contents: read
+  contents: read # Required for checkout and authenticated link checks only.
 
 on:
   workflow_dispatch:

@@ -5,7 +5,7 @@
 name: Publish Docker Images
 
 permissions:
-  contents: read
+  contents: read # Required for checkout only; Docker Hub push uses repository secrets.
 
 on:
   push:
