@@ -115,7 +115,7 @@ logging = [
 extra = [
     "ipython", # interactive notebook
     "albumentations>=1.0.3", # training augmentations
-    "pycocotools>=2.0.6", # COCO mAP
+    "pycocotools>=2.0.11", # COCO mAP
 ]
 
 [project.urls]
