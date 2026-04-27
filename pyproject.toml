@@ -63,7 +63,7 @@ classifiers = [
 
 # Required dependencies ------------------------------------------------------------------------------------------------
 dependencies = [
-    "matplotlib>=3.3.0",
+    "matplotlib>=3.9.4",
     "numpy>=1.22.2",
     "opencv-python>=4.6.0",
     "pillow>=7.1.2",
