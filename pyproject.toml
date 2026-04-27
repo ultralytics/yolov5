@@ -92,7 +92,7 @@ dev = [
     "coverage[toml]",
     "mkdocs-material",
     "mkdocstrings[python]",
-    "mkdocs-ultralytics-plugin>=0.0.34", # for meta descriptions and images, dates and authors
+    "mkdocs-ultralytics-plugin>=0.2.4", # for meta descriptions and images, dates and authors
 ]
 export = [
     "onnx>=1.12.0", # ONNX export
