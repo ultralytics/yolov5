@@ -25,7 +25,7 @@ ultralytics>=8.2.64  # https://ultralytics.com
 
 # Plotting --------------------------------------------------------------------
 pandas>=1.1.4
-seaborn>=0.11.0
+seaborn>=0.13.2
 
 # Export ----------------------------------------------------------------------
 # coremltools>=6.0  # CoreML export

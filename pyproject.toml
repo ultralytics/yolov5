@@ -77,7 +77,7 @@ dependencies = [
     "py-cpuinfo", # display CPU info
     "thop>=0.1.1", # FLOPs computation
     "pandas>=1.1.4",
-    "seaborn>=0.11.0", # plotting
+    "seaborn>=0.13.2", # plotting
     "packaging", # general utilities
     "ultralytics>=8.4.37"
 ]
