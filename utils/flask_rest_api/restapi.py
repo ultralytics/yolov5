@@ -4,16 +4,16 @@
 import argparse
 import io
 
-import torch
 from flask import Flask, request
 from PIL import Image
-
-app = Flask(__name__)
-models = {}
 
 DETECTION_URL = "/v1/object-detection/<model>"
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp"}
 MAX_IMAGE_SIZE = 16 * 1024 * 1024  # 16 MB
+
+app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_SIZE
+models = {}
 
 
 @app.route(DETECTION_URL, methods=["POST"])
@@ -38,9 +38,12 @@ def predict(model):
         if len(im_bytes) > MAX_IMAGE_SIZE:
             return {"error": "File too large. Maximum size is 16 MB."}, 413
 
+        try:
+            with Image.open(io.BytesIO(im_bytes)) as im:
+                im.verify()
+        except Exception:
+            return {"error": "Invalid image file"}, 400
         im = Image.open(io.BytesIO(im_bytes))
-        im.verify()  # Verify it is a valid image (raises exception if not)
-        im = Image.open(io.BytesIO(im_bytes))  # Re-open after verify (verify closes the stream)
 
         if model in models:
             results = models[model](im, size=640)  # reduce size=320 for faster inference
@@ -48,6 +51,8 @@ def predict(model):
 
 
 if __name__ == "__main__":
+    import torch
+
     parser = argparse.ArgumentParser(description="Flask API exposing YOLOv5 model")
     parser.add_argument("--port", default=5000, type=int, help="port number")
     parser.add_argument("--model", nargs="+", default=["yolov5s"], help="model(s) to run, i.e. --model yolov5n yolov5s")
