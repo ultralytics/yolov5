@@ -12,6 +12,8 @@ app = Flask(__name__)
 models = {}
 
 DETECTION_URL = "/v1/object-detection/<model>"
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp"}
+MAX_IMAGE_SIZE = 16 * 1024 * 1024  # 16 MB
 
 
 @app.route(DETECTION_URL, methods=["POST"])
@@ -23,14 +25,22 @@ def predict(model):
         return
 
     if request.files.get("image"):
-        # Method 1
-        # with request.files["image"] as f:
-        #     im = Image.open(io.BytesIO(f.read()))
-
-        # Method 2
         im_file = request.files["image"]
-        im_bytes = im_file.read()
+
+        # Validate file extension against allowlist
+        filename = im_file.filename or ""
+        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if ext not in ALLOWED_EXTENSIONS:
+            return {"error": "Invalid file type. Allowed types: " + ", ".join(ALLOWED_EXTENSIONS)}, 400
+
+        # Enforce upload size limit
+        im_bytes = im_file.read(MAX_IMAGE_SIZE + 1)
+        if len(im_bytes) > MAX_IMAGE_SIZE:
+            return {"error": "File too large. Maximum size is 16 MB."}, 413
+
         im = Image.open(io.BytesIO(im_bytes))
+        im.verify()  # Verify it is a valid image (raises exception if not)
+        im = Image.open(io.BytesIO(im_bytes))  # Re-open after verify (verify closes the stream)
 
         if model in models:
             results = models[model](im, size=640)  # reduce size=320 for faster inference
@@ -46,4 +56,4 @@ if __name__ == "__main__":
     for m in opt.model:
         models[m] = torch.hub.load("ultralytics/yolov5", m, force_reload=True, skip_validation=True)
 
-    app.run(host="0.0.0.0", port=opt.port)  # debug=True causes Restarting with stat
+    app.run(host="127.0.0.1", port=opt.port)  # debug=True causes Restarting with stat
