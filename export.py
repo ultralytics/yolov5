@@ -893,7 +893,8 @@ def export_tflite(
         converter.target_spec.supported_ops.append(tf.lite.OpsSet.SELECT_TF_OPS)
 
     tflite_model = converter.convert()
-    open(f, "wb").write(tflite_model)
+    with open(f, "wb") as fp:
+        fp.write(tflite_model)
     return f, None
 
 
@@ -1169,7 +1170,6 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
     print(spec.description)
 
     # Model from spec
-    weights_dir = None
     weights_dir = None if mlmodel else str(f / "Data/com.apple.CoreML/weights")
     model = ct.models.MLModel(spec, weights_dir=weights_dir)
 
@@ -1272,7 +1272,7 @@ def run(
     cache="",  # TensorRT: timing cache path
     simplify=False,  # ONNX: simplify model
     mlmodel=False,  # CoreML: Export in *.mlmodel format
-    opset=12,  # ONNX: opset version
+    opset=17,  # ONNX: opset version
     verbose=False,  # TensorRT: verbose log
     workspace=4,  # TensorRT: workspace size (GB)
     nms=False,  # TF: add NMS to model

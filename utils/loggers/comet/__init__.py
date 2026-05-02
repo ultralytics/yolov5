@@ -198,8 +198,6 @@ class CometLogger:
             )
             return self._get_experiment("offline", experiment_id)
 
-        return
-
     def log_metrics(self, log_dict, **kwargs):
         """Logs metrics to the current experiment, accepting a dictionary of metric names and values."""
         self.experiment.log_metrics(log_dict, **kwargs)
@@ -385,7 +383,7 @@ class CometLogger:
         elif isinstance(metadata_names, list):
             data_dict["names"] = {int(k): v for k, v in zip(range(len(metadata_names)), metadata_names)}
         else:
-            raise "Invalid 'names' field in dataset yaml file. Please use a list or dictionary"
+            raise ValueError("Invalid 'names' field in dataset yaml file. Please use a list or dictionary")
 
         return self.update_data_paths(data_dict)
 
