@@ -66,8 +66,8 @@ def test_rejects_upload_with_disallowed_extension(client):
 
 def test_rejects_oversized_upload(client):
     response = post_image(client, io.BytesIO(b"a" * (MAX_IMAGE_SIZE + 1)), "large.jpg")
-    assert response.status_code in {413, 400}
-    assert b"File too large" in response.data or b"Request Entity Too Large" in response.data
+    assert response.status_code == 413
+    assert response.json == {"error": "File too large. Maximum size is 16 MB."}
 
 
 def test_accepts_valid_image_upload(client):

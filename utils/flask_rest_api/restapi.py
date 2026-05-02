@@ -6,6 +6,7 @@ import io
 
 from flask import Flask, request
 from PIL import Image
+from werkzeug.exceptions import RequestEntityTooLarge
 
 DETECTION_URL = "/v1/object-detection/<model>"
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp"}
@@ -14,6 +15,12 @@ MAX_IMAGE_SIZE = 16 * 1024 * 1024  # 16 MB
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_SIZE
 models = {}
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_upload(_):
+    """Return a JSON error for uploads rejected by Flask before request parsing."""
+    return {"error": "File too large. Maximum size is 16 MB."}, 413
 
 
 @app.route(DETECTION_URL, methods=["POST"])
@@ -31,7 +38,7 @@ def predict(model):
         filename = im_file.filename or ""
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
         if ext not in ALLOWED_EXTENSIONS:
-            return {"error": "Invalid file type. Allowed types: " + ", ".join(ALLOWED_EXTENSIONS)}, 400
+            return {"error": "Invalid file type. Allowed types: " + ", ".join(sorted(ALLOWED_EXTENSIONS))}, 400
 
         # Enforce upload size limit
         im_bytes = im_file.read(MAX_IMAGE_SIZE + 1)
