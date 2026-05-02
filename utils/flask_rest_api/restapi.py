@@ -4,14 +4,23 @@
 import argparse
 import io
 
-import torch
 from flask import Flask, request
 from PIL import Image
-
-app = Flask(__name__)
-models = {}
+from werkzeug.exceptions import RequestEntityTooLarge
 
 DETECTION_URL = "/v1/object-detection/<model>"
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp"}
+MAX_IMAGE_SIZE = 16 * 1024 * 1024  # 16 MB
+
+app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_SIZE
+models = {}
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_upload(_):
+    """Return a JSON error for uploads rejected by Flask before request parsing."""
+    return {"error": "File too large. Maximum size is 16 MB."}, 413
 
 
 @app.route(DETECTION_URL, methods=["POST"])
@@ -23,13 +32,24 @@ def predict(model):
         return
 
     if request.files.get("image"):
-        # Method 1
-        # with request.files["image"] as f:
-        #     im = Image.open(io.BytesIO(f.read()))
-
-        # Method 2
         im_file = request.files["image"]
-        im_bytes = im_file.read()
+
+        # Validate file extension against allowlist
+        filename = im_file.filename or ""
+        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if ext not in ALLOWED_EXTENSIONS:
+            return {"error": "Invalid file type. Allowed types: " + ", ".join(sorted(ALLOWED_EXTENSIONS))}, 400
+
+        # Enforce upload size limit
+        im_bytes = im_file.read(MAX_IMAGE_SIZE + 1)
+        if len(im_bytes) > MAX_IMAGE_SIZE:
+            return {"error": "File too large. Maximum size is 16 MB."}, 413
+
+        try:
+            with Image.open(io.BytesIO(im_bytes)) as im:
+                im.verify()
+        except Exception:
+            return {"error": "Invalid image file"}, 400
         im = Image.open(io.BytesIO(im_bytes))
 
         if model in models:
@@ -38,6 +58,8 @@ def predict(model):
 
 
 if __name__ == "__main__":
+    import torch
+
     parser = argparse.ArgumentParser(description="Flask API exposing YOLOv5 model")
     parser.add_argument("--port", default=5000, type=int, help="port number")
     parser.add_argument("--model", nargs="+", default=["yolov5s"], help="model(s) to run, i.e. --model yolov5n yolov5s")
@@ -46,4 +68,4 @@ if __name__ == "__main__":
     for m in opt.model:
         models[m] = torch.hub.load("ultralytics/yolov5", m, force_reload=True, skip_validation=True)
 
-    app.run(host="0.0.0.0", port=opt.port)  # debug=True causes Restarting with stat
+    app.run(host="127.0.0.1", port=opt.port)  # debug=True causes Restarting with stat
