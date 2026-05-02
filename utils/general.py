@@ -168,7 +168,7 @@ set_logging(LOGGING_NAME)  # run before defining LOGGER
 LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
 if platform.system() == "Windows":
     for fn in LOGGER.info, LOGGER.warning:
-        setattr(LOGGER, fn.__name__, lambda x: fn(emojis(x)))  # emoji safe logging
+        setattr(LOGGER, fn.__name__, lambda x, fn=fn: fn(emojis(x)))  # emoji safe logging
 
 
 def user_config_dir(dir="Ultralytics", env_var="YOLOV5_CONFIG_DIR"):

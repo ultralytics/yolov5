@@ -261,7 +261,7 @@ def run(
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     c = int(cls)  # integer class
-                    label = names[c] if hide_conf else f"{names[c]}"
+                    label = names[c]
                     confidence = float(conf)
                     confidence_str = f"{confidence:.2f}"
 

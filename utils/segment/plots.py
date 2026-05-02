@@ -142,8 +142,6 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
                     # last
                     ax[i].scatter(x[-1], y[-1], color="r", label="last", marker="*", linewidth=3)
                     ax[i].set_title(s[j] + f"\n{round(y[-1], 5)}")
-                # if j in [8, 9, 10]:  # share train and val loss y axes
-                #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
         except Exception as e:
             print(f"Warning: Plotting error for {f}: {e}")
     ax[1].legend()
