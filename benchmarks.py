@@ -134,12 +134,10 @@ def run(
 
     # Print results
     LOGGER.info("\n")
-    parse_opt()
     notebook_init()  # print system info
-    c = ["Format", "Size (MB)", "mAP50-95", "Inference time (ms)"] if map else ["Format", "Export", "", ""]
-    py = pd.DataFrame(y, columns=c)
+    py = pd.DataFrame(y, columns=["Format", "Size (MB)", "mAP50-95", "Inference time (ms)"])
     LOGGER.info(f"\nBenchmarks complete ({time.time() - t:.2f}s)")
-    LOGGER.info(str(py if map else py.iloc[:, :2]))
+    LOGGER.info(str(py))
     if hard_fail and isinstance(hard_fail, str):
         metrics = py["mAP50-95"].array  # values to compare to floor
         floor = eval(hard_fail)  # minimum metric floor to pass, i.e. = 0.29 mAP for YOLOv5n

@@ -714,6 +714,7 @@ class DetectMultiBackend(nn.Module):
                 for name in self.output_names:
                     i = self.model.get_binding_index(name)
                     self.bindings[name].data.resize_(tuple(self.context.get_binding_shape(i)))
+                    self.binding_addrs[name] = int(self.bindings[name].data.data_ptr())  # refresh after resize_
             s = self.bindings["images"].shape
             assert im.shape == s, f"input size {im.shape} {'>' if self.dynamic else 'not equal to'} max model size {s}"
             self.binding_addrs["images"] = int(im.data_ptr())
