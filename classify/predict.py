@@ -121,7 +121,7 @@ def run(
     seen, windows, dt = 0, [], (Profile(device=device), Profile(device=device), Profile(device=device))
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
-            im = torch.from_numpy(im).to(model.device)
+            im = torch.Tensor(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
             if len(im.shape) == 3:
                 im = im[None]  # expand for batch dim

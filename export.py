@@ -1272,7 +1272,7 @@ def run(
     cache="",  # TensorRT: timing cache path
     simplify=False,  # ONNX: simplify model
     mlmodel=False,  # CoreML: Export in *.mlmodel format
-    opset=17,  # ONNX: opset version
+    opset=12,  # ONNX: opset version
     verbose=False,  # TensorRT: verbose log
     workspace=4,  # TensorRT: workspace size (GB)
     nms=False,  # TF: add NMS to model
