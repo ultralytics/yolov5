@@ -72,7 +72,7 @@ dependencies = [
     "scipy>=1.4.1",
     "torch>=1.8.0",
     "torchvision>=0.9.0",
-    "tqdm>=4.64.0", # progress bars
+    "tqdm>=4.67.3", # progress bars
     "psutil", # system utilization
     "py-cpuinfo", # display CPU info
     "thop>=0.1.1", # FLOPs computation
