@@ -26,7 +26,7 @@ def gsutil_getsize(url=""):
 
     Returns 0 if the command fails or output is empty.
     """
-    output = subprocess.check_output(["gsutil", "du", url], shell=True, encoding="utf-8")
+    output = subprocess.check_output(["gsutil", "du", url], encoding="utf-8")
     return int(output.split()[0]) if output else 0
 
 
