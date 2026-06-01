@@ -100,10 +100,10 @@ download: |
 
       # Make dirs
       labels = Path(path / 'labels' / 'train')
-      if labels.is_dir():
-          shutil.rmtree(labels)
-      elif labels.exists() or labels.is_symlink():
+      if labels.is_symlink() or labels.is_file():
           labels.unlink()
+      else:
+          shutil.rmtree(labels, ignore_errors=True)
       labels.mkdir(parents=True, exist_ok=True)
 
       # xView classes 11-94 to 0-59
