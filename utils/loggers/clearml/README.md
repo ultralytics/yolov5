@@ -6,7 +6,7 @@
 
 ## ℹ️ About ClearML
 
-[ClearML](https://clear.ml/) is an [open-source MLOps platform](https://github.com/clearml/clearml) designed to streamline your machine learning workflow and maximize productivity. Integrating ClearML with [Ultralytics YOLO](https://docs.ultralytics.com/models/yolov5/) unlocks a robust suite of tools for experiment tracking, data management, and scalable deployment:
+[ClearML](https://www.clear.ml/) is an [open-source MLOps platform](https://github.com/clearml/clearml) designed to streamline your machine learning workflow and maximize productivity. Integrating ClearML with [Ultralytics YOLO](https://docs.ultralytics.com/models/yolov5/) unlocks a robust suite of tools for experiment tracking, data management, and scalable deployment:
 
 - **Experiment Management:** Effortlessly track every [YOLO training run](https://docs.ultralytics.com/modes/train/), including parameters, metrics, and outputs. Explore the [Ultralytics ClearML integration guide](https://docs.ultralytics.com/integrations/clearml/) for step-by-step instructions.
 - **Data Versioning:** Manage and access your custom training data with ClearML's Data Versioning Tool, similar to [DVC integration](https://docs.ultralytics.com/integrations/dvc/).
@@ -23,7 +23,7 @@ You can use ClearML's experiment manager alone or combine these features into a 
 ClearML requires a server to track experiments and data. You have two main options:
 
 1. **ClearML Hosted Service:** Sign up for a free account at [app.clear.ml](https://app.clear.ml/).
-2. **Self-Hosted Server:** Deploy your own ClearML server using the [official setup guide](https://clear.ml/docs/latest/docs/deploying_clearml/clearml_server). The server is open-source, ensuring data privacy and control.
+2. **Self-Hosted Server:** Deploy your own ClearML server using the [official setup guide](https://docs.clear.ml/docs/latest/docs/deploying_clearml/clearml_server). The server is open-source, ensuring data privacy and control.
 
 To get started:
 
@@ -176,7 +176,7 @@ ClearML Agent enables you to execute experiments on remote machines, including o
 Learn more about ClearML Agent:
 
 - [YouTube Introduction to ClearML Agent](https://www.youtube.com/watch?v=MX3BrXnaULs)
-- [Official ClearML Agent Documentation](https://clear.ml/docs/latest/docs/clearml_agent)
+- [Official ClearML Agent Documentation](https://docs.clear.ml/docs/latest/docs/clearml_agent)
 
 Turn any machine into a ClearML agent by running:
 
