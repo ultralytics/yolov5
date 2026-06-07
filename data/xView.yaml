@@ -79,7 +79,7 @@ names:
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import json
-  import os
+  import shutil
   from pathlib import Path
 
   import numpy as np
@@ -99,7 +99,10 @@ download: |
 
       # Make dirs
       labels = Path(path / 'labels' / 'train')
-      os.system(f'rm -rf {labels}')
+      if labels.is_symlink() or labels.is_file():
+          labels.unlink()
+      else:
+          shutil.rmtree(labels, ignore_errors=True)
       labels.mkdir(parents=True, exist_ok=True)
 
       # xView classes 11-94 to 0-59
