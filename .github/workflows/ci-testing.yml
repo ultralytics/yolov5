@@ -36,6 +36,35 @@ jobs:
           uv pip install --system -r requirements.txt coremltools openvino-dev "tensorflow<=2.19.0" "keras>=3.5.0,<=3.12.0" --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
           yolo checks
           uv pip list
+      - name: Cache CI assets
+        uses: actions/cache@v5
+        with:
+          path: |
+            ../datasets
+            yolov5*.pt
+          key: yolov5-ci-assets-${{ runner.os }}-${{ matrix.model }}-${{ hashFiles('.github/workflows/ci-testing.yml', 'data/coco128*.yaml') }}
+          restore-keys: |
+            yolov5-ci-assets-${{ runner.os }}-${{ matrix.model }}-
+      - name: Pre-cache CI assets
+        shell: bash # for Windows compatibility
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          from utils.downloads import attempt_download
+          from utils.general import DATASETS_DIR, download
+
+          assets_url = "https://github.com/ultralytics/assets/releases/download/v0.0.0"
+          for name in "coco128", "coco128-seg", "mnist160":
+              path = DATASETS_DIR / name
+              if not path.exists():
+                  download(f"{assets_url}/{name}.zip", dir=DATASETS_DIR, curl=True)
+              assert path.exists(), f"Dataset pre-cache failed: {path}"
+
+          for name in "${{ matrix.model }}.pt", "${{ matrix.model }}-seg.pt", "${{ matrix.model }}-cls.pt":
+              path = Path(attempt_download(name))
+              assert path.exists(), f"Weight pre-cache failed: {path}"
+          PY
       - name: Benchmark DetectionModel
         run: |
           python benchmarks.py --data coco128.yaml --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
@@ -77,6 +106,35 @@ jobs:
           fi
           uv pip install --system -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
         shell: bash # for Windows compatibility
+      - name: Cache CI assets
+        uses: actions/cache@v5
+        with:
+          path: |
+            ../datasets
+            yolov5*.pt
+          key: yolov5-ci-assets-${{ runner.os }}-${{ matrix.model }}-${{ hashFiles('.github/workflows/ci-testing.yml', 'data/coco128*.yaml') }}
+          restore-keys: |
+            yolov5-ci-assets-${{ runner.os }}-${{ matrix.model }}-
+      - name: Pre-cache CI assets
+        shell: bash # for Windows compatibility
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          from utils.downloads import attempt_download
+          from utils.general import DATASETS_DIR, download
+
+          assets_url = "https://github.com/ultralytics/assets/releases/download/v0.0.0"
+          for name in "coco128", "coco128-seg", "mnist160":
+              path = DATASETS_DIR / name
+              if not path.exists():
+                  download(f"{assets_url}/{name}.zip", dir=DATASETS_DIR, curl=True)
+              assert path.exists(), f"Dataset pre-cache failed: {path}"
+
+          for name in "${{ matrix.model }}.pt", "${{ matrix.model }}-seg.pt", "${{ matrix.model }}-cls.pt":
+              path = Path(attempt_download(name))
+              assert path.exists(), f"Weight pre-cache failed: {path}"
+          PY
       - name: Update macOS security policy
         if: runner.os == 'macOS'
         run: |  # fix occasional torch multiprocessing failure
