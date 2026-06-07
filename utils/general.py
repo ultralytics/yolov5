@@ -564,12 +564,7 @@ def check_dataset(data, autodownload=True):
                 raise Exception("Dataset not found ❌")
             t = time.time()
             if s.startswith("http") and s.endswith(".zip"):  # URL
-                f = Path(s).name  # filename
-                LOGGER.info(f"Downloading {s} to {f}...")
-                torch.hub.download_url_to_file(s, f)
-                Path(DATASETS_DIR).mkdir(parents=True, exist_ok=True)  # create root
-                unzip_file(f, path=DATASETS_DIR)  # unzip
-                Path(f).unlink()  # remove zip
+                download(s, dir=DATASETS_DIR, curl=True)
                 r = None  # success
             elif s.startswith("bash "):  # bash script
                 LOGGER.info(f"Running {s} ...")
