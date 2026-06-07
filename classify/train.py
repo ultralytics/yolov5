@@ -110,7 +110,7 @@ def train(opt, device):
                 subprocess.run(["bash", str(ROOT / "data/scripts/get_imagenet.sh")], shell=True, check=True)
             else:
                 url = f"https://github.com/ultralytics/assets/releases/download/v0.0.0/{data}.zip"
-                download(url, dir=data_dir.parent)
+                download(url, dir=data_dir.parent, curl=True)
             s = f"Dataset download success ✅ ({time.time() - t:.1f}s), saved to {colorstr('bold', data_dir)}\n"
             LOGGER.info(s)
 
