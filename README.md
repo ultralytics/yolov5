@@ -188,7 +188,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 - **[Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers/)**: Adapt pretrained models to new tasks efficiently using [transfer learning](https://www.ultralytics.com/glossary/transfer-learning).
 - **[Architecture Summary](https://docs.ultralytics.com/yolov5/tutorials/architecture_description/)** 🌟 **NEW**: Understand the YOLOv5 model architecture.
 - **[Ultralytics Platform Training](https://platform.ultralytics.com)** 🚀 **RECOMMENDED**: Train and deploy YOLO models using Ultralytics Platform.
-- **[ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration/)**: Integrate with [ClearML](https://clear.ml/) for experiment tracking.
+- **[ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration/)**: Integrate with [ClearML](https://www.clear.ml/) for experiment tracking.
 - **[Neural Magic DeepSparse Integration](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization/)**: Accelerate inference with DeepSparse.
 - **[Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration/)** 🌟 **NEW**: Log experiments using [Comet ML](https://www.comet.com/site/).
 
