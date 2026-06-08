@@ -1,6 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """
-Train a YOLOv5 segment model on a segment dataset Models and datasets download automatically from the latest YOLOv5
+Train a YOLOv5 segment model on a segment dataset. Models and datasets download automatically from the latest YOLOv5
 release.
 
 Usage - Single-GPU training:
@@ -583,7 +583,7 @@ def parse_opt(known=False):
     parser.add_argument("--local_rank", type=int, default=-1, help="Automatic DDP Multi-GPU argument, do not modify")
 
     # Instance Segmentation Args
-    parser.add_argument("--mask-ratio", type=int, default=4, help="Downsample the truth masks to saving memory")
+    parser.add_argument("--mask-ratio", type=int, default=4, help="Downsample the truth masks to save memory")
     parser.add_argument("--no-overlap", action="store_true", help="Overlap masks train faster at slightly less mAP")
 
     return parser.parse_known_args()[0] if known else parser.parse_args()

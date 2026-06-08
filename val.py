@@ -143,15 +143,14 @@ def process_batch(detections, labels, iouv):
     """Return a correct prediction matrix given detections and labels at various IoU thresholds.
 
     Args:
-        detections (np.ndarray): Array of shape (N, 6) where each row corresponds to a detection with format [x1, y1,
+        detections (torch.Tensor): Tensor of shape (N, 6) where each row corresponds to a detection with format [x1, y1,
             x2, y2, conf, class].
-        labels (np.ndarray): Array of shape (M, 5) where each row corresponds to a ground truth label with format
+        labels (torch.Tensor): Tensor of shape (M, 5) where each row corresponds to a ground truth label with format
             [class, x1, y1, x2, y2].
-        iouv (np.ndarray): Array of IoU thresholds to evaluate at.
+        iouv (torch.Tensor): Tensor of IoU thresholds to evaluate at.
 
     Returns:
-        correct (np.ndarray): A binary array of shape (N, len(iouv)) indicating whether each detection is a true
-            positive for each IoU threshold. There are 10 IoU levels used in the evaluation.
+        correct (torch.Tensor): A boolean tensor of shape (N, len(iouv)) on iouv.device.
 
     Examples:
         ```python

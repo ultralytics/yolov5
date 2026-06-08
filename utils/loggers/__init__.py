@@ -347,13 +347,16 @@ class Loggers:
 
 
 class GenericLogger:
-    """YOLOv5 General purpose logger for non-task specific logging Usage: from utils.loggers import GenericLogger;
-    logger = GenericLogger(...).
+    """General-purpose YOLOv5 logger for non-task-specific logging.
 
     Args:
         opt: Run arguments
         console_logger: Console logger
         include: loggers to include
+
+    Examples:
+        >>> from utils.loggers import GenericLogger
+        >>> logger = GenericLogger(...)
     """
 
     def __init__(self, opt, console_logger, include=("tb", "wandb", "clearml")):

@@ -6,7 +6,7 @@
 
 Welcome to the guide for integrating [Ultralytics YOLO](https://github.com/ultralytics/yolov5) with [Comet](https://www.comet.com/site/)! Comet offers robust experiment tracking, model management, and visualization tools to enhance your [machine learning](https://www.ultralytics.com/glossary/machine-learning-ml) workflow. This guide explains how to leverage Comet for monitoring training, logging results, managing datasets, and optimizing hyperparameters for your YOLO models.
 
-[![Ultralytics Actions](https://github.com/ultralytics/velocity/actions/workflows/format.yml/badge.svg)](https://github.com/ultralytics/velocity/actions/workflows/format.yml)
+[![Ultralytics Actions](https://github.com/ultralytics/yolov5/actions/workflows/format.yml/badge.svg)](https://github.com/ultralytics/yolov5/actions/workflows/format.yml)
 [![Ultralytics Discord](https://img.shields.io/discord/1089800235347353640?logo=discord&logoColor=white&label=Discord&color=blue)](https://discord.com/invite/ultralytics)
 [![Ultralytics Forums](https://img.shields.io/discourse/users?server=https%3A%2F%2Fcommunity.ultralytics.com&logo=discourse&label=Forums&color=blue)](https://community.ultralytics.com/)
 [![Ultralytics Reddit](https://img.shields.io/reddit/subreddit-subscribers/ultralytics?style=flat&logo=reddit&logoColor=white&label=Reddit&color=blue)](https://reddit.com/r/ultralytics)
@@ -108,7 +108,7 @@ export COMET_LOG_CONFUSION_MATRIX=false                     # Disable confusion 
 export COMET_MAX_IMAGE_UPLOADS=NUMBER                       # Max prediction images to log. Default: 100
 export COMET_LOG_PER_CLASS_METRICS=true                     # Log metrics per class. Default: false
 export COMET_DEFAULT_CHECKPOINT_FILENAME=checkpoint_file.pt # Checkpoint for resuming. Default: 'last.pt'
-export COMET_LOG_BATCH_LEVEL_METRICS=true                   # Log training metrics per batch. Default: false
+export COMET_LOG_BATCH_METRICS=true                        # Log training metrics per batch. Default: false
 export COMET_LOG_PREDICTIONS=true                           # Disable prediction logging if set to false. Default: true
 ```
 

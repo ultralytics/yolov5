@@ -17,7 +17,7 @@ def is_url(url, check=True):
         result = urllib.parse.urlparse(url)
         assert all([result.scheme, result.netloc])  # check if is url
         return (urllib.request.urlopen(url).getcode() == 200) if check else True  # check if exists online
-    except (AssertionError, urllib.request.HTTPError):
+    except (AssertionError, urllib.error.URLError):  # URLError covers HTTPError and offline/DNS failures
         return False
 
 

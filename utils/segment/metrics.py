@@ -7,7 +7,9 @@ from ..metrics import ap_per_class
 
 
 def fitness(x):
-    """Evaluates model fitness by a weighted sum of 8 metrics, `x`: [N,8] array, weights: [0.1, 0.9] for mAP and F1."""
+    """Return model fitness as a weighted sum of box and mask metrics [P, R, mAP@0.5, mAP@0.5:0.95] with weights
+    [0, 0, 0.1, 0.9] applied to each of the box and mask groups (x: [N, 8] array).
+    """
     w = [0.0, 0.0, 0.1, 0.9, 0.0, 0.0, 0.1, 0.9]
     return (x[:, :8] * w).sum(1)
 

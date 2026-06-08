@@ -9,7 +9,7 @@ TorchScript                 | `torchscript`                 | yolov5s.torchscrip
 ONNX                        | `onnx`                        | yolov5s.onnx
 OpenVINO                    | `openvino`                    | yolov5s_openvino_model/
 TensorRT                    | `engine`                      | yolov5s.engine
-CoreML                      | `coreml`                      | yolov5s.mlmodel
+CoreML                      | `coreml`                      | yolov5s.mlpackage
 TensorFlow SavedModel       | `saved_model`                 | yolov5s_saved_model/
 TensorFlow GraphDef         | `pb`                          | yolov5s.pb
 TensorFlow Lite             | `tflite`                      | yolov5s.tflite
@@ -18,8 +18,8 @@ TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
 PaddlePaddle                | `paddle`                      | yolov5s_paddle_model/
 
 Requirements:
-    $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU
-    $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow  # GPU
+    $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime openvino-dev tensorflow-cpu  # CPU
+    $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime-gpu openvino-dev tensorflow  # GPU
 
 Usage:
     $ python export.py --weights yolov5s.pt --include torchscript onnx openvino engine coreml tflite ...
@@ -30,7 +30,7 @@ Inference:
                                  yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                  yolov5s_openvino_model     # OpenVINO
                                  yolov5s.engine             # TensorRT
-                                 yolov5s.mlmodel            # CoreML (macOS-only)
+                                 yolov5s.mlpackage          # CoreML (macOS-only)
                                  yolov5s_saved_model        # TensorFlow SavedModel
                                  yolov5s.pb                 # TensorFlow GraphDef
                                  yolov5s.tflite             # TensorFlow Lite
@@ -146,7 +146,7 @@ def export_formats():
     Returns:
         pandas.DataFrame: A DataFrame containing supported export formats and their properties. The DataFrame includes
             columns for format name, CLI argument suffix, file extension or directory name, and boolean flags indicating
-            if the export format supports training and detection.
+            if the export format runs on CPU and GPU.
 
     Examples:
         ```python
@@ -159,8 +159,8 @@ def export_formats():
         - Format: The name of the model format (e.g., PyTorch, TorchScript, ONNX, etc.).
         - Include Argument: The argument to use with the export script to include this format.
         - File Suffix: File extension or directory name associated with the format.
-        - Supports Training: Whether the format supports training.
-        - Supports Detection: Whether the format supports detection.
+        - CPU: Whether the format runs on CPU.
+        - GPU: Whether the format runs on GPU.
     """
     x = [
         ["PyTorch", "-", ".pt", True, True],
@@ -293,7 +293,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
         tuple[pathlib.Path | str, None]: The path to the saved ONNX model file and None (consistent with decorator).
 
     Raises:
-        ImportError: If required libraries for export (e.g., 'onnx', 'onnx-simplifier') are not installed.
+        ImportError: If required libraries for export (e.g., 'onnx', 'onnxslim') are not installed.
         AssertionError: If the simplification check fails.
 
     Examples:
@@ -319,7 +319,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
     Notes:
         The required packages for this function can be installed via:
         ```
-        pip install onnx onnx-simplifier onnxruntime onnxruntime-gpu
+        pip install onnx onnxslim onnxruntime onnxruntime-gpu
         ```
     """
     check_requirements(("onnx>=1.12.0", "onnxscript"))
@@ -540,7 +540,8 @@ def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("Co
         ```
 
     Notes:
-        The exported CoreML model will be saved with a .mlmodel extension.
+        The exported CoreML model will be saved with a .mlpackage extension by default (or .mlmodel when the mlmodel
+        flag is True).
         Quantization is supported only on macOS.
     """
     check_requirements("coremltools")
@@ -1097,7 +1098,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
         prefix (str): Custom prefix for logging messages.
 
     Returns:
-        (Path): Path to the saved CoreML model (.mlmodel).
+        None
 
     Raises:
         AssertionError: If the number of class names does not match the number of classes in the model.
@@ -1295,7 +1296,7 @@ def run(
         inplace (bool): Set the YOLOv5 Detect() module inplace=True. Default is False.
         keras (bool): Flag to use Keras for TensorFlow SavedModel export. Default is False.
         optimize (bool): Optimize TorchScript model for mobile deployment. Default is False.
-        int8 (bool): Apply INT8 quantization for CoreML or TensorFlow models. Default is False.
+        int8 (bool): Apply INT8 quantization for CoreML, TensorFlow, or OpenVINO models. Default is False.
         per_tensor (bool): Apply per tensor quantization for TensorFlow models. Default is False.
         dynamic (bool): Enable dynamic axes for ONNX, TensorFlow, or TensorRT exports. Default is False.
         cache (str): TensorRT timing cache path. Default is an empty string.

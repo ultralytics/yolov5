@@ -114,6 +114,7 @@ def run(
             the best available device.
         view_img (bool): If True, display inference results using OpenCV. Default is False.
         save_txt (bool): If True, save results in a text file. Default is False.
+        save_format (int): Save boxes in YOLO (0) or Pascal-VOC (1) format when save_txt is set. Default is 0.
         save_csv (bool): If True, save results in a CSV file. Default is False.
         save_conf (bool): If True, include confidence scores in the saved results. Default is False.
         save_crop (bool): If True, save cropped prediction boxes. Default is False.
@@ -139,7 +140,7 @@ def run(
 
     Examples:
         ```python
-        from ultralytics import run
+        from detect import run
 
         # Run inference on an image
         run(source='data/images/example.jpg', weights='yolov5s.pt', device='0')
@@ -342,6 +343,7 @@ def parse_opt():
         --device (str, optional): CUDA device, i.e., '0' or '0,1,2,3' or 'cpu'. Defaults to "".
         --view-img (bool, optional): Flag to display results. Defaults to False.
         --save-txt (bool, optional): Flag to save results to *.txt files. Defaults to False.
+        --save-format (int): Save boxes in YOLO (0) or Pascal-VOC (1) format when --save-txt is set. Defaults to 0.
         --save-csv (bool, optional): Flag to save results in CSV format. Defaults to False.
         --save-conf (bool, optional): Flag to save confidences in labels saved via --save-txt. Defaults to False.
         --save-crop (bool, optional): Flag to save cropped prediction boxes. Defaults to False.
@@ -368,8 +370,8 @@ def parse_opt():
 
     Examples:
         ```python
-        from ultralytics import YOLOv5
-        args = YOLOv5.parse_opt()
+        from detect import parse_opt
+        opt = parse_opt()
         ```
     """
     parser = argparse.ArgumentParser()

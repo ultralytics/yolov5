@@ -312,12 +312,11 @@ class CometLogger:
             tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
             scale_boxes(image.shape[1:], tbox, shape[0], shape[1])  # native-space labels
             labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-            scale_boxes(image.shape[1:], predn[:, :4], shape[0], shape[1])  # native-space pred
 
         return predn, labelsn
 
     def add_assets_to_artifact(self, artifact, path, asset_path, split):
-        """Adds image and label assets to a wandb artifact given dataset split and paths."""
+        """Adds image and label assets to a Comet artifact given dataset split and paths."""
         img_paths = sorted(glob.glob(f"{asset_path}/*"))
         label_paths = img2label_paths(img_paths)
 
@@ -395,7 +394,7 @@ class CometLogger:
             if data_dict.get(split):
                 split_path = data_dict.get(split)
                 data_dict[split] = (
-                    f"{path}/{split_path}" if isinstance(split, str) else [f"{path}/{x}" for x in split_path]
+                    f"{path}/{split_path}" if isinstance(split_path, str) else [f"{path}/{x}" for x in split_path]
                 )
 
         return data_dict

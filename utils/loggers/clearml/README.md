@@ -50,7 +50,7 @@ For a general Ultralytics setup, see the [Quickstart Guide](https://docs.ultraly
 
 When the `clearml` package is installed, experiment tracking is automatically enabled for every [YOLO training run](https://docs.ultralytics.com/modes/train/). All experiment details are captured and stored in the ClearML experiment manager.
 
-To customize your project or task name in ClearML, use the `--project` and `--name` arguments. By default, the project is `YOLO` and the task is `Training`. ClearML uses `/` as a delimiter for subprojects.
+To customize your project or task name in ClearML, use the `--project` and `--name` arguments. By default, the project is `YOLOv5` and the task is `Training`. ClearML uses `/` as a delimiter for subprojects.
 
 **Example Training Command:**
 

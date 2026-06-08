@@ -15,7 +15,7 @@ import pandas as pd
 import seaborn as sn
 import torch
 from PIL import Image, ImageDraw
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 from ultralytics.utils.plotting import Annotator
 
 from utils import TryExcept, threaded
@@ -77,7 +77,8 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 
 
 def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detect/exp")):
-    """
+    """Visualize feature maps of a given model module during inference.
+
     Args:
         x: Features to be visualized
         module_type: Module type
@@ -110,7 +111,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detec
 def hist2d(x, y, n=100):
     """Generates a logarithmic 2D histogram, useful for visualizing label or evolution distributions.
 
-    Used in used in labels.png and evolve.png.
+    Used in labels.png and evolve.png.
     """
     xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
     hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))
@@ -417,7 +418,7 @@ def plot_evolve(evolve_csv="path/to/evolve.csv"):
         plt.subplot(6, 5, i + 1)
         plt.scatter(v, f, c=hist2d(v, f, 20), cmap="viridis", alpha=0.8, edgecolors="none")
         plt.plot(mu, f.max(), "k+", markersize=15)
-        plt.title(f"{k} = {mu:.3g}", fontdict={"size": 9})  # limit to 40 characters
+        plt.title(f"{k} = {mu:.3g}", fontdict={"size": 9})
         if i % 5 != 0:
             plt.yticks([])
         print(f"{k:>15}: {mu:.3g}")

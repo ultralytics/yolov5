@@ -34,10 +34,9 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     Examples:
         ```python
         import torch
-        from ultralytics import _create
 
         # Load an official YOLOv5s model with pretrained weights
-        model = _create('yolov5s')
+        model = torch.hub.load("ultralytics/yolov5", "yolov5n")
 
         # Load a custom model from a local checkpoint
         model = _create('path/to/custom_model.pt', pretrained=False)
@@ -156,10 +155,9 @@ def yolov5n(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
     Examples:
         ```python
         import torch
-        from ultralytics import yolov5n
 
         # Load the YOLOv5-nano model with defaults
-        model = yolov5n()
+        model = torch.hub.load("ultralytics/yolov5", "yolov5n")
 
         # Load the YOLOv5-nano model with a specific device
         model = yolov5n(device='cuda')
