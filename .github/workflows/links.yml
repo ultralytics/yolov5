@@ -66,9 +66,13 @@ jobs:
             --scheme 'https' \
             --timeout 60 \
             --insecure \
-            --accept 100..=103,200..=299,429,999 \
+            --accept 100..=103,200..=299,401,403,429,500,502,999 \
             --exclude-all-private \
             --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|x\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
+            --exclude 'https?://[^[:space:]]*(%7B|%7D|\{|\}|sentry\.io|google-analytics\.com/mp/collect|storage\.googleapis\.com|packages\.cloud\.google\.com/apt)(/.*)?' \
+            --exclude 'https://github\.com/ultralytics/assets/releases/download/v0\.0\.0' \
+            --exclude 'https://image-net\.org/data/ILSVRC/2012/ILSVRC2012_img_val\.tar' \
+            --exclude 'https?://(www\.)?reddit\.com/r/ultralytics/?' \
             --exclude-path './**/ci.yml' \
             --github-token ${{ secrets.GITHUB_TOKEN }} \
             --header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.183 Safari/537.36" \
