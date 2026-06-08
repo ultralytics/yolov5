@@ -5,7 +5,8 @@
 
 # Start FROM Ubuntu image https://hub.docker.com/_/ubuntu
 FROM ubuntu:24.04
-ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV PIP_BREAK_SYSTEM_PACKAGES=1 \
+    UV_BREAK_SYSTEM_PACKAGES=1
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
@@ -18,11 +19,11 @@ RUN apt update \
 
 # Install pip packages
 COPY requirements.txt .
-RUN python3 -m pip install wheel
-RUN pip install --no-cache -r requirements.txt albumentations gsutil notebook \
+RUN python3 -m pip install uv wheel
+RUN uv pip install --system --no-cache -r requirements.txt albumentations gsutil notebook \
     coremltools onnx onnx-simplifier onnxruntime 'openvino-dev>=2023.0' \
-    # tensorflow tensorflowjs \
-    --extra-index-url https://download.pytorch.org/whl/cpu
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    --index-strategy unsafe-best-match
 
 # Create working directory
 RUN mkdir -p /usr/src/app
