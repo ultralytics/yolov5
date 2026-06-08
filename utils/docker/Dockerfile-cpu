@@ -4,7 +4,8 @@
 # Image is CPU-optimized for ONNX, OpenVINO and PyTorch YOLOv5 deployments
 
 # Start FROM Ubuntu image https://hub.docker.com/_/ubuntu
-FROM ubuntu:23.10
+FROM ubuntu:24.04
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
@@ -15,12 +16,9 @@ RUN apt update \
     && apt install --no-install-recommends -y python3-pip git zip curl htop libgl1 libglib2.0-0 libpython3-dev gnupg g++ libusb-1.0-0
 # RUN alias python=python3
 
-# Remove python3.11/EXTERNALLY-MANAGED or use 'pip install --break-system-packages' avoid 'externally-managed-environment' Ubuntu nightly error
-RUN rm -rf /usr/lib/python3.11/EXTERNALLY-MANAGED
-
 # Install pip packages
 COPY requirements.txt .
-RUN python3 -m pip install --upgrade pip wheel
+RUN python3 -m pip install wheel
 RUN pip install --no-cache -r requirements.txt albumentations gsutil notebook \
     coremltools onnx onnx-simplifier onnxruntime 'openvino-dev>=2023.0' \
     # tensorflow tensorflowjs \
