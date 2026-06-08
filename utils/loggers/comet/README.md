@@ -108,7 +108,7 @@ export COMET_LOG_CONFUSION_MATRIX=false                     # Disable confusion 
 export COMET_MAX_IMAGE_UPLOADS=NUMBER                       # Max prediction images to log. Default: 100
 export COMET_LOG_PER_CLASS_METRICS=true                     # Log metrics per class. Default: false
 export COMET_DEFAULT_CHECKPOINT_FILENAME=checkpoint_file.pt # Checkpoint for resuming. Default: 'last.pt'
-export COMET_LOG_BATCH_METRICS=true                        # Log training metrics per batch. Default: false
+export COMET_LOG_BATCH_METRICS=true                         # Log training metrics per batch. Default: false
 export COMET_LOG_PREDICTIONS=true                           # Disable prediction logging if set to false. Default: true
 ```
 
