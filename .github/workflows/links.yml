@@ -71,7 +71,7 @@ jobs:
             --exclude 'https?://(www\.)?(linkedin\.com|twitter\.com|x\.com|instagram\.com|kaggle\.com|fonts\.gstatic\.com|url\.com)' \
             --exclude 'https?://[^[:space:]]*(%7B|%7D|\{|\}|sentry\.io|google-analytics\.com/mp/collect|storage\.googleapis\.com|packages\.cloud\.google\.com/apt)(/.*)?' \
             --exclude 'https://github\.com/ultralytics/assets/releases/download/v0\.0\.0' \
-            --exclude 'https://image-net\.org/data/ILSVRC/2012/ILSVRC2012_img_val\.tar/n' \
+            --exclude 'https://image-net\.org/data/ILSVRC/2012/ILSVRC2012_img_val\.tar' \
             --exclude 'https?://(www\.)?reddit\.com/r/ultralytics/?' \
             --exclude-path './**/ci.yml' \
             --github-token ${{ secrets.GITHUB_TOKEN }} \
