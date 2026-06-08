@@ -15,50 +15,63 @@ on:
 jobs:
   docker:
     if: github.repository == 'ultralytics/yolov5'
-    name: Push Docker image to Docker Hub
-    runs-on: ubuntu-latest
+    name: Build ${{ matrix.tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dockerfile: utils/docker/Dockerfile-arm64
+            tag: latest-arm64
+            platform: linux/arm64
+            runs_on: ubuntu-24.04-arm
+          - dockerfile: utils/docker/Dockerfile-cpu
+            tag: latest-cpu
+            platform: linux/amd64
+            runs_on: ubuntu-latest
+          - dockerfile: utils/docker/Dockerfile
+            tag: latest
+            platform: linux/amd64
+            runs_on: ubuntu-latest
+    runs-on: ${{ matrix.runs_on }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
           fetch-depth: 0 # copy full .git directory to access full git history in Docker images
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
       - name: Login to Docker Hub
-        uses: docker/login-action@v4
+        uses: ultralytics/actions/retry@main
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          run: |
+            if ! out=$(printf '%s' "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin 2>&1); then
+              printf '%s\n' "$out" >&2
+              exit 1
+            fi
+            echo "Logged in to docker.io"
 
-      - name: Build and push arm64 image
-        uses: docker/build-push-action@v7
-        continue-on-error: true
+      - name: Build Docker image
+        uses: ultralytics/actions/retry@main
         with:
-          context: .
-          platforms: linux/arm64
-          file: utils/docker/Dockerfile-arm64
-          push: true
-          tags: ultralytics/yolov5:latest-arm64
+          timeout_minutes: 120
+          retry_delay_seconds: 60
+          retries: 2
+          run: |
+            docker build \
+              --platform ${{ matrix.platform }} \
+              --label "org.opencontainers.image.source=https://github.com/ultralytics/yolov5" \
+              --label "org.opencontainers.image.description=Ultralytics YOLOv5 image" \
+              --label "org.opencontainers.image.licenses=AGPL-3.0-or-later" \
+              -f ${{ matrix.dockerfile }} \
+              -t ultralytics/yolov5:${{ matrix.tag }} \
+              .
 
-      - name: Build and push CPU image
-        uses: docker/build-push-action@v7
-        continue-on-error: true
+      - name: Push Docker image
+        uses: ultralytics/actions/retry@main
         with:
-          context: .
-          file: utils/docker/Dockerfile-cpu
-          push: true
-          tags: ultralytics/yolov5:latest-cpu
-
-      - name: Build and push GPU image
-        uses: docker/build-push-action@v7
-        continue-on-error: true
-        with:
-          context: .
-          file: utils/docker/Dockerfile
-          push: true
-          tags: ultralytics/yolov5:latest
+          timeout_minutes: 15
+          retry_delay_seconds: 300
+          retries: 2
+          run: docker push ultralytics/yolov5:${{ matrix.tag }}
