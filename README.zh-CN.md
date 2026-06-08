@@ -11,7 +11,7 @@
     <a href="https://hub.docker.com/r/ultralytics/yolov5"><img src="https://img.shields.io/docker/pulls/ultralytics/yolov5?logo=docker" alt="Docker 拉取次数"></a>
     <a href="https://discord.com/invite/ultralytics"><img alt="Discord" src="https://img.shields.io/discord/1089800235347353640?logo=discord&logoColor=white&label=Discord&color=blue"></a> <a href="https://community.ultralytics.com/"><img alt="Ultralytics 论坛" src="https://img.shields.io/discourse/users?server=https%3A%2F%2Fcommunity.ultralytics.com&logo=discourse&label=Forums&color=blue"></a> <a href="https://www.reddit.com/r/ultralytics/"><img alt="Ultralytics Reddit" src="https://img.shields.io/reddit/subreddit-subscribers/ultralytics?style=flat&logo=reddit&logoColor=white&label=Reddit&color=blue"></a>
     <br>
-    <a href="https://bit.ly/yolov5-paperspace-notebook"><img src="https://assets.paperspace.io/img/gradient-badge.svg" alt="在 Gradient 上运行"></a>
+    <a href="https://console.paperspace.com/github/ultralytics/ultralytics"><img src="https://img.shields.io/badge/Run%20on-Gradient-0A0A0A" alt="在 Gradient 上运行"></a>
     <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="在 Colab 中打开"></a>
     <a href="https://www.kaggle.com/models/ultralytics/yolov5"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="在 Kaggle 中打开"></a>
   </div>
@@ -458,7 +458,7 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 使用我们预配置的环境快速开始。点击下面的图标查看设置详情。
 
 <div align="center">
-  <a href="https://bit.ly/yolov5-paperspace-notebook" title="在 Paperspace Gradient 上运行">
+  <a href="https://console.paperspace.com/github/ultralytics/ultralytics" title="在 Paperspace Gradient 上运行">
     <img src="https://github.com/ultralytics/assets/releases/download/v0.0.0/logo-gradient.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
   <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb" title="在 Google Colab 中打开">
