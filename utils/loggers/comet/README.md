@@ -41,7 +41,7 @@ You can configure Comet in two ways:
    export COMET_PROJECT_NAME=YOUR_COMET_PROJECT_NAME # Defaults to 'yolov5' if not set
    ```
 
-   Find your API key in your [Comet Account Settings](https://www.comet.com/site/).
+   Find your API key in your [Comet Account Settings](https://www.comet.com/account-settings/apiKeys).
 
 2. **Configuration File:**  
    Create a `.comet.config` file in your working directory:

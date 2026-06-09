@@ -33,7 +33,7 @@ To get started:
    pip install clearml
    ```
 
-   _Note: The `clearml` package is included in the YOLO requirements._
+   _Note: The `clearml` package is listed (commented out) in `requirements.txt` and is not installed by default — install it with the command above._
 
 2. **Connect the ClearML SDK to your server:**  
    [Create credentials](https://app.clear.ml/settings/workspace-configuration) (Settings → Workspace → Create new credentials), then run:

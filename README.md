@@ -280,7 +280,7 @@ YOLOv5 segmentation models were trained on the [COCO dataset](https://docs.ultra
 
 ### Train
 
-YOLOv5 segmentation training supports automatic download of the [COCO128-seg dataset](https://docs.ultralytics.com/datasets/segment/coco8-seg/) via the `--data coco128-seg.yaml` argument. For the full [COCO-segments dataset](https://docs.ultralytics.com/datasets/segment/coco/), download it manually using `bash data/scripts/get_coco.sh --train --val --segments` and then train with `python train.py --data coco.yaml`.
+YOLOv5 segmentation training supports automatic download of the [COCO128-seg dataset](https://docs.ultralytics.com/datasets/segment/coco128-seg/) via the `--data coco128-seg.yaml` argument. For the full [COCO-segments dataset](https://docs.ultralytics.com/datasets/segment/coco/), download it manually using `bash data/scripts/get_coco.sh --train --val --segments` and then train with `python train.py --data coco.yaml`.
 
 ```bash
 # Train on a single GPU
