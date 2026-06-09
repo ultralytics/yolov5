@@ -12,7 +12,7 @@ Usage - formats:
                                        yolov5s-cls.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                        yolov5s-cls_openvino_model     # OpenVINO
                                        yolov5s-cls.engine             # TensorRT
-                                       yolov5s-cls.mlmodel            # CoreML (macOS-only)
+                                       yolov5s-cls.mlpackage          # CoreML (macOS-only)
                                        yolov5s-cls_saved_model        # TensorFlow SavedModel
                                        yolov5s-cls.pb                 # TensorFlow GraphDef
                                        yolov5s-cls.tflite             # TensorFlow Lite

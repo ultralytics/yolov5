@@ -56,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-14] # macos-latest bug https://github.com/ultralytics/yolov5/pull/9049
-        python-version: ["3.11"]
+        python-version: ["3.x"] # evergreen latest stable Python
         model: [yolov5n]
         include:
           - os: ubuntu-latest
