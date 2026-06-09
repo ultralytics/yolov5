@@ -17,7 +17,7 @@
   </div>
   <br>
 
-Ultralytics YOLOv5 🚀 is a cutting-edge, state-of-the-art (SOTA) computer vision model developed by [Ultralytics](https://www.ultralytics.com/). Based on the [PyTorch](https://pytorch.org/) framework, YOLOv5 is renowned for its ease of use, speed, and accuracy. It incorporates insights and best practices from extensive research and development, making it a popular choice for a wide range of vision AI tasks, including [object detection](https://docs.ultralytics.com/tasks/detect/), [image segmentation](https://docs.ultralytics.com/tasks/segment/), and [image classification](https://docs.ultralytics.com/tasks/classify/).
+Ultralytics YOLOv5 🚀 is a fast, accurate, and easy-to-use computer vision model developed by [Ultralytics](https://www.ultralytics.com/). Based on the [PyTorch](https://pytorch.org/) framework, YOLOv5 is renowned for its speed, accuracy, and simplicity. It incorporates insights and best practices from extensive research and development, making it a popular and reliable choice for a wide range of vision AI tasks, including [object detection](https://docs.ultralytics.com/tasks/detect/), [image segmentation](https://docs.ultralytics.com/tasks/segment/), and [image classification](https://docs.ultralytics.com/tasks/classify/).
 
 We hope the resources here help you get the most out of YOLOv5. Please browse the [YOLOv5 Docs](https://docs.ultralytics.com/yolov5/) for detailed information, raise an issue on [GitHub](https://github.com/ultralytics/yolov5/issues/new/choose) for support, and join our [Discord community](https://discord.com/invite/ultralytics) for questions and discussions!
 
@@ -42,22 +42,18 @@ To request an Enterprise License, please complete the form at [Ultralytics Licen
 </div>
 <br>
 
-## 🚀 YOLO11: The Next Evolution
+## 🚀 Explore the Ultralytics YOLO Ecosystem
 
-We are excited to announce the launch of **Ultralytics YOLO11** 🚀, the latest advancement in our state-of-the-art (SOTA) vision models! Available now at the [Ultralytics YOLO GitHub repository](https://github.com/ultralytics/ultralytics), YOLO11 builds on our legacy of speed, precision, and ease of use. Whether you're tackling [object detection](https://docs.ultralytics.com/tasks/detect/), [instance segmentation](https://docs.ultralytics.com/tasks/segment/), [pose estimation](https://docs.ultralytics.com/tasks/pose/), [image classification](https://docs.ultralytics.com/tasks/classify/), or [oriented object detection (OBB)](https://docs.ultralytics.com/tasks/obb/), YOLO11 delivers the performance and versatility needed to excel in diverse applications.
-
-Get started today and unlock the full potential of YOLO11! Visit the [Ultralytics Docs](https://docs.ultralytics.com/) for comprehensive guides and resources:
-
-[![PyPI version](https://badge.fury.io/py/ultralytics.svg)](https://badge.fury.io/py/ultralytics) [![Downloads](https://static.pepy.tech/badge/ultralytics)](https://clickpy.clickhouse.com/dashboard/ultralytics)
+YOLOv5 is a mature, production-proven model that remains an excellent choice for fast and reliable [object detection](https://docs.ultralytics.com/tasks/detect/), [instance segmentation](https://docs.ultralytics.com/tasks/segment/), and [image classification](https://docs.ultralytics.com/tasks/classify/). If your project calls for the newest architectures, additional tasks such as [pose estimation](https://docs.ultralytics.com/tasks/pose/) and [oriented object detection (OBB)](https://docs.ultralytics.com/tasks/obb/), or a unified Python and CLI interface, the actively maintained [`ultralytics`](https://github.com/ultralytics/ultralytics) package brings the latest [Ultralytics YOLO models](https://docs.ultralytics.com/models/) together in one place. Explore the [Ultralytics Docs](https://docs.ultralytics.com/) to find the best fit for your use case.
 
 ```bash
-# Install the ultralytics package
+# Install the ultralytics package for the latest Ultralytics YOLO models
 pip install ultralytics
 ```
 
 <div align="center">
-  <a href="https://platform.ultralytics.com/ultralytics/yolo26" target="_blank">
-  <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/refs/heads/main/yolo/performance-comparison.png" alt="Ultralytics YOLO Performance Comparison"></a>
+  <a href="https://docs.ultralytics.com/models/" target="_blank">
+  <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/refs/heads/main/yolo/performance-comparison.png" alt="Ultralytics YOLO performance comparison"></a>
 </div>
 
 ## 📚 Documentation
@@ -178,19 +174,19 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 - **[Train Custom Data](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data/)** 🚀 **RECOMMENDED**: Learn how to train YOLOv5 on your own datasets.
 - **[Tips for Best Training Results](https://docs.ultralytics.com/guides/model-training-tips/)** ☘️: Improve your model's performance with expert tips.
 - **[Multi-GPU Training](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training/)**: Speed up training using multiple GPUs.
-- **[PyTorch Hub Integration](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading/)** 🌟 **NEW**: Easily load models using PyTorch Hub.
+- **[PyTorch Hub Integration](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading/)**: Easily load models using PyTorch Hub.
 - **[Model Export (TFLite, ONNX, CoreML, TensorRT)](https://docs.ultralytics.com/yolov5/tutorials/model_export/)** 🚀: Convert your models to various deployment formats like [ONNX](https://onnx.ai/) or [TensorRT](https://developer.nvidia.com/tensorrt).
-- **[NVIDIA Jetson Deployment](https://docs.ultralytics.com/guides/nvidia-jetson/)** 🌟 **NEW**: Deploy YOLOv5 on [NVIDIA Jetson](https://developer.nvidia.com/embedded-computing) devices.
+- **[NVIDIA Jetson Deployment](https://docs.ultralytics.com/guides/nvidia-jetson/)**: Deploy YOLOv5 on [NVIDIA Jetson](https://developer.nvidia.com/embedded-computing) devices.
 - **[Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation/)**: Enhance prediction accuracy with TTA.
 - **[Model Ensembling](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling/)**: Combine multiple models for better performance.
 - **[Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity/)**: Optimize models for size and speed.
 - **[Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter_evolution/)**: Automatically find the best training hyperparameters.
 - **[Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers/)**: Adapt pretrained models to new tasks efficiently using [transfer learning](https://www.ultralytics.com/glossary/transfer-learning).
-- **[Architecture Summary](https://docs.ultralytics.com/yolov5/tutorials/architecture_description/)** 🌟 **NEW**: Understand the YOLOv5 model architecture.
+- **[Architecture Summary](https://docs.ultralytics.com/yolov5/tutorials/architecture_description/)**: Understand the YOLOv5 model architecture.
 - **[Ultralytics Platform Training](https://platform.ultralytics.com)** 🚀 **RECOMMENDED**: Train and deploy YOLO models using Ultralytics Platform.
 - **[ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration/)**: Integrate with [ClearML](https://www.clear.ml/) for experiment tracking.
 - **[Neural Magic DeepSparse Integration](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization/)**: Accelerate inference with DeepSparse.
-- **[Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration/)** 🌟 **NEW**: Log experiments using [Comet ML](https://www.comet.com/site/).
+- **[Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration/)**: Log experiments using [Comet ML](https://www.comet.com/site/).
 
 </details>
 
@@ -252,7 +248,7 @@ This table shows the performance metrics for various YOLOv5 models trained on th
 
 ## 🖼️ Segmentation
 
-The YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases/v7.0) introduced [instance segmentation](https://docs.ultralytics.com/tasks/segment/) models that achieve state-of-the-art performance. These models are designed for easy training, validation, and deployment. For full details, see the [Release Notes](https://github.com/ultralytics/yolov5/releases/v7.0) and explore the [YOLOv5 Segmentation Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb) for quickstart examples.
+The YOLOv5 [release v7.0](https://github.com/ultralytics/yolov5/releases/v7.0) introduced [instance segmentation](https://docs.ultralytics.com/tasks/segment/) models designed for easy training, validation, and deployment. For full details, see the [Release Notes](https://github.com/ultralytics/yolov5/releases/v7.0) and explore the [YOLOv5 Segmentation Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/segment/tutorial.ipynb) for quickstart examples.
 
 <details>
   <summary>Segmentation Checkpoints</summary>
