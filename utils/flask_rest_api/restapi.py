@@ -51,7 +51,7 @@ def predict(model):
     im = Image.open(io.BytesIO(im_bytes))
 
     if model not in models:
-        return {"error": f"Model {model} not found. Available models: " + ", ".join(sorted(models))}, 404
+        return {"error": "Model not found. Available models: " + ", ".join(sorted(models))}, 404
     results = models[model](im, size=640)  # reduce size=320 for faster inference
     return results.pandas().xyxy[0].to_json(orient="records")
 
