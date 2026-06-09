@@ -927,9 +927,9 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
     cmd = "edgetpu_compiler --version"
     help_url = "https://coral.ai/docs/edgetpu/compiler/"
     assert platform.system() == "Linux", f"export only supported on Linux. See {help_url}"
-    if subprocess.run(f"{cmd} > /dev/null 2>&1", shell=True).returncode != 0:
+    if subprocess.run(cmd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
         LOGGER.info(f"\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}")
-        sudo = subprocess.run("sudo --version >/dev/null", shell=True).returncode == 0  # sudo installed on system
+        sudo = subprocess.run(["sudo", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0  # sudo installed on system
         for c in (
             "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
             'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
@@ -937,7 +937,7 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
             "sudo apt-get install edgetpu-compiler",
         ):
             subprocess.run(c if sudo else c.replace("sudo ", ""), shell=True, check=True)
-    ver = subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1]
+    ver = subprocess.run(cmd.split(), capture_output=True, check=True).stdout.decode().split()[-1]
 
     LOGGER.info(f"\n{prefix} starting export with Edge TPU compiler {ver}...")
     f = str(file).replace(".pt", "-int8_edgetpu.tflite")  # Edge TPU model
