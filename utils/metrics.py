@@ -140,16 +140,14 @@ class ConfusionMatrix:
         self.iou_thres = iou_thres
 
     def process_batch(self, detections, labels):
-        """Return intersection-over-union (Jaccard index) of boxes.
-
-        Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+        """Update the confusion matrix for a batch of detections vs labels (both in pixel xyxy).
 
         Args:
             detections (Array[N, 6]): x1, y1, x2, y2, conf, class
             labels (Array[M, 5]): class, x1, y1, x2, y2
 
         Returns:
-            None, updates confusion matrix accordingly
+            None (updates self.matrix in place).
         """
         if detections is None:
             gt_classes = labels.int()
@@ -238,7 +236,7 @@ class ConfusionMatrix:
 def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
     """Calculates IoU, GIoU, DIoU, or CIoU between two boxes, supporting xywh/xyxy formats.
 
-    Input shapes are box1(1,4) to box2(n,4).
+    box1 and box2 broadcast over the last dim; common shapes are (n,4) x (n,4) (loss) or (1,4) x (n,4).
     """
     # Get the coordinates of bounding boxes
     if xywh:  # transform from xywh to xyxy

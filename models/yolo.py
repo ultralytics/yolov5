@@ -121,7 +121,9 @@ class Detect(nn.Module):
         t = self.anchors[i].dtype
         shape = 1, self.na, ny, nx, 2  # grid shape
         y, x = torch.arange(ny, device=d, dtype=t), torch.arange(nx, device=d, dtype=t)
-        yv, xv = torch.meshgrid(y, x, indexing="ij") if torch_1_10 else torch.meshgrid(y, x)  # torch>=0.7 compatibility
+        yv, xv = (
+            torch.meshgrid(y, x, indexing="ij") if torch_1_10 else torch.meshgrid(y, x)
+        )  # torch>=1.10 compatibility
         grid = torch.stack((xv, yv), 2).expand(shape) - 0.5  # add grid offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape)
         return grid, anchor_grid
@@ -347,8 +349,8 @@ class ClassificationModel(BaseModel):
     """YOLOv5 classification model for image classification tasks, initialized with a config file or detection model."""
 
     def __init__(self, cfg=None, model=None, nc=1000, cutoff=10):
-        """Initializes YOLOv5 model with config file `cfg`, input channels `ch`, number of classes `nc`, and `cuttoff`
-        index.
+        """Initializes a YOLOv5 classification model from a YAML config (cfg) or an existing detection model (model),
+        with nc classes; when building from a detection model the backbone is sliced at the cutoff layer index.
         """
         super().__init__()
         self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)

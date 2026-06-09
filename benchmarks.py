@@ -17,8 +17,8 @@ TensorFlow Edge TPU         | `edgetpu`                     | yolov5s_edgetpu.tf
 TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
 
 Requirements:
-    $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU
-    $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow  # GPU
+    $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime openvino-dev tensorflow-cpu  # CPU
+    $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime-gpu openvino-dev tensorflow  # GPU
     $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
 
 Usage:
@@ -82,8 +82,8 @@ def run(
         ```
 
         Install required packages:
-          $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU support
-          $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow   # GPU support
+          $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime openvino-dev tensorflow-cpu  # CPU support
+          $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime-gpu openvino-dev tensorflow   # GPU support
           $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
 
         Run benchmarks:
@@ -180,8 +180,8 @@ def test(
         ```
 
         Install required packages:
-            $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU support
-            $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow   # GPU support
+            $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime openvino-dev tensorflow-cpu  # CPU support
+            $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime-gpu openvino-dev tensorflow   # GPU support
             $ pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com  # TensorRT
         Run export tests:
             $ python benchmarks.py --weights yolov5s.pt --img 640
@@ -192,7 +192,7 @@ def test(
     """
     y, t = [], time.time()
     device = select_device(device)
-    for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
+    for i, (name, f, suffix, cpu, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, CPU, GPU)
         try:
             w = (
                 weights
@@ -206,7 +206,6 @@ def test(
 
     # Print results
     LOGGER.info("\n")
-    parse_opt()
     notebook_init()  # print system info
     py = pd.DataFrame(y, columns=["Format", "Export"])
     LOGGER.info(f"\nExports complete ({time.time() - t:.2f}s)")

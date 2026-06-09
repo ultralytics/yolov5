@@ -198,6 +198,7 @@ def train(opt, device):
     t0 = time.time()
     criterion = smartCrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
     best_fitness = 0.0
+    final_epoch = False  # defined here so the post-loop checkpoint block is safe when epochs == 0
     scaler = amp.GradScaler(enabled=cuda)
     val = test_dir.stem  # 'val' or 'test'
     LOGGER.info(
@@ -219,7 +220,7 @@ def train(opt, device):
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
             # Forward
-            with amp.autocast(enabled=cuda):  # stability issues when enabled
+            with amp.autocast(enabled=cuda):
                 loss = criterion(model(images), labels)
 
             # Backward
@@ -367,7 +368,7 @@ def main(opt):
 def run(**kwargs):
     """Executes YOLOv5 model training or inference with specified parameters, returning updated options.
 
-    Example: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')
+    Example: from yolov5 import classify; classify.train.run(data='mnist', imgsz=320, model='yolov5m-cls.pt')
     """
     opt = parse_opt(True)
     for k, v in kwargs.items():

@@ -305,10 +305,16 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
 
 
 def polygon2mask(img_size, polygons, color=1, downsample_ratio=1):
-    """
+    """Convert polygons to a binary mask of the given image size.
+
     Args:
-        img_size (tuple): The image size.
-        polygons (np.ndarray): [N, M], N is the number of polygons, M is the number of points(Be divided by 2).
+        img_size (tuple): The image size as (h, w).
+        polygons (np.ndarray): [N, M], N is the number of polygons, M is the number of points (divided by 2).
+        color (int): Fill value for the mask.
+        downsample_ratio (int): Mask downsample factor.
+
+    Returns:
+        (np.ndarray): Binary mask of shape (h // downsample_ratio, w // downsample_ratio).
     """
     mask = np.zeros(img_size, dtype=np.uint8)
     polygons = np.asarray(polygons)
@@ -324,11 +330,17 @@ def polygon2mask(img_size, polygons, color=1, downsample_ratio=1):
 
 
 def polygons2masks(img_size, polygons, color, downsample_ratio=1):
-    """
+    """Convert a list of polygons to an array of binary masks of the given image size.
+
     Args:
-        img_size (tuple): The image size.
-        polygons (list[np.ndarray]): each polygon is [N, M], N is the number of polygons, M is the number of points(Be
-            divided by 2).
+        img_size (tuple): The image size as (h, w).
+        polygons (list[np.ndarray]): Each polygon is [N, M], N is the number of polygons, M is the number of points
+            (divided by 2).
+        color (int): Fill value for the masks.
+        downsample_ratio (int): Mask downsample factor.
+
+    Returns:
+        (np.ndarray): Array of binary masks.
     """
     masks = []
     for si in range(len(polygons)):

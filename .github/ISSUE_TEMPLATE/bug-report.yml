@@ -52,7 +52,7 @@ body:
       placeholder: |
         Please include:
         - OS (e.g., Ubuntu 20.04, macOS 13.5, Windows 11)
-        - Language or framework version (Python, Swift, Flutter, etc.)
+        - Language or framework version (Python, PyTorch, etc.)
         - Package or app version
         - Hardware (e.g., CPU, GPU model, device model)
         - Any other environment details

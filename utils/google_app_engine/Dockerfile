@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y python-opencv
 # Copy the application's requirements.txt and run pip to install all
 # dependencies into the virtualenv.
 ADD requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
+RUN pip install uv && uv pip install --system -r /app/requirements.txt
 
 # Add the application source code.
 ADD . /app

@@ -91,12 +91,13 @@ def exif_size(img):
 
 
 def exif_transpose(image):
-    """
-    Transpose a PIL image accordingly if it has an EXIF Orientation tag.
-    Inplace version of https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py exif_transpose().
+    """Apply EXIF orientation to a PIL image and return the transposed image.
 
-    :param image: The image to transpose.
-    :return: An image.
+    Args:
+        image (Image.Image): The image to transpose.
+
+    Returns:
+        (Image.Image): The EXIF-transposed image.
     """
     exif = image.getexif()
     orientation = exif.get(0x0112, 1)  # default 1
@@ -321,7 +322,7 @@ class LoadImages:
     def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         """Initializes YOLOv5 loader for images/videos, supporting glob patterns, directories, and lists of paths."""
         if isinstance(path, str) and Path(path).suffix == ".txt":  # *.txt file with img/vid/dir on each line
-            path = Path(path).read_text().rsplit()
+            path = Path(path).read_text().strip().splitlines()
         files = []
         for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
@@ -436,7 +437,7 @@ class LoadStreams:
         self.img_size = img_size
         self.stride = stride
         self.vid_stride = vid_stride  # video frame-rate stride
-        sources = Path(sources).read_text().rsplit() if os.path.isfile(sources) else [sources]
+        sources = Path(sources).read_text().strip().splitlines() if os.path.isfile(sources) else [sources]
         n = len(sources)
         self.sources = [clean_str(x) for x in sources]  # clean source names for later
         self.imgs, self.fps, self.frames, self.threads = [None] * n, [0] * n, [0] * n, [None] * n
@@ -708,8 +709,7 @@ class LoadImagesAndLabels(Dataset):
         if not cache:
             LOGGER.info(
                 f"{prefix}{mem_required / gb:.1f}GB RAM required, "
-                f"{mem.available / gb:.1f}/{mem.total / gb:.1f}GB available, "
-                f"{'caching images ✅' if cache else 'not caching images ⚠️'}"
+                f"{mem.available / gb:.1f}/{mem.total / gb:.1f}GB available, not caching images ⚠️"
             )
         return cache
 
@@ -1251,7 +1251,7 @@ class HUBDatasetStats:
             cv2.imwrite(str(f_new), im)
 
     def get_json(self, save=False, verbose=False):
-        """Generates dataset JSON for Ultralytics Platform, optionally saves or prints it; save=bool, verbose=bool."""
+        """Generates dataset JSON for Ultralytics Platform, optionally saves or prints it."""
 
         def _round(labels):
             """Rounds class labels to integers and coordinates to 4 decimal places for improved label accuracy."""

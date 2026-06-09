@@ -6,12 +6,13 @@ import pprint
 import requests
 
 DETECTION_URL = "http://localhost:5000/v1/object-detection/yolov5s"
-IMAGE = "zidane.jpg"
+IMAGE = "../../data/images/zidane.jpg"
 
 # Read image
 with open(IMAGE, "rb") as f:
     image_data = f.read()
 
-response = requests.post(DETECTION_URL, files={"image": image_data}).json()
+# Send the filename so the server can validate the extension (restapi.py checks ALLOWED_EXTENSIONS)
+response = requests.post(DETECTION_URL, files={"image": ("zidane.jpg", image_data, "image/jpeg")}).json()
 
 pprint.pprint(response)

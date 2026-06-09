@@ -73,8 +73,6 @@ class TFPad(keras.layers.Layer):
     def __init__(self, pad):
         """Initializes a padding layer for spatial dimensions 1 and 2 with specified padding, supporting both int and
         tuple inputs.
-
-        Inputs are
         """
         super().__init__()
         if isinstance(pad, int):
@@ -94,7 +92,7 @@ class TFConv(keras.layers.Layer):
         """Initializes a standard convolution layer with optional batch normalization and activation; supports only
         group=1.
 
-        Inputs are ch_in, ch_out, weights, kernel, stride, padding, groups.
+        Inputs are ch_in, ch_out, kernel, stride, padding, groups, act, weights.
         """
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
@@ -125,7 +123,7 @@ class TFDWConv(keras.layers.Layer):
         """Initializes a depthwise convolution layer with optional batch normalization and activation for TensorFlow
         models.
 
-        Input are ch_in, ch_out, weights, kernel, stride, padding, groups.
+        Inputs are ch_in, ch_out, kernel, stride, padding, act, weights.
         """
         super().__init__()
         assert c2 % c1 == 0, f"TFDWConv() output={c2} must be a multiple of input={c1} channels"
@@ -153,11 +151,11 @@ class TFDWConvTranspose2d(keras.layers.Layer):
     def __init__(self, c1, c2, k=1, s=1, p1=0, p2=0, w=None):
         """Initializes depthwise ConvTranspose2D layer with specific channel, kernel, stride, and padding settings.
 
-        Inputs are ch_in, ch_out, weights, kernel, stride, padding, groups.
+        Inputs are ch_in, ch_out, kernel, stride, pad1, pad2, weights.
         """
         super().__init__()
-        assert c1 == c2, f"TFDWConv() output={c2} must be equal to input={c1} channels"
-        assert k == 4 and p1 == 1, "TFDWConv() only valid for k=4 and p1=1"
+        assert c1 == c2, f"TFDWConvTranspose2d() output={c2} must be equal to input={c1} channels"
+        assert k == 4 and p1 == 1, "TFDWConvTranspose2d() only valid for k=4 and p1=1"
         weight, bias = w.weight.permute(2, 3, 1, 0).numpy(), w.bias.numpy()
         self.c1 = c1
         self.conv = [
@@ -186,7 +184,7 @@ class TFFocus(keras.layers.Layer):
         """Initializes TFFocus layer to focus width and height information into channel space with custom convolution
         parameters.
 
-        Inputs are ch_in, ch_out, kernel, stride, padding, groups.
+        Inputs are ch_in, ch_out, kernel, stride, padding, groups, act, weights.
         """
         super().__init__()
         self.conv = TFConv(c1 * 4, c2, k, s, p, g, act, w.conv)
@@ -648,7 +646,7 @@ class TFModel:
 
     @staticmethod
     def _xywh2xyxy(xywh):
-        """Convert box format from [x, y, w, h] to [x1, y1, x2, y2], where xy1=top-left and xy2=bottom- right."""
+        """Convert box format from [x, y, w, h] to [x1, y1, x2, y2], where xy1=top-left and xy2=bottom-right."""
         x, y, w, h = tf.split(xywh, num_or_size_splits=4, axis=-1)
         return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
 
@@ -710,7 +708,7 @@ def activations(act=nn.SiLU):
     elif isinstance(act, (nn.SiLU, SiLU)):
         return lambda x: keras.activations.swish(x)
     else:
-        raise Exception(f"no matching TensorFlow activation found for PyTorch activation {act}")
+        raise TypeError(f"no matching TensorFlow activation found for PyTorch activation {act}")
 
 
 def representative_dataset_gen(dataset, ncalib=100):

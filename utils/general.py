@@ -68,7 +68,7 @@ np.set_printoptions(linewidth=320, formatter={"float_kind": "{:11.5g}".format}) 
 pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
 os.environ["NUMEXPR_MAX_THREADS"] = str(NUM_THREADS)  # NumExpr max threads
-os.environ["OMP_NUM_THREADS"] = "1" if platform.system() == "darwin" else str(NUM_THREADS)  # OpenMP (PyTorch and SciPy)
+os.environ["OMP_NUM_THREADS"] = "1" if platform.system() == "Darwin" else str(NUM_THREADS)  # OpenMP (PyTorch and SciPy)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # suppress verbose TF compiler warnings in Colab
 os.environ["TORCH_CPP_LOG_LEVEL"] = "ERROR"  # suppress "NNPACK.cpp could not initialize NNPACK" warnings
 os.environ["KINETO_LOG_LEVEL"] = "5"  # suppress verbose PyTorch profiler output when computing FLOPs
@@ -366,7 +366,7 @@ def check_online():
 def git_describe(path=ROOT):
     """Returns a human-readable git description of the repository at `path`, or an empty string on failure.
 
-    Example output is 'fv5.0-5-g3e25f1e'. See https://git-scm.com/docs/git-describe.
+    Example output is 'v5.0-5-g3e25f1e'. See https://git-scm.com/docs/git-describe.
     """
     try:
         assert (Path(path) / ".git").is_dir()
@@ -1216,7 +1216,7 @@ def apply_classifier(x, model, img, im0):
                 cutout = im0[i][int(a[1]) : int(a[3]), int(a[0]) : int(a[2])]
                 im = cv2.resize(cutout, (224, 224))  # BGR
 
-                im = im[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+                im = im[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x224x224
                 im = np.ascontiguousarray(im, dtype=np.float32)  # uint8 to float32
                 im /= 255  # 0 - 255 to 0.0 - 1.0
                 ims.append(im)

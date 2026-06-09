@@ -113,7 +113,7 @@ def train(hyp, opt, device, callbacks):
         callbacks (Callbacks): Callback functions for various training events.
 
     Returns:
-        None
+        (tuple): Final validation results (P, R, mAP@0.5, mAP@0.5:0.95, val/box_loss, val/obj_loss, val/cls_loss).
 
     Examples:
         Single-GPU training:
@@ -554,7 +554,7 @@ def parse_opt(known=False):
 
     Examples:
         ```python
-        from ultralytics.yolo import parse_opt
+        from train import parse_opt
         opt = parse_opt()
         print(opt)
         ```
@@ -789,7 +789,7 @@ def main(opt, callbacks=Callbacks()):
                     initial_values.append(list(value))
 
         # Generate random values within the search space for the rest of the population
-        if initial_values is None:
+        if not initial_values:
             population = [generate_individual(gene_ranges, len(hyp_GA)) for _ in range(pop_size)]
         elif pop_size > 1:
             population = [generate_individual(gene_ranges, len(hyp_GA)) for _ in range(pop_size - len(initial_values))]
@@ -962,7 +962,7 @@ def run(**kwargs):
         local_rank (int, optional): Automatic DDP Multi-GPU argument. Do not modify. Defaults to -1.
 
     Returns:
-        None: The function initiates YOLOv5 training or hyperparameter evolution based on the provided options.
+        (argparse.Namespace): The parsed options namespace with any keyword overrides applied.
 
     Examples:
         ```python

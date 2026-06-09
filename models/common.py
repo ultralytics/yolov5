@@ -116,7 +116,7 @@ class TransformerLayer(nn.Module):
     def __init__(self, c, num_heads):
         """Initializes a transformer layer, sans LayerNorm for performance, with multihead attention and linear layers.
 
-        See  as described in https://arxiv.org/abs/2010.11929.
+        As described in https://arxiv.org/abs/2010.11929 (ViT).
         """
         super().__init__()
         self.q = nn.Linear(c, c, bias=False)
@@ -511,7 +511,7 @@ class DetectMultiBackend(nn.Module):
             output_names = [x.name for x in session.get_outputs()]
             meta = session.get_modelmeta().custom_metadata_map  # metadata
             if "stride" in meta:
-                stride, names = int(meta["stride"]), eval(meta["names"])
+                stride, names = int(meta["stride"]), ast.literal_eval(meta["names"])
         elif xml:  # OpenVINO
             LOGGER.info(f"Loading {w} for OpenVINO inference...")
             check_requirements("openvino>=2023.0")  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -708,13 +708,20 @@ class DetectMultiBackend(nn.Module):
             y = list(self.ov_compiled_model(im).values())
         elif self.engine:  # TensorRT
             if self.dynamic and im.shape != self.bindings["images"].shape:
-                i = self.model.get_binding_index("images")
-                self.context.set_binding_shape(i, im.shape)  # reshape if dynamic
-                self.bindings["images"] = self.bindings["images"]._replace(shape=im.shape)
-                for name in self.output_names:
-                    i = self.model.get_binding_index(name)
-                    self.bindings[name].data.resize_(tuple(self.context.get_binding_shape(i)))
-                    self.binding_addrs[name] = int(self.bindings[name].data.data_ptr())  # refresh after resize_
+                if self.is_trt10:  # TensorRT>=10 tensor API
+                    self.context.set_input_shape("images", im.shape)  # reshape if dynamic
+                    self.bindings["images"] = self.bindings["images"]._replace(shape=im.shape)
+                    for name in self.output_names:
+                        self.bindings[name].data.resize_(tuple(self.context.get_tensor_shape(name)))
+                        self.binding_addrs[name] = int(self.bindings[name].data.data_ptr())  # refresh after resize_
+                else:  # TensorRT<10 binding API
+                    i = self.model.get_binding_index("images")
+                    self.context.set_binding_shape(i, im.shape)  # reshape if dynamic
+                    self.bindings["images"] = self.bindings["images"]._replace(shape=im.shape)
+                    for name in self.output_names:
+                        i = self.model.get_binding_index(name)
+                        self.bindings[name].data.resize_(tuple(self.context.get_binding_shape(i)))
+                        self.binding_addrs[name] = int(self.bindings[name].data.data_ptr())  # refresh after resize_
             s = self.bindings["images"].shape
             assert im.shape == s, f"input size {im.shape} {'>' if self.dynamic else 'not equal to'} max model size {s}"
             self.binding_addrs["images"] = int(im.data_ptr())
@@ -835,10 +842,7 @@ class AutoShape(nn.Module):
             m.export = True  # do not output loss values
 
     def _apply(self, fn):
-        """Applies to(), cpu(), cuda(), half() etc.
-
-        to model tensors excluding parameters or registered buffers.
-        """
+        """Applies to(), cpu(), cuda(), half() etc. to model tensors, excluding parameters or registered buffers."""
         self = super()._apply(fn)
         if self.pt:
             m = self.model.model.model[-1] if self.dmb else self.model.model[-1]  # Detect()

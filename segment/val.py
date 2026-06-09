@@ -10,9 +10,9 @@ Usage - formats:
     $ python segment/val.py --weights yolov5s-seg.pt                 # PyTorch
                                       yolov5s-seg.torchscript        # TorchScript
                                       yolov5s-seg.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                      yolov5s-seg_openvino_label     # OpenVINO
+                                      yolov5s-seg_openvino_model     # OpenVINO
                                       yolov5s-seg.engine             # TensorRT
-                                      yolov5s-seg.mlmodel            # CoreML (macOS-only)
+                                      yolov5s-seg.mlpackage          # CoreML (macOS-only)
                                       yolov5s-seg_saved_model        # TensorFlow SavedModel
                                       yolov5s-seg.pb                 # TensorFlow GraphDef
                                       yolov5s-seg.tflite             # TensorFlow Lite

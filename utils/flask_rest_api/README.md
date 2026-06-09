@@ -24,51 +24,51 @@ python restapi.py --port 5000
 
 The server will begin listening on the specified port (defaulting to 5000). You can then send inference requests to the API endpoint using tools like [curl](https://curl.se/) or any other HTTP client.
 
-To test the API with a local image file (e.g., `zidane.jpg` located in the `yolov5/data/images` directory relative to the script):
+To test the API with a local image file (e.g., `zidane.jpg` located in the `yolov5/data/images` directory, which is `../../data/images/zidane.jpg` relative to the script):
 
 ```shell
-curl -X POST -F image=@../data/images/zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'
+curl -X POST -F image=@../../data/images/zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'
 ```
 
-The API processes the submitted image using the YOLOv5s model and returns the detection results in [JSON](https://www.json.org/json-en.html) format. Each object within the JSON array represents a detected item, including its class ID, confidence score, normalized [bounding box](https://www.ultralytics.com/glossary/bounding-box) coordinates (`xcenter`, `ycenter`, `width`, `height`), and class name.
+The API processes the submitted image using the YOLOv5s model and returns the detection results in [JSON](https://www.json.org/json-en.html) format. Each object within the JSON array represents a detected item, including its pixel [bounding box](https://www.ultralytics.com/glossary/bounding-box) coordinates (`xmin`, `ymin`, `xmax`, `ymax`), confidence score, class ID, and class name.
 
 ```json
 [
   {
-    "class": 0,
+    "xmin": 749.5,
+    "ymin": 43.5,
+    "xmax": 1148.0,
+    "ymax": 704.5,
     "confidence": 0.8900438547,
-    "height": 0.9318675399,
-    "name": "person",
-    "width": 0.3264600933,
-    "xcenter": 0.7438579798,
-    "ycenter": 0.5207948685
-  },
-  {
     "class": 0,
+    "name": "person"
+  },
+  {
+    "xmin": 113.5,
+    "ymin": 196.0,
+    "xmax": 1093.0,
+    "ymax": 711.0,
     "confidence": 0.8440024257,
-    "height": 0.7155083418,
-    "name": "person",
-    "width": 0.6546785235,
-    "xcenter": 0.427829951,
-    "ycenter": 0.6334488392
+    "class": 0,
+    "name": "person"
   },
   {
-    "class": 27,
+    "xmin": 437.5,
+    "ymin": 433.5,
+    "xmax": 529.5,
+    "ymax": 717.5,
     "confidence": 0.3771208823,
-    "height": 0.3902671337,
-    "name": "tie",
-    "width": 0.0696444362,
-    "xcenter": 0.3675483763,
-    "ycenter": 0.7991207838
+    "class": 27,
+    "name": "tie"
   },
   {
-    "class": 27,
+    "xmin": 1090.0,
+    "ymin": 312.0,
+    "xmax": 1135.0,
+    "ymax": 410.0,
     "confidence": 0.3527112305,
-    "height": 0.1540903747,
-    "name": "tie",
-    "width": 0.0336618312,
-    "xcenter": 0.7814827561,
-    "ycenter": 0.5065554976
+    "class": 27,
+    "name": "tie"
   }
 ]
 ```

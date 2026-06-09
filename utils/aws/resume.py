@@ -50,4 +50,4 @@ for last in path.rglob("*/**/last.pt"):
         cmd = ["python", "train.py", "--resume", str(last)]
 
     print(" ".join(cmd))
-    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # run in daemon thread
+    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # launch detached subprocess
