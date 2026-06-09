@@ -798,6 +798,7 @@ def main(opt, callbacks=Callbacks()):
 
         # Run the genetic algorithm for a fixed number of generations
         list_keys = list(hyp_GA.keys())
+        best_fitness, best_individual = float("-inf"), None
         for generation in range(opt.evolve):
             if generation >= 1:
                 save_dict = {}
@@ -871,9 +872,10 @@ def main(opt, callbacks=Callbacks()):
                         child[j] += random.uniform(-0.1, 0.1)
                         child[j] = min(max(child[j], gene_ranges[j][0]), gene_ranges[j][1])
                 next_generation.append(child)
-            # Track the best evaluated individual before replacing the population
-            best_index = fitness_scores.index(max(fitness_scores))
-            best_individual = population[best_index]
+            # Track the best evaluated individual across all generations
+            if max(fitness_scores) > best_fitness:
+                best_fitness = max(fitness_scores)
+                best_individual = population[fitness_scores.index(best_fitness)]
             # Replace the old population with the new generation
             population = next_generation
         # Print the best solution found
