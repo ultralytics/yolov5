@@ -930,13 +930,19 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
     if subprocess.run(cmd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
         LOGGER.info(f"\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}")
         sudo = subprocess.run(["sudo", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0  # sudo installed on system
-        for c in (
-            "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
-            'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
-            "sudo apt-get update",
-            "sudo apt-get install edgetpu-compiler",
-        ):
-            subprocess.run(c if sudo else c.replace("sudo ", ""), shell=True, check=True)
+        s = ["sudo"] if sudo else []
+        curl_proc = subprocess.run(
+            ["curl", "https://packages.cloud.google.com/apt/doc/apt-key.gpg"],
+            stdout=subprocess.PIPE, check=True,
+        )
+        subprocess.run(s + ["apt-key", "add", "-"], input=curl_proc.stdout, check=True)
+        deb_entry = b"deb https://packages.cloud.google.com/apt coral-edgetpu-stable main\n"
+        subprocess.run(
+            s + ["tee", "/etc/apt/sources.list.d/coral-edgetpu.list"],
+            input=deb_entry, check=True, stdout=subprocess.DEVNULL,
+        )
+        subprocess.run(s + ["apt-get", "update"], check=True)
+        subprocess.run(s + ["apt-get", "install", "edgetpu-compiler"], check=True)
     ver = subprocess.run(cmd.split(), capture_output=True, check=True).stdout.decode().split()[-1]
 
     LOGGER.info(f"\n{prefix} starting export with Edge TPU compiler {ver}...")
