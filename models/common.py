@@ -3,9 +3,11 @@
 
 import ast
 import contextlib
+import ipaddress
 import json
 import math
 import platform
+import socket
 import warnings
 import zipfile
 from collections import OrderedDict, namedtuple
@@ -511,7 +513,7 @@ class DetectMultiBackend(nn.Module):
             output_names = [x.name for x in session.get_outputs()]
             meta = session.get_modelmeta().custom_metadata_map  # metadata
             if "stride" in meta:
-                stride, names = int(meta["stride"]), eval(meta["names"])
+                stride, names = int(meta["stride"]), ast.literal_eval(meta["names"])
         elif xml:  # OpenVINO
             LOGGER.info(f"Loading {w} for OpenVINO inference...")
             check_requirements("openvino>=2023.0")  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -879,6 +881,10 @@ class AutoShape(nn.Module):
             for i, im in enumerate(ims):
                 f = f"image{i}"  # filename
                 if isinstance(im, (str, Path)):  # filename or uri
+                    if str(im).startswith("http"):
+                        _ip = ipaddress.ip_address(socket.gethostbyname(urlparse(str(im)).hostname or ""))
+                        if _ip.is_private or _ip.is_loopback or _ip.is_link_local or _ip.is_reserved:
+                            raise ValueError(f"Blocked request to internal address: {_ip}")
                     im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith("http") else im), im
                     im = np.asarray(exif_transpose(im))
                 elif isinstance(im, Image.Image):  # PIL Image
