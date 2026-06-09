@@ -1,22 +1,17 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # Overview:
-# This pyproject.toml file manages the build, packaging, and distribution of the Ultralytics library.
-# It defines essential project metadata, dependencies, and settings used to develop and deploy the library.
+# This pyproject.toml file manages the packaging metadata and tool configuration for Ultralytics YOLOv5.
+# Most users run YOLOv5 directly from a repository clone with dependencies from requirements.txt.
 
 # Key Sections:
 # - [build-system]: Specifies the build requirements and backend (e.g., setuptools, wheel).
 # - [project]: Includes details like name, version, description, authors, dependencies and more.
 # - [project.optional-dependencies]: Provides additional, optional packages for extended features.
-# - [tool.*]: Configures settings for various tools (pytest, yapf, etc.) used in the project.
-
-# Installation:
-# The Ultralytics library can be installed using the command: 'pip install ultralytics'
-# For development purposes, you can install the package in editable mode with: 'pip install -e .'
-# This approach allows for real-time code modifications without the need for re-installation.
+# - [tool.*]: Configures settings for various tools (pytest, ruff, etc.) used in the project.
 
 # Documentation:
-# For comprehensive documentation and usage instructions, visit: https://docs.ultralytics.com
+# For comprehensive documentation and usage instructions, visit: https://docs.ultralytics.com/yolov5/
 
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
@@ -26,11 +21,11 @@ build-backend = "setuptools.build_meta"
 [project]
 version = "7.0.0"
 name = "YOLOv5"
-description = "Ultralytics YOLOv5 for SOTA object detection, instance segmentation and image classification."
+description = "Ultralytics YOLOv5 for object detection, instance segmentation and image classification."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { "text" = "AGPL-3.0" }
-keywords = ["machine-learning", "deep-learning", "computer-vision", "ML", "DL", "AI", "YOLO", "YOLOv3", "YOLOv5", "YOLOv8", "HUB", "Ultralytics"]
+keywords = ["machine-learning", "deep-learning", "computer-vision", "ML", "DL", "AI", "YOLO", "YOLOv3", "YOLOv5", "Ultralytics"]
 authors = [
     { name = "Glenn Jocher" },
     { name = "Ayush Chaurasia" },
@@ -52,6 +47,8 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -63,18 +60,18 @@ classifiers = [
 
 # Required dependencies ------------------------------------------------------------------------------------------------
 dependencies = [
+    "gitpython>=3.1.30",
     "matplotlib>=3.3.0",
-    "numpy>=1.22.2",
+    "numpy>=1.23.5",
     "opencv-python>=4.6.0",
-    "pillow>=7.1.2",
+    "pillow>=10.3.0",
     "pyyaml>=5.3.1",
-    "requests>=2.23.0",
+    "requests>=2.32.2",
     "scipy>=1.4.1",
     "torch>=1.8.0",
     "torchvision>=0.9.0",
-    "tqdm>=4.64.0", # progress bars
+    "tqdm>=4.66.3", # progress bars
     "psutil", # system utilization
-    "py-cpuinfo", # display CPU info
     "thop>=0.1.1", # FLOPs computation
     "pandas>=1.1.4",
     "seaborn>=0.11.0", # plotting
@@ -86,31 +83,23 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "ipython",
-    "check-manifest",
     "pytest",
     "pytest-cov",
     "coverage[toml]",
-    "mkdocs-material",
-    "mkdocstrings[python]",
-    "mkdocs-ultralytics-plugin>=0.0.34", # for meta descriptions and images, dates and authors
 ]
 export = [
     "onnx>=1.12.0", # ONNX export
     "coremltools>=9.0; platform_system != 'Windows'", # CoreML only supported on macOS and Linux
-    "openvino-dev>=2023.0", # OpenVINO export
+    "openvino>=2024.0.0", # OpenVINO export
     "tensorflow>=2.0.0,<=2.19.0", # TF bug https://github.com/ultralytics/ultralytics/issues/5161
     "tensorflowjs>=3.9.0", # TF.js export, automatically installs tensorflow
     "keras>=3.5.0,<=3.12.0", # pin to avoid XNNPACK errors
 ]
-# tensorflow>=2.4.1,<=2.13.1  # TF exports (-cpu, -aarch64, -macos)
 # tflite-support  # for TFLite model metadata
-# scikit-learn==0.19.2  # CoreML quantization
-# nvidia-pyindex  # TensorRT export
-# nvidia-tensorrt  # TensorRT export
+# tensorrt  # TensorRT export
 logging = [
-    "comet", # https://docs.ultralytics.com/integrations/comet/
+    "comet_ml", # https://docs.ultralytics.com/integrations/comet/
     "tensorboard>=2.13.0",
-    "dvclive>=2.12.0",
 ]
 extra = [
     "ipython", # interactive notebook
@@ -124,9 +113,8 @@ extra = [
 "Source" = "https://github.com/ultralytics/yolov5/"
 
 # Tools settings -------------------------------------------------------------------------------------------------------
-[tool.pytest]
+[tool.pytest.ini_options]
 norecursedirs = [".git", "dist", "build"]
-addopts = "--doctest-modules --durations=30 --color=yes"
 
 [tool.isort]
 line_length = 120

@@ -10,7 +10,7 @@
 
 - **Experiment Management:** Effortlessly track every [YOLO training run](https://docs.ultralytics.com/modes/train/), including parameters, metrics, and outputs. Explore the [Ultralytics ClearML integration guide](https://docs.ultralytics.com/integrations/clearml/) for step-by-step instructions.
 - **Data Versioning:** Manage and access your custom training data with ClearML's Data Versioning Tool, similar to [DVC integration](https://docs.ultralytics.com/integrations/dvc/).
-- **Remote Execution:** [Remotely train and monitor models](https://docs.ultralytics.com/platform/) using ClearML Agent for seamless scaling.
+- **Remote Execution:** Remotely train and monitor models using [ClearML Agent](https://docs.clear.ml/docs/latest/docs/clearml_agent) for seamless scaling.
 - **Hyperparameter Optimization:** Boost your [mean average precision (mAP)](https://docs.ultralytics.com/guides/yolo-performance-metrics/) with ClearML's [hyperparameter tuning](https://docs.ultralytics.com/guides/hyperparameter-tuning/) capabilities.
 - **Model Deployment:** Deploy your trained YOLO model as an API with ClearML Serving, complementing [Ultralytics model deployment options](https://docs.ultralytics.com/guides/model-deployment-options/).
 
@@ -158,14 +158,14 @@ With experiments and data versioned, you can leverage ClearML for [hyperparamete
 To run HPO locally, use the provided script `utils/loggers/clearml/hpo.py`. You'll need the ID of a previously run training task (the "template task") to clone. Update the script with this ID and run:
 
 ```bash
-# Install Optuna for advanced optimization strategies (optional)
-# pip install optuna
+# Install Optuna, required by the optimizer used in the script
+pip install optuna
 
 # Run the HPO script
 python utils/loggers/clearml/hpo.py
 ```
 
-The script uses [Optuna](https://optuna.org/) by default if installed, or falls back to `RandomSearch`. You can modify `task.execute_locally()` to `task.execute()` in the script to enqueue HPO tasks for a remote ClearML agent.
+The script uses [Optuna](https://optuna.org/) (via `OptimizerOptuna`) to search the hyperparameter space, so the `optuna` package must be installed. To enqueue HPO tasks for a remote ClearML agent instead of running locally, replace `optimizer.start_locally()` with `optimizer.start()` in the script and provide an execution queue.
 
 ![HPO in ClearML UI](https://raw.githubusercontent.com/thepycoder/clearml_screenshots/main/hpo.png)
 

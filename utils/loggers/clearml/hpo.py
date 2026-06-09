@@ -64,10 +64,10 @@ optimizer = HyperParameterOptimizer(
     # if we have an auto-scaler connected, this, by proxy, will limit the number of machine
     max_number_of_concurrent_tasks=1,
     # this is the optimizer class (actually doing the optimization)
-    # Currently, we can choose from GridSearch, RandomSearch or OptimizerBOHB (Bayesian optimization Hyper-Band)
+    # Available options include GridSearch, RandomSearch, OptimizerBOHB (Bayesian optimization Hyper-Band) and OptimizerOptuna
     optimizer_class=OptimizerOptuna,
     # If specified only the top K performing Tasks will be kept, the others will be automatically archived
-    save_top_k_tasks_only=5,  # 5,
+    save_top_k_tasks_only=5,
     compute_time_limit=None,
     total_max_jobs=20,
     min_iteration_per_job=None,

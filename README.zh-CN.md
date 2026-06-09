@@ -280,7 +280,7 @@ YOLOv5 分割模型在 [COCO 数据集](https://docs.ultralytics.com/datasets/se
 
 ### 训练
 
-YOLOv5 分割训练支持通过 `--data coco128-seg.yaml` 参数自动下载 [COCO128-seg 数据集](https://docs.ultralytics.com/datasets/segment/coco128-seg/)。对于完整的 [COCO-segments 数据集](https://docs.ultralytics.com/datasets/segment/coco/)，请使用 `bash data/scripts/get_coco.sh --train --val --segments` 手动下载，然后使用 `python train.py --data coco.yaml` 进行训练。
+YOLOv5 分割训练支持通过 `--data coco128-seg.yaml` 参数自动下载 [COCO128-seg 数据集](https://docs.ultralytics.com/datasets/segment/coco128-seg/)。对于完整的 [COCO-segments 数据集](https://docs.ultralytics.com/datasets/segment/coco/)，请使用 `bash data/scripts/get_coco.sh --train --val --segments` 手动下载，然后使用 `python segment/train.py --data coco.yaml` 进行训练。
 
 ```bash
 # 在单个 GPU 上训练

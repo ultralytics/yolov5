@@ -9,32 +9,7 @@ import torch.nn as nn
 from ultralytics.utils.patches import torch_load
 
 from utils.downloads import attempt_download
-
-
-class Sum(nn.Module):
-    """Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070."""
-
-    def __init__(self, n, weight=False):
-        """Initializes a module to sum outputs of layers with number of inputs `n` and optional weighting, supporting 2+
-        inputs.
-        """
-        super().__init__()
-        self.weight = weight  # apply weights boolean
-        self.iter = range(n - 1)  # iter object
-        if weight:
-            self.w = nn.Parameter(-torch.arange(1.0, n) / 2, requires_grad=True)  # layer weights
-
-    def forward(self, x):
-        """Processes input through a customizable weighted sum of `n` inputs, optionally applying learned weights."""
-        y = x[0]  # no weight
-        if self.weight:
-            w = torch.sigmoid(self.w) * 2
-            for i in self.iter:
-                y = y + x[i + 1] * w[i]
-        else:
-            for i in self.iter:
-                y = y + x[i + 1]
-        return y
+from utils.general import LOGGER
 
 
 class MixConv2d(nn.Module):
@@ -72,10 +47,6 @@ class MixConv2d(nn.Module):
 
 class Ensemble(nn.ModuleList):
     """Ensemble of models."""
-
-    def __init__(self):
-        """Initializes an ensemble of models to be used for aggregated predictions."""
-        super().__init__()
 
     def forward(self, x, augment=False, profile=False, visualize=False):
         """Performs forward pass aggregating outputs from an ensemble of models."""
@@ -122,7 +93,7 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
         return model[-1]
 
     # Return detection ensemble
-    print(f"Ensemble created with {weights}\n")
+    LOGGER.info(f"Ensemble created with {weights}\n")
     for k in "names", "nc", "yaml":
         setattr(model, k, getattr(model[0], k))
     model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride

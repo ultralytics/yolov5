@@ -25,12 +25,6 @@ class TritonRemoteModel:
             model_repository = self.client.get_model_repository_index()
             self.model_name = model_repository.models[0].name
             self.metadata = self.client.get_model_metadata(self.model_name, as_json=True)
-
-            def create_input_placeholders() -> list[InferInput]:
-                return [
-                    InferInput(i["name"], [int(s) for s in i["shape"]], i["datatype"]) for i in self.metadata["inputs"]
-                ]
-
         else:
             from tritonclient.http import InferenceServerClient, InferInput
 
@@ -39,10 +33,8 @@ class TritonRemoteModel:
             self.model_name = model_repository[0]["name"]
             self.metadata = self.client.get_model_metadata(self.model_name)
 
-            def create_input_placeholders() -> list[InferInput]:
-                return [
-                    InferInput(i["name"], [int(s) for s in i["shape"]], i["datatype"]) for i in self.metadata["inputs"]
-                ]
+        def create_input_placeholders() -> list[InferInput]:
+            return [InferInput(i["name"], [int(s) for s in i["shape"]], i["datatype"]) for i in self.metadata["inputs"]]
 
         self._create_input_placeholders_fn = create_input_placeholders
 

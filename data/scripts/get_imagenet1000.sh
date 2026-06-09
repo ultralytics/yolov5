@@ -2,24 +2,11 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # Download ILSVRC2012 ImageNet dataset https://image-net.org
-# Example usage: bash data/scripts/get_imagenet.sh
+# Example usage: bash data/scripts/get_imagenet1000.sh
 # parent
 # ├── yolov5
 # └── datasets
-#     └── imagenet  ← downloads here
-
-# Arguments (optional) Usage: bash data/scripts/get_imagenet.sh --train --val
-if [ "$#" -gt 0 ]; then
-  for opt in "$@"; do
-    case "${opt}" in
-      --train) train=true ;;
-      --val) val=true ;;
-    esac
-  done
-else
-  train=true
-  val=true
-fi
+#     └── imagenet1000  ← downloads here
 
 # Make dir
 d='../datasets/imagenet1000' # unzip directory

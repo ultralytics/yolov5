@@ -514,8 +514,8 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(meta["stride"]), ast.literal_eval(meta["names"])
         elif xml:  # OpenVINO
             LOGGER.info(f"Loading {w} for OpenVINO inference...")
-            check_requirements("openvino>=2023.0")  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-            from openvino.runtime import Core, Layout, get_batch
+            check_requirements("openvino>=2024.0.0")
+            from openvino import Core, Layout, get_batch
 
             core = Core()
             if not Path(w).is_file():  # if not *.xml
@@ -585,8 +585,7 @@ class DetectMultiBackend(nn.Module):
             LOGGER.info(f"Loading {w} for TensorFlow SavedModel inference...")
             import tensorflow as tf
 
-            keras = False  # assume TF1 saved_model
-            model = tf.keras.models.load_model(w) if keras else tf.saved_model.load(w)
+            model = tf.saved_model.load(w)
         elif pb:  # GraphDef https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
             LOGGER.info(f"Loading {w} for TensorFlow GraphDef inference...")
             import tensorflow as tf
@@ -926,7 +925,7 @@ class AutoShape(nn.Module):
 class Detections:
     """Manages YOLOv5 detection results with methods for visualization, saving, cropping, and exporting detections."""
 
-    def __init__(self, ims, pred, files, times=(0, 0, 0), names=None, shape=None):
+    def __init__(self, ims, pred, files, times, names=None, shape=None):
         """Initializes the YOLOv5 Detections class with image info, predictions, filenames, timing and normalization."""
         super().__init__()
         d = pred[0].device  # device

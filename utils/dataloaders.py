@@ -8,7 +8,6 @@ import json
 import math
 import os
 import random
-import shutil
 import time
 from itertools import repeat
 from multiprocessing.pool import Pool, ThreadPool
@@ -51,7 +50,6 @@ from utils.general import (
     segments2boxes,
     unzip_file,
     xyn2xy,
-    xywh2xyxy,
     xywhn2xyxy,
     xyxy2xywhn,
 )
@@ -129,7 +127,7 @@ def seed_worker(worker_id):
 
 
 # Inherit from DistributedSampler and override iterator
-# https://github.com/pytorch/pytorch/blob/master/torch/utils/data/distributed.py
+# https://github.com/pytorch/pytorch/blob/main/torch/utils/data/distributed.py
 class SmartDistributedSampler(distributed.DistributedSampler):
     """A distributed sampler ensuring deterministic shuffling and balanced data distribution across GPUs."""
 
@@ -446,10 +444,9 @@ class LoadStreams:
             st = f"{i + 1}/{n}: {s}... "
             if urlparse(s).hostname in ("www.youtube.com", "youtube.com", "youtu.be"):  # if source is YouTube video
                 # YouTube format i.e. 'https://www.youtube.com/watch?v=LNwODJXcvt4' or 'https://youtu.be/LNwODJXcvt4'
-                check_requirements(("pafy", "youtube_dl==2020.12.2"))
-                import pafy
+                from ultralytics.data.loaders import get_best_youtube_url
 
-                s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
+                s = get_best_youtube_url(s)  # YouTube URL
             s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
             if s == 0:
                 assert not is_colab(), "--source 0 webcam unsupported on Colab. Rerun command in a local environment."
@@ -757,18 +754,12 @@ class LoadImagesAndLabels(Dataset):
         """Returns the number of images in the dataset."""
         return len(self.im_files)
 
-    # def __iter__(self):
-    #     self.count = -1
-    #     print('ran dataset iter')
-    #     #self.shuffled_vector = np.random.permutation(self.nF) if self.augment else np.arange(self.nF)
-    #     return self
-
     def __getitem__(self, index):
         """Fetches the dataset item at the given index, considering linear, shuffled, or weighted sampling."""
         index = self.indices[index]  # linear, shuffled, or image_weights
 
         hyp = self.hyp
-        if mosaic := self.mosaic and random.random() < hyp["mosaic"]:
+        if self.mosaic and random.random() < hyp["mosaic"]:
             # Load mosaic
             img, labels = self.load_mosaic(index)
             shapes = None
@@ -824,10 +815,6 @@ class LoadImagesAndLabels(Dataset):
                 img = np.fliplr(img)
                 if nl:
                     labels[:, 1] = 1 - labels[:, 1]
-
-            # Cutouts
-            # labels = cutout(img, labels, p=0.5)
-            # nl = len(labels)  # update after cutout
 
         labels_out = torch.zeros((nl, 6))
         if nl:
@@ -911,7 +898,6 @@ class LoadImagesAndLabels(Dataset):
         labels4 = np.concatenate(labels4, 0)
         for x in (labels4[:, 1:], *segments4):
             np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
-        # img4, labels4 = replicate(img4, labels4)  # replicate
 
         # Augment
         img4, labels4, segments4 = copy_paste(img4, labels4, segments4, p=self.hyp["copy_paste"])
@@ -928,87 +914,6 @@ class LoadImagesAndLabels(Dataset):
         )  # border to remove
 
         return img4, labels4
-
-    def load_mosaic9(self, index):
-        """Loads 1 image + 8 random images into a 9-image mosaic for augmented YOLOv5 training, returning labels and
-        segments.
-        """
-        labels9, segments9 = [], []
-        s = self.img_size
-        indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
-        random.shuffle(indices)
-        hp, wp = -1, -1  # height, width previous
-        for i, index in enumerate(indices):
-            # Load image
-            img, _, (h, w) = self.load_image(index)
-
-            # place img in img9
-            if i == 0:  # center
-                img9 = np.full((s * 3, s * 3, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
-                h0, w0 = h, w
-                c = s, s, s + w, s + h  # xmin, ymin, xmax, ymax (base) coordinates
-            elif i == 1:  # top
-                c = s, s - h, s + w, s
-            elif i == 2:  # top right
-                c = s + wp, s - h, s + wp + w, s
-            elif i == 3:  # right
-                c = s + w0, s, s + w0 + w, s + h
-            elif i == 4:  # bottom right
-                c = s + w0, s + hp, s + w0 + w, s + hp + h
-            elif i == 5:  # bottom
-                c = s + w0 - w, s + h0, s + w0, s + h0 + h
-            elif i == 6:  # bottom left
-                c = s + w0 - wp - w, s + h0, s + w0 - wp, s + h0 + h
-            elif i == 7:  # left
-                c = s - w, s + h0 - h, s, s + h0
-            elif i == 8:  # top left
-                c = s - w, s + h0 - hp - h, s, s + h0 - hp
-
-            padx, pady = c[:2]
-            x1, y1, x2, y2 = (max(x, 0) for x in c)  # allocate coords
-
-            # Labels
-            labels, segments = self.labels[index].copy(), self.segments[index].copy()
-            if labels.size:
-                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padx, pady)  # normalized xywh to pixel xyxy format
-                segments = [xyn2xy(x, w, h, padx, pady) for x in segments]
-            labels9.append(labels)
-            segments9.extend(segments)
-
-            # Image
-            img9[y1:y2, x1:x2] = img[y1 - pady :, x1 - padx :]  # img9[ymin:ymax, xmin:xmax]
-            hp, wp = h, w  # height, width previous
-
-        # Offset
-        yc, xc = (int(random.uniform(0, s)) for _ in self.mosaic_border)  # mosaic center x, y
-        img9 = img9[yc : yc + 2 * s, xc : xc + 2 * s]
-
-        # Concat/clip labels
-        labels9 = np.concatenate(labels9, 0)
-        labels9[:, [1, 3]] -= xc
-        labels9[:, [2, 4]] -= yc
-        c = np.array([xc, yc])  # centers
-        segments9 = [x - c for x in segments9]
-
-        for x in (labels9[:, 1:], *segments9):
-            np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
-        # img9, labels9 = replicate(img9, labels9)  # replicate
-
-        # Augment
-        img9, labels9, segments9 = copy_paste(img9, labels9, segments9, p=self.hyp["copy_paste"])
-        img9, labels9 = random_perspective(
-            img9,
-            labels9,
-            segments9,
-            degrees=self.hyp["degrees"],
-            translate=self.hyp["translate"],
-            scale=self.hyp["scale"],
-            shear=self.hyp["shear"],
-            perspective=self.hyp["perspective"],
-            border=self.mosaic_border,
-        )  # border to remove
-
-        return img9, labels9
 
     @staticmethod
     def collate_fn(batch):
@@ -1048,54 +953,6 @@ class LoadImagesAndLabels(Dataset):
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
-def flatten_recursive(path=DATASETS_DIR / "coco128"):
-    """Flatten a directory by copying all files from subdirs to a new top-level directory, preserving filenames."""
-    new_path = Path(f"{path!s}_flat")
-    if os.path.exists(new_path):
-        shutil.rmtree(new_path)  # delete output folder
-    os.makedirs(new_path)  # make new output folder
-    for file in tqdm(glob.glob(f"{Path(path)!s}/**/*.*", recursive=True)):
-        shutil.copyfile(file, new_path / Path(file).name)
-
-
-def extract_boxes(path=DATASETS_DIR / "coco128"):
-    """Converts a detection dataset to a classification dataset, creating a directory for each class and extracting
-    bounding boxes.
-
-    Example: from utils.dataloaders import *; extract_boxes()
-    """
-    path = Path(path)  # images dir
-    shutil.rmtree(path / "classification") if (path / "classification").is_dir() else None  # remove existing
-    files = list(path.rglob("*.*"))
-    n = len(files)  # number of files
-    for im_file in tqdm(files, total=n):
-        if im_file.suffix[1:] in IMG_FORMATS:
-            # image
-            im = cv2.imread(str(im_file))[..., ::-1]  # BGR to RGB
-            h, w = im.shape[:2]
-
-            # labels
-            lb_file = Path(img2label_paths([str(im_file)])[0])
-            if Path(lb_file).exists():
-                with open(lb_file) as f:
-                    lb = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
-
-                for j, x in enumerate(lb):
-                    c = int(x[0])  # class
-                    f = (path / "classification") / f"{c}" / f"{path.stem}_{im_file.stem}_{j}.jpg"  # new filename
-                    if not f.parent.is_dir():
-                        f.parent.mkdir(parents=True)
-
-                    b = x[1:] * [w, h, w, h]  # box
-                    # b[2:] = b[2:].max()  # rectangle to square
-                    b[2:] = b[2:] * 1.2 + 3  # pad
-                    b = xywh2xyxy(b.reshape(-1, 4)).ravel().astype(int)
-
-                    b[[0, 2]] = np.clip(b[[0, 2]], 0, w)  # clip boxes outside of image
-                    b[[1, 3]] = np.clip(b[[1, 3]], 0, h)
-                    assert cv2.imwrite(str(f), im[b[1] : b[3], b[0] : b[2]]), f"box failure in {f}"
-
-
 def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), annotated_only=False):
     """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files Usage: from utils.dataloaders
     import *; autosplit().
@@ -1178,10 +1035,10 @@ class HUBDatasetStats:
     """Class for generating HUB dataset JSON and `-hub` dataset directory.
 
     Args:
-        path: Path to data.yaml or data.zip (with data.yaml inside data.zip)
-        autodownload: Attempt to download dataset if not found locally
+        path (str): Path to data.yaml or data.zip (with data.yaml inside data.zip).
+        autodownload (bool): Attempt to download dataset if not found locally.
 
-            Usage
+    Examples:
         from utils.dataloaders import HUBDatasetStats
         stats = HUBDatasetStats('coco128.yaml', autodownload=True)  # usage 1
         stats = HUBDatasetStats('path/to/coco128.zip')  # usage 2
@@ -1306,9 +1163,10 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
     """YOLOv5 Classification Dataset.
 
     Args:
-        root: Dataset path
-        transform: torchvision transforms, used by default
-        album_transform: Albumentations transforms, used if installed
+        root (str): Dataset path.
+        augment (bool): Apply Albumentations augmentations if installed.
+        imgsz (int): Image size for transforms.
+        cache (bool | str): Cache images in RAM if True or 'ram', on disk if 'disk', or not at all if False.
     """
 
     def __init__(self, root, augment, imgsz, cache=False):
@@ -1343,7 +1201,6 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
 def create_classification_dataloader(
     path, imgsz=224, batch_size=16, augment=True, cache=False, rank=-1, workers=8, shuffle=True
 ):
-    # Returns Dataloader object to be used with YOLOv5 Classifier
     """Creates a DataLoader for image classification, supporting caching, augmentation, and distributed training."""
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = ClassificationDataset(root=path, imgsz=imgsz, augment=augment, cache=cache)

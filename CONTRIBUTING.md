@@ -12,33 +12,18 @@ We value your input and are committed to making contributing to YOLO as easy and
 
 Ultralytics YOLO thrives thanks to the collective efforts of our community. Every improvement you contribute helps push the boundaries of what's possible in AI! 😃
 
+To ensure a welcoming and inclusive environment for everyone, all contributors must adhere to our [Code of Conduct](https://docs.ultralytics.com/help/code-of-conduct/).
+
 ## 🛠️ Submitting a Pull Request (PR)
 
-Submitting a PR is straightforward! Here’s an example showing how to update `requirements.txt` in four simple steps:
+We greatly appreciate contributions in the form of [pull requests (PRs)](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests). To make the review process as smooth as possible, please follow these steps:
 
-### 1. Select the File to Update
-
-Click on `requirements.txt` in the GitHub repository.
-
-<p align="center"><img width="800" alt="PR_step1" src="https://user-images.githubusercontent.com/26833433/122260847-08be2600-ced4-11eb-828b-8287ace4136c.png"></p>
-
-### 2. Click 'Edit this file'
-
-Find the 'Edit this file' button in the top-right corner.
-
-<p align="center"><img width="800" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122260844-06f46280-ced4-11eb-9eec-b8a24be519ca.png"></p>
-
-### 3. Make Your Changes
-
-For example, update the `matplotlib` version from `3.2.2` to `3.3`.
-
-<p align="center"><img width="800" alt="PR_step3" src="https://user-images.githubusercontent.com/26833433/122260853-0a87e980-ced4-11eb-9fd2-3650fb6e0842.png"></p>
-
-### 4. Preview Changes and Submit Your PR
-
-Click the **Preview changes** tab to review your updates. At the bottom, select 'Create a new branch for this commit', give your branch a descriptive name like `fix/matplotlib_version`, and click the green **Propose changes** button. Your PR is now submitted for review! 😃
-
-<p align="center"><img width="800" alt="PR_step4" src="https://user-images.githubusercontent.com/26833433/122260856-0b208000-ced4-11eb-8e8e-77b6151cbcc3.png"></p>
+1. **[Fork the repository](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo):** Start by forking the [ultralytics/yolov5](https://github.com/ultralytics/yolov5) repository to your GitHub account.
+2. **[Create a branch](https://docs.github.com/en/desktop/making-changes-in-a-branch/managing-branches-in-github-desktop):** Create a new branch in your forked repository with a clear, descriptive name reflecting your changes (e.g., `fix-issue-123`, `improve-docs`).
+3. **Make your changes:** Implement your improvements or fixes. Ensure your code adheres to the project's style guidelines and doesn't introduce new errors or warnings.
+4. **Test your changes:** Before submitting, test your changes locally to confirm they work as expected and don't cause regressions.
+5. **[Commit your changes](https://docs.github.com/en/desktop/making-changes-in-a-branch/committing-and-reviewing-changes-to-your-project-in-github-desktop):** Commit your changes with concise and descriptive commit messages. If your changes address a specific issue, include the issue number (e.g., `Fix #123: Corrected calculation error.`).
+6. **[Create a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request):** Submit a pull request from your branch to the `master` branch of the [ultralytics/yolov5](https://github.com/ultralytics/yolov5) repository. Provide a clear title and a detailed description explaining the purpose and scope of your changes.
 
 ### PR Best Practices
 
@@ -84,4 +69,4 @@ For more details on contributing, check out the [Ultralytics open-source contrib
 
 We welcome your contributions—thank you for helping make Ultralytics YOLO better! 🚀
 
-[![Ultralytics open-source contributors](https://raw.githubusercontent.com/ultralytics/assets/main/im/image-contributors.png)](https://github.com/ultralytics/ultralytics/graphs/contributors)
+[![Ultralytics open-source contributors](https://raw.githubusercontent.com/ultralytics/assets/main/im/image-contributors.png)](https://github.com/ultralytics/yolov5/graphs/contributors)

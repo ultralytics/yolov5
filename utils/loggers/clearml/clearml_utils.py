@@ -189,10 +189,11 @@ class ClearmlLogger:
         """Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
 
         Args:
-            image_path (PosixPath) the path the original image file
+            image_path (PosixPath): Path to the original image file
             boxes (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
             class_names (dict): dict containing mapping of class int to class name
             image (Tensor): A torch tensor containing the actual image data
+            conf_threshold (float): Confidence threshold for drawing predictions
         """
         if (
             len(self.current_epoch_logged_images) < self.max_imgs_to_log_per_epoch
@@ -209,7 +210,6 @@ class ClearmlLogger:
                 label = f"{class_name}: {confidence_percentage}%"
 
                 if conf > conf_threshold:
-                    annotator.rectangle(box.cpu().numpy(), outline=color)
                     annotator.box_label(box.cpu().numpy(), label=label, color=color)
 
             annotated_image = annotator.result()

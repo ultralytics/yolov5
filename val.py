@@ -20,6 +20,7 @@ Usage - formats:
 """
 
 import argparse
+import glob
 import json
 import os
 import subprocess
@@ -52,45 +53,14 @@ from utils.general import (
     increment_path,
     non_max_suppression,
     print_args,
+    save_one_txt,
     scale_boxes,
     xywh2xyxy,
     xyxy2xywh,
 )
-from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
+from utils.metrics import ConfusionMatrix, ap_per_class, process_batch
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
-
-
-def save_one_txt(predn, save_conf, shape, file):
-    """Saves one detection result to a txt file in normalized xywh format, optionally including confidence.
-
-    Args:
-        predn (torch.Tensor): Predicted bounding boxes and associated confidence scores and classes in xyxy format,
-            tensor of shape (N, 6) where N is the number of detections.
-        save_conf (bool): If True, saves the confidence scores along with the bounding box coordinates.
-        shape (tuple): Shape of the original image as (height, width).
-        file (str | Path): File path where the result will be saved.
-
-    Returns:
-        None
-
-    Examples:
-        ```python
-        predn = torch.tensor([[10, 20, 30, 40, 0.9, 1]])  # example prediction
-        save_one_txt(predn, save_conf=True, shape=(640, 480), file="output.txt")
-        ```
-
-    Notes:
-        The xyxy bounding box format represents the coordinates (xmin, ymin, xmax, ymax).
-        The xywh format represents the coordinates (center_x, center_y, width, height) and is normalized by the width and
-        height of the image.
-    """
-    gn = torch.tensor(shape)[[1, 0, 1, 0]]  # normalization gain whwh
-    for *xyxy, conf, cls in predn.tolist():
-        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-        line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-        with open(file, "a") as f:
-            f.write(("%g " * len(line)).rstrip() % line + "\n")
 
 
 def save_one_json(predn, jdict, path, class_map):
@@ -137,46 +107,6 @@ def save_one_json(predn, jdict, path, class_map):
                 "score": round(p[4], 5),
             }
         )
-
-
-def process_batch(detections, labels, iouv):
-    """Return a correct prediction matrix given detections and labels at various IoU thresholds.
-
-    Args:
-        detections (torch.Tensor): Tensor of shape (N, 6) where each row corresponds to a detection with format [x1, y1,
-            x2, y2, conf, class].
-        labels (torch.Tensor): Tensor of shape (M, 5) where each row corresponds to a ground truth label with format
-            [class, x1, y1, x2, y2].
-        iouv (torch.Tensor): Tensor of IoU thresholds to evaluate at.
-
-    Returns:
-        correct (torch.Tensor): A boolean tensor of shape (N, len(iouv)) on iouv.device.
-
-    Examples:
-        ```python
-        detections = np.array([[50, 50, 200, 200, 0.9, 1], [30, 30, 150, 150, 0.7, 0]])
-        labels = np.array([[1, 50, 50, 200, 200]])
-        iouv = np.linspace(0.5, 0.95, 10)
-        correct = process_batch(detections, labels, iouv)
-        ```
-
-    Notes:
-        - This function is used as part of the evaluation pipeline for object detection models.
-        - IoU (Intersection over Union) is a common evaluation metric for object detection performance.
-    """
-    correct = np.zeros((detections.shape[0], iouv.shape[0])).astype(bool)
-    iou = box_iou(labels[:, 1:], detections[:, :4])
-    correct_class = labels[:, 0:1] == detections[:, 5]
-    for i in range(len(iouv)):
-        x = torch.where((iou >= iouv[i]) & correct_class)  # IoU > threshold and classes match
-        if x[0].shape[0]:
-            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()  # [label, detect, iou]
-            if x[0].shape[0] > 1:
-                matches = matches[matches[:, 2].argsort()[::-1]]
-                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
-                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
-            correct[matches[:, 1].astype(int), i] = True
-    return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
 
 
 @smart_inference_mode()
@@ -246,7 +176,7 @@ def run(
         compute_loss (function, optional): Loss function for training. Default is None.
 
     Returns:
-        dict: Contains performance metrics including precision, recall, mAP50, and mAP50-95.
+        (tuple): ((mp, mr, map50, map, box_loss, obj_loss, cls_loss), per-class mAP50-95 array, speeds tuple (ms)).
     """
     # Initialize/load model and set device
     training = model is not None
@@ -586,7 +516,7 @@ def main(opt):
                     r, _, t = run(**vars(opt), plots=False)
                     y.append(r + t)  # results and times
                 np.savetxt(f, y, fmt="%10.4g")  # save
-            subprocess.run(["zip", "-r", "study.zip", "study_*.txt"])
+            subprocess.run(["zip", "-r", "study.zip", *glob.glob("study_*.txt")])
             plot_val_study(x=x)  # plot
         else:
             raise NotImplementedError(f'--task {opt.task} not in ("train", "val", "test", "speed", "study")')

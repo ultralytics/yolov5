@@ -23,7 +23,7 @@ import subprocess
 import sys
 import time
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -220,7 +220,7 @@ def train(hyp, opt, device, callbacks):
             """Linear learning rate scheduler decreasing from 1 to hyp['lrf'] over 'epochs'."""
             return (1 - x / epochs) * (1.0 - hyp["lrf"]) + hyp["lrf"]  # linear
 
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
@@ -638,7 +638,9 @@ def main(opt, callbacks=Callbacks()):
         assert torch.cuda.device_count() > LOCAL_RANK, "insufficient CUDA devices for DDP command"
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device("cuda", LOCAL_RANK)
-        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
+        dist.init_process_group(
+            backend="nccl" if dist.is_nccl_available() else "gloo", timeout=timedelta(seconds=10800)
+        )
 
     # Train
     if not opt.evolve:
@@ -742,7 +744,7 @@ def main(opt, callbacks=Callbacks()):
         LOGGER.info(
             f"Hyperparameter evolution finished {opt.evolve} generations\n"
             f"Results saved to {colorstr('bold', save_dir)}\n"
-            f"Usage example: $ python train.py --hyp {evolve_yaml}"
+            f"Usage example: $ python segment/train.py --hyp {evolve_yaml}"
         )
 
 

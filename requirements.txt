@@ -5,7 +5,7 @@
 gitpython>=3.1.30
 matplotlib>=3.3
 numpy>=1.23.5
-opencv-python>=4.1.1
+opencv-python>=4.6.0
 pillow>=10.3.0
 psutil  # system resources
 PyYAML>=5.3.1
@@ -21,7 +21,7 @@ ultralytics>=8.4.47  # https://ultralytics.com
 # Logging ---------------------------------------------------------------------
 # tensorboard>=2.4.1
 # clearml>=1.2.0
-# comet
+# comet_ml
 
 # Plotting --------------------------------------------------------------------
 pandas>=1.1.4
@@ -31,12 +31,11 @@ seaborn>=0.11.0
 # coremltools>=6.0  # CoreML export
 # onnx>=1.10.0  # ONNX export
 # onnxslim>=0.1.82  # ONNX simplifier
-# nvidia-pyindex  # TensorRT export
-# nvidia-tensorrt  # TensorRT export
+# tensorrt  # TensorRT export
 # scikit-learn<=1.1.2  # CoreML quantization
-# tensorflow>=2.4.0,<=2.13.1  # TF exports (-cpu, -aarch64, -macos)
+# tensorflow>=2.0.0,<=2.19.0  # TF exports (-cpu, -aarch64, -macos)
 # tensorflowjs>=3.9.0  # TF.js export
-# openvino-dev>=2023.0  # OpenVINO export
+# openvino>=2024.0.0  # OpenVINO export
 
 # Deploy ----------------------------------------------------------------------
 packaging  # Migration of deprecated pkg_resources packages

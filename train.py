@@ -258,7 +258,7 @@ def train(hyp, opt, device, callbacks):
             """Linear learning rate scheduler function with decay calculated by epoch proportion."""
             return (1 - x / epochs) * (1.0 - hyp["lrf"]) + hyp["lrf"]  # linear
 
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
@@ -871,12 +871,13 @@ def main(opt, callbacks=Callbacks()):
                         child[j] += random.uniform(-0.1, 0.1)
                         child[j] = min(max(child[j], gene_ranges[j][0]), gene_ranges[j][1])
                 next_generation.append(child)
+            # Track the best evaluated individual before replacing the population
+            best_index = fitness_scores.index(max(fitness_scores))
+            best_individual = population[best_index]
             # Replace the old population with the new generation
             population = next_generation
         # Print the best solution found
-        best_index = fitness_scores.index(max(fitness_scores))
-        best_individual = population[best_index]
-        print("Best solution found:", best_individual)
+        LOGGER.info(f"Best solution found: {best_individual}")
         # Plot results
         plot_evolve(evolve_csv)
         LOGGER.info(

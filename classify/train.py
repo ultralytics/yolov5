@@ -19,7 +19,7 @@ import subprocess
 import sys
 import time
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import torch
@@ -107,7 +107,7 @@ def train(opt, device):
             LOGGER.info(f"\nDataset not found ⚠️, missing path {data_dir}, attempting download...")
             t = time.time()
             if str(data) == "imagenet":
-                subprocess.run(["bash", str(ROOT / "data/scripts/get_imagenet.sh")], shell=True, check=True)
+                subprocess.run(["bash", str(ROOT / "data/scripts/get_imagenet.sh")], check=True)
             else:
                 url = f"https://github.com/ultralytics/assets/releases/download/v0.0.0/{data}.zip"
                 download(url, dir=data_dir.parent, curl=True)
@@ -215,7 +215,7 @@ def train(opt, device):
             trainloader.sampler.set_epoch(epoch)
         pbar = enumerate(trainloader)
         if RANK in {-1, 0}:
-            pbar = tqdm(enumerate(trainloader), total=len(trainloader), bar_format=TQDM_BAR_FORMAT)
+            pbar = tqdm(pbar, total=len(trainloader), bar_format=TQDM_BAR_FORMAT)
         for i, (images, labels) in pbar:  # progress bar
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
@@ -351,12 +351,14 @@ def main(opt):
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
     if LOCAL_RANK != -1:
-        assert opt.batch_size != -1, "AutoBatch is coming soon for classification, please pass a valid --batch-size"
+        assert opt.batch_size != -1, "AutoBatch is not supported for classification, please pass a valid --batch-size"
         assert opt.batch_size % WORLD_SIZE == 0, f"--batch-size {opt.batch_size} must be multiple of WORLD_SIZE"
         assert torch.cuda.device_count() > LOCAL_RANK, "insufficient CUDA devices for DDP command"
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device("cuda", LOCAL_RANK)
-        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
+        dist.init_process_group(
+            backend="nccl" if dist.is_nccl_available() else "gloo", timeout=timedelta(seconds=10800)
+        )
 
     # Parameters
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run

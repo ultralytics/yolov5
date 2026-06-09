@@ -373,7 +373,7 @@ class ClassificationModel(BaseModel):
         self.nc = nc
 
     def _from_yaml(self, cfg):
-        """Creates a YOLOv5 classification model from a specified *.yaml configuration file."""
+        """Placeholder; building a classification model from a *.yaml config is not implemented, sets model to None."""
         self.model = None
 
 

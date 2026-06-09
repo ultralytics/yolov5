@@ -20,8 +20,6 @@
 *.data
 *.json
 *.cfg
-!setup.cfg
-!cfg/yolov3*.cfg
 
 storage.googleapis.com
 runs/*
@@ -45,7 +43,6 @@ VOC/
 # MATLAB GitIgnore -----------------------------------------------------------------------------------------------------
 *.m~
 *.mat
-!targets*.mat
 
 # Neural Network weights -----------------------------------------------------------------------------------------------
 *.weights
@@ -62,8 +59,6 @@ VOC/
 *_web_model/
 *_openvino_model/
 *_paddle_model/
-darknet53.conv.74
-yolov3-tiny.conv.15
 
 # GitHub Python GitIgnore ----------------------------------------------------------------------------------------------
 # Byte-compiled / optimized / DLL files
@@ -211,9 +206,8 @@ Temporary Items
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/dictionaries
-.html  # Bokeh Plots
-.pg  # TensorFlow Frozen Graphs
-.avi # videos
+*.html
+*.pg
 
 # Sensitive or high-churn files:
 .idea/**/dataSources/
