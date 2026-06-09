@@ -394,8 +394,8 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
         ```python
         from pathlib import Path
 
-        export_openvino(Path("yolov5s.pt"), metadata={"names": model.names, "stride": model.stride}, half=True,
-                        int8=False, data="data.yaml")
+        metadata = {"stride": 32, "names": {0: "person", 1: "bicycle"}}  # model metadata
+        export_openvino(Path("yolov5s.pt"), metadata, half=True, int8=False, data="coco128.yaml")
         ```
 
         This will export the YOLOv5 model to OpenVINO with FP16 precision but without INT8 quantization, saving it to
