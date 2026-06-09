@@ -747,7 +747,7 @@ class DetectMultiBackend(nn.Module):
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
             im = im.cpu().numpy()
             if self.saved_model:  # SavedModel
-                y = self.model(im, training=False) if self.keras else self.model(im)
+                y = self.model(im)
             elif self.pb:  # GraphDef
                 y = self.frozen_func(x=self.tf.constant(im))
             else:  # Lite or Edge TPU
