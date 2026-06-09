@@ -275,8 +275,8 @@ def yolov5l(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=Tr
 
 
 def yolov5x(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=True, device=None):
-    """Create the YOLOv5-xlarge model with options for pretraining, input channels, class count, autoshaping,
-    verbosity, and device specification.
+    """Create the YOLOv5-xlarge model with options for pretraining, input channels, class count, autoshaping, verbosity,
+    and device specification.
 
     Args:
         pretrained (bool): If True, loads pretrained weights into the model. Defaults to True.

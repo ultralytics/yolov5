@@ -8,8 +8,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-
-from ultralytics.utils.metrics import smooth  # noqa: F401
+from ultralytics.utils.metrics import smooth
 
 from utils import TryExcept, threaded
 
@@ -40,8 +39,8 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
         prefix (str): Prefix for saved plot filenames.
 
     Returns:
-        (tuple): tp, fp, p, r, f1, ap, unique_classes — per-class counts, precision, recall, F1, AP per IoU
-            threshold, and the sorted unique class indices.
+        (tuple): tp, fp, p, r, f1, ap, unique_classes — per-class counts, precision, recall, F1, AP per IoU threshold,
+            and the sorted unique class indices.
     """
     # Sort by objectness
     i = np.argsort(-conf)
@@ -367,8 +366,8 @@ def bbox_ioa(box1, box2, eps=1e-7):
 
 @threaded
 def plot_pr_curve(px, py, ap, save_dir=Path("pr_curve.png"), names=()):
-    """Plots precision-recall curve, optionally per class, saving to `save_dir`; `px`, `py` are lists, `ap` is an
-    (nc, 10) array whose first column (AP@0.5) is plotted, `names` optional.
+    """Plots precision-recall curve, optionally per class, saving to `save_dir`; `px`, `py` are lists, `ap` is an (nc,
+    10) array whose first column (AP@0.5) is plotted, `names` optional.
     """
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)

@@ -13,7 +13,6 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
-
 from ultralytics.utils.torch_utils import copy_attr, scale_img, time_sync  # noqa: F401
 
 from utils.general import LOGGER, check_version, colorstr, file_date, git_describe

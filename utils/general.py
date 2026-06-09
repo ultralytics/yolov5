@@ -45,9 +45,9 @@ except (ImportError, AssertionError):
 from ultralytics.data.converter import coco80_to_coco91_class  # noqa: F401
 from ultralytics.utils import colorstr, get_default_args  # noqa: F401
 from ultralytics.utils.checks import check_requirements as check_requirements_ultralytics
-from ultralytics.utils.checks import is_ascii  # noqa: F401
+from ultralytics.utils.checks import is_ascii
 from ultralytics.utils.files import WorkingDirectory, file_date, file_size  # noqa: F401
-from ultralytics.utils.ops import make_divisible  # noqa: F401
+from ultralytics.utils.ops import make_divisible
 from ultralytics.utils.patches import torch_load
 from ultralytics.utils.torch_utils import intersect_dicts  # noqa: F401
 
