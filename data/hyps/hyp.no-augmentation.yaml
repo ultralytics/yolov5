@@ -1,8 +1,10 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-# Hyperparameters when using Albumentations frameworks
-# python train.py --hyp hyp.no-augmentation.yaml
-# See https://github.com/ultralytics/yolov5/pull/3882 for YOLOv5 + Albumentations Usage examples
+# Hyperparameters for disabling built-in YOLO augmentations when using Albumentations
+# Configuration docs: https://docs.ultralytics.com/usage/cfg
+# Augmentation docs: https://docs.ultralytics.com/guides/yolo-data-augmentation
+# Albumentations example: https://github.com/ultralytics/yolov5/pull/3882
+# Example usage: python train.py --hyp hyp.no-augmentation.yaml
 
 lr0: 0.01 # initial learning rate (SGD=1E-2, Adam=1E-3)
 lrf: 0.1 # final OneCycleLR learning rate (lr0 * lrf)
@@ -19,7 +21,7 @@ obj_pw: 1.0 # obj BCELoss positive_weight
 iou_t: 0.20 # IoU training threshold
 anchor_t: 4.0 # anchor-multiple threshold
 # anchors: 3  # anchors per output layer (0 to ignore)
-# this parameters are all zero since we want to use albumentation framework
+# These built-in augmentation probabilities are zero so Albumentations owns augmentation.
 fl_gamma: 0.0 # focal loss gamma (efficientDet default gamma=1.5)
 hsv_h: 0 # image HSV-Hue augmentation (fraction)
 hsv_s: 0 # image HSV-Saturation augmentation (fraction)

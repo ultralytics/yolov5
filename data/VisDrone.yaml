@@ -1,7 +1,9 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # VisDrone2019-DET dataset https://github.com/VisDrone/VisDrone-Dataset by Tianjin University
-# Documentation: https://docs.ultralytics.com/datasets/detect/visdrone/
+# Documentation: https://docs.ultralytics.com/datasets/detect/visdrone
+# Dataset format: https://docs.ultralytics.com/datasets/detect#ultralytics-yolo-format
+# Training docs: https://docs.ultralytics.com/modes/train
 # Example usage: python train.py --data VisDrone.yaml
 # parent
 # ├── yolov5
@@ -10,9 +12,9 @@
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
 path: ../datasets/VisDrone # dataset root dir
-train: VisDrone2019-DET-train/images # train images (relative to 'path')  6471 images
-val: VisDrone2019-DET-val/images # val images (relative to 'path')  548 images
-test: VisDrone2019-DET-test-dev/images # test images (optional)  1610 images
+train: VisDrone2019-DET-train/images # train images (relative to 'path') 6471 images
+val: VisDrone2019-DET-val/images # val images (relative to 'path') 548 images
+test: VisDrone2019-DET-test-dev/images # test images (optional) 1610 images
 
 # Classes
 names:

@@ -1,8 +1,10 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # Hyperparameters for VOC training
-# python train.py --batch 128 --weights yolov5m6.pt --data VOC.yaml --epochs 50 --img 512 --hyp hyp.scratch-med.yaml --evolve
-# See Hyperparameter Evolution tutorial for details https://docs.ultralytics.com/yolov5/
+# Configuration docs: https://docs.ultralytics.com/usage/cfg
+# Hyperparameter tuning docs: https://docs.ultralytics.com/guides/hyperparameter-tuning
+# Augmentation docs: https://docs.ultralytics.com/guides/yolo-data-augmentation
+# Example usage: python train.py --batch 128 --weights yolov5m6.pt --data VOC.yaml --epochs 50 --img 512 --hyp hyp.scratch-med.yaml --evolve
 
 # YOLOv5 Hyperparameter Evolution Results
 # Best generation: 467
@@ -10,32 +12,32 @@
 #    metrics/precision,       metrics/recall,      metrics/mAP_0.5, metrics/mAP_0.5:0.95,         val/box_loss,         val/obj_loss,         val/cls_loss
 #              0.87729,              0.85125,              0.91286,              0.72664,            0.0076739,            0.0042529,            0.0013865
 
-lr0: 0.00334
-lrf: 0.15135
-momentum: 0.74832
-weight_decay: 0.00025
-warmup_epochs: 3.3835
-warmup_momentum: 0.59462
-warmup_bias_lr: 0.18657
-box: 0.02
-cls: 0.21638
-cls_pw: 0.5
-obj: 0.51728
-obj_pw: 0.67198
-iou_t: 0.2
-anchor_t: 3.3744
-fl_gamma: 0.0
-hsv_h: 0.01041
-hsv_s: 0.54703
-hsv_v: 0.27739
-degrees: 0.0
-translate: 0.04591
-scale: 0.75544
-shear: 0.0
-perspective: 0.0
-flipud: 0.0
-fliplr: 0.5
-mosaic: 0.85834
-mixup: 0.04266
-copy_paste: 0.0
-anchors: 3.412
+lr0: 0.00334 # initial learning rate (SGD=1E-2, Adam=1E-3)
+lrf: 0.15135 # final OneCycleLR learning rate (lr0 * lrf)
+momentum: 0.74832 # SGD momentum/Adam beta1
+weight_decay: 0.00025 # optimizer weight decay
+warmup_epochs: 3.3835 # warmup epochs (fractions ok)
+warmup_momentum: 0.59462 # warmup initial momentum
+warmup_bias_lr: 0.18657 # warmup initial bias lr
+box: 0.02 # box loss gain
+cls: 0.21638 # cls loss gain
+cls_pw: 0.5 # cls BCELoss positive_weight
+obj: 0.51728 # obj loss gain (scale with pixels)
+obj_pw: 0.67198 # obj BCELoss positive_weight
+iou_t: 0.2 # IoU training threshold
+anchor_t: 3.3744 # anchor-multiple threshold
+fl_gamma: 0.0 # focal loss gamma (efficientDet default gamma=1.5)
+hsv_h: 0.01041 # image HSV-Hue augmentation (fraction)
+hsv_s: 0.54703 # image HSV-Saturation augmentation (fraction)
+hsv_v: 0.27739 # image HSV-Value augmentation (fraction)
+degrees: 0.0 # image rotation (+/- deg)
+translate: 0.04591 # image translation (+/- fraction)
+scale: 0.75544 # image scale (+/- gain)
+shear: 0.0 # image shear (+/- deg)
+perspective: 0.0 # image perspective (+/- fraction), range 0-0.001
+flipud: 0.0 # image flip up-down (probability)
+fliplr: 0.5 # image flip left-right (probability)
+mosaic: 0.85834 # image mosaic (probability)
+mixup: 0.04266 # image mixup (probability)
+copy_paste: 0.0 # segment copy-paste (probability)
+anchors: 3.412 # anchors per output layer

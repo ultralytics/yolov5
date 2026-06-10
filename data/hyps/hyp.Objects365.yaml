@@ -1,35 +1,37 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # Hyperparameters for Objects365 training
-# python train.py --weights yolov5m.pt --data Objects365.yaml --evolve
-# See Hyperparameter Evolution tutorial for details https://docs.ultralytics.com/yolov5/
+# Configuration docs: https://docs.ultralytics.com/usage/cfg
+# Hyperparameter tuning docs: https://docs.ultralytics.com/guides/hyperparameter-tuning
+# Augmentation docs: https://docs.ultralytics.com/guides/yolo-data-augmentation
+# Example usage: python train.py --weights yolov5m.pt --data Objects365.yaml --evolve
 
-lr0: 0.00258
-lrf: 0.17
-momentum: 0.779
-weight_decay: 0.00058
-warmup_epochs: 1.33
-warmup_momentum: 0.86
-warmup_bias_lr: 0.0711
-box: 0.0539
-cls: 0.299
-cls_pw: 0.825
-obj: 0.632
-obj_pw: 1.0
-iou_t: 0.2
-anchor_t: 3.44
-anchors: 3.2
-fl_gamma: 0.0
-hsv_h: 0.0188
-hsv_s: 0.704
-hsv_v: 0.36
-degrees: 0.0
-translate: 0.0902
-scale: 0.491
-shear: 0.0
-perspective: 0.0
-flipud: 0.0
-fliplr: 0.5
-mosaic: 1.0
-mixup: 0.0
-copy_paste: 0.0
+lr0: 0.00258 # initial learning rate (SGD=1E-2, Adam=1E-3)
+lrf: 0.17 # final OneCycleLR learning rate (lr0 * lrf)
+momentum: 0.779 # SGD momentum/Adam beta1
+weight_decay: 0.00058 # optimizer weight decay
+warmup_epochs: 1.33 # warmup epochs (fractions ok)
+warmup_momentum: 0.86 # warmup initial momentum
+warmup_bias_lr: 0.0711 # warmup initial bias lr
+box: 0.0539 # box loss gain
+cls: 0.299 # cls loss gain
+cls_pw: 0.825 # cls BCELoss positive_weight
+obj: 0.632 # obj loss gain (scale with pixels)
+obj_pw: 1.0 # obj BCELoss positive_weight
+iou_t: 0.2 # IoU training threshold
+anchor_t: 3.44 # anchor-multiple threshold
+anchors: 3.2 # anchors per output layer
+fl_gamma: 0.0 # focal loss gamma (efficientDet default gamma=1.5)
+hsv_h: 0.0188 # image HSV-Hue augmentation (fraction)
+hsv_s: 0.704 # image HSV-Saturation augmentation (fraction)
+hsv_v: 0.36 # image HSV-Value augmentation (fraction)
+degrees: 0.0 # image rotation (+/- deg)
+translate: 0.0902 # image translation (+/- fraction)
+scale: 0.491 # image scale (+/- gain)
+shear: 0.0 # image shear (+/- deg)
+perspective: 0.0 # image perspective (+/- fraction), range 0-0.001
+flipud: 0.0 # image flip up-down (probability)
+fliplr: 0.5 # image flip left-right (probability)
+mosaic: 1.0 # image mosaic (probability)
+mixup: 0.0 # image mixup (probability)
+copy_paste: 0.0 # segment copy-paste (probability)

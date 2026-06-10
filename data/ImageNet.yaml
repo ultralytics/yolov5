@@ -2,7 +2,9 @@
 
 # ImageNet-1k dataset https://www.image-net.org/index.php by Stanford University
 # Simplified class names from https://github.com/anishathalye/imagenet-simple-labels
-# Documentation: https://docs.ultralytics.com/datasets/classify/imagenet/
+# Documentation: https://docs.ultralytics.com/datasets/classify/imagenet
+# Classification docs: https://docs.ultralytics.com/tasks/classify
+# Training docs: https://docs.ultralytics.com/modes/train
 # Example usage: python classify/train.py --data imagenet
 # parent
 # ├── yolov5

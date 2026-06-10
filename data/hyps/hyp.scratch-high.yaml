@@ -1,8 +1,10 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # Hyperparameters for high-augmentation COCO training from scratch
-# python train.py --batch 32 --cfg yolov5m6.yaml --weights '' --data coco.yaml --img 1280 --epochs 300
-# See tutorials for hyperparameter evolution https://docs.ultralytics.com/yolov5/
+# Configuration docs: https://docs.ultralytics.com/usage/cfg
+# Hyperparameter tuning docs: https://docs.ultralytics.com/guides/hyperparameter-tuning
+# Augmentation docs: https://docs.ultralytics.com/guides/yolo-data-augmentation
+# Example usage: python train.py --batch 32 --cfg yolov5m6.yaml --weights '' --data coco.yaml --img 1280 --epochs 300
 
 lr0: 0.01 # initial learning rate (SGD=1E-2, Adam=1E-3)
 lrf: 0.1 # final OneCycleLR learning rate (lr0 * lrf)
