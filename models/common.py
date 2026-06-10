@@ -811,6 +811,19 @@ class DetectMultiBackend(nn.Module):
         return None, None
 
 
+def _validate_ssrf_url(url: str) -> None:
+    """Raise ValueError if url resolves to any private/internal address."""
+    hostname = urlparse(url).hostname or ""
+    try:
+        results = socket.getaddrinfo(hostname, None)
+    except socket.gaierror as e:
+        raise ValueError(f"Could not resolve hostname '{hostname}': {e}") from e
+    for _family, _type, _proto, _canonname, sockaddr in results:
+        addr = ipaddress.ip_address(sockaddr[0])
+        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved or addr.is_multicast:
+            raise ValueError(f"Blocked request to internal address: {addr}")
+
+
 class AutoShape(nn.Module):
     """AutoShape class for robust YOLOv5 inference with preprocessing, NMS, and support for various input formats."""
 
@@ -882,9 +895,7 @@ class AutoShape(nn.Module):
                 f = f"image{i}"  # filename
                 if isinstance(im, (str, Path)):  # filename or uri
                     if str(im).startswith("http"):
-                        _ip = ipaddress.ip_address(socket.gethostbyname(urlparse(str(im)).hostname or ""))
-                        if _ip.is_private or _ip.is_loopback or _ip.is_link_local or _ip.is_reserved:
-                            raise ValueError(f"Blocked request to internal address: {_ip}")
+                        _validate_ssrf_url(str(im))
                     im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith("http") else im), im
                     im = np.asarray(exif_transpose(im))
                 elif isinstance(im, Image.Image):  # PIL Image
