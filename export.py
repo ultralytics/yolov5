@@ -927,9 +927,20 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
     cmd = "edgetpu_compiler --version"
     help_url = "https://coral.ai/docs/edgetpu/compiler/"
     assert platform.system() == "Linux", f"export only supported on Linux. See {help_url}"
-    if subprocess.run(cmd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
+    try:
+        compiler_present = subprocess.run(
+            cmd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        ).returncode == 0
+    except FileNotFoundError:
+        compiler_present = False
+    if not compiler_present:
         LOGGER.info(f"\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}")
-        sudo = subprocess.run(["sudo", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0  # sudo installed on system
+        try:
+            sudo = subprocess.run(
+                ["sudo", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            ).returncode == 0
+        except FileNotFoundError:
+            sudo = False
         s = ["sudo"] if sudo else []
         curl_proc = subprocess.run(
             ["curl", "https://packages.cloud.google.com/apt/doc/apt-key.gpg"],
