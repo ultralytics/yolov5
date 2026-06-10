@@ -2,13 +2,8 @@
 """utils/initialization."""
 
 import contextlib
-import platform
-import threading
 
-
-def emojis(str=""):
-    """Returns an emoji-safe version of a string, stripped of emojis on Windows platforms."""
-    return str.encode().decode("ascii", "ignore") if platform.system() == "Windows" else str
+from ultralytics.utils import emojis, threaded  # noqa: F401
 
 
 class TryExcept(contextlib.ContextDecorator):
@@ -29,31 +24,6 @@ class TryExcept(contextlib.ContextDecorator):
         if value:
             print(emojis(f"{self.msg}{': ' if self.msg else ''}{value}"))
         return True
-
-
-def threaded(func):
-    """Decorator @threaded to run a function in a separate thread, returning the thread instance."""
-
-    def wrapper(*args, **kwargs):
-        """Runs the decorated function in a separate daemon thread and returns the thread instance."""
-        thread = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=True)
-        thread.start()
-        return thread
-
-    return wrapper
-
-
-def join_threads(verbose=False):
-    """Joins all daemon threads, optionally printing their names if verbose is True.
-
-    Example: atexit.register(lambda: join_threads())
-    """
-    main_thread = threading.current_thread()
-    for t in threading.enumerate():
-        if t is not main_thread:
-            if verbose:
-                print(f"Joining thread {t.name}")
-            t.join()
 
 
 def notebook_init(verbose=True):

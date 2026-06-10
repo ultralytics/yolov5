@@ -54,8 +54,7 @@ IOU_THRES = float(os.getenv("IOU_THRES", 0.6))
 
 # Batch Logging Settings
 COMET_LOG_BATCH_METRICS = os.getenv("COMET_LOG_BATCH_METRICS", "false").lower() == "true"
-COMET_BATCH_LOGGING_INTERVAL = os.getenv("COMET_BATCH_LOGGING_INTERVAL", 1)
-COMET_PREDICTION_LOGGING_INTERVAL = os.getenv("COMET_PREDICTION_LOGGING_INTERVAL", 1)
+COMET_BATCH_LOGGING_INTERVAL = int(os.getenv("COMET_BATCH_LOGGING_INTERVAL", 1))
 COMET_LOG_PER_CLASS_METRICS = os.getenv("COMET_LOG_PER_CLASS_METRICS", "false").lower() == "true"
 
 RANK = int(os.getenv("RANK", -1))
@@ -93,7 +92,8 @@ class CometLogger:
             "log_env_gpu": True,
             "log_env_cpu": True,
             "project_name": COMET_PROJECT_NAME,
-        } | experiment_kwargs
+            **experiment_kwargs,
+        }
         self.experiment = self._get_experiment(self.comet_mode, run_id)
         self.experiment.set_name(self.opt.name)
 
@@ -261,12 +261,12 @@ class CometLogger:
             return
         detections = predn[predn[:, 4] > self.conf_thres]
         iou = box_iou(labelsn[:, 1:], detections[:, :4])
-        mask, _ = torch.where(iou > self.iou_thres)
-        if len(mask) == 0:
+        label_indices, detection_indices = torch.where(iou > self.iou_thres)
+        if len(label_indices) == 0:
             return
 
-        filtered_detections = detections[mask]
-        filtered_labels = labelsn[mask]
+        filtered_detections = detections[detection_indices.unique()]
+        filtered_labels = labelsn[label_indices.unique()]
 
         image_id = path.split("/")[-1].split(".")[0]
         image_name = f"{image_id}_curr_epoch_{self.experiment.curr_epoch}"
@@ -416,18 +416,10 @@ class CometLogger:
         """Logs hyperparameters at the start of training."""
         self.log_parameters(self.hyp)
 
-    def on_train_epoch_start(self):
-        """Called at the start of each training epoch."""
-        return
-
     def on_train_epoch_end(self, epoch):
         """Updates the current epoch in the experiment tracking at the end of each epoch."""
         self.experiment.curr_epoch = epoch
 
-        return
-
-    def on_train_batch_start(self):
-        """Called at the start of each training batch."""
         return
 
     def on_train_batch_end(self, log_dict, step):
@@ -468,10 +460,6 @@ class CometLogger:
 
     def on_val_start(self):
         """Called at the start of validation, currently a placeholder with no functionality."""
-        return
-
-    def on_val_batch_start(self):
-        """Placeholder called at the start of a validation batch with no current functionality."""
         return
 
     def on_val_batch_end(self, batch_i, images, targets, paths, shapes, outputs):

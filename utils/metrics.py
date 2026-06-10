@@ -8,11 +8,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from ultralytics.utils.metrics import smooth
+
+from utils import TryExcept, threaded
 
 # NumPy 2.0 compatibility: trapezoid was renamed from trapz
 trapezoid = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
-
-from utils import TryExcept, threaded
 
 
 def fitness(x):
@@ -21,29 +22,25 @@ def fitness(x):
     return (x[:, :4] * w).sum(1)
 
 
-def smooth(y, f=0.05):
-    """Applies box filter smoothing to array `y` with fraction `f`, yielding a smoothed array."""
-    nf = round(len(y) * f * 2) // 2 + 1  # number of filter elements (must be odd)
-    p = np.ones(nf // 2)  # ones padding
-    yp = np.concatenate((p * y[0], y, p * y[-1]), 0)  # y padded
-    return np.convolve(yp, np.ones(nf) / nf, mode="valid")  # y-smoothed
-
-
 def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names=(), eps=1e-16, prefix=""):
     """Compute the average precision, given the recall and precision curves.
 
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
 
     Args:
-        tp: True positives (nparray, nx1 or nx10).
-        conf: Objectness value from 0-1 (nparray).
-        pred_cls: Predicted object classes (nparray).
-        target_cls: True object classes (nparray).
-        plot: Plot precision-recall curve at mAP@0.5
-        save_dir: Plot save directory
+        tp (np.ndarray): True positives, shape (n, 1) or (n, 10).
+        conf (np.ndarray): Objectness values from 0-1, shape (n,).
+        pred_cls (np.ndarray): Predicted object classes, shape (n,).
+        target_cls (np.ndarray): True object classes, shape (m,).
+        plot (bool): Plot precision-recall curve at mAP@0.5.
+        save_dir (str | Path): Plot save directory.
+        names (dict | tuple): Class index to name mapping used for plot legends.
+        eps (float): Small value to avoid division by zero.
+        prefix (str): Prefix for saved plot filenames.
 
     Returns:
-        The average precision as computed in py-faster-rcnn.
+        (tuple): tp, fp, p, r, f1, ap, unique_classes — per-class counts, precision, recall, F1, AP per IoU threshold,
+            and the sorted unique class indices.
     """
     # Sort by objectness
     i = np.argsort(-conf)
@@ -51,7 +48,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
 
     # Find unique classes
     unique_classes, nt = np.unique(target_cls, return_counts=True)
-    nc = unique_classes.shape[0]  # number of classes, number of detections
+    nc = unique_classes.shape[0]  # number of classes
 
     # Create Precision-Recall curve and compute AP for each class
     px, py = np.linspace(0, 1, 1000), []  # for plotting
@@ -185,15 +182,6 @@ class ConfusionMatrix:
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # predicted background
 
-    def tp_fp(self):
-        """Calculates true positives (tp) and false positives (fp) excluding the background class from the confusion
-        matrix.
-        """
-        tp = self.matrix.diagonal()  # true positives
-        fp = self.matrix.sum(1) - tp  # false positives
-        # fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
-        return tp[:-1], fp[:-1]  # remove background class
-
     @TryExcept("WARNING ⚠️ ConfusionMatrix plot failure")
     def plot(self, normalize=True, save_dir="", names=()):
         """Plots confusion matrix using seaborn, optional normalization; can save plot to specified directory."""
@@ -277,8 +265,54 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
     return iou  # IoU
 
 
+def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, overlap=False, masks=False):
+    """Return a correct prediction matrix given detections and labels at various IoU thresholds.
+
+    Args:
+        detections (torch.Tensor): Tensor of shape (N, 6) where each row is [x1, y1, x2, y2, conf, class].
+        labels (torch.Tensor): Tensor of shape (M, 5) where each row is [class, x1, y1, x2, y2].
+        iouv (torch.Tensor): Tensor of IoU thresholds to evaluate at.
+        pred_masks (torch.Tensor, optional): Predicted masks used when `masks=True`.
+        gt_masks (torch.Tensor, optional): Ground-truth masks used when `masks=True`.
+        overlap (bool): Whether ground-truth masks are stored as a single overlap-encoded mask.
+        masks (bool): If True, match predictions to labels by mask IoU instead of box IoU.
+
+    Returns:
+        correct (torch.Tensor): A boolean tensor of shape (N, len(iouv)) on iouv.device.
+    """
+    if masks:
+        import torch.nn.functional as F
+
+        from utils.segment.general import mask_iou
+
+        if overlap:
+            nl = len(labels)
+            index = torch.arange(nl, device=gt_masks.device).view(nl, 1, 1) + 1
+            gt_masks = gt_masks.repeat(nl, 1, 1)  # shape(1,640,640) -> (n,640,640)
+            gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
+        if gt_masks.shape[1:] != pred_masks.shape[1:]:
+            gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0]
+            gt_masks = gt_masks.gt_(0.5)
+        iou = mask_iou(gt_masks.view(gt_masks.shape[0], -1), pred_masks.view(pred_masks.shape[0], -1))
+    else:  # boxes
+        iou = box_iou(labels[:, 1:], detections[:, :4])
+
+    correct = np.zeros((detections.shape[0], iouv.shape[0])).astype(bool)
+    correct_class = labels[:, 0:1] == detections[:, 5]
+    for i in range(len(iouv)):
+        x = torch.where((iou >= iouv[i]) & correct_class)  # IoU > threshold and classes match
+        if x[0].shape[0]:
+            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()  # [label, detect, iou]
+            if x[0].shape[0] > 1:
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+            correct[matches[:, 1].astype(int), i] = True
+    return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
+
+
 def box_iou(box1, box2, eps=1e-7):
-    # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
+    # https://github.com/pytorch/vision/blob/main/torchvision/ops/boxes.py
     """Return intersection-over-union (Jaccard index) of boxes.
 
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
@@ -327,23 +361,13 @@ def bbox_ioa(box1, box2, eps=1e-7):
     return inter_area / box2_area
 
 
-def wh_iou(wh1, wh2, eps=1e-7):
-    """Calculates the Intersection over Union (IoU) for two sets of widths and heights; `wh1` and `wh2` should be nx2
-    and mx2 tensors.
-    """
-    wh1 = wh1[:, None]  # [N,1,2]
-    wh2 = wh2[None]  # [1,M,2]
-    inter = torch.min(wh1, wh2).prod(2)  # [N,M]
-    return inter / (wh1.prod(2) + wh2.prod(2) - inter + eps)  # iou = inter / (area1 + area2 - inter)
-
-
 # Plots ----------------------------------------------------------------------------------------------------------------
 
 
 @threaded
 def plot_pr_curve(px, py, ap, save_dir=Path("pr_curve.png"), names=()):
-    """Plots precision-recall curve, optionally per class, saving to `save_dir`; `px`, `py` are lists, `ap` is Nx2
-    array, `names` optional.
+    """Plots precision-recall curve, optionally per class, saving to `save_dir`; `px`, `py` are lists, `ap` is an (nc,
+    10) array whose first column (AP@0.5) is plotted, `names` optional.
     """
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)

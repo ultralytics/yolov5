@@ -23,12 +23,12 @@ fi
 
 # Make dir
 d='../datasets/imagenet' # unzip directory
-mkdir -p $d && cd $d
+mkdir -p $d && cd $d || exit
 
 # Download/unzip train
 if [ "$train" == "true" ]; then
   wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar # download 138G, 1281167 images
-  mkdir train && mv ILSVRC2012_img_train.tar train/ && cd train
+  mkdir train && mv ILSVRC2012_img_train.tar train/ && cd train || exit
   tar -xf ILSVRC2012_img_train.tar && rm -f ILSVRC2012_img_train.tar
   find . -name "*.tar" | while read NAME; do
     mkdir -p "${NAME%.tar}"

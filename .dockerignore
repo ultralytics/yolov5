@@ -174,9 +174,8 @@ Temporary Items
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/dictionaries
-.html  # Bokeh Plots
-.pg  # TensorFlow Frozen Graphs
-.avi # videos
+*.html
+*.pg
 
 # Sensitive or high-churn files:
 .idea/**/dataSources/

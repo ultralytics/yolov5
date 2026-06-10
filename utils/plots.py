@@ -4,7 +4,6 @@
 import contextlib
 import math
 import os
-from copy import copy
 from pathlib import Path
 
 import cv2
@@ -19,7 +18,7 @@ from scipy.ndimage import gaussian_filter1d
 from ultralytics.utils.plotting import Annotator
 
 from utils import TryExcept, threaded
-from utils.general import LOGGER, clip_boxes, increment_path, xywh2xyxy, xyxy2xywh
+from utils.general import LOGGER, xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
 
 # Settings
@@ -120,23 +119,6 @@ def hist2d(x, y, n=100):
     return np.log(hist[xidx, yidx])
 
 
-def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
-    """Applies a low-pass Butterworth filter to `data` with specified `cutoff`, `fs`, and `order`."""
-    from scipy.signal import butter, filtfilt
-
-    # https://stackoverflow.com/questions/28536191/how-to-filter-smooth-with-scipy-numpy
-    def butter_lowpass(cutoff, fs, order):
-        """Applies a low-pass Butterworth filter to a signal with specified cutoff frequency, sample rate, and filter
-        order.
-        """
-        nyq = 0.5 * fs
-        normal_cutoff = cutoff / nyq
-        return butter(order, normal_cutoff, btype="low", analog=False)
-
-    b, a = butter_lowpass(cutoff, fs, order=order)
-    return filtfilt(b, a, data)  # forward-backward filter
-
-
 def output_to_target(output, max_det=300):
     """Converts YOLOv5 model output to [batch_id, class_id, x, y, w, h, conf] format for plotting, limiting detections
     to `max_det`.
@@ -212,60 +194,6 @@ def plot_images(images, targets, paths=None, fname="images.jpg", names=None):
                     label = f"{cls}" if labels else f"{cls} {conf[j]:.1f}"
                     annotator.box_label(box, label, color=color)
     annotator.im.save(fname)  # save
-
-
-def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=""):
-    """Plots learning rate schedule for given optimizer and scheduler, saving plot to `save_dir`."""
-    optimizer, scheduler = copy(optimizer), copy(scheduler)  # do not modify originals
-    y = []
-    for _ in range(epochs):
-        scheduler.step()
-        y.append(optimizer.param_groups[0]["lr"])
-    plt.plot(y, ".-", label="LR")
-    plt.xlabel("epoch")
-    plt.ylabel("LR")
-    plt.grid()
-    plt.xlim(0, epochs)
-    plt.ylim(0)
-    plt.savefig(Path(save_dir) / "LR.png", dpi=200)
-    plt.close()
-
-
-def plot_val_txt():
-    """Plots 2D and 1D histograms of bounding box centers from 'val.txt' using matplotlib, saving as 'hist2d.png' and
-    'hist1d.png'.
-
-    Example: from utils.plots import *; plot_val()
-    """
-    x = np.loadtxt("val.txt", dtype=np.float32)
-    box = xyxy2xywh(x[:, :4])
-    cx, cy = box[:, 0], box[:, 1]
-
-    fig, ax = plt.subplots(1, 1, figsize=(6, 6), tight_layout=True)
-    ax.hist2d(cx, cy, bins=600, cmax=10, cmin=0)
-    ax.set_aspect("equal")
-    plt.savefig("hist2d.png", dpi=300)
-
-    _fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
-    ax[0].hist(cx, bins=600)
-    ax[1].hist(cy, bins=600)
-    plt.savefig("hist1d.png", dpi=200)
-
-
-def plot_targets_txt():
-    """Plots histograms of object detection targets from 'targets.txt', saving the figure as 'targets.jpg'.
-
-    Example: from utils.plots import *; plot_targets_txt()
-    """
-    x = np.loadtxt("targets.txt", dtype=np.float32).T
-    s = ["x targets", "y targets", "width targets", "height targets"]
-    _fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
-    ax = ax.ravel()
-    for i in range(4):
-        ax[i].hist(x[i], bins=100, label=f"{x[i].mean():.3g} +/- {x[i].std():.3g}")
-        ax[i].legend()
-        ax[i].set_title(s[i])
-    plt.savefig("targets.jpg", dpi=200)
 
 
 def plot_val_study(file="", dir="", x=None):
@@ -373,9 +301,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     from utils.augmentations import denormalize
 
     names = names or [f"class{i}" for i in range(1000)]
-    blocks = torch.chunk(
-        denormalize(im.clone()).cpu().float(), len(im), dim=0
-    )  # select batch index 0, block by channels
+    blocks = torch.chunk(denormalize(im.clone()).cpu().float(), len(im), dim=0)  # split batch into individual images
     n = min(len(blocks), nmax)  # number of plots
     m = min(8, round(n**0.5))  # 8 x 8 default
     _fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
@@ -456,57 +382,3 @@ def plot_results(file="path/to/results.csv", dir=""):
     ax[1].legend()
     fig.savefig(save_dir / "results.png", dpi=200)
     plt.close()
-
-
-def profile_idetection(start=0, stop=0, labels=(), save_dir=""):
-    """Plots per-image iDetection logs, comparing metrics like storage and performance over time.
-
-    Example: from utils.plots import *; profile_idetection()
-    """
-    ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)[1].ravel()
-    s = ["Images", "Free Storage (GB)", "RAM Usage (GB)", "Battery", "dt_raw (ms)", "dt_smooth (ms)", "real-world FPS"]
-    files = list(Path(save_dir).glob("frames*.txt"))
-    for fi, f in enumerate(files):
-        try:
-            results = np.loadtxt(f, ndmin=2).T[:, 90:-30]  # clip first and last rows
-            n = results.shape[1]  # number of rows
-            x = np.arange(start, min(stop, n) if stop else n)
-            results = results[:, x]
-            t = results[0] - results[0].min()  # set t0=0s
-            results[0] = x
-            for i, a in enumerate(ax):
-                if i < len(results):
-                    label = labels[fi] if len(labels) else f.stem.replace("frames_", "")
-                    a.plot(t, results[i], marker=".", label=label, linewidth=1, markersize=5)
-                    a.set_title(s[i])
-                    a.set_xlabel("time (s)")
-                    # if fi == len(files) - 1:
-                    #     a.set_ylim(bottom=0)
-                    for side in ["top", "right"]:
-                        a.spines[side].set_visible(False)
-                else:
-                    a.remove()
-        except Exception as e:
-            print(f"Warning: Plotting error for {f}; {e}")
-    ax[1].legend()
-    plt.savefig(Path(save_dir) / "idetection_profile.png", dpi=200)
-
-
-def save_one_box(xyxy, im, file=Path("im.jpg"), gain=1.02, pad=10, square=False, BGR=False, save=True):
-    """Crops and saves an image from bounding box `xyxy`, applied with `gain` and `pad`, optionally squares and adjusts
-    for BGR.
-    """
-    xyxy = torch.tensor(xyxy).view(-1, 4)
-    b = xyxy2xywh(xyxy)  # boxes
-    if square:
-        b[:, 2:] = b[:, 2:].max(1)[0].unsqueeze(1)  # attempt rectangle to square
-    b[:, 2:] = b[:, 2:] * gain + pad  # box wh * gain + pad
-    xyxy = xywh2xyxy(b).long()
-    clip_boxes(xyxy, im.shape)
-    crop = im[int(xyxy[0, 1]) : int(xyxy[0, 3]), int(xyxy[0, 0]) : int(xyxy[0, 2]), :: (1 if BGR else -1)]
-    if save:
-        file.parent.mkdir(parents=True, exist_ok=True)  # make directory
-        f = str(increment_path(file).with_suffix(".jpg"))
-        # cv2.imwrite(f, crop)  # save BGR, https://github.com/ultralytics/yolov5/issues/7007 chroma subsampling issue
-        Image.fromarray(crop[..., ::-1]).save(f, quality=95, subsampling=0)  # save RGB
-    return crop

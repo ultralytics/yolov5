@@ -4,8 +4,6 @@
 import math
 import os
 import platform
-import subprocess
-import time
 import warnings
 from contextlib import contextmanager
 from copy import deepcopy
@@ -14,8 +12,8 @@ from pathlib import Path
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
+from ultralytics.utils.torch_utils import copy_attr, scale_img, time_sync  # noqa: F401
 
 from utils.general import LOGGER, check_version, colorstr, file_date, git_describe
 
@@ -29,7 +27,6 @@ except ImportError:
     thop = None
 
 # Suppress PyTorch warnings
-warnings.filterwarnings("ignore", message="User provided device_type of 'cuda', but CUDA is not available. Disabling")
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
@@ -99,16 +96,6 @@ def torch_distributed_zero_first(local_rank: int):
         dist.barrier(device_ids=[0])
 
 
-def device_count():
-    """Returns the number of available CUDA devices; works on Linux and Windows by invoking `nvidia-smi`."""
-    assert platform.system() in ("Linux", "Windows"), "device_count() only supported on Linux or Windows"
-    try:
-        cmd = "nvidia-smi -L | wc -l" if platform.system() == "Linux" else 'nvidia-smi -L | find /c /v ""'  # Windows
-        return int(subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1])
-    except Exception:
-        return 0
-
-
 def select_device(device="", batch_size=0, newline=True):
     """Selects computing device (CPU, CUDA GPU, MPS) for YOLOv5 model deployment, logging device info."""
     s = f"YOLOv5 🚀 {git_describe() or file_date()} Python-{platform.python_version()} torch-{torch.__version__} "
@@ -144,13 +131,6 @@ def select_device(device="", batch_size=0, newline=True):
         s = s.rstrip()
     LOGGER.info(s)
     return torch.device(arg)
-
-
-def time_sync():
-    """Synchronizes PyTorch for accurate timing, leveraging CUDA if available, and returns the current time."""
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-    return time.time()
 
 
 def profile(input, ops, n=10, device=None):
@@ -230,11 +210,6 @@ def initialize_weights(model):
             m.momentum = 0.03
         elif t in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU]:
             m.inplace = True
-
-
-def find_modules(model, mclass=nn.Conv2d):
-    """Finds and returns list of layer indices in `model.module_list` matching the specified `mclass`."""
-    return [i for i, m in enumerate(model.module_list) if isinstance(m, mclass)]
 
 
 def sparsity(model):
@@ -320,29 +295,6 @@ def model_info(model, verbose=False, imgsz=640):
     LOGGER.info(f"{name} summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
 
 
-def scale_img(img, ratio=1.0, same_shape=False, gs=32):  # img(16,3,256,416)
-    """Scales an image tensor `img` of shape (bs,3,y,x) by `ratio`, optionally maintaining the original shape, padded to
-    multiples of `gs`.
-    """
-    if ratio == 1.0:
-        return img
-    h, w = img.shape[2:]
-    s = (int(h * ratio), int(w * ratio))  # new size
-    img = F.interpolate(img, size=s, mode="bilinear", align_corners=False)  # resize
-    if not same_shape:  # pad/crop img
-        h, w = (math.ceil(x * ratio / gs) * gs for x in (h, w))
-    return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
-
-
-def copy_attr(a, b, include=(), exclude=()):
-    """Copies attributes from object b to a, optionally filtering with include and exclude lists."""
-    for k, v in b.__dict__.items():
-        if (len(include) and k not in include) or k.startswith("_") or k in exclude:
-            continue
-        else:
-            setattr(a, k, v)
-
-
 def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):
     """Initializes YOLOv5 smart optimizer with 3 parameter groups for different decay configurations.
 
@@ -377,18 +329,6 @@ def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):
         f"{len(g[1])} weight(decay=0.0), {len(g[0])} weight(decay={decay}), {len(g[2])} bias"
     )
     return optimizer
-
-
-def smart_hub_load(repo="ultralytics/yolov5", model="yolov5s", **kwargs):
-    """YOLOv5 torch.hub.load() wrapper with smart error handling, adjusting torch arguments for compatibility."""
-    if check_version(torch.__version__, "1.9.1"):
-        kwargs["skip_validation"] = True  # validation causes GitHub API rate limit errors
-    if check_version(torch.__version__, "1.12.0"):
-        kwargs["trust_repo"] = True  # argument required starting in torch 0.12
-    try:
-        return torch.hub.load(repo, model, **kwargs)
-    except Exception:
-        return torch.hub.load(repo, model, force_reload=True, **kwargs)
 
 
 def smart_resume(ckpt, optimizer, ema=None, weights="yolov5s.pt", epochs=300, resume=True):

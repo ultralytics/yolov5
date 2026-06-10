@@ -24,11 +24,20 @@ def ap_per_class_box_and_mask(
     save_dir=".",
     names=(),
 ):
-    """
+    """Compute AP metrics for both boxes and masks given per-prediction true-positive arrays.
+
     Args:
-        tp_b: tp of boxes.
-        tp_m: tp of masks.
-        other arguments see `func: ap_per_class`.
+        tp_m (np.ndarray): True positives for masks, shape (n, 10).
+        tp_b (np.ndarray): True positives for boxes, shape (n, 10).
+        conf (np.ndarray): Objectness values from 0-1, shape (n,).
+        pred_cls (np.ndarray): Predicted object classes, shape (n,).
+        target_cls (np.ndarray): True object classes, shape (m,).
+        plot (bool): Plot precision-recall curves.
+        save_dir (str | Path): Plot save directory.
+        names (dict | tuple): Class index to name mapping used for plot legends.
+
+    Returns:
+        (dict): {'boxes': {'p', 'r', 'ap', 'f1', 'ap_class'}, 'masks': {...}} metric dicts from `ap_per_class`.
     """
     results_boxes = ap_per_class(
         tp_b, conf, pred_cls, target_cls, plot=plot, save_dir=save_dir, names=names, prefix="Box"
@@ -138,9 +147,10 @@ class Metric:
         return maps
 
     def update(self, results):
-        """
+        """Update the metric attributes from new results.
+
         Args:
-            results: tuple(p, r, ap, f1, ap_class).
+            results (tuple): (p, r, ap, f1, ap_class).
         """
         p, r, all_ap, f1, ap_class_index = results
         self.p = p
@@ -159,9 +169,10 @@ class Metrics:
         self.metric_mask = Metric()
 
     def update(self, results):
-        """
+        """Update box and mask metrics from new results.
+
         Args:
-            results: Dict{'boxes': Dict{}, 'masks': Dict{}}.
+            results (dict): {'boxes': {...}, 'masks': {...}} metric dicts from `ap_per_class_box_and_mask`.
         """
         self.metric_box.update(list(results["boxes"].values()))
         self.metric_mask.update(list(results["masks"].values()))

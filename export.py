@@ -18,8 +18,8 @@ TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
 PaddlePaddle                | `paddle`                      | yolov5s_paddle_model/
 
 Requirements:
-    $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime openvino-dev tensorflow-cpu  # CPU
-    $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime-gpu openvino-dev tensorflow  # GPU
+    $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime openvino tensorflow-cpu  # CPU
+    $ pip install -r requirements.txt coremltools onnx onnxslim onnxruntime-gpu openvino tensorflow  # GPU
 
 Usage:
     $ python export.py --weights yolov5s.pt --include torchscript onnx openvino engine coreml tflite ...
@@ -202,7 +202,7 @@ def try_export(inner_func):
 
     Notes:
         For additional requirements and model export formats, refer to the
-        [Ultralytics YOLOv5 GitHub repository](https://github.com/ultralytics/ultralytics).
+        [Ultralytics YOLOv5 GitHub repository](https://github.com/ultralytics/yolov5).
     """
     inner_args = get_default_args(inner_func)
 
@@ -388,38 +388,34 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
         prefix (str): Prefix string for logging purposes (default is "OpenVINO:").
 
     Returns:
-        (str, openvino.runtime.Model | None): The OpenVINO model file path and openvino.runtime.Model object if export
-            is successful; otherwise, None.
+        (str, None): The OpenVINO model directory path and None.
 
     Examples:
         ```python
         from pathlib import Path
-        from ultralytics import YOLOv5
 
-        model = YOLOv5('yolov5s.pt')
-        export_openvino(Path('yolov5s.onnx'), metadata={'names': model.names, 'stride': model.stride}, half=True,
-                        int8=False, data='data.yaml')
+        metadata = {"stride": 32, "names": {0: "person", 1: "bicycle"}}  # model metadata
+        export_openvino(Path("yolov5s.pt"), metadata, half=True, int8=False, data="coco128.yaml")
         ```
 
         This will export the YOLOv5 model to OpenVINO with FP16 precision but without INT8 quantization, saving it to
         the specified file path.
 
     Notes:
-        - Requires `openvino-dev` package version 2023.0 or higher. Install with:
-          `$ pip install openvino-dev>=2023.0`
+        - Requires the `openvino` package version 2024.0.0 or higher. Install with:
+          `$ pip install "openvino>=2024.0.0"`
         - For INT8 quantization, also requires `nncf` library version 2.5.0 or higher. Install with:
           `$ pip install nncf>=2.5.0`
     """
-    check_requirements("openvino-dev>=2023.0")  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-    import openvino.runtime as ov
-    from openvino.tools import mo
+    check_requirements("openvino>=2024.0.0")
+    import openvino as ov
 
     LOGGER.info(f"\n{prefix} starting export with openvino {ov.__version__}...")
     f = str(file).replace(file.suffix, f"_{'int8_' if int8 else ''}openvino_model{os.sep}")
     f_onnx = file.with_suffix(".onnx")
     f_ov = str(Path(f) / file.with_suffix(".xml").name)
 
-    ov_model = mo.convert_model(f_onnx, model_name=file.stem, framework="onnx", compress_to_fp16=half)  # export
+    ov_model = ov.convert_model(f_onnx)  # export from the existing ONNX model
 
     if int8:
         check_requirements("nncf>=2.5.0")  # requires at least version 2.5.0 to use the post-training quantization
@@ -458,7 +454,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
         quantization_dataset = nncf.Dataset(ds, transform_fn)
         ov_model = nncf.quantize(ov_model, quantization_dataset, preset=nncf.QuantizationPreset.MIXED)
 
-    ov.serialize(ov_model, f_ov)  # save
+    ov.save_model(ov_model, f_ov, compress_to_fp16=half)  # save
     yaml_save(Path(f) / file.with_suffix(".yaml").name, metadata)  # add metadata.yaml
     return f, None
 
@@ -608,15 +604,14 @@ def export_engine(
 
     Examples:
         ```python
-        from ultralytics import YOLOv5
         import torch
         from pathlib import Path
+        from models.experimental import attempt_load
 
-        model = YOLOv5('yolov5s.pt')  # Load a pre-trained YOLOv5 model
+        model = attempt_load("yolov5s.pt", device="cuda")  # load a pre-trained YOLOv5 model
         input_tensor = torch.randn(1, 3, 640, 640).cuda()  # example input tensor on GPU
-        export_path = Path('yolov5s.engine')  # export destination
 
-        export_engine(model.model, input_tensor, export_path, half=True, dynamic=True, simplify=True, workspace=8, verbose=True)
+        export_engine(model, input_tensor, Path("yolov5s"), half=True, dynamic=True, simplify=True, workspace=8)
         ```
     """
     assert im.device.type != "cpu", "export running on CPU but must be on GPU, i.e. `python export.py --device 0`"
@@ -624,7 +619,7 @@ def export_engine(
         import tensorrt as trt
     except Exception:
         if platform.system() == "Linux":
-            check_requirements("nvidia-tensorrt", cmds="-U --index-url https://pypi.ngc.nvidia.com")
+            check_requirements("tensorrt")
         import tensorrt as trt
 
     if trt.__version__[0] == "7":  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
@@ -1129,7 +1124,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
     from PIL import Image
 
     f = file.with_suffix(".mlmodel") if mlmodel else file.with_suffix(".mlpackage")
-    print(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
+    LOGGER.info(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
     _batch_size, _ch, h, w = list(im.shape)  # BCHW
     t = time.time()
 
@@ -1168,7 +1163,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
     # flexible_shape_utils.update_image_size_range(spec, feature_name='image', size_range=r)
 
     # Print
-    print(spec.description)
+    LOGGER.info(spec.description)
 
     # Model from spec
     weights_dir = None if mlmodel else str(f / "Data/com.apple.CoreML/weights")
@@ -1252,7 +1247,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
     model.output_description["confidence"] = 'Boxes × Class confidence (see user-defined metadata "classes")'
     model.output_description["coordinates"] = "Boxes × [x, y, width, height] (relative to image size)"
     model.save(f)  # pipelined
-    print(f"{prefix} pipeline success ({time.time() - t:.2f}s), saved as {f} ({file_size(f):.1f} MB)")
+    LOGGER.info(f"{prefix} pipeline success ({time.time() - t:.2f}s), saved as {f} ({file_size(f):.1f} MB)")
 
 
 @smart_inference_mode()
@@ -1313,7 +1308,7 @@ def run(
         mlmodel (bool): Flag to use *.mlmodel for CoreML export. Default is False.
 
     Returns:
-        None
+        (list[str]): Paths of the exported files/directories.
 
     Examples:
         ```python

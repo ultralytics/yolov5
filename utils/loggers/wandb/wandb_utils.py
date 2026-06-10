@@ -126,10 +126,6 @@ class WandbLogger:
         )
         LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
 
-    def val_one_image(self, pred, predn, path, names, im):
-        """No-op retained for callback compatibility; W&B validation-image logging is deprecated."""
-        pass
-
     def log(self, log_dict):
         """Save the metrics to the logging dictionary.
 
@@ -141,11 +137,7 @@ class WandbLogger:
                 self.log_dict[key] = value
 
     def end_epoch(self):
-        """Commit the log_dict, model artifacts and Tables to W&B and flush the log_dict.
-
-        Args:
-            best_result (boolean): Boolean representing if the result of this evaluation is best or not
-        """
+        """Commit the accumulated log_dict to W&B and reset it."""
         if self.wandb_run:
             with all_logging_disabled():
                 try:

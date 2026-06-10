@@ -1,6 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-# Default anchors for COCO data
+# Default anchors for COCO data. Reference values for manual anchor tuning; this file is not loaded by any code.
 
 # P5 -------------------------------------------------------------------------------------------------------------------
 # P5-640:

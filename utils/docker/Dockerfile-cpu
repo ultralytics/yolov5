@@ -15,13 +15,12 @@ ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Aria
 # g++ required to build 'tflite_support' and 'lap' packages, libusb-1.0-0 required for 'tflite_support' package
 RUN apt update \
     && apt install --no-install-recommends -y python3-pip git zip curl htop libgl1 libglib2.0-0 libpython3-dev gnupg g++ libusb-1.0-0
-# RUN alias python=python3
 
 # Install pip packages
 COPY requirements.txt .
 RUN python3 -m pip install uv wheel
 RUN uv pip install --system --no-cache -r requirements.txt albumentations gsutil notebook \
-    coremltools onnx onnx-simplifier onnxruntime 'openvino-dev>=2023.0' \
+    coremltools onnx onnxslim onnxruntime 'openvino>=2024.0.0' \
     --extra-index-url https://download.pytorch.org/whl/cpu \
     --index-strategy unsafe-best-match
 

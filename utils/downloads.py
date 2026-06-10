@@ -30,12 +30,6 @@ def gsutil_getsize(url=""):
     return int(output.split()[0]) if output else 0
 
 
-def url_getsize(url="https://ultralytics.com/images/bus.jpg"):
-    """Returns the size in bytes of a downloadable file at a given URL; defaults to -1 if not found."""
-    response = requests.head(url, allow_redirects=True)
-    return int(response.headers.get("content-length", -1))
-
-
 def curl_download(url, filename, *, silent: bool = False) -> bool:
     """Download a file from a url to a filename using curl."""
     silent_option = "sS" if silent else ""  # silent

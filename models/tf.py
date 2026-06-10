@@ -42,7 +42,7 @@ from models.common import (
     Focus,
     autopad,
 )
-from models.experimental import MixConv2d, attempt_load
+from models.experimental import attempt_load
 from models.yolo import Detect, Segment
 from utils.activations import SiLU
 from utils.general import LOGGER, make_divisible, print_args
@@ -95,7 +95,7 @@ class TFConv(keras.layers.Layer):
         Inputs are ch_in, ch_out, kernel, stride, padding, groups, act, weights.
         """
         super().__init__()
-        assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
+        assert g == 1, "grouped convolutions are not supported in TF export"
         # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
         conv = keras.layers.Conv2D(
@@ -244,7 +244,7 @@ class TFConv2d(keras.layers.Layer):
         sizes and stride.
         """
         super().__init__()
-        assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
+        assert g == 1, "grouped convolutions are not supported in TF export"
         self.conv = keras.layers.Conv2D(
             filters=c2,
             kernel_size=k,
@@ -388,7 +388,6 @@ class TFDetect(keras.layers.Layer):
         self.anchors = tf.convert_to_tensor(w.anchors.numpy(), dtype=tf.float32)
         self.anchor_grid = tf.reshape(self.anchors * tf.reshape(self.stride, [self.nl, 1, 1]), [self.nl, 1, -1, 1, 2])
         self.m = [TFConv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
-        self.training = False  # set to False after building model
         self.imgsz = imgsz
         for i in range(self.nl):
             ny, nx = self.imgsz[0] // self.stride[i], self.imgsz[1] // self.stride[i]
@@ -404,19 +403,19 @@ class TFDetect(keras.layers.Layer):
             ny, nx = self.imgsz[0] // self.stride[i], self.imgsz[1] // self.stride[i]
             x[i] = tf.reshape(x[i], [-1, ny * nx, self.na, self.no])
 
-            if not self.training:  # inference
-                y = x[i]
-                grid = tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5
-                anchor_grid = tf.transpose(self.anchor_grid[i], [0, 2, 1, 3]) * 4
-                xy = (tf.sigmoid(y[..., 0:2]) * 2 + grid) * self.stride[i]  # xy
-                wh = tf.sigmoid(y[..., 2:4]) ** 2 * anchor_grid
-                # Normalize xywh to 0-1 to reduce calibration error
-                xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
-                wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
-                y = tf.concat([xy, wh, tf.sigmoid(y[..., 4 : 5 + self.nc]), y[..., 5 + self.nc :]], -1)
-                z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
+            # Inference
+            y = x[i]
+            grid = tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5
+            anchor_grid = tf.transpose(self.anchor_grid[i], [0, 2, 1, 3]) * 4
+            xy = (tf.sigmoid(y[..., 0:2]) * 2 + grid) * self.stride[i]  # xy
+            wh = tf.sigmoid(y[..., 2:4]) ** 2 * anchor_grid
+            # Normalize xywh to 0-1 to reduce calibration error
+            xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
+            wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
+            y = tf.concat([xy, wh, tf.sigmoid(y[..., 4 : 5 + self.nc]), y[..., 5 + self.nc :]], -1)
+            z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
-        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1),)
+        return (tf.concat(z, 1),)
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -442,12 +441,12 @@ class TFSegment(TFDetect):
         self.detect = TFDetect.call
 
     def call(self, x):
-        """Applies detection and proto layers on input, returning detections and optionally protos if training."""
+        """Applies detection and proto layers on input, returning detections and prototype masks."""
         p = self.proto(x[0])
         # p = TFUpsample(None, scale_factor=4, mode='nearest')(self.proto(x[0]))  # (optional) full-size protos
         p = tf.transpose(p, [0, 3, 1, 2])  # from shape(1,160,160,32) to shape(1,32,160,160)
         x = self.detect(self, x)
-        return (x, p) if self.training else (x[0], p)
+        return (x[0], p)
 
 
 class TFProto(keras.layers.Layer):
@@ -536,7 +535,6 @@ def parse_model(d, ch, model, imgsz):
             Bottleneck,
             SPP,
             SPPF,
-            MixConv2d,
             Focus,
             CrossConv,
             BottleneckCSP,
@@ -638,11 +636,6 @@ class TFModel:
                 )
             return (nms,)
         return x  # output [1,6300,85] = [xywh, conf, class0, class1, ...]
-        # x = x[0]  # [x(1,6300,85), ...] to x(6300,85)
-        # xywh = x[..., :4]  # x(6300,4) boxes
-        # conf = x[..., 4:5]  # x(6300,1) confidences
-        # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32), (-1, 1))  # x(6300,1)  classes
-        # return tf.concat([conf, cls, xywh], 1)
 
     @staticmethod
     def _xywh2xyxy(xywh):
@@ -728,8 +721,8 @@ def run(
     batch_size=1,  # batch size
     dynamic=False,  # dynamic batch size
 ):
-    # PyTorch model
     """Exports YOLOv5 model from PyTorch to TensorFlow and Keras formats, performing inference for validation."""
+    # PyTorch model
     im = torch.zeros((batch_size, 3, *imgsz))  # BCHW image
     model = attempt_load(weights, device=torch.device("cpu"), inplace=True, fuse=False)
     _ = model(im)  # inference

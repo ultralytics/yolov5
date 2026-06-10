@@ -33,7 +33,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       - name: Install requirements
         run: |
-          uv pip install --system -r requirements.txt coremltools openvino-dev "tensorflow<=2.19.0" "keras>=3.5.0,<=3.12.0" --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
+          uv pip install --system -r requirements.txt coremltools "openvino>=2024.0.0" "tensorflow<=2.19.0" "keras>=3.5.0,<=3.12.0" --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
           yolo checks
           uv pip list
       - name: Benchmark DetectionModel
@@ -60,7 +60,7 @@ jobs:
         model: [yolov5n]
         include:
           - os: ubuntu-latest
-            python-version: "3.8" # torch 1.8.0 requires python >=3.6, <=3.8
+            python-version: "3.8" # repo minimum Python, paired with minimum torch 1.8.0
             model: yolov5n
             torch: "1.8.0" # min torch version CI https://pypi.org/project/torchvision/
     steps:
@@ -79,9 +79,9 @@ jobs:
         shell: bash # for Windows compatibility
       - name: Update macOS security policy
         if: runner.os == 'macOS'
-        run: |  # fix occasional torch multiprocessing failure
-          xattr -dr com.apple.quarantine $(python -c "import torch; import os; print(os.path.dirname(torch.__file__))")
-          chmod +x $(python -c "import torch; print(torch.__file__.replace('__init__.py', 'bin/torch_shm_manager'))")
+        run: | # fix occasional torch multiprocessing failure
+          xattr -dr com.apple.quarantine "$(python -c "import torch; import os; print(os.path.dirname(torch.__file__))")"
+          chmod +x "$(python -c "import torch; print(torch.__file__.replace('__init__.py', 'bin/torch_shm_manager'))")"
       - name: Check environment
         run: |
           yolo checks
@@ -95,8 +95,8 @@ jobs:
           python train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
           for d in cpu; do  # devices
             for w in $m $b; do  # weights
-              python val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
-              python detect.py --imgsz 64 --weights $w.pt --device $d  # detect
+              python val.py --imgsz 64 --batch 32 --weights "$w.pt" --device $d  # val
+              python detect.py --imgsz 64 --weights "$w.pt" --device $d  # detect
             done
           done
           python hubconf.py --model $m  # hub
@@ -121,9 +121,9 @@ jobs:
           python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg $m.yaml --epochs 1 --device cpu  # train
           for d in cpu; do  # devices
             for w in $m $b; do  # weights
-              python segment/val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
-              python segment/predict.py --imgsz 64 --weights $w.pt --device $d  # predict
-              python export.py --weights $w.pt --img 64 --include torchscript --device $d  # export
+              python segment/val.py --imgsz 64 --batch 32 --weights "$w.pt" --device $d  # val
+              python segment/predict.py --imgsz 64 --weights "$w.pt" --device $d  # predict
+              python export.py --weights "$w.pt" --img 64 --include torchscript --device $d  # export
             done
           done
       - name: Test classification

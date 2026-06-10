@@ -77,12 +77,6 @@ def get_args(known=False):
     parser.add_argument("--comet_optimizer_id", type=str, help="Comet: ID of the Comet Optimizer sweep.")
     parser.add_argument("--comet_optimizer_objective", type=str, help="Comet: Set to 'minimize' or 'maximize'.")
     parser.add_argument("--comet_optimizer_metric", type=str, help="Comet: Metric to Optimize.")
-    parser.add_argument(
-        "--comet_optimizer_workers",
-        type=int,
-        default=1,
-        help="Comet: Number of Parallel Workers to use with the Comet Optimizer.",
-    )
 
     return parser.parse_known_args()[0] if known else parser.parse_args()
 

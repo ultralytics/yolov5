@@ -1,5 +1,7 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
+# YOLOv5 object detection model with P3/8 - P7/128 outputs. Docs: https://docs.ultralytics.com/yolov5/
+
 # Parameters
 nc: 80 # number of classes
 depth_multiple: 1.0 # model depth multiple

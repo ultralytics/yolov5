@@ -28,33 +28,32 @@ def predict(model):
     """Predict and return object detections in JSON format given an image and model name via a Flask REST API POST
     request.
     """
-    if request.method != "POST":
-        return
+    if not request.files.get("image"):
+        return {"error": "No image file provided"}, 400
+    im_file = request.files["image"]
 
-    if request.files.get("image"):
-        im_file = request.files["image"]
+    # Validate file extension against allowlist
+    filename = im_file.filename or ""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        return {"error": "Invalid file type. Allowed types: " + ", ".join(sorted(ALLOWED_EXTENSIONS))}, 400
 
-        # Validate file extension against allowlist
-        filename = im_file.filename or ""
-        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-        if ext not in ALLOWED_EXTENSIONS:
-            return {"error": "Invalid file type. Allowed types: " + ", ".join(sorted(ALLOWED_EXTENSIONS))}, 400
+    # Enforce upload size limit
+    im_bytes = im_file.read(MAX_IMAGE_SIZE + 1)
+    if len(im_bytes) > MAX_IMAGE_SIZE:
+        return {"error": "File too large. Maximum size is 16 MB."}, 413
 
-        # Enforce upload size limit
-        im_bytes = im_file.read(MAX_IMAGE_SIZE + 1)
-        if len(im_bytes) > MAX_IMAGE_SIZE:
-            return {"error": "File too large. Maximum size is 16 MB."}, 413
+    try:
+        with Image.open(io.BytesIO(im_bytes)) as im:
+            im.verify()
+    except Exception:
+        return {"error": "Invalid image file"}, 400
+    im = Image.open(io.BytesIO(im_bytes))
 
-        try:
-            with Image.open(io.BytesIO(im_bytes)) as im:
-                im.verify()
-        except Exception:
-            return {"error": "Invalid image file"}, 400
-        im = Image.open(io.BytesIO(im_bytes))
-
-        if model in models:
-            results = models[model](im, size=640)  # reduce size=320 for faster inference
-            return results.pandas().xyxy[0].to_json(orient="records")
+    if model not in models:
+        return {"error": "Model not found. Available models: " + ", ".join(sorted(models))}, 404
+    results = models[model](im, size=640)  # reduce size=320 for faster inference
+    return results.pandas().xyxy[0].to_json(orient="records")
 
 
 if __name__ == "__main__":
