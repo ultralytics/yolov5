@@ -4,7 +4,7 @@
 # Configuration docs: https://docs.ultralytics.com/usage/cfg
 # Hyperparameter tuning docs: https://docs.ultralytics.com/guides/hyperparameter-tuning
 # Augmentation docs: https://docs.ultralytics.com/guides/yolo-data-augmentation
-# Example usage: python train.py --batch 64 --cfg yolov5n6.yaml --weights '' --data coco.yaml --img 640 --epochs 300 --linear
+# Example usage: python train.py --batch 64 --cfg yolov5n6.yaml --weights '' --data coco.yaml --img 640 --epochs 300
 
 lr0: 0.01 # initial learning rate (SGD=1E-2, Adam=1E-3)
 lrf: 0.01 # final OneCycleLR learning rate (lr0 * lrf)
