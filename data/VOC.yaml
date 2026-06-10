@@ -1,7 +1,9 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # PASCAL VOC dataset http://host.robots.ox.ac.uk/pascal/VOC by University of Oxford
-# Documentation: https://docs.ultralytics.com/datasets/detect/voc/
+# Documentation: https://docs.ultralytics.com/datasets/detect/voc
+# Dataset format: https://docs.ultralytics.com/datasets/detect#ultralytics-yolo-format
+# Training docs: https://docs.ultralytics.com/modes/train
 # Example usage: python train.py --data VOC.yaml
 # parent
 # ├── yolov5
@@ -9,13 +11,13 @@
 #     └── VOC  ← downloads here (2.8 GB)
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: ../datasets/VOC
-train: # train images (relative to 'path')  16551 images
+path: ../datasets/VOC # dataset root dir
+train: # train images (relative to 'path') 16551 images
   - images/train2012
   - images/train2007
   - images/val2012
   - images/val2007
-val: # val images (relative to 'path')  4952 images
+val: # val images (relative to 'path') 4952 images
   - images/test2007
 test: # test images (optional)
   - images/test2007
