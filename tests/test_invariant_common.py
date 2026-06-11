@@ -39,18 +39,23 @@ def test_ssrf_redirect_target_is_validated(monkeypatch):
     class RedirectResponse:
         is_redirect = True
         headers = {"location": "http://169.254.169.254/latest/meta-data/"}
+        url = "https://example.com/image.jpg"
+
+        def close(self):
+            pass
+
+    class FakeSession:
+        def get(self, url, **kwargs):
+            assert kwargs["allow_redirects"] is False
+            return RedirectResponse()
 
     def fake_validate(url):
         calls.append(url)
         if "169.254.169.254" in url:
             raise ValueError("blocked")
 
-    def fake_get(url, **kwargs):
-        assert kwargs["allow_redirects"] is False
-        return RedirectResponse()
-
     monkeypatch.setattr("models.common._validate_ssrf_url", fake_validate)
-    monkeypatch.setattr("models.common.requests.get", fake_get)
+    monkeypatch.setattr("models.common.requests.Session", FakeSession)
 
     with pytest.raises(ValueError):
         _request_ssrf_url("https://example.com/image.jpg")

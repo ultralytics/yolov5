@@ -826,12 +826,14 @@ def _validate_ssrf_url(url: str) -> None:
 
 def _request_ssrf_url(url: str, max_redirects: int = 5):
     """Fetch a URL after validating each resolved redirect target."""
+    session = requests.Session()
     for _ in range(max_redirects + 1):
         _validate_ssrf_url(url)
-        response = requests.get(url, stream=True, allow_redirects=False)
+        response = session.get(url, stream=True, allow_redirects=False)
         if not response.is_redirect:
             return response
-        url = urljoin(url, response.headers["location"])
+        url = urljoin(response.url, response.headers["location"])
+        response.close()
     raise ValueError(f"Too many redirects while fetching {url}")
 
 
