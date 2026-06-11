@@ -13,7 +13,7 @@ import zipfile
 from collections import OrderedDict, namedtuple
 from copy import copy
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import cv2
 import numpy as np
@@ -824,6 +824,17 @@ def _validate_ssrf_url(url: str) -> None:
             raise ValueError(f"Blocked request to internal address: {addr}")
 
 
+def _request_ssrf_url(url: str, max_redirects: int = 5):
+    """Fetch a URL after validating each resolved redirect target."""
+    for _ in range(max_redirects + 1):
+        _validate_ssrf_url(url)
+        response = requests.get(url, stream=True, allow_redirects=False)
+        if not response.is_redirect:
+            return response
+        url = urljoin(url, response.headers["location"])
+    raise ValueError(f"Too many redirects while fetching {url}")
+
+
 class AutoShape(nn.Module):
     """AutoShape class for robust YOLOv5 inference with preprocessing, NMS, and support for various input formats."""
 
@@ -894,9 +905,7 @@ class AutoShape(nn.Module):
             for i, im in enumerate(ims):
                 f = f"image{i}"  # filename
                 if isinstance(im, (str, Path)):  # filename or uri
-                    if str(im).startswith("http"):
-                        _validate_ssrf_url(str(im))
-                    im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith("http") else im), im
+                    im, f = Image.open(_request_ssrf_url(str(im)).raw if str(im).startswith("http") else im), im
                     im = np.asarray(exif_transpose(im))
                 elif isinstance(im, Image.Image):  # PIL Image
                     im, f = np.asarray(exif_transpose(im)), getattr(im, "filename", f) or f

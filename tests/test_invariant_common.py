@@ -4,7 +4,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from models.common import _validate_ssrf_url
+from models.common import _request_ssrf_url, _validate_ssrf_url
 
 BLOCKED_URLS = [
     "http://169.254.169.254/latest/meta-data/",   # AWS metadata / link-local
@@ -30,3 +30,28 @@ def test_ssrf_blocked_urls(url):
 def test_ssrf_allowed_urls(url):
     """Validator must not raise for legitimate public URLs."""
     _validate_ssrf_url(url)
+
+
+def test_ssrf_redirect_target_is_validated(monkeypatch):
+    """Redirects must not bypass URL validation."""
+    calls = []
+
+    class RedirectResponse:
+        is_redirect = True
+        headers = {"location": "http://169.254.169.254/latest/meta-data/"}
+
+    def fake_validate(url):
+        calls.append(url)
+        if "169.254.169.254" in url:
+            raise ValueError("blocked")
+
+    def fake_get(url, **kwargs):
+        assert kwargs["allow_redirects"] is False
+        return RedirectResponse()
+
+    monkeypatch.setattr("models.common._validate_ssrf_url", fake_validate)
+    monkeypatch.setattr("models.common.requests.get", fake_get)
+
+    with pytest.raises(ValueError):
+        _request_ssrf_url("https://example.com/image.jpg")
+    assert calls == ["https://example.com/image.jpg", "http://169.254.169.254/latest/meta-data/"]
