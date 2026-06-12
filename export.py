@@ -924,32 +924,36 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
     help_url = "https://coral.ai/docs/edgetpu/compiler/"
     assert platform.system() == "Linux", f"export only supported on Linux. See {help_url}"
     try:
-        compiler_present = subprocess.run(
-            cmd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        ).returncode == 0
+        compiler_present = (
+            subprocess.run(cmd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+        )
     except FileNotFoundError:
         compiler_present = False
     if not compiler_present:
         LOGGER.info(f"\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}")
         try:
-            sudo = subprocess.run(
-                ["sudo", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            ).returncode == 0
+            sudo = (
+                subprocess.run(["sudo", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+                == 0
+            )
         except FileNotFoundError:
             sudo = False
         s = ["sudo"] if sudo else []
         curl_proc = subprocess.run(
             ["curl", "https://packages.cloud.google.com/apt/doc/apt-key.gpg"],
-            stdout=subprocess.PIPE, check=True,
+            stdout=subprocess.PIPE,
+            check=True,
         )
-        subprocess.run(s + ["apt-key", "add", "-"], input=curl_proc.stdout, check=True)
+        subprocess.run([*s, "apt-key", "add", "-"], input=curl_proc.stdout, check=True)
         deb_entry = b"deb https://packages.cloud.google.com/apt coral-edgetpu-stable main\n"
         subprocess.run(
-            s + ["tee", "/etc/apt/sources.list.d/coral-edgetpu.list"],
-            input=deb_entry, check=True, stdout=subprocess.DEVNULL,
+            [*s, "tee", "/etc/apt/sources.list.d/coral-edgetpu.list"],
+            input=deb_entry,
+            check=True,
+            stdout=subprocess.DEVNULL,
         )
-        subprocess.run(s + ["apt-get", "update"], check=True)
-        subprocess.run(s + ["apt-get", "install", "edgetpu-compiler"], check=True)
+        subprocess.run([*s, "apt-get", "update"], check=True)
+        subprocess.run([*s, "apt-get", "install", "edgetpu-compiler"], check=True)
     ver = subprocess.run(cmd.split(), capture_output=True, check=True).stdout.decode().split()[-1]
 
     LOGGER.info(f"\n{prefix} starting export with Edge TPU compiler {ver}...")
