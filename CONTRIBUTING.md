@@ -12,7 +12,7 @@ We value your input and are committed to making contributing to YOLO as easy and
 
 Ultralytics YOLO thrives thanks to the collective efforts of our community. Every improvement you contribute helps push the boundaries of what's possible in AI! 😃
 
-To ensure a welcoming and inclusive environment for everyone, all contributors must adhere to our [Code of Conduct](https://docs.ultralytics.com/help/code-of-conduct/).
+To ensure a welcoming and inclusive environment for everyone, all contributors must adhere to our [Code of Conduct](https://docs.ultralytics.com/help/code-of-conduct).
 
 ## 🛠️ Submitting a Pull Request (PR)
 
@@ -65,7 +65,7 @@ By contributing, you agree that your contributions will be licensed under the [A
 
 ---
 
-For more details on contributing, check out the [Ultralytics open-source contributing guide](https://docs.ultralytics.com/help/contributing/), and explore our [Ultralytics blog](https://www.ultralytics.com/blog) for community highlights and best practices.
+For more details on contributing, check out the [Ultralytics open-source contributing guide](https://docs.ultralytics.com/help/contributing), and explore our [Ultralytics blog](https://www.ultralytics.com/blog) for community highlights and best practices.
 
 We welcome your contributions—thank you for helping make Ultralytics YOLO better! 🚀
 

@@ -47,7 +47,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     Notes:
         For more information on model loading and customization, visit the
-        [YOLOv5 PyTorch Hub Documentation](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading/).
+        [YOLOv5 PyTorch Hub Documentation](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading).
     """
     from pathlib import Path
 
