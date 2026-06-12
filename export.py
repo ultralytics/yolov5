@@ -1062,7 +1062,7 @@ def add_tflite_metadata(file, metadata, num_outputs):
     Notes:
         TFLite metadata can include information such as model name, version, author, and other relevant details.
         For more details on the structure of the metadata, refer to TensorFlow Lite
-        [metadata guidelines](https://ai.google.dev/edge/litert/conversion/tensorflow/metadata).
+        [metadata guidelines](https://developers.google.com/edge/litert/conversion/tensorflow/metadata).
     """
     with contextlib.suppress(ImportError):
         # check_requirements('tflite_support')

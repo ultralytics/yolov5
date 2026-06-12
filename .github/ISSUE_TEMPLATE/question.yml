@@ -13,7 +13,7 @@ body:
     attributes:
       label: Search before asking
       description: >
-        Please search the Ultralytics YOLOv5 [docs](https://docs.ultralytics.com/yolov5/), [issues](https://github.com/ultralytics/yolov5/issues), and [Ultralytics discussions](https://github.com/orgs/ultralytics/discussions) to see if a similar question already exists.
+        Please search the Ultralytics YOLOv5 [docs](https://docs.ultralytics.com/yolov5), [issues](https://github.com/ultralytics/yolov5/issues), and [Ultralytics discussions](https://github.com/orgs/ultralytics/discussions) to see if a similar question already exists.
       options:
         - label: >
             I checked the docs, issues, and discussions and could not find an answer.

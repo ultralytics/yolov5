@@ -6,13 +6,13 @@
 
 ## ℹ️ About ClearML
 
-[ClearML](https://www.clear.ml/) is an [open-source MLOps platform](https://github.com/clearml/clearml) designed to streamline your machine learning workflow and maximize productivity. Integrating ClearML with [Ultralytics YOLO](https://docs.ultralytics.com/models/yolov5/) unlocks a robust suite of tools for experiment tracking, data management, and scalable deployment:
+[ClearML](https://clear.ml/) is an [open-source MLOps platform](https://github.com/clearml/clearml) designed to streamline your machine learning workflow and maximize productivity. Integrating ClearML with [Ultralytics YOLO](https://docs.ultralytics.com/models/yolov5) unlocks a robust suite of tools for experiment tracking, data management, and scalable deployment:
 
-- **Experiment Management:** Effortlessly track every [YOLO training run](https://docs.ultralytics.com/modes/train/), including parameters, metrics, and outputs. Explore the [Ultralytics ClearML integration guide](https://docs.ultralytics.com/integrations/clearml/) for step-by-step instructions.
-- **Data Versioning:** Manage and access your custom training data with ClearML's Data Versioning Tool, similar to [DVC integration](https://docs.ultralytics.com/integrations/dvc/).
+- **Experiment Management:** Effortlessly track every [YOLO training run](https://docs.ultralytics.com/modes/train), including parameters, metrics, and outputs. Explore the [Ultralytics ClearML integration guide](https://docs.ultralytics.com/integrations/clearml) for step-by-step instructions.
+- **Data Versioning:** Manage and access your custom training data with ClearML's Data Versioning Tool, similar to [DVC integration](https://docs.ultralytics.com/integrations/dvc).
 - **Remote Execution:** Remotely train and monitor models using [ClearML Agent](https://docs.clear.ml/docs/latest/docs/clearml_agent) for seamless scaling.
-- **Hyperparameter Optimization:** Boost your [mean average precision (mAP)](https://docs.ultralytics.com/guides/yolo-performance-metrics/) with ClearML's [hyperparameter tuning](https://docs.ultralytics.com/guides/hyperparameter-tuning/) capabilities.
-- **Model Deployment:** Deploy your trained YOLO model as an API with ClearML Serving, complementing [Ultralytics model deployment options](https://docs.ultralytics.com/guides/model-deployment-options/).
+- **Hyperparameter Optimization:** Boost your [mean average precision (mAP)](https://docs.ultralytics.com/guides/yolo-performance-metrics) with ClearML's [hyperparameter tuning](https://docs.ultralytics.com/guides/hyperparameter-tuning) capabilities.
+- **Model Deployment:** Deploy your trained YOLO model as an API with ClearML Serving, complementing [Ultralytics model deployment options](https://docs.ultralytics.com/guides/model-deployment-options).
 
 You can use ClearML's experiment manager alone or combine these features into a comprehensive [MLOps pipeline](https://www.ultralytics.com/glossary/machine-learning-operations-mlops).
 
@@ -44,11 +44,11 @@ To get started:
 
    Follow the prompts to complete setup.
 
-For a general Ultralytics setup, see the [Quickstart Guide](https://docs.ultralytics.com/quickstart/).
+For a general Ultralytics setup, see the [Quickstart Guide](https://docs.ultralytics.com/quickstart).
 
 ## 🚀 Training YOLO with ClearML
 
-When the `clearml` package is installed, experiment tracking is automatically enabled for every [YOLO training run](https://docs.ultralytics.com/modes/train/). All experiment details are captured and stored in the ClearML experiment manager.
+When the `clearml` package is installed, experiment tracking is automatically enabled for every [YOLO training run](https://docs.ultralytics.com/modes/train). All experiment details are captured and stored in the ClearML experiment manager.
 
 To customize your project or task name in ClearML, use the `--project` and `--name` arguments. By default, the project is `YOLOv5` and the task is `Training`. ClearML uses `/` as a delimiter for subprojects.
 
@@ -73,7 +73,7 @@ ClearML automatically logs:
 - Hyperparameters and configuration settings
 - Model checkpoints (use `--save-period n` to save every `n` epochs)
 - Console output logs
-- Performance metrics ([precision, recall](https://docs.ultralytics.com/guides/yolo-performance-metrics/), [losses](https://docs.ultralytics.com/reference/utils/loss/), [learning rates](https://www.ultralytics.com/glossary/learning-rate), mAP<sub>0.5</sub>, mAP<sub>0.5:0.95</sub>)
+- Performance metrics ([precision, recall](https://docs.ultralytics.com/guides/yolo-performance-metrics), [losses](https://docs.ultralytics.com/reference/utils/loss), [learning rates](https://www.ultralytics.com/glossary/learning-rate), mAP<sub>0.5</sub>, mAP<sub>0.5:0.95</sub>)
 - System details (hardware specs, runtime, creation date)
 - Generated plots (label correlogram, [confusion matrix](https://www.ultralytics.com/glossary/confusion-matrix))
 - Images with bounding boxes per epoch
@@ -84,13 +84,13 @@ All this information can be visualized in the ClearML UI. You can customize tabl
 
 ## 🔗 Dataset Version Management
 
-Versioning your [datasets](https://docs.ultralytics.com/datasets/) independently from code is essential for reproducibility and collaboration. ClearML's Data Versioning Tool streamlines this process. YOLO supports ClearML dataset version IDs, automatically downloading data as needed. The dataset ID is saved as a task parameter, ensuring traceability for every experiment.
+Versioning your [datasets](https://docs.ultralytics.com/datasets) independently from code is essential for reproducibility and collaboration. ClearML's Data Versioning Tool streamlines this process. YOLO supports ClearML dataset version IDs, automatically downloading data as needed. The dataset ID is saved as a task parameter, ensuring traceability for every experiment.
 
 ![ClearML Dataset Interface](https://raw.githubusercontent.com/thepycoder/clearml_screenshots/main/clearml_data.gif)
 
 ### Prepare Your Dataset
 
-YOLO uses [YAML files](https://www.ultralytics.com/glossary/yaml) to define dataset configurations. By default, datasets are expected in the `../datasets` directory relative to the repository root. For example, the [COCO128 dataset](https://docs.ultralytics.com/datasets/detect/coco128/) structure:
+YOLO uses [YAML files](https://www.ultralytics.com/glossary/yaml) to define dataset configurations. By default, datasets are expected in the `../datasets` directory relative to the repository root. For example, the [COCO128 dataset](https://docs.ultralytics.com/datasets/detect/coco128) structure:
 
 ```
 ../
@@ -153,7 +153,7 @@ python train.py --img 640 --batch 16 --epochs 3 --data clearml://YOUR_DATASET_ID
 
 ## 👀 Hyperparameter Optimization
 
-With experiments and data versioned, you can leverage ClearML for [hyperparameter optimization](https://docs.ultralytics.com/guides/hyperparameter-tuning/). ClearML captures all necessary information (code, packages, environment), making experiments fully reproducible. Its HPO tools clone an existing experiment, modify hyperparameters, and rerun it automatically.
+With experiments and data versioned, you can leverage ClearML for [hyperparameter optimization](https://docs.ultralytics.com/guides/hyperparameter-tuning). ClearML captures all necessary information (code, packages, environment), making experiments fully reproducible. Its HPO tools clone an existing experiment, modify hyperparameters, and rerun it automatically.
 
 To run HPO locally, use the provided script `utils/loggers/clearml/hpo.py`. You'll need the ID of a previously run training task (the "template task") to clone. Update the script with this ID and run:
 
@@ -225,7 +225,7 @@ Watch the Autoscalers getting started video:
 
 ## 🤝 Contributing
 
-Contributions to enhance the ClearML integration are welcome! Please see the [Ultralytics Contributing Guide](https://docs.ultralytics.com/help/contributing/) for details on how to get involved.
+Contributions to enhance the ClearML integration are welcome! Please see the [Ultralytics Contributing Guide](https://docs.ultralytics.com/help/contributing) for details on how to get involved.
 
 ---
 
