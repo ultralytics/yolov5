@@ -963,6 +963,7 @@ def run(**kwargs):
         save_period (int, optional): Frequency in epochs to save checkpoints. Disabled if < 1. Defaults to -1.
         seed (int, optional): Global training random seed. Defaults to 0.
         local_rank (int, optional): Automatic DDP Multi-GPU argument. Do not modify. Defaults to -1.
+        **kwargs: Optional training argument overrides applied to the parsed options namespace.
 
     Returns:
         (argparse.Namespace): The parsed options namespace with any keyword overrides applied.

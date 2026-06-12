@@ -123,6 +123,20 @@ multi_line_output = 0
 [tool.ruff]
 line-length = 120
 
+[tool.ruff.lint.per-file-ignores]
+"benchmarks.py" = ["E402"]
+"classify/*.py" = ["E402"]
+"detect.py" = ["E402"]
+"export.py" = ["E402"]
+"models/tf.py" = ["E402"]
+"models/yolo.py" = ["E402"]
+"segment/*.py" = ["E402"]
+"tests/test_flask_rest_api.py" = ["D101", "D102", "D103"]
+"train.py" = ["E402"]
+"utils/loggers/comet/__init__.py" = ["E402"]
+"utils/loggers/comet/hpo.py" = ["E402"]
+"val.py" = ["E402"]
+
 [tool.docformatter]
 wrap-summaries = 120
 wrap-descriptions = 120
