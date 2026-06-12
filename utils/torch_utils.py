@@ -277,8 +277,7 @@ def model_info(model, verbose=False, imgsz=640):
         for i, (name, p) in enumerate(model.named_parameters()):
             name = name.replace("module_list.", "")
             print(
-                "%5g %40s %9s %12g %20s %10.3g %10.3g"
-                % (i, name, p.requires_grad, p.numel(), list(p.shape), p.mean(), p.std())
+                f"{i:5d} {name:>40s} {p.requires_grad!s:>9s} {p.numel():12d} {list(p.shape)!s:>20s} {p.mean().item():10.3g} {p.std().item():10.3g}"
             )
 
     try:  # FLOPs

@@ -861,7 +861,7 @@ class LoadImagesAndLabels(Dataset):
         labels4, segments4 = [], []
         s = self.img_size
         yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border)  # mosaic center x, y
-        indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
+        indices = [index, *random.choices(self.indices, k=3)]  # 3 additional image indices
         random.shuffle(indices)
         for i, index in enumerate(indices):
             # Load image

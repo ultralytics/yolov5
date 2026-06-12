@@ -239,7 +239,7 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
         yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border)  # mosaic center x, y
 
         # 3 additional image indices
-        indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
+        indices = [index, *random.choices(self.indices, k=3)]  # 3 additional image indices
         for i, index in enumerate(indices):
             # Load image
             img, _, (h, w) = self.load_image(index)
@@ -296,8 +296,8 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
         """Custom collation function for DataLoader, batches images, labels, paths, shapes, and segmentation masks."""
         img, label, path, shapes, masks = zip(*batch)  # transposed
         batched_masks = torch.cat(masks, 0)
-        for i, l in enumerate(label):
-            l[:, 0] = i  # add target image index for build_targets()
+        for i, labels in enumerate(label):
+            labels[:, 0] = i  # add target image index for build_targets()
         return torch.stack(img, 0), torch.cat(label, 0), path, shapes, batched_masks
 
 

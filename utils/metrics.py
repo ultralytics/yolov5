@@ -320,6 +320,7 @@ def box_iou(box1, box2, eps=1e-7):
     Args:
         box1: (Tensor[N, 4])
         box2: (Tensor[M, 4])
+        eps: Small value to avoid division by zero.
 
     Returns:
         iou (Tensor[N, M]): the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
@@ -338,6 +339,7 @@ def bbox_ioa(box1, box2, eps=1e-7):
     Args:
         box1: np.array of shape(4)
         box2: np.array of shape(nx4)
+        eps: Small value to avoid division by zero.
 
     Returns:
         np.array of shape(n)
