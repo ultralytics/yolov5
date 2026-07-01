@@ -65,7 +65,7 @@ def smart_amp_autocast(amp=True):
     """Returns autocast function for mixed precision training, due to cuda.amp.autocast is warned to be
     deprecated after torch 2.8.0 since torch 2.4.0.
     """
-    if check_version(torch.__version__, "2.8.0"):
+    if check_version(torch.__version__, "2.4.0"):
         return torch.amp.autocast("cuda", enabled=amp)
     else:
         return torch.cuda.amp.autocast(amp)
