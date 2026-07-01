@@ -64,6 +64,7 @@ from utils.torch_utils import (
     reshape_classifier_output,
     select_device,
     smart_DDP,
+    smart_amp_autocast,
     smart_optimizer,
     smartCrossEntropyLoss,
     torch_distributed_zero_first,
@@ -220,7 +221,7 @@ def train(opt, device):
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
             # Forward
-            with amp.autocast(enabled=cuda):
+            with smart_amp_autocast(enabled=cuda):
                 loss = criterion(model(images), labels)
 
             # Backward

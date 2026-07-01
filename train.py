@@ -91,6 +91,7 @@ from utils.torch_utils import (
     de_parallel,
     select_device,
     smart_DDP,
+    smart_amp_autocast,
     smart_optimizer,
     smart_resume,
     torch_distributed_zero_first,
@@ -411,7 +412,7 @@ def train(hyp, opt, device, callbacks):
                     imgs = nn.functional.interpolate(imgs, size=ns, mode="bilinear", align_corners=False)
 
             # Forward
-            with torch.cuda.amp.autocast(amp):
+            with smart_amp_autocast(amp):
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if RANK != -1:
