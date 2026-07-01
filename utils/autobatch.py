@@ -7,12 +7,11 @@ import numpy as np
 import torch
 
 from utils.general import LOGGER, colorstr
-from utils.torch_utils import profile
-
+from utils.torch_utils import profile, smart_amp_autocast
 
 def check_train_batch_size(model, imgsz=640, amp=True):
     """Checks and computes optimal training batch size for YOLOv5 model, given image size and AMP setting."""
-    with torch.cuda.amp.autocast(amp):
+    with smart_amp_autocast(amp):
         return autobatch(deepcopy(model).train(), imgsz)  # compute optimal batch size
 
 

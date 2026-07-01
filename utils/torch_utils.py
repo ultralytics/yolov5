@@ -61,6 +61,14 @@ def smart_DDP(model):
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
 
 
+def smart_amp_autocast(enabled=True):
+    """Return a torch.amp autocast context manager for PyTorch>=2.4, else torch.cuda.amp autocast context manager."""
+    if check_version(torch.__version__, "2.4.0"):
+        return torch.amp.autocast("cuda", enabled=enabled)
+    else:
+        return torch.cuda.amp.autocast(enabled)
+
+
 def reshape_classifier_output(model, n=1000):
     """Reshapes last layer of model to match class count 'n', supporting Classify, Linear, Sequential types."""
     from models.common import Classify
