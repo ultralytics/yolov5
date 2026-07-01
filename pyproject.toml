@@ -69,7 +69,7 @@ dependencies = [
     "requests>=2.32.2",
     "scipy>=1.4.1",
     "torch>=1.8.0",
-    "torchvision>=0.9.0",
+    "torchvision>=0.27.1",
     "tqdm>=4.66.3", # progress bars
     "psutil", # system utilization
     "thop>=0.1.1", # FLOPs computation
