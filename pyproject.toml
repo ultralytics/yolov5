@@ -76,7 +76,7 @@ dependencies = [
     "pandas>=1.1.4",
     "seaborn>=0.11.0", # plotting
     "packaging", # general utilities
-    "ultralytics>=8.4.65"
+    "ultralytics>=8.4.83"
 ]
 
 # Optional dependencies ------------------------------------------------------------------------------------------------
