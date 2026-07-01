@@ -67,6 +67,7 @@ from utils.torch_utils import (
     smart_optimizer,
     smartCrossEntropyLoss,
     torch_distributed_zero_first,
+    smart_amp_autocast,
 )
 
 LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -220,7 +221,7 @@ def train(opt, device):
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
             # Forward
-            with amp.autocast(enabled=cuda):
+            with smart_amp_autocast(cuda):
                 loss = criterion(model(images), labels)
 
             # Backward
