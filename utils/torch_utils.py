@@ -61,14 +61,12 @@ def smart_DDP(model):
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
 
 
-def smart_amp_autocast(amp=True):
-    """Returns autocast function for mixed precision training, due to cuda.amp.autocast is warned to be
-    deprecated after torch 2.8.0 since torch 2.4.0.
-    """
-    if check_version(torch.__version__, "2.8.0"):
-        return torch.amp.autocast("cuda", enabled=amp)
+def smart_amp_autocast(enabled=True):
+    """Return a torch.amp autocast context manager for PyTorch>=2.4, else torch.cuda.amp autocast context manager."""
+    if check_version(torch.__version__, "2.4.0"):
+        return torch.amp.autocast("cuda", enabled=enabled)
     else:
-        return torch.cuda.amp.autocast(amp)
+        return torch.cuda.amp.autocast(enabled)
 
 
 def reshape_classifier_output(model, n=1000):
