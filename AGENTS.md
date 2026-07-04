@@ -28,7 +28,7 @@ After opening a PR:
 1. Wait for the automated PR review and auto-format commit from Ultralytics Actions (`format.yml`), then pull and address every finding.
 2. Launch an independent adversarial review agent with cold context (just the PR diff and this file) to hunt for bugs, regressions, and Core Principles violations — use the Codex CLI, one fresh `codex exec` run per round. Fix, push, and repeat until a fresh run reports LGTM.
 3. Never fight other commits: Ultralytics Actions pushes auto-format and header commits, and multiple users may work on the same PR. `git pull --rebase` before pushing; never force-push, reset, or revert commits you did not author.
-4. After the PR merges, clean up: remove local worktrees and branches for it, then `git checkout main && git pull`.
+4. After the PR merges, clean up: remove local worktrees and branches for it, then `git checkout master && git pull`.
 
 ## Commands
 
@@ -48,13 +48,13 @@ python train.py --imgsz 64 --batch 32 --weights yolov5n.pt --cfg yolov5n.yaml --
 
 ## Architecture
 
-YOLOv5 is run from a repo clone, not as an installed package: `pyproject.toml` carries packaging metadata (static version 7.0.0) but there is no PyPI publish workflow, and pretrained weights download from the GitHub v7.0 release. Each task has a script triad — root `train.py`/`val.py`/`detect.py` for detection, mirrored in `segment/` and `classify/` — with shared `export.py` (all export formats) and `benchmarks.py` (export + val across formats). `models/yolo.py` builds Detection/Segmentation/ClassificationModel from YAML configs (`models/*.yaml`; P6 and experimental variants in `models/hub/`, segmentation in `models/segment/`), `models/common.py` holds the layer zoo and `DetectMultiBackend` for multi-format inference, and `hubconf.py` is the PyTorch Hub entry point. `utils/` provides dataloaders, general helpers, torch utilities, and `utils/loggers/` (Comet, ClearML, W&B, TensorBoard). The repo depends on the `ultralytics` pip package for some utilities (e.g. `ultralytics.utils.patches.torch_load`). Publishing: `docker.yml` builds and pushes `ultralytics/yolov5` Docker Hub images (`latest`, `latest-cpu`, `latest-arm64` from `utils/docker/`) on every push to `master`, gated to the `ultralytics/yolov5` repository; `format.yml` (Ultralytics Actions) auto-formats, labels, and summarizes PRs by pushing commits to the PR branch.
+YOLOv5 is run from a repo clone, not as an installed package: `pyproject.toml` carries packaging metadata (static version 7.0.0) but there is no PyPI publish workflow, and pretrained weights download from the GitHub v7.0 release. Each task has a script triad — root `train.py`/`val.py`/`detect.py` for detection, mirrored in `segment/` and `classify/` (which use `predict.py` instead of `detect.py`) — with shared `export.py` (all export formats) and `benchmarks.py` (export + val across formats). `models/yolo.py` builds DetectionModel and SegmentationModel from YAML configs (`models/*.yaml`; P6 and experimental variants in `models/hub/`, segmentation in `models/segment/`), while ClassificationModel only wraps an existing detection model (its YAML construction is an unimplemented placeholder); `models/common.py` holds the layer zoo and `DetectMultiBackend` for multi-format inference, and `hubconf.py` is the PyTorch Hub entry point. `utils/` provides dataloaders, general helpers, torch utilities, and `utils/loggers/` (Comet, ClearML, W&B, TensorBoard). The repo depends on the `ultralytics` pip package for some utilities (e.g. `ultralytics.utils.patches.torch_load`). Publishing: `docker.yml` builds and pushes `ultralytics/yolov5` Docker Hub images (`latest`, `latest-cpu`, `latest-arm64` from `utils/docker/`) on every push to `master`, gated to the `ultralytics/yolov5` repository; `format.yml` (Ultralytics Actions) auto-formats, labels, and summarizes PRs by pushing commits to the PR branch.
 
 ## Conventions
 
-- Every source file opens with `# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license` — Ultralytics Actions adds these headers automatically, so don't add or revert them manually.
+- Source files carry the `# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license` header as the first line (after the shebang in shell scripts) — Ultralytics Actions adds these headers automatically, so don't add or revert them manually.
 - Google-style docstrings for larger classes and functions; a single-line docstring is fine for small functions and methods (docformatter wraps at 120, config in `pyproject.toml`).
 - Formatting is enforced on PRs by Ultralytics Actions: Ruff + docformatter for Python, Prettier for YAML/JSON/Markdown, codespell (ignore list in `pyproject.toml [tool.codespell]`).
 - Tests live in `tests/` as plain pytest; tests marked `@pytest.mark.network` hit the live network — deselect with `-m "not network"` when offline.
-- The default branch is `master`, not `main` — read `main` in the PR Workflow above as `master`.
+- The default branch is `master`, not `main`.
 - No automated version bumps or releases: the version in `pyproject.toml` is fixed at 7.0.0 and releases are hand-cut GitHub tags with attached weights.
