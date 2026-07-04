@@ -35,10 +35,10 @@ After opening a PR:
 ```bash
 uv pip install -r requirements.txt                                                                    # install (CI adds --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match)
 uv pip install pytest pytest-cov                                                                      # test dependencies (the "dev" extra in pyproject.toml)
-pytest tests/                                                                                         # run all tests
-pytest tests/ -m "not network"                                                                        # skip tests that hit the live network
-pytest tests/test_invariant_export.py::test_export_edgetpu_no_shell_true                              # run one test
-pytest tests/ --cov                                                                                   # coverage (local convention only; CI runs no pytest or coverage)
+python -m pytest tests/                                                                               # run all tests (python -m puts the repo root on sys.path; bare pytest fails imports)
+python -m pytest tests/ -m "not network"                                                              # skip tests that hit the live network
+python -m pytest tests/test_invariant_export.py::test_export_edgetpu_no_shell_true                    # run one test
+python -m pytest tests/ --cov                                                                         # coverage (local convention only; CI runs no pytest or coverage)
 ruff format . && ruff check --fix .                                                                   # format + lint (line-length 120 from pyproject.toml [tool.ruff])
 python train.py --imgsz 64 --batch 32 --weights yolov5n.pt --cfg yolov5n.yaml --epochs 1 --device cpu # CI-style smoke train
 ```
