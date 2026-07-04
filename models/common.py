@@ -55,7 +55,8 @@ from utils.general import (
     xyxy2xywh,
     yaml_load,
 )
-from utils.torch_utils import copy_attr, smart_inference_mode, smart_amp_autocast
+from utils.torch_utils import copy_attr, smart_amp_autocast, smart_inference_mode
+
 
 def autopad(k, p=None, d=1):
     """Pads kernel to 'same' output shape, adjusting for optional dilation; returns padding size.

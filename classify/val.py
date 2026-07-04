@@ -46,7 +46,8 @@ from utils.general import (
     increment_path,
     print_args,
 )
-from utils.torch_utils import select_device, smart_inference_mode, smart_amp_autocast
+from utils.torch_utils import select_device, smart_amp_autocast, smart_inference_mode
+
 
 @smart_inference_mode()
 def run(
