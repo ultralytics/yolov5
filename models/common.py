@@ -540,6 +540,11 @@ class DetectMultiBackend(nn.Module):
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, "rb") as f, trt.Runtime(logger) as runtime:
                 model = runtime.deserialize_cuda_engine(f.read())
+            if model is None:
+                raise RuntimeError(
+                    "TensorRT engine deserialization failed. Re-export the engine with the same TensorRT version, "
+                    "CUDA version, and GPU device used for inference."
+                )
             context = model.create_execution_context()
             bindings = OrderedDict()
             output_names = []

@@ -2,12 +2,13 @@
 
 import os
 import sys
+from types import SimpleNamespace
 
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from models.common import _request_ssrf_url, _validate_ssrf_url
+from models.common import DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
 
 BLOCKED_URLS = [
     "http://169.254.169.254/latest/meta-data/",  # AWS metadata / link-local
@@ -63,3 +64,36 @@ def test_ssrf_redirect_target_is_validated(monkeypatch):
     with pytest.raises(ValueError):
         _request_ssrf_url("https://example.com/image.jpg")
     assert calls == ["https://example.com/image.jpg", "http://169.254.169.254/latest/meta-data/"]
+
+
+def test_tensorrt_deserialize_failure_reports_environment(monkeypatch, tmp_path):
+    """TensorRT engine incompatibility must fail with an actionable runtime error."""
+    engine = tmp_path / "model.engine"
+    engine.write_bytes(b"bad-engine")
+
+    class FakeLogger:
+        INFO = 1
+
+        def __init__(self, *_args):
+            pass
+
+    class FakeRuntime:
+        def __init__(self, *_args):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def deserialize_cuda_engine(self, data):
+            assert data == b"bad-engine"
+            return None
+
+    fake_trt = SimpleNamespace(__version__="8.6.1", Logger=FakeLogger, Runtime=FakeRuntime)
+    monkeypatch.setitem(sys.modules, "tensorrt", fake_trt)
+    monkeypatch.setattr("models.experimental.attempt_download", lambda w: w)
+
+    with pytest.raises(RuntimeError, match="same TensorRT version"):
+        DetectMultiBackend(str(engine))
