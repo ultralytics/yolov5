@@ -19,10 +19,13 @@ class Opt(SimpleNamespace):
 def test_clearml_not_configured_warns_and_disables_logger(monkeypatch, tmp_path):
     """ClearML auth/config errors should not crash training startup."""
 
+    class MissingConfigError(ValueError):
+        pass
+
     class Task:
         @staticmethod
         def init(**kwargs):
-            raise ValueError("ClearML configuration could not be found")
+            raise MissingConfigError("ClearML configuration could not be found")
 
     opt = Opt(
         data="data/coco128.yaml",
@@ -38,6 +41,7 @@ def test_clearml_not_configured_warns_and_disables_logger(monkeypatch, tmp_path)
 
     monkeypatch.setattr(loggers, "clearml", object())
     monkeypatch.setattr(clearml_utils, "clearml", object())
+    monkeypatch.setattr(clearml_utils, "MissingConfigError", MissingConfigError, raising=False)
     monkeypatch.setattr(clearml_utils, "Task", Task, raising=False)
     warnings = []
     monkeypatch.setattr(loggers.LOGGER, "warning", warnings.append)

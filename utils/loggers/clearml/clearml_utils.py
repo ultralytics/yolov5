@@ -14,6 +14,7 @@ from ultralytics.utils.plotting import Annotator, colors
 try:
     import clearml
     from clearml import Dataset, Task
+    from clearml.backend_api.session.defs import MissingConfigError
 
     assert hasattr(clearml, "__version__")  # verify package import not local dir
 except (ImportError, AssertionError):
@@ -107,7 +108,7 @@ class ClearmlLogger:
                     auto_connect_frameworks={"pytorch": False, "matplotlib": False},
                     # We disconnect pytorch auto-detection, because we added manual model save points in the code
                 )
-            except ValueError as e:
+            except MissingConfigError as e:
                 raise ClearmlNotConfiguredError from e
             # ClearML's hooks will already grab all general parameters
             # Only the hyperparameters coming from the yaml config file
