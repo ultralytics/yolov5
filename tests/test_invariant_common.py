@@ -93,7 +93,6 @@ def test_tensorrt_deserialize_failure_reports_environment(monkeypatch, tmp_path)
 
     fake_trt = SimpleNamespace(__version__="8.6.1", Logger=FakeLogger, Runtime=FakeRuntime)
     monkeypatch.setitem(sys.modules, "tensorrt", fake_trt)
-    monkeypatch.setattr("models.experimental.attempt_download", lambda w: w)
 
     with pytest.raises(RuntimeError, match="same TensorRT version"):
         DetectMultiBackend(str(engine))
