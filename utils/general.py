@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import glob
+import hashlib
 import inspect
 import logging
 import logging.config
@@ -480,11 +481,16 @@ def check_dataset(data, autodownload=True):
             if s.startswith("http") and s.endswith(".zip"):  # URL
                 download(s, dir=DATASETS_DIR, curl=True)
                 r = None  # success
-            elif s.startswith("bash "):  # bash script
-                LOGGER.info(f"Running {s} ...")
-                r = subprocess.run(s, shell=True).returncode
-            else:  # python script
-                r = exec(s, {"yaml": data})  # return None
+            else:  # script
+                LOGGER.warning(
+                    "WARNING ⚠️ Dataset YAML download script will execute code. "
+                    f"Review the script for safety before running. SHA256: {hashlib.sha256(s.encode()).hexdigest()}"
+                )
+                if s.startswith("bash "):  # bash script
+                    LOGGER.info(f"Running {s} ...")
+                    r = subprocess.run(s, shell=True).returncode
+                else:  # python script
+                    r = exec(s, {"yaml": data})  # return None
             dt = f"({round(time.time() - t, 1)}s)"
             s = f"success ✅ {dt}, saved to {colorstr('bold', DATASETS_DIR)}" if r in (0, None) else f"failure {dt} ❌"
             LOGGER.info(f"Dataset download {s}")

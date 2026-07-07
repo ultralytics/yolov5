@@ -1,7 +1,9 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
+import hashlib
 import os
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -63,3 +65,30 @@ def test_ssrf_redirect_target_is_validated(monkeypatch):
     with pytest.raises(ValueError):
         _request_ssrf_url("https://example.com/image.jpg")
     assert calls == ["https://example.com/image.jpg", "http://169.254.169.254/latest/meta-data/"]
+
+
+def test_yaml_shell_download_warns_with_hash(tmp_path, monkeypatch):
+    """YAML shell downloads must not execute silently."""
+    from utils import general
+
+    script = "bash scripts/download.sh"
+    data = tmp_path / "data.yaml"
+    data.write_text(
+        f"path: {tmp_path}\ntrain: images/train\nval: images/val\nnames:\n  0: person\ndownload: {script}\n"
+    )
+
+    events = []
+    monkeypatch.setattr(general.LOGGER, "warning", lambda message: events.append(("warning", message)))
+    monkeypatch.setattr(
+        general.subprocess,
+        "run",
+        lambda *args, **kwargs: events.append(("run", args, kwargs)) or SimpleNamespace(returncode=0),
+    )
+    monkeypatch.setattr(general, "check_font", lambda *args, **kwargs: None)
+
+    general.check_dataset(data)
+
+    assert events[0][0] == "warning"
+    assert "Dataset YAML download script will execute code" in events[0][1]
+    assert f"SHA256: {hashlib.sha256(script.encode()).hexdigest()}" in events[0][1]
+    assert events[1][0] == "run"
