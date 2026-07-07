@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
 import utils.loggers as loggers
 
 clearml_utils = importlib.import_module("utils.loggers.clearml.clearml_utils")
@@ -34,7 +35,6 @@ def make_opt(tmp_path):
 @pytest.mark.parametrize("legacy_error", [False, True])
 def test_clearml_not_configured_warns_and_disables_logger(monkeypatch, tmp_path, legacy_error):
     """ClearML auth/config errors should not crash training startup."""
-
     MissingConfigError = ValueError if legacy_error else type("MissingConfigError", (ValueError,), {})
 
     class Task:
