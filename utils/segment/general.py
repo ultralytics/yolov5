@@ -100,10 +100,13 @@ def scale_image(im1_shape, masks, im0_shape, ratio_pad=None):
     if len(masks.shape) < 2:
         raise ValueError(f'"len of masks shape" should be 2 or 3, but got {len(masks.shape)}')
     masks = masks[top:bottom, left:right]
-    # masks = masks.permute(2, 0, 1).contiguous()
-    # masks = F.interpolate(masks[None], im0_shape[:2], mode='bilinear', align_corners=False)[0]
-    # masks = masks.permute(1, 2, 0).contiguous()
-    masks = cv2.resize(masks, (im0_shape[1], im0_shape[0]))
+    if masks.ndim == 3 and masks.shape[2] > 512:
+        masks = [
+            cv2.resize(masks[:, :, i : i + 512], (im0_shape[1], im0_shape[0])) for i in range(0, masks.shape[2], 512)
+        ]
+        masks = np.concatenate([x if x.ndim == 3 else x[:, :, None] for x in masks], axis=2)
+    else:
+        masks = cv2.resize(masks, (im0_shape[1], im0_shape[0]))
 
     if len(masks.shape) == 2:
         masks = masks[:, :, None]
