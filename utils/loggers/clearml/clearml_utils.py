@@ -14,7 +14,11 @@ from ultralytics.utils.plotting import Annotator, colors
 try:
     import clearml
     from clearml import Dataset, Task
-    from clearml.backend_api.session.defs import MissingConfigError
+
+    try:
+        from clearml.backend_api.session.defs import MissingConfigError
+    except ImportError:
+        MissingConfigError = ValueError
 
     assert hasattr(clearml, "__version__")  # verify package import not local dir
 except (ImportError, AssertionError):
