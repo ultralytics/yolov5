@@ -25,6 +25,15 @@ except (ImportError, AssertionError):
     clearml = None
 
 
+CLEARML_CONFIG_ERRORS = (
+    "ClearML configuration could not be found",
+    "Missing access_key.",
+    "Missing secret_key.",
+    "host is required in init or config",
+    "Could not get access credentials",
+)
+
+
 class ClearmlNotConfiguredError(ValueError):
     """Raised when ClearML is installed but not configured for task logging."""
 
@@ -113,6 +122,8 @@ class ClearmlLogger:
                     # We disconnect pytorch auto-detection, because we added manual model save points in the code
                 )
             except MissingConfigError as e:
+                if MissingConfigError is ValueError and not str(e).startswith(CLEARML_CONFIG_ERRORS):
+                    raise
                 raise ClearmlNotConfiguredError from e
             # ClearML's hooks will already grab all general parameters
             # Only the hyperparameters coming from the yaml config file
