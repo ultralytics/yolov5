@@ -3,11 +3,14 @@
 import os
 import sys
 
+import cv2
+import numpy as np
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from models.common import _request_ssrf_url, _validate_ssrf_url
+from utils.segment.general import scale_image
 
 BLOCKED_URLS = [
     "http://169.254.169.254/latest/meta-data/",  # AWS metadata / link-local
@@ -63,3 +66,14 @@ def test_ssrf_redirect_target_is_validated(monkeypatch):
     with pytest.raises(ValueError):
         _request_ssrf_url("https://example.com/image.jpg")
     assert calls == ["https://example.com/image.jpg", "http://169.254.169.254/latest/meta-data/"]
+
+
+def test_scale_image_many_masks():
+    """scale_image must resize more than 512 masks, which OpenCV cannot resize as channels directly."""
+    masks = np.arange(4 * 5 * 513, dtype=np.float32).reshape(4, 5, 513)
+
+    resized = scale_image((4, 5), masks, (8, 10, 3))
+    expected = np.stack([cv2.resize(masks[:, :, i], (10, 8)) for i in range(masks.shape[2])], axis=2)
+
+    assert resized.shape == (8, 10, 513)
+    np.testing.assert_allclose(resized, expected)
