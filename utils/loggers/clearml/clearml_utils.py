@@ -15,9 +15,27 @@ try:
     import clearml
     from clearml import Dataset, Task
 
+    try:
+        from clearml.backend_api.session.defs import MissingConfigError
+    except ImportError:
+        MissingConfigError = ValueError
+
     assert hasattr(clearml, "__version__")  # verify package import not local dir
 except (ImportError, AssertionError):
     clearml = None
+
+
+CLEARML_CONFIG_ERRORS = (
+    "ClearML configuration could not be found",
+    "Missing access_key.",
+    "Missing secret_key.",
+    "host is required in init or config",
+    "Could not get access credentials",
+)
+
+
+class ClearmlNotConfiguredError(ValueError):
+    """Raised when ClearML is installed but not configured for task logging."""
 
 
 def construct_dataset(clearml_info_string):
@@ -93,15 +111,20 @@ class ClearmlLogger:
         self.task = None
         self.data_dict = None
         if self.clearml:
-            self.task = Task.init(
-                project_name="YOLOv5" if str(opt.project).startswith("runs/") else opt.project,
-                task_name=opt.name if opt.name != "exp" else "Training",
-                tags=["YOLOv5"],
-                output_uri=True,
-                reuse_last_task_id=opt.exist_ok,
-                auto_connect_frameworks={"pytorch": False, "matplotlib": False},
-                # We disconnect pytorch auto-detection, because we added manual model save points in the code
-            )
+            try:
+                self.task = Task.init(
+                    project_name="YOLOv5" if str(opt.project).startswith("runs/") else opt.project,
+                    task_name=opt.name if opt.name != "exp" else "Training",
+                    tags=["YOLOv5"],
+                    output_uri=True,
+                    reuse_last_task_id=opt.exist_ok,
+                    auto_connect_frameworks={"pytorch": False, "matplotlib": False},
+                    # We disconnect pytorch auto-detection, because we added manual model save points in the code
+                )
+            except MissingConfigError as e:
+                if MissingConfigError is ValueError and not str(e).startswith(CLEARML_CONFIG_ERRORS):
+                    raise
+                raise ClearmlNotConfiguredError from e
             # ClearML's hooks will already grab all general parameters
             # Only the hyperparameters coming from the yaml config file
             # will have to be added manually!

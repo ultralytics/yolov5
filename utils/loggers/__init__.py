@@ -10,7 +10,7 @@ import torch
 from packaging.version import parse
 
 from utils.general import LOGGER, colorstr, cv2
-from utils.loggers.clearml.clearml_utils import ClearmlLogger
+from utils.loggers.clearml.clearml_utils import ClearmlLogger, ClearmlNotConfiguredError
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_labels, plot_results
 from utils.torch_utils import de_parallel
@@ -131,7 +131,7 @@ class Loggers:
         if clearml and "clearml" in self.include:
             try:
                 self.clearml = ClearmlLogger(self.opt, self.hyp)
-            except Exception:
+            except ClearmlNotConfiguredError:
                 self.clearml = None
                 prefix = colorstr("ClearML: ")
                 LOGGER.warning(
@@ -382,7 +382,7 @@ class GenericLogger:
                 # Hyp is not available in classification mode
                 hyp = {} if "hyp" not in opt else opt.hyp
                 self.clearml = ClearmlLogger(opt, hyp)
-            except Exception:
+            except ClearmlNotConfiguredError:
                 self.clearml = None
                 prefix = colorstr("ClearML: ")
                 LOGGER.warning(
