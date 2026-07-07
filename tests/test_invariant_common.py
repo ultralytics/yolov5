@@ -2,6 +2,7 @@
 
 import os
 import sys
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
@@ -9,7 +10,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from models.common import _request_ssrf_url, _validate_ssrf_url
+from models.common import DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
 from utils.segment.general import scale_image
 
 BLOCKED_URLS = [
@@ -77,3 +78,35 @@ def test_scale_image_many_masks():
 
     assert resized.shape == (8, 10, 513)
     np.testing.assert_allclose(resized, expected)
+
+
+def test_tensorrt_deserialize_failure_reports_environment(monkeypatch, tmp_path):
+    """TensorRT engine incompatibility must fail with an actionable runtime error."""
+    engine = tmp_path / "model.engine"
+    engine.write_bytes(b"bad-engine")
+
+    class FakeLogger:
+        INFO = 1
+
+        def __init__(self, *_args):
+            pass
+
+    class FakeRuntime:
+        def __init__(self, *_args):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def deserialize_cuda_engine(self, data):
+            assert data == b"bad-engine"
+            return None
+
+    fake_trt = SimpleNamespace(__version__="8.6.1", Logger=FakeLogger, Runtime=FakeRuntime)
+    monkeypatch.setitem(sys.modules, "tensorrt", fake_trt)
+
+    with pytest.raises(RuntimeError, match="same TensorRT version"):
+        DetectMultiBackend(str(engine))
