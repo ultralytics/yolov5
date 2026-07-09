@@ -75,10 +75,9 @@ The API processes the submitted image using the YOLOv5s model and returns the de
 
 An example Python script, `example_request.py`, is included to demonstrate how to perform inference using the popular [requests](https://requests.readthedocs.io/en/latest/) library. This script offers a straightforward method for interacting with the running API programmatically.
 
-
 ## 🔒 Authentication (optional)
 
-The API supports an optional API-key guard via the `API_KEY` environment variable. When `API_KEY` is set, every request must include a matching `X-API-Key` header; requests without it (or with the wrong key) receive a `401 Unauthorized` response. When `API_KEY` is **not** set the endpoint remains open, preserving the default behaviour.
+The API supports an optional API-key guard via the `API_KEY` environment variable. When `API_KEY` is set, every request must include a matching `X-API-Key` header; requests without it (or with the wrong key) receive a `401 Unauthorized` response. When `API_KEY` is **not** set the endpoint remains open, preserving the default behavior.
 
 **Start the server with an API key:**
 
@@ -90,9 +89,9 @@ API_KEY=mysecretkey python restapi.py --port 5000
 
 ```shell
 curl -X POST \
-     -H "X-API-Key: mysecretkey" \
-     -F image=@../../data/images/zidane.jpg \
-     'http://localhost:5000/v1/object-detection/yolov5s'
+  -H "X-API-Key: mysecretkey" \
+  -F image=@../../data/images/zidane.jpg \
+  'http://localhost:5000/v1/object-detection/yolov5s'
 ```
 
 **Send an authenticated request with Python `requests`:**
