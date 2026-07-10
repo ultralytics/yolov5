@@ -75,3 +75,47 @@ def test_accepts_valid_image_upload(client):
     response = post_image(client, make_image_bytes(), "image.png")
     assert response.status_code == 200
     assert response.data == b"[]"
+
+
+def test_auth_correct_key_returns_200(client, monkeypatch):
+    monkeypatch.setattr("utils.flask_rest_api.restapi.API_KEY", "testkey")
+    response = client.post(
+        DETECTION_PATH,
+        data={"image": (make_image_bytes(), "image.png")},
+        content_type="multipart/form-data",
+        headers={"X-API-Key": "testkey"},
+    )
+    assert response.status_code == 200
+
+
+def test_auth_wrong_key_returns_401(client, monkeypatch):
+    monkeypatch.setattr("utils.flask_rest_api.restapi.API_KEY", "testkey")
+    response = client.post(
+        DETECTION_PATH,
+        data={"image": (make_image_bytes(), "image.png")},
+        content_type="multipart/form-data",
+        headers={"X-API-Key": "wrongkey"},
+    )
+    assert response.status_code == 401
+    assert response.json == {"error": "Unauthorized"}
+
+
+def test_auth_missing_header_returns_401(client, monkeypatch):
+    monkeypatch.setattr("utils.flask_rest_api.restapi.API_KEY", "testkey")
+    response = client.post(
+        DETECTION_PATH,
+        data={"image": (make_image_bytes(), "image.png")},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 401
+    assert response.json == {"error": "Unauthorized"}
+
+
+def test_auth_disabled_when_api_key_empty_returns_200(client, monkeypatch):
+    monkeypatch.setattr("utils.flask_rest_api.restapi.API_KEY", "")
+    response = client.post(
+        DETECTION_PATH,
+        data={"image": (make_image_bytes(), "image.png")},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 200

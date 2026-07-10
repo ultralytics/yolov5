@@ -107,6 +107,8 @@ response = requests.post(
 print(response.json())
 ```
 
+Omitting or supplying a wrong key returns HTTP 401: `{"error": "Unauthorized"}`.
+
 ## 🤝 Contribute
 
 Contributions to enhance this Flask API example are highly encouraged! Whether you're interested in adding support for different YOLO models, improving error handling, or implementing new features, please feel free to fork the repository, apply your changes, and submit a pull request. For more comprehensive contribution guidelines, please refer to the main [Ultralytics YOLOv5 repository](https://github.com/ultralytics/yolov5) and the general [Ultralytics documentation](https://docs.ultralytics.com/).
