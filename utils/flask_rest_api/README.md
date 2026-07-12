@@ -75,6 +75,13 @@ The API processes the submitted image using the YOLOv5s model and returns the de
 
 An example Python script, `example_request.py`, is included to demonstrate how to perform inference using the popular [requests](https://requests.readthedocs.io/en/latest/) library. This script offers a straightforward method for interacting with the running API programmatically.
 
+To require authentication, set `API_KEY` when starting the server and include it in each request:
+
+```shell
+API_KEY=mysecretkey python restapi.py --port 5000
+curl -H 'X-API-Key: mysecretkey' -F image=@../../data/images/zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'
+```
+
 ## 🤝 Contribute
 
 Contributions to enhance this Flask API example are highly encouraged! Whether you're interested in adding support for different YOLO models, improving error handling, or implementing new features, please feel free to fork the repository, apply your changes, and submit a pull request. For more comprehensive contribution guidelines, please refer to the main [Ultralytics YOLOv5 repository](https://github.com/ultralytics/yolov5) and the general [Ultralytics documentation](https://docs.ultralytics.com/).

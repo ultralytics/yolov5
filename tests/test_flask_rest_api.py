@@ -25,7 +25,8 @@ class DummyModel:
 
 
 @pytest.fixture(autouse=True)
-def setup_model():
+def setup_model(monkeypatch):
+    monkeypatch.delenv("API_KEY", raising=False)
     models.clear()
     models[MODEL_NAME] = DummyModel()
     yield
@@ -75,3 +76,15 @@ def test_accepts_valid_image_upload(client):
     response = post_image(client, make_image_bytes(), "image.png")
     assert response.status_code == 200
     assert response.data == b"[]"
+
+
+@pytest.mark.parametrize(("header", "status"), [(None, 401), ("wrong", 401), ("é", 401), ("secret", 200)])
+def test_api_key(client, monkeypatch, header, status):
+    monkeypatch.setenv("API_KEY", "secret")
+    response = client.post(
+        DETECTION_PATH,
+        data={"image": (make_image_bytes(), "image.png")},
+        content_type="multipart/form-data",
+        headers={"X-API-Key": header} if header else None,
+    )
+    assert response.status_code == status

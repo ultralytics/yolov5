@@ -3,6 +3,8 @@
 
 import argparse
 import io
+import os
+import secrets
 
 from flask import Flask, request
 from PIL import Image
@@ -28,6 +30,10 @@ def predict(model):
     """Predict and return object detections in JSON format given an image and model name via a Flask REST API POST
     request.
     """
+    if (api_key := os.getenv("API_KEY")) and not secrets.compare_digest(
+        request.headers.get("X-API-Key", "").encode(), api_key.encode()
+    ):
+        return {"error": "Unauthorized"}, 401
     if not request.files.get("image"):
         return {"error": "No image file provided"}, 400
     im_file = request.files["image"]
