@@ -78,7 +78,7 @@ def test_accepts_valid_image_upload(client):
     assert response.data == b"[]"
 
 
-@pytest.mark.parametrize(("header", "status"), [(None, 401), ("wrong", 401), ("secret", 200)])
+@pytest.mark.parametrize(("header", "status"), [(None, 401), ("wrong", 401), ("é", 401), ("secret", 200)])
 def test_api_key(client, monkeypatch, header, status):
     monkeypatch.setenv("API_KEY", "secret")
     response = client.post(
