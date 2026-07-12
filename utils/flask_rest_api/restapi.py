@@ -25,15 +25,12 @@ def handle_large_upload(_):
     return {"error": "File too large. Maximum size is 16 MB."}, 413
 
 
-API_KEY = os.environ.get("API_KEY", "")
-
-
 @app.route(DETECTION_URL, methods=["POST"])
 def predict(model):
     """Predict and return object detections in JSON format given an image and model name via a Flask REST API POST
     request.
     """
-    if API_KEY and not secrets.compare_digest(request.headers.get("X-API-Key", ""), API_KEY):
+    if (api_key := os.getenv("API_KEY")) and not secrets.compare_digest(request.headers.get("X-API-Key", ""), api_key):
         return {"error": "Unauthorized"}, 401
     if not request.files.get("image"):
         return {"error": "No image file provided"}, 400
