@@ -25,7 +25,8 @@ class DummyModel:
 
 
 @pytest.fixture(autouse=True)
-def setup_model():
+def setup_model(monkeypatch):
+    monkeypatch.delenv("API_KEY", raising=False)
     models.clear()
     models[MODEL_NAME] = DummyModel()
     yield
