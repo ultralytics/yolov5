@@ -222,7 +222,7 @@ def try_export(inner_func):
 
 
 @try_export
-def export_torchscript(model, im, file, optimize, prefix=colorstr("TorchScript:")):
+def export_torchscript(model, im, file, optimize, prefix=colorstr("TorchScript:")):  # noqa: B008
     """Export a YOLOv5 model to the TorchScript format.
 
     Args:
@@ -277,7 +277,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr("TorchScript:"
 
 
 @try_export
-def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX:")):
+def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX:")):  # noqa: B008
     """Export a YOLOv5 model to ONNX format with dynamic axes support and optional model simplification.
 
     Args:
@@ -376,7 +376,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
 
 
 @try_export
-def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:")):
+def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:")):  # noqa: B008
     """Export a YOLOv5 model to OpenVINO format with optional FP16 and INT8 quantization.
 
     Args:
@@ -460,7 +460,7 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
 
 
 @try_export
-def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):
+def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):  # noqa: B008
     """Export a YOLOv5 PyTorch model to PaddlePaddle format using X2Paddle, saving the converted model and metadata.
 
     Args:
@@ -508,7 +508,7 @@ def export_paddle(model, im, file, metadata, prefix=colorstr("PaddlePaddle:")):
 
 
 @try_export
-def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("CoreML:")):
+def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("CoreML:")):  # noqa: B008
     """Export a YOLOv5 model to CoreML format with optional NMS, INT8, and FP16 support.
 
     Args:
@@ -579,7 +579,16 @@ def export_coreml(model, im, file, int8, half, nms, mlmodel, prefix=colorstr("Co
 
 @try_export
 def export_engine(
-    model, im, file, half, dynamic, simplify, workspace=4, verbose=False, cache="", prefix=colorstr("TensorRT:")
+    model,
+    im,
+    file,
+    half,
+    dynamic,
+    simplify,
+    workspace=4,
+    verbose=False,
+    cache="",
+    prefix=colorstr("TensorRT:"),  # noqa: B008
 ):
     """Export a YOLOv5 model to TensorRT engine format, requiring GPU and TensorRT>=7.0.0.
 
@@ -698,7 +707,7 @@ def export_saved_model(
     iou_thres=0.45,
     conf_thres=0.25,
     keras=False,
-    prefix=colorstr("TensorFlow SavedModel:"),
+    prefix=colorstr("TensorFlow SavedModel:"),  # noqa: B008
 ):
     """Export a YOLOv5 model to the TensorFlow SavedModel format, supporting dynamic axes and non-maximum suppression
     (NMS).
@@ -782,7 +791,7 @@ def export_saved_model(
 
 
 @try_export
-def export_pb(keras_model, file, prefix=colorstr("TensorFlow GraphDef:")):
+def export_pb(keras_model, file, prefix=colorstr("TensorFlow GraphDef:")):  # noqa: B008
     """Export YOLOv5 model to TensorFlow GraphDef (*.pb) format.
 
     Args:
@@ -820,7 +829,15 @@ def export_pb(keras_model, file, prefix=colorstr("TensorFlow GraphDef:")):
 
 @try_export
 def export_tflite(
-    keras_model, im, file, int8, per_tensor, data, nms, agnostic_nms, prefix=colorstr("TensorFlow Lite:")
+    keras_model,
+    im,
+    file,
+    int8,
+    per_tensor,
+    data,
+    nms,
+    agnostic_nms,
+    prefix=colorstr("TensorFlow Lite:"),  # noqa: B008
 ):
     # YOLOv5 TensorFlow Lite export
     """Export a YOLOv5 model to TensorFlow Lite format with optional INT8 quantization and NMS support.
@@ -895,7 +912,7 @@ def export_tflite(
 
 
 @try_export
-def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
+def export_edgetpu(file, prefix=colorstr("Edge TPU:")):  # noqa: B008
     """Exports a YOLOv5 model to Edge TPU compatible TFLite format; requires Linux and Edge TPU compiler.
 
     Args:
@@ -925,7 +942,8 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
     assert platform.system() == "Linux", f"export only supported on Linux. See {help_url}"
     try:
         compiler_present = (
-            subprocess.run(cmd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+            subprocess.run(cmd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode
+            == 0
         )
     except FileNotFoundError:
         compiler_present = False
@@ -933,7 +951,9 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
         LOGGER.info(f"\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}")
         try:
             sudo = (
-                subprocess.run(["sudo", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+                subprocess.run(
+                    ["sudo", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
+                ).returncode
                 == 0
             )
         except FileNotFoundError:
@@ -977,7 +997,7 @@ def export_edgetpu(file, prefix=colorstr("Edge TPU:")):
 
 
 @try_export
-def export_tfjs(file, int8, prefix=colorstr("TensorFlow.js:")):
+def export_tfjs(file, int8, prefix=colorstr("TensorFlow.js:")):  # noqa: B008
     """Convert a YOLOv5 model to TensorFlow.js format with optional uint8 quantization.
 
     Args:
@@ -1099,7 +1119,7 @@ def add_tflite_metadata(file, metadata, num_outputs):
         tmp_file.unlink()
 
 
-def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML Pipeline:")):
+def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML Pipeline:")):  # noqa: B008
     """Convert a PyTorch YOLOv5 model to CoreML format with Non-Maximum Suppression (NMS), handling different
     input/output shapes, and saving the model.
 
@@ -1533,7 +1553,9 @@ def parse_opt(known=False):
 
 def main(opt):
     """Run(**vars(opt)), execute the run function with parsed options."""
-    for opt.weights in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
+    weights = opt.weights if isinstance(opt.weights, list) else [opt.weights]
+    for weight in weights:
+        opt.weights = weight
         run(**vars(opt))
 
 

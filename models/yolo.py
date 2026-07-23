@@ -16,7 +16,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -115,7 +115,7 @@ class Detect(nn.Module):
 
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
-    def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, "1.10.0")):
+    def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, "1.10.0")):  # noqa: B008
         """Generates a mesh grid for anchor boxes with optional compatibility for torch versions < 1.10."""
         d = self.anchors[i].device
         t = self.anchors[i].dtype
@@ -207,7 +207,7 @@ class BaseModel(nn.Module):
         """Applies transformations like to(), cpu(), cuda(), half() to model tensors excluding parameters or registered
         buffers.
         """
-        self = super()._apply(fn)
+        super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(m, (Detect, Segment)):
             m.stride = fn(m.stride)

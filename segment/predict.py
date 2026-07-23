@@ -220,7 +220,7 @@ def run(
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
                 cv2.imshow(str(p), im0)
                 if cv2.waitKey(1) == ord("q"):  # 1 millisecond
-                    exit()
+                    sys.exit()
 
             # Save results (image with detections)
             if save_img:

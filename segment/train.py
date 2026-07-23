@@ -29,8 +29,8 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.distributed as dist
-import torch.nn as nn
 import yaml
+from torch import nn
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 
@@ -92,9 +92,9 @@ from utils.torch_utils import (
     torch_distributed_zero_first,
 )
 
-LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
-RANK = int(os.getenv("RANK", -1))
-WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
+LOCAL_RANK = int(os.getenv("LOCAL_RANK", "-1"))  # https://pytorch.org/docs/stable/elastic/run.html
+RANK = int(os.getenv("RANK", "-1"))
+WORLD_SIZE = int(os.getenv("WORLD_SIZE", "1"))
 GIT_INFO = check_git_info()
 
 
@@ -454,8 +454,7 @@ def train(hyp, opt, device, callbacks):
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
-            if fi > best_fitness:
-                best_fitness = fi
+            best_fitness = max(best_fitness, fi)
             log_vals = list(mloss) + list(results) + lr
             # callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
             # Log val metrics and media
@@ -473,7 +472,7 @@ def train(hyp, opt, device, callbacks):
                     "optimizer": optimizer.state_dict(),
                     "opt": vars(opt),
                     "git": GIT_INFO,  # {remote, branch, commit} if a git repo
-                    "date": datetime.now().isoformat(),
+                    "date": datetime.now().isoformat(),  # noqa: DTZ005
                 }
 
                 # Save last, best and delete
@@ -590,8 +589,10 @@ def parse_opt(known=False):
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
 
-def main(opt, callbacks=Callbacks()):
+def main(opt, callbacks=None):
     """Initializes training or evolution of YOLOv5 models based on provided configuration and options."""
+    if callbacks is None:
+        callbacks = Callbacks()
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
@@ -699,7 +700,8 @@ def main(opt, callbacks=Callbacks()):
                     "cp",
                     f"gs://{opt.bucket}/evolve.csv",
                     str(evolve_csv),
-                ]
+                ],
+                check=False,
             )
 
         for _ in range(opt.evolve):  # generations to evolve
@@ -720,7 +722,7 @@ def main(opt, callbacks=Callbacks()):
                 mp, s = 0.8, 0.2  # mutation probability, sigma
                 npr = np.random
                 npr.seed(int(time.time()))
-                g = np.array([meta[k][0] for k in hyp.keys()])  # gains 0-1
+                g = np.array([meta[k][0] for k in hyp])  # gains 0-1
                 ng = len(meta)
                 v = np.ones(ng)
                 while all(v == 1):  # mutate until a change occurs (prevent duplicates)

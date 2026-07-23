@@ -137,7 +137,7 @@ def run(
     dataloader=None,
     save_dir=Path(""),
     plots=True,
-    callbacks=Callbacks(),
+    callbacks=None,
     compute_loss=None,
 ):
     """Evaluates a YOLOv5 model on a dataset and logs performance metrics.
@@ -178,6 +178,8 @@ def run(
     Returns:
         (tuple): ((mp, mr, map50, map, box_loss, obj_loss, cls_loss), per-class mAP50-95 array, speeds tuple (ms)).
     """
+    if callbacks is None:
+        callbacks = Callbacks()
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -516,7 +518,7 @@ def main(opt):
                     r, _, t = run(**vars(opt), plots=False)
                     y.append(r + t)  # results and times
                 np.savetxt(f, y, fmt="%10.4g")  # save
-            subprocess.run(["zip", "-r", "study.zip", *glob.glob("study_*.txt")])
+            subprocess.run(["zip", "-r", "study.zip", *glob.glob("study_*.txt")], check=False)
             plot_val_study(x=x)  # plot
         else:
             raise NotImplementedError(f'--task {opt.task} not in ("train", "val", "test", "speed", "study")')

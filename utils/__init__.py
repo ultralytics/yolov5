@@ -15,7 +15,6 @@ class TryExcept(contextlib.ContextDecorator):
 
     def __enter__(self):
         """Enter the runtime context related to this object for error handling with an optional message."""
-        pass
 
     def __exit__(self, exc_type, value, traceback):
         """Context manager exit method that prints an error message with emojis if an exception occurred, always returns

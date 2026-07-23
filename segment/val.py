@@ -132,9 +132,11 @@ def run(
     overlap=False,
     mask_downsample_ratio=1,
     compute_loss=None,
-    callbacks=Callbacks(),
+    callbacks=None,
 ):
     """Validate a YOLOv5 segmentation model on specified dataset, producing metrics, plots, and optional JSON output."""
+    if callbacks is None:
+        callbacks = Callbacks()
     if save_json:
         check_requirements("pycocotools>=2.0.6")
         process = process_mask_native  # more accurate
@@ -463,7 +465,7 @@ def main(opt):
                     r, _, t = run(**vars(opt), plots=False)
                     y.append(r + t)  # results and times
                 np.savetxt(f, y, fmt="%10.4g")  # save
-            subprocess.run(["zip", "-r", "study.zip", "study_*.txt"])
+            subprocess.run(["zip", "-r", "study.zip", "study_*.txt"], check=False)
             plot_val_study(x=x)  # plot
         else:
             raise NotImplementedError(f'--task {opt.task} not in ("train", "val", "test", "speed", "study")')

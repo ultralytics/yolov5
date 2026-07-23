@@ -45,7 +45,8 @@ def curl_download(url, filename, *, silent: bool = False) -> bool:
             "9",
             "-C",
             "-",
-        ]
+        ],
+        check=False,
     )
     return proc.returncode == 0
 

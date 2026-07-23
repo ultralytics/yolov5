@@ -57,13 +57,13 @@ from utils.metrics import box_iou, fitness
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
-RANK = int(os.getenv("RANK", -1))
+RANK = int(os.getenv("RANK", "-1"))
 
 # Settings
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
 DATASETS_DIR = Path(os.getenv("YOLOv5_DATASETS_DIR", ROOT.parent / "datasets"))  # global datasets directory
-AUTOINSTALL = str(os.getenv("YOLOv5_AUTOINSTALL", True)).lower() == "true"  # global auto-install mode
-VERBOSE = str(os.getenv("YOLOv5_VERBOSE", True)).lower() == "true"  # global verbose mode
+AUTOINSTALL = str(os.getenv("YOLOv5_AUTOINSTALL", "true")).lower() == "true"  # global auto-install mode
+VERBOSE = str(os.getenv("YOLOv5_VERBOSE", "true")).lower() == "true"  # global verbose mode
 TQDM_BAR_FORMAT = "{l_bar}{bar:10}{r_bar}"  # tqdm bar format
 FONT = "Arial.ttf"  # https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf
 
@@ -139,7 +139,7 @@ LOGGING_NAME = "yolov5"
 
 def set_logging(name=LOGGING_NAME, verbose=True):
     """Configures logging with specified verbosity; `name` sets the logger's name, `verbose` controls logging level."""
-    rank = int(os.getenv("RANK", -1))  # rank in world for Multi-GPU trainings
+    rank = int(os.getenv("RANK", "-1"))  # rank in world for Multi-GPU trainings
     level = logging.INFO if verbose and rank in {-1, 0} else logging.ERROR
     logging.config.dictConfig(
         {
@@ -450,7 +450,7 @@ def check_dataset(data, autodownload=True):
         assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
     if isinstance(data["names"], (list, tuple)):  # old array format
         data["names"] = dict(enumerate(data["names"]))  # convert to dict
-    assert all(isinstance(k, int) for k in data["names"].keys()), "data.yaml names keys must be integers, i.e. 2: car"
+    assert all(isinstance(k, int) for k in data["names"]), "data.yaml names keys must be integers, i.e. 2: car"
     data["nc"] = len(data["names"])
 
     # Resolve paths
@@ -475,16 +475,16 @@ def check_dataset(data, autodownload=True):
         if not all(x.exists() for x in val):
             LOGGER.info("\nDataset not found ⚠️, missing paths %s" % [str(x) for x in val if not x.exists()])
             if not s or not autodownload:
-                raise Exception("Dataset not found ❌")
+                raise RuntimeError("Dataset not found ❌")
             t = time.time()
             if s.startswith("http") and s.endswith(".zip"):  # URL
                 download(s, dir=DATASETS_DIR, curl=True)
                 r = None  # success
             elif s.startswith("bash "):  # bash script
                 LOGGER.info(f"Running {s} ...")
-                r = subprocess.run(s, shell=True).returncode
+                r = subprocess.run(s, shell=True, check=False).returncode
             else:  # python script
-                r = exec(s, {"yaml": data})  # return None
+                r = exec(s, {"yaml": data})  # noqa: S102  # return None
             dt = f"({round(time.time() - t, 1)}s)"
             s = f"success ✅ {dt}, saved to {colorstr('bold', DATASETS_DIR)}" if r in (0, None) else f"failure {dt} ❌"
             LOGGER.info(f"Dataset download {s}")
@@ -638,7 +638,7 @@ def labels_to_class_weights(labels, nc=80):
     return torch.from_numpy(weights).float()
 
 
-def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
+def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):  # noqa: B008
     """Calculates image weights from labels using class weights for weighted sampling."""
     # Usage: index = random.choices(range(n), weights=image_weights, k=1)  # weighted image sample
     class_counts = np.array([np.bincount(x[:, 0].astype(int), minlength=nc) for x in labels])
@@ -931,7 +931,7 @@ def save_one_txt(predn, save_conf, shape, file):
             f.write(("%g " * len(line)).rstrip() % line + "\n")
 
 
-def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr("evolve: ")):
+def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr("evolve: ")):  # noqa: B008
     """Logs evolution results and saves to CSV and YAML in `save_dir`, optionally syncs with `bucket`."""
     evolve_csv = save_dir / "evolve.csv"
     evolve_yaml = save_dir / "hyp_evolve.yaml"
@@ -944,7 +944,9 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr("evolve
     if bucket:
         url = f"gs://{bucket}/evolve.csv"
         if gsutil_getsize(url) > (evolve_csv.stat().st_size if evolve_csv.exists() else 0):
-            subprocess.run(["gsutil", "cp", f"{url}", f"{save_dir}"])  # download evolve.csv if larger than local
+            subprocess.run(
+                ["gsutil", "cp", f"{url}", f"{save_dir}"], check=False
+            )  # download evolve.csv if larger than local
 
     # Log to evolve.csv
     s = "" if evolve_csv.exists() else (("%20s," * n % keys).rstrip(",") + "\n")  # add header
@@ -955,7 +957,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr("evolve
     with open(evolve_yaml, "w") as f:
         data = pd.read_csv(evolve_csv, skipinitialspace=True)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
-        i = np.argmax(fitness(data.values[:, :4]))  #
+        i = np.argmax(fitness(data.values[:, :4]))
         generations = len(data)
         f.write(
             "# YOLOv5 Hyperparameter Evolution Results\n"
@@ -983,7 +985,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr("evolve
     )
 
     if bucket:
-        subprocess.run(["gsutil", "cp", f"{evolve_csv}", f"{evolve_yaml}", f"gs://{bucket}"])  # upload
+        subprocess.run(["gsutil", "cp", f"{evolve_csv}", f"{evolve_yaml}", f"gs://{bucket}"], check=False)  # upload
 
 
 def increment_path(path, exist_ok=False, sep="", mkdir=False):
@@ -999,7 +1001,7 @@ def increment_path(path, exist_ok=False, sep="", mkdir=False):
         # Method 1
         for n in range(2, 9999):
             p = f"{path}{sep}{n}{suffix}"  # increment path
-            if not os.path.exists(p):  #
+            if not os.path.exists(p):
                 break
         path = Path(p)
 
