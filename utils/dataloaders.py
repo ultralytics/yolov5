@@ -59,13 +59,13 @@ from utils.torch_utils import torch_distributed_zero_first
 HELP_URL = "See https://docs.ultralytics.com/yolov5/tutorials/train_custom_data"
 IMG_FORMATS = "bmp", "dng", "jpeg", "jpg", "mpo", "png", "tif", "tiff", "webp", "pfm"  # include image suffixes
 VID_FORMATS = "asf", "avi", "gif", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "ts", "wmv"  # include video suffixes
-LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
-RANK = int(os.getenv("RANK", -1))
-WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
-PIN_MEMORY = str(os.getenv("PIN_MEMORY", True)).lower() == "true"  # global pin_memory for dataloaders
+LOCAL_RANK = int(os.getenv("LOCAL_RANK", "-1"))  # https://pytorch.org/docs/stable/elastic/run.html
+RANK = int(os.getenv("RANK", "-1"))
+WORLD_SIZE = int(os.getenv("WORLD_SIZE", "1"))
+PIN_MEMORY = str(os.getenv("PIN_MEMORY", "true")).lower() == "true"  # global pin_memory for dataloaders
 
 # Get orientation exif tag
-for orientation in ExifTags.TAGS.keys():
+for orientation in ExifTags.TAGS:
     if ExifTags.TAGS[orientation] == "Orientation":
         break
 
@@ -581,7 +581,7 @@ class LoadImagesAndLabels(Dataset):
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert self.im_files, f"{prefix}No images found"
         except Exception as e:
-            raise Exception(f"{prefix}Error loading data from {path}: {e}\n{HELP_URL}") from e
+            raise RuntimeError(f"{prefix}Error loading data from {path}: {e}\n{HELP_URL}") from e
 
         # Check cache
         self.label_files = img2label_paths(self.im_files)  # labels
@@ -863,9 +863,9 @@ class LoadImagesAndLabels(Dataset):
         yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border)  # mosaic center x, y
         indices = [index, *random.choices(self.indices, k=3)]  # 3 additional image indices
         random.shuffle(indices)
-        for i, index in enumerate(indices):
+        for i, mosaic_index in enumerate(indices):
             # Load image
-            img, _, (h, w) = self.load_image(index)
+            img, _, (h, w) = self.load_image(mosaic_index)
 
             # place img in img4
             if i == 0:  # top left
@@ -887,7 +887,7 @@ class LoadImagesAndLabels(Dataset):
             padh = y1a - y1b
 
             # Labels
-            labels, segments = self.labels[index].copy(), self.segments[index].copy()
+            labels, segments = self.labels[mosaic_index].copy(), self.segments[mosaic_index].copy()
             if labels.size:
                 labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
                 segments = [xyn2xy(x, w, h, padw, padh) for x in segments]
@@ -1057,7 +1057,7 @@ class HUBDatasetStats:
                 if zipped:
                     data["path"] = data_dir
         except Exception as e:
-            raise Exception("error/HUB/dataset_stats/yaml_load") from e
+            raise RuntimeError("error/HUB/dataset_stats/yaml_load") from e
 
         check_dataset(data, autodownload)  # download dataset if missing
         self.hub_dir = Path(data["path"] + "-hub")

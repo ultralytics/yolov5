@@ -15,7 +15,7 @@ from ..general import LOGGER, xyn2xy, xywhn2xyxy, xyxy2xywhn
 from ..torch_utils import torch_distributed_zero_first
 from .augmentations import mixup, random_perspective
 
-RANK = int(os.getenv("RANK", -1))
+RANK = int(os.getenv("RANK", "-1"))
 
 
 def create_dataloader(
@@ -240,9 +240,9 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
 
         # 3 additional image indices
         indices = [index, *random.choices(self.indices, k=3)]  # 3 additional image indices
-        for i, index in enumerate(indices):
+        for i, mosaic_index in enumerate(indices):
             # Load image
-            img, _, (h, w) = self.load_image(index)
+            img, _, (h, w) = self.load_image(mosaic_index)
 
             # place img in img4
             if i == 0:  # top left
@@ -263,7 +263,7 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
             padw = x1a - x1b
             padh = y1a - y1b
 
-            labels, segments = self.labels[index].copy(), self.segments[index].copy()
+            labels, segments = self.labels[mosaic_index].copy(), self.segments[mosaic_index].copy()
 
             if labels.size:
                 labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format

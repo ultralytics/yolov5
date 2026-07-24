@@ -11,15 +11,15 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-import torch.nn as nn
+from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from ultralytics.utils.torch_utils import copy_attr, scale_img, time_sync  # noqa: F401
 
 from utils.general import LOGGER, check_version, colorstr, file_date, git_describe
 
-LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
-RANK = int(os.getenv("RANK", -1))
-WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
+LOCAL_RANK = int(os.getenv("LOCAL_RANK", "-1"))  # https://pytorch.org/docs/stable/elastic/run.html
+RANK = int(os.getenv("RANK", "-1"))
+WORLD_SIZE = int(os.getenv("WORLD_SIZE", "1"))
 
 try:
     import thop  # for FLOPs computation
@@ -30,7 +30,7 @@ except ImportError:
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):
+def smart_inference_mode(torch_1_9=check_version(torch.__version__, "1.9.0")):  # noqa: B008
     """Applies torch.inference_mode() if torch>=1.9.0, else torch.no_grad() as a decorator for functions."""
 
     def decorate(fn):
@@ -231,7 +231,7 @@ def sparsity(model):
 
 def prune(model, amount=0.3):
     """Prunes Conv2d layers in a model to a specified sparsity using L1 unstructured pruning."""
-    import torch.nn.utils.prune as prune
+    from torch.nn.utils import prune
 
     for name, m in model.named_modules():
         if isinstance(m, nn.Conv2d):

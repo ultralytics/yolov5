@@ -22,8 +22,8 @@ from utils.general import LOGGER, xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
 
 # Settings
-RANK = int(os.getenv("RANK", -1))
-matplotlib.rc("font", **{"size": 11})
+RANK = int(os.getenv("RANK", "-1"))
+matplotlib.rc("font", size=11)
 matplotlib.use("Agg")  # for writing to files only
 
 
@@ -259,7 +259,7 @@ def plot_labels(labels, names=(), save_dir=Path("")):
     x = pd.DataFrame(b.transpose(), columns=["x", "y", "width", "height"])
 
     # seaborn correlogram
-    sn.pairplot(x, corner=True, diag_kind="auto", kind="hist", diag_kws=dict(bins=50), plot_kws=dict(pmax=0.9))
+    sn.pairplot(x, corner=True, diag_kind="auto", kind="hist", diag_kws={"bins": 50}, plot_kws={"pmax": 0.9})
     plt.savefig(save_dir / "labels_correlogram.jpg", dpi=200)
     plt.close()
 
@@ -336,7 +336,7 @@ def plot_evolve(evolve_csv="path/to/evolve.csv"):
     f = fitness(x)
     j = np.argmax(f)  # max fitness index
     plt.figure(figsize=(10, 12), tight_layout=True)
-    matplotlib.rc("font", **{"size": 8})
+    matplotlib.rc("font", size=8)
     print(f"Best results from row {j} of {evolve_csv}:")
     for i, k in enumerate(keys[7:]):
         v = x[:, 7 + i]

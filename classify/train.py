@@ -24,10 +24,10 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-import torch.hub as hub
-import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
+from torch import hub
 from torch.cuda import amp
+from torch.optim import lr_scheduler
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
@@ -70,9 +70,9 @@ from utils.torch_utils import (
     torch_distributed_zero_first,
 )
 
-LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
-RANK = int(os.getenv("RANK", -1))
-WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
+LOCAL_RANK = int(os.getenv("LOCAL_RANK", "-1"))  # https://pytorch.org/docs/stable/elastic/run.html
+RANK = int(os.getenv("RANK", "-1"))
+WORLD_SIZE = int(os.getenv("WORLD_SIZE", "1"))
 GIT_INFO = check_git_info()
 
 
@@ -255,8 +255,7 @@ def train(opt, device):
         # Log metrics
         if RANK in {-1, 0}:
             # Best fitness
-            if fitness > best_fitness:
-                best_fitness = fitness
+            best_fitness = max(best_fitness, fitness)
 
             # Log
             metrics = {
@@ -280,7 +279,7 @@ def train(opt, device):
                     "optimizer": None,  # optimizer.state_dict(),
                     "opt": vars(opt),
                     "git": GIT_INFO,  # {remote, branch, commit} if a git repo
-                    "date": datetime.now().isoformat(),
+                    "date": datetime.now().isoformat(),  # noqa: DTZ005
                 }
 
                 # Save last, best and delete
@@ -307,7 +306,7 @@ def train(opt, device):
         file = imshow_cls(images, labels, pred, de_parallel(model).names, verbose=False, f=save_dir / "test_images.jpg")
 
         # Log results
-        meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
+        meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}  # noqa: DTZ005
         logger.log_images(file, name="Test Examples (true-predicted)", epoch=epoch)
         logger.log_model(best, epochs, metadata=meta)
 

@@ -61,9 +61,8 @@ def download_model_checkpoint(opt, experiment):
 
         opt.weights = model_download_path
 
-    except Exception as e:
-        logger.warning("COMET WARNING: Unable to download checkpoint from Comet")
-        logger.exception(e)
+    except Exception:
+        logger.exception("COMET WARNING: Unable to download checkpoint from Comet")
 
 
 def set_opt_parameters(opt, experiment):

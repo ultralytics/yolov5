@@ -103,7 +103,6 @@ def test_tensorrt_deserialize_failure_reports_environment(monkeypatch, tmp_path)
 
         def deserialize_cuda_engine(self, data):
             assert data == b"bad-engine"
-            return None
 
     fake_trt = SimpleNamespace(__version__="8.6.1", Logger=FakeLogger, Runtime=FakeRuntime)
     monkeypatch.setitem(sys.modules, "tensorrt", fake_trt)

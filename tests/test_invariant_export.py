@@ -29,6 +29,7 @@ def test_shell_injection_via_model_path(malicious_path):
         capture_output=True,
         text=True,
         timeout=30,
+        check=False,
     )
 
     assert not os.path.exists(pwned_marker), (

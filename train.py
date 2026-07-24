@@ -33,8 +33,8 @@ except ImportError:
 import numpy as np
 import torch
 import torch.distributed as dist
-import torch.nn as nn
 import yaml
+from torch import nn
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 
@@ -97,9 +97,9 @@ from utils.torch_utils import (
     torch_distributed_zero_first,
 )
 
-LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
-RANK = int(os.getenv("RANK", -1))
-WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
+LOCAL_RANK = int(os.getenv("LOCAL_RANK", "-1"))  # https://pytorch.org/docs/stable/elastic/run.html
+RANK = int(os.getenv("RANK", "-1"))
+WORLD_SIZE = int(os.getenv("WORLD_SIZE", "1"))
 GIT_INFO = check_git_info()
 
 
@@ -474,8 +474,7 @@ def train(hyp, opt, device, callbacks):
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
-            if fi > best_fitness:
-                best_fitness = fi
+            best_fitness = max(best_fitness, fi)
             log_vals = list(mloss) + list(results) + lr
             callbacks.run("on_fit_epoch_end", log_vals, epoch, best_fitness, fi)
 
@@ -490,7 +489,7 @@ def train(hyp, opt, device, callbacks):
                     "optimizer": optimizer.state_dict(),
                     "opt": vars(opt),
                     "git": GIT_INFO,  # {remote, branch, commit} if a git repo
-                    "date": datetime.now().isoformat(),
+                    "date": datetime.now().isoformat(),  # noqa: DTZ005
                 }
 
                 # Save last, best and delete
@@ -618,7 +617,7 @@ def parse_opt(known=False):
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
 
-def main(opt, callbacks=Callbacks()):
+def main(opt, callbacks=None):
     """Runs the main entry point for training or hyperparameter evolution with specified options and optional callbacks.
 
     Args:
@@ -633,6 +632,8 @@ def main(opt, callbacks=Callbacks()):
         For detailed usage, refer to:
         https://github.com/ultralytics/yolov5/tree/master/models
     """
+    if callbacks is None:
+        callbacks = Callbacks()
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
@@ -751,7 +752,8 @@ def main(opt, callbacks=Callbacks()):
                     "cp",
                     f"gs://{opt.bucket}/evolve.csv",
                     str(evolve_csv),
-                ]
+                ],
+                check=False,
             )
 
         # Delete the items in meta dictionary whose first value is False
@@ -762,8 +764,8 @@ def main(opt, callbacks=Callbacks()):
             del hyp_GA[item]  # Remove the item from hyp_GA dictionary
 
         # Set lower_limit and upper_limit arrays to hold the search space boundaries
-        lower_limit = np.array([meta[k][1] for k in hyp_GA.keys()])
-        upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
+        lower_limit = np.array([meta[k][1] for k in hyp_GA])
+        upper_limit = np.array([meta[k][2] for k in hyp_GA])
 
         # Create gene_ranges list to hold the range of values for each gene in the population
         gene_ranges = [(lower_limit[i], upper_limit[i]) for i in range(len(upper_limit))]
@@ -777,7 +779,7 @@ def main(opt, callbacks=Callbacks()):
             with open(ROOT / opt.resume_evolve, errors="ignore") as f:
                 evolve_population = yaml.safe_load(f)
                 for value in evolve_population.values():
-                    value = np.array([value[k] for k in hyp_GA.keys()])
+                    value = np.array([value[k] for k in hyp_GA])
                     initial_values.append(list(value))
 
         # If not resuming from a previous checkpoint, generate initial values from .yaml files in opt.evolve_population
@@ -786,7 +788,7 @@ def main(opt, callbacks=Callbacks()):
             for file_name in yaml_files:
                 with open(os.path.join(opt.evolve_population, file_name)) as yaml_file:
                     value = yaml.safe_load(yaml_file)
-                    value = np.array([value[k] for k in hyp_GA.keys()])
+                    value = np.array([value[k] for k in hyp_GA])
                     initial_values.append(list(value))
 
         # Generate random values within the search space for the rest of the population
