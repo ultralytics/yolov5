@@ -41,7 +41,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from models.yolo import SegmentationModel
-from utils.callbacks import Callbacks
 from utils.general import (
     LOGGER,
     NUM_THREADS,
@@ -135,8 +134,6 @@ def run(
     callbacks=None,
 ):
     """Validate a YOLOv5 segmentation model on specified dataset, producing metrics, plots, and optional JSON output."""
-    if callbacks is None:
-        callbacks = Callbacks()
     if save_json:
         check_requirements("pycocotools>=2.0.6")
         process = process_mask_native  # more accurate
