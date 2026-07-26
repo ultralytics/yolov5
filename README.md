@@ -239,6 +239,7 @@ This table shows the performance metrics for various YOLOv5 models trained on th
 <details>
   <summary>Table Notes</summary>
 
+- The 640-pixel rows report the legacy anchor-based YOLOv5 checkpoints, while their links open the corresponding anchor-free YOLOv5u successor models on Ultralytics Platform. P6 links continue to download the legacy 1280-pixel checkpoints directly.
 - All checkpoints were trained for 300 epochs using default settings. Nano (n) and Small (s) models use [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyperparameters, while Medium (m), Large (l), and Extra-Large (x) models use [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
 - **mAP<sup>val</sup>** values represent single-model, single-scale performance on the [COCO val2017 dataset](https://docs.ultralytics.com/datasets/detect/coco).<br>Reproduce using: `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
 - **Speed** metrics are averaged over COCO val images using an [AWS p3.2xlarge V100 instance](https://aws.amazon.com/ec2/instance-types/p4/). Non-Maximum Suppression (NMS) time (~1 ms/image) is not included.<br>Reproduce using: `python val.py --data coco.yaml --img 640 --task speed --batch 1`

@@ -239,6 +239,7 @@ YOLOv5 的设计旨在简单易用。我们优先考虑实际性能和可访问�
 <details>
   <summary>表格说明</summary>
 
+- 640 像素行展示的是旧版基于锚框的 YOLOv5 权重及其指标，但链接会打开 Ultralytics Platform 上对应的无锚 YOLOv5u 后继模型。P6 链接仍直接下载旧版 1280 像素权重。
 - 所有预训练权重均使用默认设置训练了 300 个周期。Nano (n) 和 Small (s) 模型使用 [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) 超参数，而 Medium (m)、Large (l) 和 Extra-Large (x) 模型使用 [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml)。
 - **mAP<sup>val</sup>** 值表示在 [COCO val2017 数据集](https://docs.ultralytics.com/datasets/detect/coco)上的单模型、单尺度性能。<br>复现请使用：`python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
 - **速度**指标是在 [AWS p3.2xlarge V100 实例](https://aws.amazon.com/ec2/instance-types/p4/)上对 COCO val 图像进行平均测量的。不包括非极大值抑制 (NMS) 时间（约 1 毫秒/图像）。<br>复现请使用：`python val.py --data coco.yaml --img 640 --task speed --batch 1`
