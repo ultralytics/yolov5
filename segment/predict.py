@@ -297,7 +297,7 @@ def parse_opt():
 
 def main(opt):
     """Executes YOLOv5 model inference with given options, checking for requirements before launching."""
-    check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
+    check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "ultralytics-thop"))
     run(**vars(opt))
 
 

@@ -126,9 +126,9 @@ class iOSModel(torch.nn.Module):
             x (torch.Tensor): Input tensor containing the image data with shape (batch, channels, height, width).
 
         Returns:
-            torch.Tensor: Concatenated tensor with normalized coordinates (xywh), confidence scores (conf), and class
-                probabilities (cls), having shape (N, 4 + 1 + C), where N is the number of predictions, and C is the
-                number of classes.
+            tuple[torch.Tensor, torch.Tensor]: Per-class confidence scores (class probabilities multiplied by
+                objectness) with shape (N, C), and normalized xywh box coordinates with shape (N, 4), where N is the
+                number of predictions and C is the number of classes.
 
         Examples:
             ```python
