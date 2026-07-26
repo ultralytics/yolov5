@@ -212,6 +212,7 @@ path: "comet://WORKSPACE_NAME/ARTIFACT_NAME:ARTIFACT_VERSION_OR_ALIAS"
 train: images/train # Adjust subdirectory if needed
 val: images/val # Adjust subdirectory if needed
 
+
 # Other dataset configurations...
 ```
 
