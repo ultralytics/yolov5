@@ -72,7 +72,7 @@ dependencies = [
     "torchvision>=0.9.0",
     "tqdm>=4.66.3", # progress bars
     "psutil", # system utilization
-    "thop>=0.1.1", # FLOPs computation
+    "ultralytics-thop>=2.1.0", # FLOPs computation https://github.com/ultralytics/thop
     "pandas>=1.1.4",
     "seaborn>=0.11.0", # plotting
     "packaging", # general utilities

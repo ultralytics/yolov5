@@ -304,7 +304,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     blocks = torch.chunk(denormalize(im.clone()).cpu().float(), len(im), dim=0)  # split batch into individual images
     n = min(len(blocks), nmax)  # number of plots
     m = min(8, round(n**0.5))  # 8 x 8 default
-    _fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
+    _fig, ax = plt.subplots(math.ceil(n / m), m)
     ax = ax.ravel() if m > 1 else [ax]
     # plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
