@@ -28,7 +28,6 @@ import torchvision
 from torch import hub
 from torch.cuda import amp
 from torch.optim import lr_scheduler
-from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -43,7 +42,7 @@ from utils.dataloaders import create_classification_dataloader
 from utils.general import (
     DATASETS_DIR,
     LOGGER,
-    TQDM_BAR_FORMAT,
+    TQDM,
     WorkingDirectory,
     check_git_info,
     check_git_status,
@@ -216,7 +215,7 @@ def train(opt, device):
             trainloader.sampler.set_epoch(epoch)
         pbar = enumerate(trainloader)
         if RANK in {-1, 0}:
-            pbar = tqdm(pbar, total=len(trainloader), bar_format=TQDM_BAR_FORMAT)
+            pbar = TQDM(pbar, total=len(trainloader))
         for i, (images, labels) in pbar:  # progress bar
             images, labels = images.to(device, non_blocking=True), labels.to(device)
 
@@ -243,7 +242,7 @@ def train(opt, device):
                 pbar.desc = f"{f'{epoch + 1}/{epochs}':>10}{mem:>10}{tloss:>12.3g}" + " " * 36
 
                 # Test
-                if i == len(pbar) - 1:  # last batch
+                if i == len(trainloader) - 1:  # last batch
                     top1, top5, vloss = validate.run(
                         model=ema.ema, dataloader=testloader, criterion=criterion, pbar=pbar
                     )  # test accuracy, loss

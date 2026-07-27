@@ -26,7 +26,6 @@ import sys
 from pathlib import Path
 
 import torch
-from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -38,7 +37,7 @@ from models.common import DetectMultiBackend
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (
     LOGGER,
-    TQDM_BAR_FORMAT,
+    TQDM,
     Profile,
     check_img_size,
     check_requirements,
@@ -107,7 +106,7 @@ def run(
     n = len(dataloader)  # number of batches
     action = "validating" if dataloader.dataset.root.stem == "val" else "testing"
     desc = f"{pbar.desc[:-36]}{action:>36}" if pbar else f"{action}"
-    bar = tqdm(dataloader, desc, n, not training, bar_format=TQDM_BAR_FORMAT, position=0)
+    bar = TQDM(dataloader, desc, n, not training)
     with smart_amp_autocast(device.type != "cpu"):
         for images, labels in bar:
             with dt[0]:

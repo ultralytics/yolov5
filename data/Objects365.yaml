@@ -386,9 +386,8 @@ names:
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
-  from tqdm import tqdm
 
-  from utils.general import Path, check_requirements, download, np, xyxy2xywhn
+  from utils.general import Path, check_requirements, download, np, xyxy2xywhn, TQDM
 
   check_requirements('pycocotools>=2.0')
   from pycocotools.coco import COCO
@@ -416,7 +415,7 @@ download: |
           download([f'{url}images/v2/patch{i}.tar.gz' for i in range(16, patches)], dir=images, curl=True, delete=False, threads=8)
 
       # Move
-      for f in tqdm(images.rglob('*.jpg'), desc=f'Moving {split} images'):
+      for f in TQDM(images.rglob('*.jpg'), desc=f'Moving {split} images'):
           f.rename(images / f.name)  # move to /images/{split}
 
       # Labels
@@ -425,7 +424,7 @@ download: |
       for cid, cat in enumerate(names):
           catIds = coco.getCatIds(catNms=[cat])
           imgIds = coco.getImgIds(catIds=catIds)
-          for im in tqdm(coco.loadImgs(imgIds), desc=f'Class {cid + 1}/{len(names)} {cat}'):
+          for im in TQDM(coco.loadImgs(imgIds), desc=f'Class {cid + 1}/{len(names)} {cat}'):
               width, height = im["width"], im["height"]
               path = Path(im["file_name"])  # image filename
               try:

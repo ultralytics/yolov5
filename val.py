@@ -29,7 +29,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -42,7 +41,7 @@ from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.general import (
     LOGGER,
-    TQDM_BAR_FORMAT,
+    TQDM,
     Profile,
     check_dataset,
     check_img_size,
@@ -252,7 +251,7 @@ def run(
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
     callbacks.run("on_val_start")
-    pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
+    pbar = TQDM(dataloader, desc=s)  # progress bar
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         callbacks.run("on_val_batch_start")
         with dt[0]:

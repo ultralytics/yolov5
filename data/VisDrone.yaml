@@ -31,11 +31,10 @@ names:
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
-  from utils.general import download, os, Path
+  from utils.general import download, os, Path, TQDM
 
   def visdrone2yolo(dir):
       from PIL import Image
-      from tqdm import tqdm
 
       def convert_box(size, box):
           # Convert VisDrone box to YOLO xywh box
@@ -44,7 +43,7 @@ download: |
           return (box[0] + box[2] / 2) * dw, (box[1] + box[3] / 2) * dh, box[2] * dw, box[3] * dh
 
       (dir / 'labels').mkdir(parents=True, exist_ok=True)  # make labels directory
-      pbar = tqdm((dir / 'annotations').glob('*.txt'), desc=f'Converting {dir}')
+      pbar = TQDM((dir / 'annotations').glob('*.txt'), desc=f'Converting {dir}')
       for f in pbar:
           img_size = Image.open((dir / 'images' / f.name).with_suffix('.jpg')).size
           lines = []

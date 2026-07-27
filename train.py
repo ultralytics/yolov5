@@ -36,7 +36,6 @@ import torch.distributed as dist
 import yaml
 from torch import nn
 from torch.optim import lr_scheduler
-from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -56,7 +55,7 @@ from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download, is_url
 from utils.general import (
     LOGGER,
-    TQDM_BAR_FORMAT,
+    TQDM,
     check_amp,
     check_dataset,
     check_file,
@@ -385,7 +384,7 @@ def train(hyp, opt, device, callbacks):
         pbar = enumerate(train_loader)
         LOGGER.info(("\n" + "%11s" * 7) % ("Epoch", "GPU_mem", "box_loss", "obj_loss", "cls_loss", "Instances", "Size"))
         if RANK in {-1, 0}:
-            pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
+            pbar = TQDM(pbar, total=nb)  # progress bar
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             callbacks.run("on_train_batch_start")
@@ -865,7 +864,7 @@ def main(opt, callbacks=None):
                     crossover_point = random.randint(1, len(hyp_GA) - 1)
                     child = population[parent1_index][:crossover_point] + population[parent2_index][crossover_point:]
                 else:
-                    child = population[parent1_index]
+                    child = population[parent1_index].copy()  # copy, else mutation edits the parent in place
                 # Adaptive mutation rate
                 mutation_rate = max(
                     mutation_rate_min, min(mutation_rate_max, mutation_rate_max - (generation / opt.evolve))

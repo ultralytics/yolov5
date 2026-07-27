@@ -1124,7 +1124,7 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
     input/output shapes, and saving the model.
 
     Args:
-        model (torch.nn.Module): The YOLOv5 PyTorch model to be converted.
+        model (ct.models.MLModel): The CoreML model from export_coreml() to be wrapped with NMS.
         im (torch.Tensor): Example input tensor with shape (N, C, H, W), where N is the batch size, C is the number of
             channels, H is the height, and W is the width.
         file (Path): Path to save the converted CoreML model.
@@ -1141,19 +1141,21 @@ def pipeline_coreml(model, im, file, names, y, mlmodel, prefix=colorstr("CoreML 
 
     Examples:
         ```python
-        from ultralytics.utils.patches import torch_load
         from pathlib import Path
         import torch
 
-        model = torch_load('yolov5s.pt')  # Load YOLOv5 model
+        from models.experimental import attempt_load
+
+        model = attempt_load('yolov5s.pt')  # Load YOLOv5 model
         im = torch.zeros((1, 3, 640, 640))  # Example input tensor
 
         names = {0: "person", 1: "bicycle", 2: "car", ...}  # Define class names
 
         y = model(im)  # Perform forward pass to get model output
 
-        output_file = Path('yolov5s.mlmodel')  # Convert to CoreML
-        pipeline_coreml(model, im, output_file, names, y)
+        # pipeline_coreml() requires the NMS-wrapped model that export_coreml() produces with nms=True
+        f, ct_model = export_coreml(model, im, Path('yolov5s.pt'), int8=False, half=False, nms=True, mlmodel=False)
+        pipeline_coreml(ct_model, im, f, names, y, mlmodel=False)
         ```
 
     Notes:
