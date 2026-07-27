@@ -23,7 +23,6 @@ import torchvision
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
-from tqdm import tqdm
 
 from utils.augmentations import (
     Albumentations,
@@ -39,7 +38,7 @@ from utils.general import (
     DATASETS_DIR,
     LOGGER,
     NUM_THREADS,
-    TQDM_BAR_FORMAT,
+    TQDM,
     check_dataset,
     check_requirements,
     check_yaml,
@@ -597,7 +596,7 @@ class LoadImagesAndLabels(Dataset):
         nf, nm, ne, nc, n = cache.pop("results")  # found, missing, empty, corrupt, total
         if exists and LOCAL_RANK in {-1, 0}:
             d = f"Scanning {cache_path}... {nf} images, {nm + ne} backgrounds, {nc} corrupt"
-            tqdm(None, desc=prefix + d, total=n, initial=n, bar_format=TQDM_BAR_FORMAT)  # display cache results
+            TQDM(None, desc=prefix + d, total=n, initial=n)  # display cache results
             if cache["msgs"]:
                 LOGGER.info("\n".join(cache["msgs"]))  # display warnings
         assert nf > 0 or not augment, f"{prefix}No labels found in {cache_path}, can not start training. {HELP_URL}"
@@ -682,7 +681,7 @@ class LoadImagesAndLabels(Dataset):
             fcn = self.cache_images_to_disk if cache_images == "disk" else self.load_image
             with ThreadPool(NUM_THREADS) as pool:
                 results = pool.imap(lambda i: (i, fcn(i)), self.indices)
-                pbar = tqdm(results, total=len(self.indices), bar_format=TQDM_BAR_FORMAT, disable=LOCAL_RANK > 0)
+                pbar = TQDM(results, total=len(self.indices), disable=LOCAL_RANK > 0)
                 for i, x in pbar:
                     if cache_images == "disk":
                         b += self.npy_files[i].stat().st_size
@@ -716,11 +715,10 @@ class LoadImagesAndLabels(Dataset):
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
         desc = f"{prefix}Scanning {path.parent / path.stem}..."
         with Pool(NUM_THREADS) as pool:
-            pbar = tqdm(
+            pbar = TQDM(
                 pool.imap(verify_image_label, zip(self.im_files, self.label_files, repeat(prefix))),
                 desc=desc,
                 total=len(self.im_files),
-                bar_format=TQDM_BAR_FORMAT,
             )
             for im_file, lb, shape, segments, nm_f, nf_f, ne_f, nc_f, msg in pbar:
                 nm += nm_f
@@ -974,7 +972,7 @@ def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), ann
             (path.parent / x).unlink()  # remove existing
 
     print(f"Autosplitting images from {path}" + ", using *.txt labeled images only" * annotated_only)
-    for i, img in tqdm(zip(indices, files), total=n):
+    for i, img in TQDM(zip(indices, files), total=n):
         if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
             with open(path.parent / txt[i], "a") as f:
                 f.write(f"./{img.relative_to(path.parent).as_posix()}" + "\n")  # add image to txt file
@@ -1060,7 +1058,7 @@ class HUBDatasetStats:
             raise RuntimeError("error/HUB/dataset_stats/yaml_load") from e
 
         check_dataset(data, autodownload)  # download dataset if missing
-        self.hub_dir = Path(data["path"] + "-hub")
+        self.hub_dir = Path(f"{data['path']}-hub")  # check_dataset() resolves 'path' to a Path
         self.im_dir = self.hub_dir / "images"
         self.im_dir.mkdir(parents=True, exist_ok=True)  # makes /images
         self.stats = {"nc": data["nc"], "names": list(data["names"].values())}  # statistics dictionary
@@ -1122,7 +1120,7 @@ class HUBDatasetStats:
             x = np.array(
                 [
                     np.bincount(label[:, 0].astype(int), minlength=self.data["nc"])
-                    for label in tqdm(dataset.labels, total=dataset.n, desc="Statistics")
+                    for label in TQDM(dataset.labels, total=dataset.n, desc="Statistics")
                 ]
             )  # shape(128x80)
             self.stats[split] = {
@@ -1152,7 +1150,7 @@ class HUBDatasetStats:
                 continue
             dataset = LoadImagesAndLabels(self.data[split])  # load dataset
             desc = f"{split} images"
-            for _ in tqdm(ThreadPool(NUM_THREADS).imap(self._hub_ops, dataset.im_files), total=dataset.n, desc=desc):
+            for _ in TQDM(ThreadPool(NUM_THREADS).imap(self._hub_ops, dataset.im_files), total=dataset.n, desc=desc):
                 pass
         print(f"Done. All images saved to {self.im_dir}")
         return self.im_dir

@@ -23,8 +23,7 @@ names:
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import shutil
-  from tqdm import tqdm
-  from utils.general import np, pd, Path, download, xyxy2xywh
+  from utils.general import np, pd, Path, download, xyxy2xywh, TQDM
 
 
   # Download
@@ -46,7 +45,7 @@ download: |
       images, unique_images = x[:, 0], np.unique(x[:, 0])
       with open((dir / d).with_suffix('.txt').__str__().replace('annotations_', ''), 'w') as f:
           f.writelines(f'./images/{s}\n' for s in unique_images)
-      for im in tqdm(unique_images, desc=f'Converting {dir / d}'):
+      for im in TQDM(unique_images, desc=f'Converting {dir / d}'):
           cls = 0  # single-class dataset
           with open((dir / 'labels' / im).with_suffix('.txt'), 'a') as f:
               for r in x[images == im]:

@@ -30,15 +30,13 @@ names:
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import json
-
-  from tqdm import tqdm
-  from utils.general import download, Path
+  from utils.general import download, Path, TQDM
 
 
   def argoverse2yolo(set):
       labels = {}
       a = json.load(open(set, "rb"))
-      for annot in tqdm(a['annotations'], desc=f"Converting {set} to YOLOv5 format..."):
+      for annot in TQDM(a['annotations'], desc=f"Converting {set} to YOLOv5 format..."):
           img_id = annot['image_id']
           img_name = a['images'][img_id]['name']
           img_label_name = f'{img_name[:-3]}txt'

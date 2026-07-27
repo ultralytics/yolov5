@@ -6,10 +6,9 @@ import random
 import numpy as np
 import torch
 import yaml
-from tqdm import tqdm
 
 from utils import TryExcept
-from utils.general import LOGGER, TQDM_BAR_FORMAT, colorstr
+from utils.general import LOGGER, TQDM, colorstr
 
 PREFIX = colorstr("AutoAnchor: ")
 
@@ -145,21 +144,9 @@ def kmean_anchors(dataset="./data/coco128.yaml", n=9, img_size=640, thr=4.0, gen
     wh, wh0 = (torch.tensor(x, dtype=torch.float32) for x in (wh, wh0))
     k = print_results(k, verbose=False)
 
-    # Plot
-    # k, d = [None] * 20, [None] * 20
-    # for i in tqdm(range(1, 21)):
-    #     k[i-1], d[i-1] = kmeans(wh / s, i)  # points, mean distance
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 7), tight_layout=True)
-    # ax = ax.ravel()
-    # ax[0].plot(np.arange(1, 21), np.array(d) ** 2, marker='.')
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 7))  # plot wh
-    # ax[0].hist(wh[wh[:, 0]<100, 0],400)
-    # ax[1].hist(wh[wh[:, 1]<100, 1],400)
-    # fig.savefig('wh.png', dpi=200)
-
     # Evolve
     f, sh, mp, s = anchor_fitness(k), k.shape, 0.9, 0.1  # fitness, anchor shape, mutation prob, sigma
-    pbar = tqdm(range(gen), bar_format=TQDM_BAR_FORMAT)  # progress bar
+    pbar = TQDM(range(gen))  # progress bar
     for _ in pbar:
         v = np.ones(sh)
         while (v == 1).all():  # mutate until a change occurs (prevent duplicates)

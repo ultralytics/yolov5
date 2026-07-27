@@ -30,7 +30,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -44,7 +43,7 @@ from models.yolo import SegmentationModel
 from utils.general import (
     LOGGER,
     NUM_THREADS,
-    TQDM_BAR_FORMAT,
+    TQDM,
     Profile,
     check_dataset,
     check_img_size,
@@ -232,7 +231,7 @@ def run(
     loss = torch.zeros(4, device=device)
     jdict, stats = [], []
     # callbacks.run('on_val_start')
-    pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
+    pbar = TQDM(dataloader, desc=s)  # progress bar
     for batch_i, (im, targets, paths, shapes, masks) in enumerate(pbar):
         # callbacks.run('on_val_batch_start')
         with dt[0]:
@@ -306,7 +305,7 @@ def run(
 
             # Save/log
             if save_txt:
-                save_one_txt(predn, save_conf, shape, file=save_dir / "labels" / f"{path.stem}.txt")
+                save_one_txt(predn[:, :6], save_conf, shape, file=save_dir / "labels" / f"{path.stem}.txt")
             if save_json:
                 pred_masks = scale_image(
                     im[si].shape[1:], pred_masks.permute(1, 2, 0).contiguous().cpu().numpy(), shape, shapes[si][1]

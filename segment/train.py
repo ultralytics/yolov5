@@ -32,7 +32,6 @@ import torch.distributed as dist
 import yaml
 from torch import nn
 from torch.optim import lr_scheduler
-from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -51,7 +50,7 @@ from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
 from utils.general import (
     LOGGER,
-    TQDM_BAR_FORMAT,
+    TQDM,
     check_amp,
     check_dataset,
     check_file,
@@ -355,7 +354,7 @@ def train(hyp, opt, device, callbacks):
             % ("Epoch", "GPU_mem", "box_loss", "seg_loss", "obj_loss", "cls_loss", "Instances", "Size")
         )
         if RANK in {-1, 0}:
-            pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
+            pbar = TQDM(pbar, total=nb)  # progress bar
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _, masks) in pbar:  # batch ------------------------------------------------------
             # callbacks.run('on_train_batch_start')

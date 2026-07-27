@@ -18,6 +18,7 @@ import sys
 import time
 import urllib
 from copy import deepcopy
+from functools import partial
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -43,10 +44,12 @@ except (ImportError, AssertionError):
     import ultralytics
 
 from ultralytics.data.converter import coco80_to_coco91_class  # noqa: F401
+from ultralytics.utils import TQDM as _TQDM
 from ultralytics.utils import colorstr, get_default_args  # noqa: F401
 from ultralytics.utils.checks import check_requirements as check_requirements_ultralytics
 from ultralytics.utils.checks import is_ascii
 from ultralytics.utils.files import WorkingDirectory, file_date, file_size  # noqa: F401
+from ultralytics.utils.git import GitRepo
 from ultralytics.utils.ops import make_divisible
 from ultralytics.utils.patches import torch_load
 from ultralytics.utils.torch_utils import intersect_dicts  # noqa: F401
@@ -64,7 +67,7 @@ NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiproces
 DATASETS_DIR = Path(os.getenv("YOLOv5_DATASETS_DIR", ROOT.parent / "datasets"))  # global datasets directory
 AUTOINSTALL = str(os.getenv("YOLOv5_AUTOINSTALL", "true")).lower() == "true"  # global auto-install mode
 VERBOSE = str(os.getenv("YOLOv5_VERBOSE", "true")).lower() == "true"  # global verbose mode
-TQDM_BAR_FORMAT = "{l_bar}{bar:10}{r_bar}"  # tqdm bar format
+TQDM = partial(_TQDM, file=sys.stderr)  # progress bars on stderr like LOGGER, keeping stdout free for --ndjson-console
 FONT = "Arial.ttf"  # https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf
 
 torch.set_printoptions(linewidth=320, precision=5, profile="long")
@@ -281,7 +284,7 @@ def git_describe(path=ROOT):
     Example output is 'v5.0-5-g3e25f1e'. See https://git-scm.com/docs/git-describe.
     """
     try:
-        assert (Path(path) / ".git").is_dir()
+        assert (Path(path) / ".git").exists()  # dir in a clone, file in a worktree or submodule
         return check_output(f"git -C {path} describe --tags --long --always", shell=True).decode()[:-1]
     except Exception:
         return ""
@@ -317,23 +320,13 @@ def check_git_status(repo="ultralytics/yolov5", branch="master"):
     LOGGER.info(s)
 
 
-@WorkingDirectory(ROOT)
-def check_git_info(path="."):
+def check_git_info(path=ROOT):
     """Checks YOLOv5 git info, returning a dict with remote URL, branch name, and commit hash."""
-    check_requirements("gitpython")
-    import git
-
-    try:
-        repo = git.Repo(path)
-        remote = repo.remotes.origin.url.replace(".git", "")  # i.e. 'https://github.com/ultralytics/yolov5'
-        commit = repo.head.commit.hexsha  # i.e. '3134699c73af83aac2a481435550b968d5792c0d'
-        try:
-            branch = repo.active_branch.name  # i.e. 'main'
-        except TypeError:  # not on any branch
-            branch = None  # i.e. 'detached HEAD' state
-        return {"remote": remote, "branch": branch, "commit": commit}
-    except git.exc.InvalidGitRepositoryError:  # path is not a git dir
+    repo = GitRepo(path)
+    if repo.root != Path(path):  # GitRepo searches parents, ignore a repo that merely contains YOLOv5
         return {"remote": None, "branch": None, "commit": None}
+    remote = repo.origin.replace(".git", "") if repo.origin else None  # i.e. 'https://github.com/ultralytics/yolov5'
+    return {"remote": remote, "branch": repo.branch, "commit": repo.commit}  # branch is None on detached HEAD
 
 
 def check_version(current="0.0.0", minimum="0.0.0", name="version ", pinned=False, hard=False, verbose=False):
@@ -707,12 +700,12 @@ def segment2box(segment, width=640, height=640):
 
 
 def segments2boxes(segments):
-    """Convert segment labels to box labels, i.e. (cls, xy1, xy2, ...) to (cls, xywh)."""
+    """Convert segment labels to box labels, i.e. (xy1, xy2, ...) to (xywh)."""
     boxes = []
     for s in segments:
         x, y = s.T  # segment xy
-        boxes.append([x.min(), y.min(), x.max(), y.max()])  # cls, xyxy
-    return xyxy2xywh(np.array(boxes))  # cls, xywh
+        boxes.append([x.min(), y.min(), x.max(), y.max()])  # xyxy
+    return xyxy2xywh(np.array(boxes))  # xywh
 
 
 def resample_segments(segments, n=1000):

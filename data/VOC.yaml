@@ -48,9 +48,7 @@ names:
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import xml.etree.ElementTree as ET
-
-  from tqdm import tqdm
-  from utils.general import download, Path
+  from utils.general import download, Path, TQDM
 
 
   def convert_label(path, lb_path, year, image_id):
@@ -95,7 +93,7 @@ download: |
 
       with open(path / f'VOC{year}/ImageSets/Main/{image_set}.txt') as f:
           image_ids = f.read().strip().split()
-      for id in tqdm(image_ids, desc=f'{image_set}{year}'):
+      for id in TQDM(image_ids, desc=f'{image_set}{year}'):
           f = path / f'VOC{year}/JPEGImages/{id}.jpg'  # old img path
           lb_path = (lbs_path / f.name).with_suffix('.txt')  # new label path
           f.rename(imgs_path / f.name)  # move image
