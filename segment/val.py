@@ -21,6 +21,7 @@ Usage - formats:
 """
 
 import argparse
+import glob
 import json
 import os
 import subprocess
@@ -433,7 +434,7 @@ def parse_opt():
 
 def main(opt):
     """Executes YOLOv5 tasks including training, validation, testing, speed, and study with configurable options."""
-    check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
+    check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "ultralytics-thop"))
 
     if opt.task in ("train", "val", "test"):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
@@ -461,7 +462,7 @@ def main(opt):
                     r, _, t = run(**vars(opt), plots=False)
                     y.append(r + t)  # results and times
                 np.savetxt(f, y, fmt="%10.4g")  # save
-            subprocess.run(["zip", "-r", "study.zip", "study_*.txt"], check=False)
+            subprocess.run(["zip", "-r", "study.zip", *glob.glob("study_*.txt")], check=False)
             plot_val_study(x=x)  # plot
         else:
             raise NotImplementedError(f'--task {opt.task} not in ("train", "val", "test", "speed", "study")')

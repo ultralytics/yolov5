@@ -264,6 +264,7 @@ def train(hyp, opt, device, callbacks):
         shuffle=True,
         mask_downsample_ratio=mask_ratio,
         overlap_mask=overlap,
+        seed=opt.seed,
     )
     labels = np.concatenate(dataset.labels, 0)
     mlc = int(labels[:, 0].max())  # max label class

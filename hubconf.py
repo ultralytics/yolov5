@@ -60,7 +60,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
-    check_requirements(ROOT / "requirements.txt", exclude=("opencv-python", "tensorboard", "thop"))
+    check_requirements(ROOT / "requirements.txt", exclude=("opencv-python", "tensorboard", "ultralytics-thop"))
     name = Path(name)
     path = name.with_suffix(".pt") if name.suffix == "" and not name.is_dir() else name  # checkpoint path
     try:
