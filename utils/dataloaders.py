@@ -596,7 +596,7 @@ class LoadImagesAndLabels(Dataset):
         nf, nm, ne, nc, n = cache.pop("results")  # found, missing, empty, corrupt, total
         if exists and LOCAL_RANK in {-1, 0}:
             d = f"Scanning {cache_path}... {nf} images, {nm + ne} backgrounds, {nc} corrupt"
-            TQDM(None, desc=prefix + d, total=n, initial=n)  # display cache results
+            LOGGER.info(prefix + d)  # display cache results
             if cache["msgs"]:
                 LOGGER.info("\n".join(cache["msgs"]))  # display warnings
         assert nf > 0 or not augment, f"{prefix}No labels found in {cache_path}, can not start training. {HELP_URL}"
