@@ -809,21 +809,11 @@ def export_pb(keras_model, file, prefix=colorstr("TensorFlow GraphDef:")):  # no
         export_pb(keras_model, file)
         ```
 
-    Notes:
-        For more details, refer to the guide on frozen graphs: https://github.com/leimao/Frozen_Graph_TensorFlow
     """
-    import tensorflow as tf
-    from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+    from ultralytics.utils.export.tensorflow import keras2pb
 
-    LOGGER.info(f"\n{prefix} starting export with tensorflow {tf.__version__}...")
-    f = file.with_suffix(".pb")
-
-    m = tf.function(lambda x: keras_model(x))  # full model
-    m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
-    frozen_func = convert_variables_to_constants_v2(m)
-    frozen_func.graph.as_graph_def()
-    tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(f.parent), name=f.name, as_text=False)
-    return f, None
+    # keras2pb does not derive the suffix despite its docstring, so pass the .pb path explicitly
+    return keras2pb(keras_model, file.with_suffix(".pb"), prefix=prefix), None
 
 
 @try_export
