@@ -181,7 +181,7 @@ class ConfusionMatrix:
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # predicted background
 
-    @TryExcept("WARNING ⚠️ ConfusionMatrix plot failure")
+    @TryExcept("ConfusionMatrix plot failure")
     def plot(self, normalize=True, save_dir="", names=()):
         """Plots confusion matrix using seaborn, optional normalization; can save plot to specified directory."""
         import seaborn as sn
