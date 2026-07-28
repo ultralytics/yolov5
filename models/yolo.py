@@ -25,6 +25,8 @@ if str(ROOT) not in sys.path:
 if platform.system() != "Windows":
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from ultralytics.utils.plotting import feature_visualization
+
 from models.common import (
     C3,
     C3SPP,
@@ -52,7 +54,6 @@ from models.common import (
 from models.experimental import MixConv2d
 from utils.autoanchor import check_anchor_order
 from utils.general import LOGGER, check_version, check_yaml, colorstr, make_divisible, print_args
-from utils.plots import feature_visualization
 from utils.torch_utils import (
     fuse_conv_and_bn,
     initialize_weights,
