@@ -74,8 +74,6 @@ def run(
     view_img=False,  # show results
     save_txt=False,  # save results to *.txt
     nosave=False,  # do not save images/videos
-    augment=False,  # augmented inference
-    visualize=False,  # visualize features
     update=False,  # update all models
     project=ROOT / "runs/predict-cls",  # save results to project/name
     name="exp",  # save results to project/name
@@ -219,8 +217,6 @@ def parse_opt():
     parser.add_argument("--view-img", action="store_true", help="show results")
     parser.add_argument("--save-txt", action="store_true", help="save results to *.txt")
     parser.add_argument("--nosave", action="store_true", help="do not save images/videos")
-    parser.add_argument("--augment", action="store_true", help="augmented inference")
-    parser.add_argument("--visualize", action="store_true", help="visualize features")
     parser.add_argument("--update", action="store_true", help="update all models")
     parser.add_argument("--project", default=ROOT / "runs/predict-cls", help="save results to project/name")
     parser.add_argument("--name", default="exp", help="save results to project/name")
