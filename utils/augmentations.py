@@ -6,9 +6,9 @@ import random
 
 import cv2
 import numpy as np
-from ultralytics.utils.metrics import bbox_ioa
 import torch
 import torchvision.transforms as T
+from ultralytics.utils.metrics import bbox_ioa
 
 from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 
