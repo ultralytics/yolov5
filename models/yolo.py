@@ -52,7 +52,7 @@ from models.common import (
 from models.experimental import MixConv2d
 from utils.autoanchor import check_anchor_order
 from utils.general import LOGGER, check_version, check_yaml, colorstr, make_divisible, print_args
-from utils.plots import feature_visualization
+from ultralytics.utils.plotting import feature_visualization
 from utils.torch_utils import (
     fuse_conv_and_bn,
     initialize_weights,
