@@ -41,7 +41,7 @@ def create_dataloader(
 ):
     """Creates a dataloader for training, validating, or testing YOLO models with various dataset options."""
     if rect and shuffle:
-        LOGGER.warning("WARNING ⚠️ --rect is incompatible with DataLoader shuffle, setting shuffle=False")
+        LOGGER.warning("--rect is incompatible with DataLoader shuffle, setting shuffle=False")
         shuffle = False
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = LoadImagesAndLabelsAndMasks(

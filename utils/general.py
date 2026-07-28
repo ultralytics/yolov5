@@ -6,8 +6,6 @@ from __future__ import annotations
 import contextlib
 import glob
 import inspect
-import logging
-import logging.config
 import os
 import platform
 import random
@@ -44,7 +42,7 @@ except (ImportError, AssertionError):
 
 from ultralytics.data.converter import coco80_to_coco91_class  # noqa: F401
 from ultralytics.utils import TQDM as _TQDM
-from ultralytics.utils import colorstr, get_default_args  # noqa: F401
+from ultralytics.utils import LOGGER, colorstr, get_default_args  # noqa: F401
 from ultralytics.utils.checks import check_requirements as check_requirements_ultralytics
 from ultralytics.utils.checks import is_ascii, print_args  # noqa: F401
 from ultralytics.utils.files import WorkingDirectory, file_date, file_size, get_latest_run  # noqa: F401
@@ -142,43 +140,6 @@ def is_writeable(dir, test=False):
         return True
     except OSError:
         return False
-
-
-LOGGING_NAME = "yolov5"
-
-
-def set_logging(name=LOGGING_NAME, verbose=True):
-    """Configures logging with specified verbosity; `name` sets the logger's name, `verbose` controls logging level."""
-    rank = int(os.getenv("RANK", "-1"))  # rank in world for Multi-GPU trainings
-    level = logging.INFO if verbose and rank in {-1, 0} else logging.ERROR
-    logging.config.dictConfig(
-        {
-            "version": 1,
-            "disable_existing_loggers": False,
-            "formatters": {name: {"format": "%(message)s"}},
-            "handlers": {
-                name: {
-                    "class": "logging.StreamHandler",
-                    "formatter": name,
-                    "level": level,
-                }
-            },
-            "loggers": {
-                name: {
-                    "level": level,
-                    "handlers": [name],
-                    "propagate": False,
-                }
-            },
-        }
-    )
-
-
-set_logging(LOGGING_NAME)  # run before defining LOGGER
-LOGGER = logging.getLogger(LOGGING_NAME)  # define globally (used in train.py, val.py, detect.py, etc.)
-if platform.system() == "Windows":
-    for fn in LOGGER.info, LOGGER.warning:
-        setattr(LOGGER, fn.__name__, lambda x, fn=fn: fn(emojis(x)))  # emoji safe logging
 
 
 def user_config_dir(dir="Ultralytics", env_var="YOLOV5_CONFIG_DIR"):
@@ -293,9 +254,9 @@ def check_version(current="0.0.0", minimum="0.0.0", name="version ", pinned=Fals
     """Checks if the current version meets the minimum required version, exits or warns based on parameters."""
     current, minimum = (packaging.version.parse(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
-    s = f"WARNING ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed"  # string
+    s = f"{name}{minimum} is required by YOLOv5, but {name}{current} is currently installed"  # string
     if hard:
-        assert result, emojis(s)  # assert min requirements met
+        assert result, emojis(f"WARNING ⚠️ {s}")  # assert min requirements met
     if verbose and not result:
         LOGGER.warning(s)
     return result
@@ -309,7 +270,7 @@ def check_img_size(imgsz, s=32, floor=0):
         imgsz = list(imgsz)  # convert to list if tuple
         new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
     if new_size != imgsz:
-        LOGGER.warning(f"WARNING ⚠️ --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}")
+        LOGGER.warning(f"--img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}")
     return new_size
 
 
@@ -325,7 +286,7 @@ def check_imshow(warn=False):
         return True
     except Exception as e:
         if warn:
-            LOGGER.warning(f"WARNING ⚠️ Environment does not support cv2.imshow() or PIL Image.show()\n{e}")
+            LOGGER.warning(f"Environment does not support cv2.imshow() or PIL Image.show()\n{e}")
         return False
 
 
@@ -782,7 +743,7 @@ def non_max_suppression(
         if mps:
             output[xi] = output[xi].to(device)
         if (time.time() - t) > time_limit:
-            LOGGER.warning(f"WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded")
+            LOGGER.warning(f"NMS time limit {time_limit:.3f}s exceeded")
             break  # time limit exceeded
 
     return output

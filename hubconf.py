@@ -55,7 +55,9 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from models.experimental import attempt_load
     from models.yolo import ClassificationModel, DetectionModel, SegmentationModel
     from utils.downloads import attempt_download
-    from utils.general import LOGGER, ROOT, check_requirements, intersect_dicts, logging
+    import logging
+
+    from utils.general import LOGGER, ROOT, check_requirements, intersect_dicts
     from utils.torch_utils import select_device
 
     if not verbose:
@@ -71,12 +73,12 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 if autoshape:
                     if model.pt and isinstance(model.model, ClassificationModel):
                         LOGGER.warning(
-                            "WARNING ⚠️ YOLOv5 ClassificationModel is not yet AutoShape compatible. "
+                            "YOLOv5 ClassificationModel is not yet AutoShape compatible. "
                             "You must pass torch tensors in BCHW to this model, i.e. shape(1,3,224,224)."
                         )
                     elif model.pt and isinstance(model.model, SegmentationModel):
                         LOGGER.warning(
-                            "WARNING ⚠️ YOLOv5 SegmentationModel is not yet AutoShape compatible. "
+                            "YOLOv5 SegmentationModel is not yet AutoShape compatible. "
                             "You will not be able to run inference with this model."
                         )
                     else:
