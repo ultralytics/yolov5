@@ -15,7 +15,7 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw
 from scipy.ndimage import gaussian_filter1d
-from ultralytics.utils.plotting import Annotator, colors  # noqa: F401
+from ultralytics.utils.plotting import Annotator, colors
 
 from utils import TryExcept, threaded
 from utils.general import LOGGER, xywh2xyxy, xyxy2xywh

@@ -49,14 +49,13 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         For more information on model loading and customization, visit the
         [YOLOv5 PyTorch Hub Documentation](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading).
     """
+    import logging
     from pathlib import Path
 
     from models.common import AutoShape, DetectMultiBackend
     from models.experimental import attempt_load
     from models.yolo import ClassificationModel, DetectionModel, SegmentationModel
     from utils.downloads import attempt_download
-    import logging
-
     from utils.general import LOGGER, ROOT, check_requirements, intersect_dicts
     from utils.torch_utils import select_device
 
