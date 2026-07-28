@@ -10,10 +10,10 @@ psutil  # system resources
 PyYAML>=5.3.1
 requests>=2.32.2
 scipy>=1.4.1
-ultralytics-thop>=2.1.0  # FLOPs computation
+ultralytics-thop>=2.1.2  # FLOPs computation
 torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
-ultralytics>=8.4.83  # https://ultralytics.com
+ultralytics>=8.4.109  # https://ultralytics.com
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
 # Logging ---------------------------------------------------------------------
@@ -46,3 +46,4 @@ setuptools>=70.0.0 # Snyk vulnerability fix
 # albumentations>=1.0.3
 # pycocotools>=2.0.6  # COCO mAP
 urllib3>=2.6.0 ; python_version > '3.8' # not directly required, pinned by Snyk to avoid a vulnerability
+filelock>=3.20.3 ; python_version >= '3.10' # not directly required, pinned by Snyk to avoid a vulnerability

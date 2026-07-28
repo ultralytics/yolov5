@@ -3,16 +3,9 @@
 
 import torch
 from torch import nn
+from ultralytics.utils.metrics import bbox_iou, smooth_bce
 
-from utils.metrics import bbox_iou
 from utils.torch_utils import de_parallel
-
-
-def smooth_BCE(eps=0.1):
-    """Returns label smoothing BCE targets for reducing overfitting; pos: `1.0 - 0.5*eps`, neg: `0.5*eps`. For details
-    see https://github.com/ultralytics/yolov3/issues/238#issuecomment-598028441.
-    """
-    return 1.0 - 0.5 * eps, 0.5 * eps
 
 
 class BCEBlurWithLogitsLoss(nn.Module):
@@ -121,7 +114,7 @@ class ComputeLoss:
         BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h["obj_pw"]], device=device))
 
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
-        self.cp, self.cn = smooth_BCE(eps=h.get("label_smoothing", 0.0))  # positive, negative BCE targets
+        self.cp, self.cn = smooth_bce(eps=h.get("label_smoothing", 0.0))  # positive, negative BCE targets
 
         # Focal loss
         g = h["fl_gamma"]  # focal loss gamma
