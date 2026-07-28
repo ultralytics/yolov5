@@ -4,10 +4,10 @@
 import os
 import random
 
-import cv2
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from ultralytics.data.utils import polygons2masks, polygons2masks_overlap
 
 from ..augmentations import augment_hsv, copy_paste, letterbox
 from ..dataloaders import PIN_MEMORY, InfiniteDataLoader, LoadImagesAndLabels, SmartDistributedSampler, seed_worker
@@ -299,75 +299,3 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
         for i, labels in enumerate(label):
             labels[:, 0] = i  # add target image index for build_targets()
         return torch.stack(img, 0), torch.cat(label, 0), path, shapes, batched_masks
-
-
-def polygon2mask(img_size, polygons, color=1, downsample_ratio=1):
-    """Convert polygons to a binary mask of the given image size.
-
-    Args:
-        img_size (tuple): The image size as (h, w).
-        polygons (np.ndarray): [N, M], N is the number of polygons, M is the number of points (divided by 2).
-        color (int): Fill value for the mask.
-        downsample_ratio (int): Mask downsample factor.
-
-    Returns:
-        (np.ndarray): Binary mask of shape (h // downsample_ratio, w // downsample_ratio).
-    """
-    mask = np.zeros(img_size, dtype=np.uint8)
-    polygons = np.asarray(polygons)
-    polygons = polygons.astype(np.int32)
-    shape = polygons.shape
-    polygons = polygons.reshape(shape[0], -1, 2)
-    cv2.fillPoly(mask, polygons, color=color)
-    nh, nw = (img_size[0] // downsample_ratio, img_size[1] // downsample_ratio)
-    # NOTE: fillPoly firstly then resize is trying the keep the same way
-    # of loss calculation when mask-ratio=1.
-    mask = cv2.resize(mask, (nw, nh))
-    return mask
-
-
-def polygons2masks(img_size, polygons, color, downsample_ratio=1):
-    """Convert a list of polygons to an array of binary masks of the given image size.
-
-    Args:
-        img_size (tuple): The image size as (h, w).
-        polygons (list[np.ndarray]): Each polygon is [N, M], N is the number of polygons, M is the number of points
-            (divided by 2).
-        color (int): Fill value for the masks.
-        downsample_ratio (int): Mask downsample factor.
-
-    Returns:
-        (np.ndarray): Array of binary masks.
-    """
-    masks = []
-    for si in range(len(polygons)):
-        mask = polygon2mask(img_size, [polygons[si].reshape(-1)], color, downsample_ratio)
-        masks.append(mask)
-    return np.array(masks)
-
-
-def polygons2masks_overlap(img_size, segments, downsample_ratio=1):
-    """Return a (640, 640) overlap mask."""
-    masks = np.zeros(
-        (img_size[0] // downsample_ratio, img_size[1] // downsample_ratio),
-        dtype=np.int32 if len(segments) > 255 else np.uint8,
-    )
-    areas = []
-    ms = []
-    for si in range(len(segments)):
-        mask = polygon2mask(
-            img_size,
-            [segments[si].reshape(-1)],
-            downsample_ratio=downsample_ratio,
-            color=1,
-        )
-        ms.append(mask)
-        areas.append(mask.sum())
-    areas = np.asarray(areas)
-    index = np.argsort(-areas)
-    ms = np.array(ms)[index]
-    for i in range(len(segments)):
-        mask = ms[i] * (i + 1)
-        masks = masks + mask
-        masks = np.clip(masks, a_min=0, a_max=i + 1)
-    return masks, index
