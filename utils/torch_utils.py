@@ -365,14 +365,14 @@ class EarlyStopping:
 
     def __init__(self, patience=30):
         """Initializes simple early stopping mechanism for YOLOv5, with adjustable patience for non-improving epochs."""
-        self.best_fitness = 0.0  # i.e. mAP
+        self.best_fitness = -1.0  # below any valid fitness so the first epoch always sets the baseline
         self.best_epoch = 0
         self.patience = patience or float("inf")  # epochs to wait after fitness stops improving to stop
         self.possible_stop = False  # possible stop may occur next epoch
 
     def __call__(self, epoch, fitness):
         """Evaluates if training should stop based on fitness improvement and patience, returning a boolean."""
-        if fitness > self.best_fitness or self.best_fitness == 0:  # allow for early zero-fitness stage of training
+        if fitness > self.best_fitness:  # only a strict improvement resets the patience counter
             self.best_epoch = epoch
             self.best_fitness = fitness
         delta = epoch - self.best_epoch  # epochs without improvement
