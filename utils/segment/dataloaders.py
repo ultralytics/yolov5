@@ -7,7 +7,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from ultralytics.data.utils import polygons2masks, polygons2masks_overlap
+from ultralytics.data.utils import polygon2mask, polygons2masks, polygons2masks_overlap  # noqa: F401
 
 from ..augmentations import augment_hsv, copy_paste, letterbox
 from ..dataloaders import PIN_MEMORY, InfiniteDataLoader, LoadImagesAndLabels, SmartDistributedSampler, seed_worker
