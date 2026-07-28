@@ -372,7 +372,7 @@ class EarlyStopping:
 
     def __call__(self, epoch, fitness):
         """Evaluates if training should stop based on fitness improvement and patience, returning a boolean."""
-        if fitness >= self.best_fitness:  # >= 0 to allow for early zero-fitness stage of training
+        if fitness > self.best_fitness or self.best_fitness == 0:  # allow for early zero-fitness stage of training
             self.best_epoch = epoch
             self.best_fitness = fitness
         delta = epoch - self.best_epoch  # epochs without improvement
