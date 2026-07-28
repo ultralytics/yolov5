@@ -3,7 +3,6 @@
 
 import contextlib
 import glob
-import hashlib
 import json
 import math
 import os
@@ -22,7 +21,11 @@ import torch.nn.functional as F
 import torchvision
 import yaml
 from PIL import ExifTags, Image, ImageOps
+from PIL.ImageOps import exif_transpose  # noqa: F401
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
+from ultralytics.data.build import seed_worker
+from ultralytics.data.split import autosplit  # noqa: F401
+from ultralytics.data.utils import get_hash, img2label_paths
 
 from utils.augmentations import (
     Albumentations,
@@ -35,7 +38,6 @@ from utils.augmentations import (
     random_perspective,
 )
 from utils.general import (
-    DATASETS_DIR,
     LOGGER,
     NUM_THREADS,
     TQDM,
@@ -69,14 +71,6 @@ for orientation in ExifTags.TAGS:
         break
 
 
-def get_hash(paths):
-    """Generates a single SHA256 hash for a list of file or directory paths by combining their sizes and paths."""
-    size = sum(os.path.getsize(p) for p in paths if os.path.exists(p))  # sizes
-    h = hashlib.sha256(str(size).encode())  # hash sizes
-    h.update("".join(paths).encode())  # hash paths
-    return h.hexdigest()  # return hash
-
-
 def exif_size(img):
     """Returns corrected PIL image size (width, height) considering EXIF orientation."""
     s = img.size  # (width, height)
@@ -85,44 +79,6 @@ def exif_size(img):
         if rotation in [6, 8]:  # rotation 270 or 90
             s = (s[1], s[0])
     return s
-
-
-def exif_transpose(image):
-    """Apply EXIF orientation to a PIL image and return the transposed image.
-
-    Args:
-        image (Image.Image): The image to transpose.
-
-    Returns:
-        (Image.Image): The EXIF-transposed image.
-    """
-    exif = image.getexif()
-    orientation = exif.get(0x0112, 1)  # default 1
-    if orientation > 1:
-        method = {
-            2: Image.FLIP_LEFT_RIGHT,
-            3: Image.ROTATE_180,
-            4: Image.FLIP_TOP_BOTTOM,
-            5: Image.TRANSPOSE,
-            6: Image.ROTATE_270,
-            7: Image.TRANSVERSE,
-            8: Image.ROTATE_90,
-        }.get(orientation)
-        if method is not None:
-            image = image.transpose(method)
-            del exif[0x0112]
-            image.info["exif"] = exif.tobytes()
-    return image
-
-
-def seed_worker(worker_id):
-    """Sets the seed for a dataloader worker to ensure reproducibility, based on PyTorch's randomness notes.
-
-    See https://pytorch.org/docs/stable/notes/randomness.html#dataloader.
-    """
-    worker_seed = torch.initial_seed() % 2**32
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
 
 
 # Inherit from DistributedSampler and override iterator
@@ -515,14 +471,6 @@ class LoadStreams:
     def __len__(self):
         """Returns the number of sources in the dataset, supporting up to 32 streams at 30 FPS over 30 years."""
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
-
-
-def img2label_paths(img_paths):
-    """Generates label file paths from corresponding image file paths by replacing `/images/` with `/labels/` and
-    extension with `.txt`.
-    """
-    sa, sb = f"{os.sep}images{os.sep}", f"{os.sep}labels{os.sep}"  # /images/, /labels/ substrings
-    return [sb.join(x.rsplit(sa, 1)).rsplit(".", 1)[0] + ".txt" for x in img_paths]
 
 
 class LoadImagesAndLabels(Dataset):
@@ -951,31 +899,6 @@ class LoadImagesAndLabels(Dataset):
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
-def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), annotated_only=False):
-    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files Usage: from utils.dataloaders
-    import *; autosplit().
-
-    Args:
-        path: Path to images directory
-        weights: Train, val, test weights (list, tuple)
-        annotated_only: Only use images with an annotated txt file
-    """
-    path = Path(path)  # images dir
-    files = sorted(x for x in path.rglob("*.*") if x.suffix[1:].lower() in IMG_FORMATS)  # image files only
-    n = len(files)  # number of files
-    random.seed(0)  # for reproducibility
-    indices = random.choices([0, 1, 2], weights=weights, k=n)  # assign each image to a split
-
-    txt = ["autosplit_train.txt", "autosplit_val.txt", "autosplit_test.txt"]  # 3 txt files
-    for x in txt:
-        if (path.parent / x).exists():
-            (path.parent / x).unlink()  # remove existing
-
-    print(f"Autosplitting images from {path}" + ", using *.txt labeled images only" * annotated_only)
-    for i, img in TQDM(zip(indices, files), total=n):
-        if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
-            with open(path.parent / txt[i], "a") as f:
-                f.write(f"./{img.relative_to(path.parent).as_posix()}" + "\n")  # add image to txt file
 
 
 def verify_image_label(args):

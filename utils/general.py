@@ -8,7 +8,6 @@ import glob
 import inspect
 import logging
 import logging.config
-import math
 import os
 import platform
 import random
@@ -47,12 +46,20 @@ from ultralytics.data.converter import coco80_to_coco91_class  # noqa: F401
 from ultralytics.utils import TQDM as _TQDM
 from ultralytics.utils import colorstr, get_default_args  # noqa: F401
 from ultralytics.utils.checks import check_requirements as check_requirements_ultralytics
-from ultralytics.utils.checks import is_ascii
-from ultralytics.utils.files import WorkingDirectory, file_date, file_size  # noqa: F401
+from ultralytics.utils.checks import is_ascii, print_args  # noqa: F401
+from ultralytics.utils.files import WorkingDirectory, file_date, file_size, get_latest_run  # noqa: F401
 from ultralytics.utils.git import GitRepo
-from ultralytics.utils.ops import make_divisible
+from ultralytics.utils.ops import (  # noqa: F401
+    Profile,
+    clip_boxes,
+    make_divisible,
+    segments2boxes,
+    xywh2xyxy,
+    xywhn2xyxy,
+    xyxy2xywhn,
+)
 from ultralytics.utils.patches import torch_load
-from ultralytics.utils.torch_utils import intersect_dicts  # noqa: F401
+from ultralytics.utils.torch_utils import intersect_dicts, one_cycle  # noqa: F401
 
 from utils import TryExcept, emojis
 from utils.downloads import curl_download, gsutil_getsize
@@ -191,50 +198,9 @@ def user_config_dir(dir="Ultralytics", env_var="YOLOV5_CONFIG_DIR"):
 CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
 
 
-class Profile(contextlib.ContextDecorator):
-    """Context manager and decorator for profiling code execution time, with optional CUDA synchronization."""
-
-    def __init__(self, t=0.0, device: torch.device = None):
-        """Initializes a profiling context for YOLOv5 with optional timing threshold and device specification."""
-        self.t = t
-        self.device = device
-        self.cuda = bool(device and str(device).startswith("cuda"))
-
-    def __enter__(self):
-        """Initializes timing at the start of a profiling context block for performance measurement."""
-        self.start = self.time()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        """Concludes timing, updating duration for profiling upon exiting a context block."""
-        self.dt = self.time() - self.start  # delta-time
-        self.t += self.dt  # accumulate dt
-
-    def time(self):
-        """Measures and returns the current time, synchronizing CUDA operations if `cuda` is True."""
-        if self.cuda:
-            torch.cuda.synchronize(self.device)
-        return time.time()
-
-
 def methods(instance):
     """Returns list of method names for a class/instance excluding dunder methods."""
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
-
-
-def print_args(args: dict | None = None, show_file=True, show_func=False):
-    """Logs the arguments of the calling function, with options to include the filename and function name."""
-    x = inspect.currentframe().f_back  # previous frame
-    file, _, func, _, _ = inspect.getframeinfo(x)
-    if args is None:  # get args automatically
-        args, _, _, frm = inspect.getargvalues(x)
-        args = {k: v for k, v in frm.items() if k in args}
-    try:
-        file = Path(file).resolve().relative_to(ROOT).with_suffix("")
-    except ValueError:
-        file = Path(file).stem
-    s = (f"{file}: " if show_file else "") + (f"{func}: " if show_func else "")
-    LOGGER.info(colorstr(s) + ", ".join(f"{k}={v}" for k, v in args.items()))
 
 
 def init_seeds(seed=0, deterministic=False):
@@ -253,12 +219,6 @@ def init_seeds(seed=0, deterministic=False):
         torch.backends.cudnn.deterministic = True
         os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
         os.environ["PYTHONHASHSEED"] = str(seed)
-
-
-def get_latest_run(search_dir="."):
-    """Returns the path to the most recent 'last.pt' file in /runs to resume from, searches in `search_dir`."""
-    last_list = glob.glob(f"{search_dir}/**/last*.pt", recursive=True)
-    return max(last_list, key=os.path.getctime) if last_list else ""
 
 
 def check_online():
@@ -597,19 +557,12 @@ def download(url, dir=".", unzip=True, delete=True, curl=False, threads=1, retry
             download_one(u, dir)
 
 
+# Keep local (do not dedup): regex differs from ultralytics clean_str (strips acute accent, keeps backtick)
 def clean_str(s):
     """Cleans a string by replacing special characters with underscore, e.g., `clean_str('#example!')` returns
     '_example_'.
     """
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
-
-
-def one_cycle(y1=0.0, y2=1.0, steps=100):
-    """Generates a lambda for a sinusoidal ramp from y1 to y2 over 'steps'.
-
-    See https://arxiv.org/pdf/1812.01187.pdf for details.
-    """
-    return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
 
 
 def labels_to_class_weights(labels, nc=80):
@@ -638,6 +591,7 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):  # noqa: 
     return (class_weights.reshape(1, nc) * class_counts).sum(1)
 
 
+# Keep local (do not dedup): ultralytics xyxy2xywh asserts a 4-wide input; models/common.py passes (n, 6)
 def xyxy2xywh(x):
     """Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right."""
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -645,38 +599,6 @@ def xyxy2xywh(x):
     y[..., 1] = (x[..., 1] + x[..., 3]) / 2  # y center
     y[..., 2] = x[..., 2] - x[..., 0]  # width
     y[..., 3] = x[..., 3] - x[..., 1]  # height
-    return y
-
-
-def xywh2xyxy(x):
-    """Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right."""
-    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = x[..., 0] - x[..., 2] / 2  # top left x
-    y[..., 1] = x[..., 1] - x[..., 3] / 2  # top left y
-    y[..., 2] = x[..., 0] + x[..., 2] / 2  # bottom right x
-    y[..., 3] = x[..., 1] + x[..., 3] / 2  # bottom right y
-    return y
-
-
-def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
-    """Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right."""
-    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = w * (x[..., 0] - x[..., 2] / 2) + padw  # top left x
-    y[..., 1] = h * (x[..., 1] - x[..., 3] / 2) + padh  # top left y
-    y[..., 2] = w * (x[..., 0] + x[..., 2] / 2) + padw  # bottom right x
-    y[..., 3] = h * (x[..., 1] + x[..., 3] / 2) + padh  # bottom right y
-    return y
-
-
-def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
-    """Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where xy1=top-left, xy2=bottom-right."""
-    if clip:
-        clip_boxes(x, (h - eps, w - eps))  # warning: inplace clip
-    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = ((x[..., 0] + x[..., 2]) / 2) / w  # x center
-    y[..., 1] = ((x[..., 1] + x[..., 3]) / 2) / h  # y center
-    y[..., 2] = (x[..., 2] - x[..., 0]) / w  # width
-    y[..., 3] = (x[..., 3] - x[..., 1]) / h  # height
     return y
 
 
@@ -697,15 +619,6 @@ def segment2box(segment, width=640, height=640):
         y,
     ) = x[inside], y[inside]
     return np.array([x.min(), y.min(), x.max(), y.max()]) if len(x) else np.zeros((1, 4))  # xyxy
-
-
-def segments2boxes(segments):
-    """Convert segment labels to box labels, i.e. (xy1, xy2, ...) to (xywh)."""
-    boxes = []
-    for s in segments:
-        x, y = s.T  # segment xy
-        boxes.append([x.min(), y.min(), x.max(), y.max()])  # xyxy
-    return xyxy2xywh(np.array(boxes))  # xywh
 
 
 def resample_segments(segments, n=1000):
@@ -751,18 +664,6 @@ def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=F
         segments[:, 0] /= img0_shape[1]  # width
         segments[:, 1] /= img0_shape[0]  # height
     return segments
-
-
-def clip_boxes(boxes, shape):
-    """Clips bounding box coordinates (xyxy) to fit within the specified image shape (height, width)."""
-    if isinstance(boxes, torch.Tensor):  # faster individually
-        boxes[..., 0].clamp_(0, shape[1])  # x1
-        boxes[..., 1].clamp_(0, shape[0])  # y1
-        boxes[..., 2].clamp_(0, shape[1])  # x2
-        boxes[..., 3].clamp_(0, shape[0])  # y2
-    else:  # np.array (faster grouped)
-        boxes[..., [0, 2]] = boxes[..., [0, 2]].clip(0, shape[1])  # x1, x2
-        boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
 
 
 def clip_segments(segments, shape):

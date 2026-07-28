@@ -202,7 +202,7 @@ class BaseModel(nn.Module):
 
     def info(self, verbose=False, img_size=640):
         """Prints model information given verbosity and image size, e.g., `info(verbose=True, img_size=640)`."""
-        model_info(self, verbose, img_size)
+        model_info(self, detailed=verbose, imgsz=img_size)
 
     def _apply(self, fn):
         """Applies transformations like to(), cpu(), cuda(), half() to model tensors excluding parameters or registered
