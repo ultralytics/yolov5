@@ -808,7 +808,6 @@ def export_pb(keras_model, file, prefix=colorstr("TensorFlow GraphDef:")):  # no
         file = Path("model.pb")
         export_pb(keras_model, file)
         ```
-
     """
     from ultralytics.utils.export.tensorflow import keras2pb
 
