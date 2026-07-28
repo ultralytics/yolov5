@@ -4,10 +4,10 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
+from ultralytics.utils.metrics import bbox_iou, smooth_bce
 
 from ..general import xywh2xyxy
-from ..loss import FocalLoss, smooth_BCE
-from ..metrics import bbox_iou
+from ..loss import FocalLoss
 from ..torch_utils import de_parallel
 from .general import crop_mask
 
@@ -27,7 +27,7 @@ class ComputeLoss:
         BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h["obj_pw"]], device=device))
 
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
-        self.cp, self.cn = smooth_BCE(eps=h.get("label_smoothing", 0.0))  # positive, negative BCE targets
+        self.cp, self.cn = smooth_bce(eps=h.get("label_smoothing", 0.0))  # positive, negative BCE targets
 
         # Focal loss
         g = h["fl_gamma"]  # focal loss gamma

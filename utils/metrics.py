@@ -1,14 +1,13 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Model validation metrics."""
 
-import math
 import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from ultralytics.utils.metrics import smooth
+from ultralytics.utils.metrics import box_iou, smooth
 
 from utils import TryExcept, threaded
 
@@ -221,50 +220,6 @@ class ConfusionMatrix:
             print(" ".join(map(str, self.matrix[i])))
 
 
-def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
-    """Calculates IoU, GIoU, DIoU, or CIoU between two boxes, supporting xywh/xyxy formats.
-
-    box1 and box2 broadcast over the last dim; common shapes are (n,4) x (n,4) (loss) or (1,4) x (n,4).
-    """
-    # Get the coordinates of bounding boxes
-    if xywh:  # transform from xywh to xyxy
-        (x1, y1, w1, h1), (x2, y2, w2, h2) = box1.chunk(4, -1), box2.chunk(4, -1)
-        w1_, h1_, w2_, h2_ = w1 / 2, h1 / 2, w2 / 2, h2 / 2
-        b1_x1, b1_x2, b1_y1, b1_y2 = x1 - w1_, x1 + w1_, y1 - h1_, y1 + h1_
-        b2_x1, b2_x2, b2_y1, b2_y2 = x2 - w2_, x2 + w2_, y2 - h2_, y2 + h2_
-    else:  # x1, y1, x2, y2 = box1
-        b1_x1, b1_y1, b1_x2, b1_y2 = box1.chunk(4, -1)
-        b2_x1, b2_y1, b2_x2, b2_y2 = box2.chunk(4, -1)
-        w1, h1 = b1_x2 - b1_x1, (b1_y2 - b1_y1).clamp(eps)
-        w2, h2 = b2_x2 - b2_x1, (b2_y2 - b2_y1).clamp(eps)
-
-    # Intersection area
-    inter = (b1_x2.minimum(b2_x2) - b1_x1.maximum(b2_x1)).clamp(0) * (
-        b1_y2.minimum(b2_y2) - b1_y1.maximum(b2_y1)
-    ).clamp(0)
-
-    # Union Area
-    union = w1 * h1 + w2 * h2 - inter + eps
-
-    # IoU
-    iou = inter / union
-    if CIoU or DIoU or GIoU:
-        cw = b1_x2.maximum(b2_x2) - b1_x1.minimum(b2_x1)  # convex (smallest enclosing box) width
-        ch = b1_y2.maximum(b2_y2) - b1_y1.minimum(b2_y1)  # convex height
-        if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
-            c2 = cw**2 + ch**2 + eps  # convex diagonal squared
-            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center dist ** 2
-            if CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi**2) * (torch.atan(w2 / h2) - torch.atan(w1 / h1)).pow(2)
-                with torch.no_grad():
-                    alpha = v / (v - iou + (1 + eps))
-                return iou - (rho2 / c2 + v * alpha)  # CIoU
-            return iou - rho2 / c2  # DIoU
-        c_area = cw * ch + eps  # convex area
-        return iou - (c_area - union) / c_area  # GIoU https://arxiv.org/pdf/1902.09630.pdf
-    return iou  # IoU
-
-
 def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, overlap=False, masks=False):
     """Return a correct prediction matrix given detections and labels at various IoU thresholds.
 
@@ -309,28 +264,6 @@ def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, over
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             correct[matches[:, 1].astype(int), i] = True
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
-
-
-def box_iou(box1, box2, eps=1e-7):
-    # https://github.com/pytorch/vision/blob/main/torchvision/ops/boxes.py
-    """Return intersection-over-union (Jaccard index) of boxes.
-
-    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
-
-    Args:
-        box1: (Tensor[N, 4])
-        box2: (Tensor[M, 4])
-        eps: Small value to avoid division by zero.
-
-    Returns:
-        iou (Tensor[N, M]): the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
-    """
-    # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
-    (a1, a2), (b1, b2) = box1.unsqueeze(1).chunk(2, 2), box2.unsqueeze(0).chunk(2, 2)
-    inter = (torch.min(a2, b2) - torch.max(a1, b1)).clamp(0).prod(2)
-
-    # IoU = inter / (area1 + area2 - inter)
-    return inter / ((a2 - a1).prod(2) + (b2 - b1).prod(2) - inter + eps)
 
 
 def bbox_ioa(box1, box2, eps=1e-7):

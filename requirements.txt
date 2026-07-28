@@ -10,7 +10,7 @@ psutil  # system resources
 PyYAML>=5.3.1
 requests>=2.32.2
 scipy>=1.4.1
-ultralytics-thop>=2.1.0  # FLOPs computation
+ultralytics-thop>=2.1.2  # FLOPs computation
 torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
 ultralytics>=8.4.83  # https://ultralytics.com
