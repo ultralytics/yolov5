@@ -322,8 +322,9 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
         pip install onnx onnxslim onnxruntime onnxruntime-gpu
         ```
     """
-    check_requirements(("onnx>=1.12.0", "onnxscript"))
+    check_requirements("onnx>=1.12.0")
     import onnx
+    from ultralytics.utils.export import torch2onnx
 
     LOGGER.info(f"\n{prefix} starting export with onnx {onnx.__version__}...")
     f = str(file.with_suffix(".onnx"))
@@ -337,16 +338,14 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
         elif isinstance(model, DetectionModel):
             dynamic["output0"] = {0: "batch", 1: "anchors"}  # shape(1,25200,85)
 
-    torch.onnx.export(
+    torch2onnx(
         model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
         im.cpu() if dynamic else im,
         f,
-        verbose=False,
-        opset_version=opset,
-        do_constant_folding=True,  # WARNING: DNN inference with torch>=1.12 may require do_constant_folding=False
+        opset=opset,
         input_names=["images"],
         output_names=output_names,
-        dynamic_axes=dynamic or None,
+        dynamic=dynamic or None,
     )
 
     # Checks
