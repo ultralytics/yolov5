@@ -192,7 +192,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 
 ## 🧩 集成
 
-Ultralytics 集成了 [Weights & Biases](https://docs.ultralytics.com/integrations/weights-biases)、[Comet ML](https://docs.ultralytics.com/integrations/comet)、[Roboflow](https://docs.ultralytics.com/integrations/roboflow) 和 [Intel OpenVINO](https://docs.ultralytics.com/integrations/openvino)，用于数据集标注、实验跟踪、可视化和模型导出。完整列表请参阅 [Ultralytics 集成](https://docs.ultralytics.com/integrations)。
+我们与领先 AI 平台的关键集成扩展了 Ultralytics 产品的功能，增强了诸如数据集标注、训练、可视化和模型管理等任务。了解 Ultralytics 如何与 [Weights & Biases](https://docs.ultralytics.com/integrations/weights-biases)、[Comet ML](https://docs.ultralytics.com/integrations/comet)、[Roboflow](https://docs.ultralytics.com/integrations/roboflow) 和 [Intel OpenVINO](https://docs.ultralytics.com/integrations/openvino) 等合作伙伴协作，优化您的 AI 工作流程。在 [Ultralytics 集成](https://docs.ultralytics.com/integrations) 探索更多信息。
 
 <a href="https://platform.ultralytics.com" target="_blank">
     <img width="100%" src="https://github.com/ultralytics/assets/raw/main/yolov8/banner-integrations.png" alt="Ultralytics 主动学习集成">
