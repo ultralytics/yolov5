@@ -190,7 +190,7 @@ def profile(input, ops, n=10, device=None):
                 LOGGER.info(f"{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{s_in!s:>24s}{s_out!s:>24s}")
                 results.append([p, flops, mem, tf, tb, s_in, s_out])
             except Exception as e:
-                LOGGER.error(e)
+                LOGGER.warning(e)
                 results.append(None)
             torch.cuda.empty_cache()
     return results

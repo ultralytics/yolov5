@@ -23,7 +23,7 @@ def check_anchor_order(m):
         m.anchors[:] = m.anchors.flip(0)
 
 
-@TryExcept(PREFIX.rstrip())
+@TryExcept(colorstr("AutoAnchor"))
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
     """Evaluates anchor fit to dataset and adjusts if necessary, supporting customizable threshold and image size."""
     m = model.module.model[-1] if hasattr(model, "module") else model.model[-1]  # Detect()

@@ -42,5 +42,5 @@ def notebook_init(verbose=True):
         s = ""
 
     select_device(newline=False)
-    LOGGER.info(emojis(f"Setup complete ✅ {s}"))
+    LOGGER.info(f"Setup complete ✅ {s}")
     return display

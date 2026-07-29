@@ -95,14 +95,15 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 model.load_state_dict(csd, strict=False)  # load
                 if len(ckpt["model"].names) == classes:
                     model.names = ckpt["model"].names  # set class names attribute
-        if not verbose:
-            LOGGER.setLevel(prev_level)  # restore, LOGGER is shared with ultralytics
         return model.to(device)
 
     except Exception as e:
         help_url = "https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading"
         s = f"{e}. Cache may be out of date, try `force_reload=True` or see {help_url} for help."
         raise RuntimeError(s) from e
+
+    finally:
+        LOGGER.setLevel(prev_level)  # restore on both paths, LOGGER is shared with ultralytics
 
 
 def custom(path="path/to/model.pt", autoshape=True, _verbose=True, device=None):
