@@ -7,9 +7,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from ultralytics.utils.metrics import box_iou, mask_iou, smooth
+from ultralytics.utils.metrics import box_iou, mask_iou, plot_mc_curve, plot_pr_curve, smooth
 
-from utils import TryExcept, threaded
+from utils import TryExcept
 
 # NumPy 2.0 compatibility: trapezoid was renamed from trapz
 trapezoid = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
@@ -262,54 +262,3 @@ def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, over
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             correct[matches[:, 1].astype(int), i] = True
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
-
-
-# Plots ----------------------------------------------------------------------------------------------------------------
-
-
-@threaded
-def plot_pr_curve(px, py, ap, save_dir=Path("pr_curve.png"), names=()):
-    """Plots precision-recall curve, optionally per class, saving to `save_dir`; `px`, `py` are lists, `ap` is an (nc,
-    10) array whose first column (AP@0.5) is plotted, `names` optional.
-    """
-    fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
-    py = np.stack(py, axis=1)
-
-    if 0 < len(names) < 21:  # display per-class legend if < 21 classes
-        for i, y in enumerate(py.T):
-            ax.plot(px, y, linewidth=1, label=f"{names[i]} {ap[i, 0]:.3f}")  # plot(recall, precision)
-    else:
-        ax.plot(px, py, linewidth=1, color="grey")  # plot(recall, precision)
-
-    ax.plot(px, py.mean(1), linewidth=3, color="blue", label=f"all classes {ap[:, 0].mean():.3f} mAP@0.5")
-    ax.set_xlabel("Recall")
-    ax.set_ylabel("Precision")
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    ax.set_title("Precision-Recall Curve")
-    fig.savefig(save_dir, dpi=250)
-    plt.close(fig)
-
-
-@threaded
-def plot_mc_curve(px, py, save_dir=Path("mc_curve.png"), names=(), xlabel="Confidence", ylabel="Metric"):
-    """Plots a metric-confidence curve for model predictions, supporting per-class visualization and smoothing."""
-    fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
-
-    if 0 < len(names) < 21:  # display per-class legend if < 21 classes
-        for i, y in enumerate(py):
-            ax.plot(px, y, linewidth=1, label=f"{names[i]}")  # plot(confidence, metric)
-    else:
-        ax.plot(px, py.T, linewidth=1, color="grey")  # plot(confidence, metric)
-
-    y = smooth(py.mean(0), 0.05)
-    ax.plot(px, y, linewidth=3, color="blue", label=f"all classes {y.max():.2f} at {px[y.argmax()]:.3f}")
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    ax.set_title(f"{ylabel}-Confidence Curve")
-    fig.savefig(save_dir, dpi=250)
-    plt.close(fig)
