@@ -192,7 +192,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 
 ## 🧩 Integrations
 
-YOLOv5 supports experiment tracking with [Comet](https://docs.ultralytics.com/integrations/comet) and [ClearML](https://docs.ultralytics.com/integrations/clearml) via `utils/loggers/`, and export to formats including [Intel OpenVINO](https://docs.ultralytics.com/integrations/openvino) via `export.py`. See [Ultralytics Integrations](https://docs.ultralytics.com/integrations) for the full list.
+YOLOv5 supports experiment tracking with [Comet ML](https://docs.ultralytics.com/integrations/comet) and [ClearML](https://docs.ultralytics.com/integrations/clearml) via `utils/loggers/`, and export to formats including [Intel OpenVINO](https://docs.ultralytics.com/integrations/openvino) via `export.py`. Ultralytics also integrates with tools such as [Roboflow](https://docs.ultralytics.com/integrations/roboflow) for dataset labeling — see [Ultralytics Integrations](https://docs.ultralytics.com/integrations) for the full list.
 
 <a href="https://platform.ultralytics.com" target="_blank">
     <img width="100%" src="https://github.com/ultralytics/assets/raw/main/yolov8/banner-integrations.png" alt="Ultralytics active learning integrations">

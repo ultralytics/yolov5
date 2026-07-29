@@ -192,7 +192,7 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 
 ## 🧩 集成
 
-YOLOv5 通过 `utils/loggers/` 支持 [Comet](https://docs.ultralytics.com/integrations/comet) 和 [ClearML](https://docs.ultralytics.com/integrations/clearml) 实验跟踪，并可通过 `export.py` 导出为包括 [Intel OpenVINO](https://docs.ultralytics.com/integrations/openvino) 在内的多种格式。完整列表请参阅 [Ultralytics 集成](https://docs.ultralytics.com/integrations)。
+YOLOv5 通过 `utils/loggers/` 支持 [Comet ML](https://docs.ultralytics.com/integrations/comet) 和 [ClearML](https://docs.ultralytics.com/integrations/clearml) 实验跟踪，并可通过 `export.py` 导出为包括 [Intel OpenVINO](https://docs.ultralytics.com/integrations/openvino) 在内的多种格式。Ultralytics 还集成了 [Roboflow](https://docs.ultralytics.com/integrations/roboflow) 等数据集标注工具，完整列表请参阅 [Ultralytics 集成](https://docs.ultralytics.com/integrations)。
 
 <a href="https://platform.ultralytics.com" target="_blank">
     <img width="100%" src="https://github.com/ultralytics/assets/raw/main/yolov8/banner-integrations.png" alt="Ultralytics 主动学习集成">
