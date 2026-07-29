@@ -42,7 +42,7 @@ except (ImportError, AssertionError):
 from ultralytics.data.converter import coco80_to_coco91_class  # noqa: F401
 from ultralytics.utils import (  # noqa: F401
     LOGGER,
-    TQDM,  # noqa: F401
+    TQDM,
     colorstr,
     get_default_args,
 )
