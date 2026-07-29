@@ -23,7 +23,6 @@ import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
 from ultralytics.data.build import seed_worker
-from ultralytics.data.split import autosplit  # noqa: F401
 from ultralytics.data.utils import get_hash, img2label_paths
 
 from utils.augmentations import (
