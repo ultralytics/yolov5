@@ -6,9 +6,9 @@
 
 ## ℹ️ About ClearML
 
-[ClearML](https://clear.ml/) is an [open-source MLOps platform](https://github.com/clearml/clearml) designed to streamline your machine learning workflow and maximize productivity. Integrating ClearML with [Ultralytics YOLO](https://docs.ultralytics.com/models/yolov5) unlocks a robust suite of tools for experiment tracking, data management, and scalable deployment:
+[ClearML](https://clear.ml/) is an [open-source MLOps platform](https://github.com/clearml/clearml). Integrating it with [Ultralytics YOLO](https://docs.ultralytics.com/models/yolov5) provides experiment tracking, data management, and remote execution:
 
-- **Experiment Management:** Effortlessly track every [YOLO training run](https://docs.ultralytics.com/modes/train), including parameters, metrics, and outputs. Explore the [Ultralytics ClearML integration guide](https://docs.ultralytics.com/integrations/clearml) for step-by-step instructions.
+- **Experiment Management:** Track every [YOLO training run](https://docs.ultralytics.com/modes/train), including parameters, metrics, and outputs. Explore the [Ultralytics ClearML integration guide](https://docs.ultralytics.com/integrations/clearml) for step-by-step instructions.
 - **Data Versioning:** Manage and access your custom training data with ClearML's Data Versioning Tool, similar to [DVC integration](https://docs.ultralytics.com/integrations/dvc).
 - **Remote Execution:** Remotely train and monitor models using [ClearML Agent](https://docs.clear.ml/docs/latest/docs/clearml_agent) for seamless scaling.
 - **Hyperparameter Optimization:** Boost your [mean average precision (mAP)](https://docs.ultralytics.com/guides/yolo-performance-metrics) with ClearML's [hyperparameter tuning](https://docs.ultralytics.com/guides/hyperparameter-tuning) capabilities.

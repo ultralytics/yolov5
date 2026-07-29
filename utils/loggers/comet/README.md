@@ -4,7 +4,7 @@
 
 # Using Ultralytics YOLO With Comet
 
-Welcome to the guide for integrating [Ultralytics YOLO](https://github.com/ultralytics/yolov5) with [Comet](https://www.comet.com/site/)! Comet offers robust experiment tracking, model management, and visualization tools to enhance your [machine learning](https://www.ultralytics.com/glossary/machine-learning-ml) workflow. This guide explains how to leverage Comet for monitoring training, logging results, managing datasets, and optimizing hyperparameters for your YOLO models.
+This guide explains how to integrate [Ultralytics YOLO](https://github.com/ultralytics/yolov5) with [Comet](https://www.comet.com/docs/v2/) for experiment tracking: monitoring training, logging results, managing datasets, and optimizing hyperparameters.
 
 [![Ultralytics Actions](https://github.com/ultralytics/yolov5/actions/workflows/format.yml/badge.svg)](https://github.com/ultralytics/yolov5/actions/workflows/format.yml)
 [![Ultralytics Discord](https://img.shields.io/discord/1089800235347353640?logo=discord&logoColor=white&label=Discord&color=blue)](https://discord.com/invite/ultralytics)
@@ -13,9 +13,9 @@ Welcome to the guide for integrating [Ultralytics YOLO](https://github.com/ultra
 
 ## 🧪 About Comet
 
-[Comet](https://www.comet.com/site/) provides tools for data scientists, engineers, and teams to accelerate and optimize [deep learning](https://www.ultralytics.com/glossary/deep-learning-dl) and machine learning models.
+[Comet](https://www.comet.com/docs/v2/) is an experiment tracking platform for [machine learning](https://www.ultralytics.com/glossary/machine-learning-ml) and [deep learning](https://www.ultralytics.com/glossary/deep-learning-dl) models.
 
-With Comet, you can track and visualize model metrics in real time, save [hyperparameters](https://docs.ultralytics.com/guides/hyperparameter-tuning), datasets, and model checkpoints, and visualize predictions using Custom Panels. Comet ensures you never lose track of your work and makes sharing results and collaborating across teams seamless. For more details, see the [Comet Documentation](https://www.comet.com/docs/v2/).
+With this integration a YOLO run tracks model metrics in real time and saves [hyperparameters](https://docs.ultralytics.com/guides/hyperparameter-tuning), datasets, model checkpoints, and prediction visualizations to your Comet workspace. For more details, see the [Comet Documentation](https://www.comet.com/docs/v2/).
 
 ## 🚀 Getting Started
 
