@@ -595,20 +595,13 @@ class DetectMultiBackend(nn.Module):
         elif pb:  # GraphDef https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
             LOGGER.info(f"Loading {w} for TensorFlow GraphDef inference...")
             import tensorflow as tf
+            from ultralytics.utils.export.tensorflow import gd_outputs
 
             def wrap_frozen_graph(gd, inputs, outputs):
                 """Wraps a TensorFlow GraphDef for inference, returning a pruned function."""
                 x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped
                 ge = x.graph.as_graph_element
                 return x.prune(tf.nest.map_structure(ge, inputs), tf.nest.map_structure(ge, outputs))
-
-            def gd_outputs(gd):
-                """Generates a sorted list of graph outputs excluding NoOp nodes and inputs, formatted as '<name>:0'."""
-                name_list, input_list = [], []
-                for node in gd.node:  # tensorflow.core.framework.node_def_pb2.NodeDef
-                    name_list.append(node.name)
-                    input_list.extend(node.input)
-                return sorted(f"{x}:0" for x in list(set(name_list) - set(input_list)) if not x.startswith("NoOp"))
 
             gd = tf.Graph().as_graph_def()  # TF GraphDef
             with open(w, "rb") as f:
