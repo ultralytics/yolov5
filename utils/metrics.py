@@ -7,6 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from ultralytics.utils import LOGGER
 from ultralytics.utils.metrics import box_iou, mask_iou, plot_mc_curve, plot_pr_curve, smooth
 
 from utils import TryExcept
@@ -217,7 +218,7 @@ class ConfusionMatrix:
     def print(self):
         """Prints the confusion matrix row-wise, with each class and its predictions separated by spaces."""
         for i in range(self.nc + 1):
-            print(" ".join(map(str, self.matrix[i])))
+            LOGGER.info(" ".join(map(str, self.matrix[i])))
 
 
 def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, overlap=False, masks=False):

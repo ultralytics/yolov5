@@ -151,7 +151,7 @@ def export_formats():
     Examples:
         ```python
         formats = export_formats()
-        print(f"Supported export formats:\n{formats}")
+        LOGGER.info(f"Supported export formats:\n{formats}")
         ```
 
     Notes:
@@ -674,7 +674,7 @@ def export_engine(
 
     if dynamic:
         if im.shape[0] <= 1:
-            LOGGER.warning(f"{prefix} WARNING ⚠️ --dynamic model requires maximum --batch-size argument")
+            LOGGER.warning(f"{prefix} --dynamic model requires maximum --batch-size argument")
         profile = builder.create_optimization_profile()
         for inp in inputs:
             profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
@@ -755,8 +755,8 @@ def export_saved_model(
     LOGGER.info(f"\n{prefix} starting export with tensorflow {tf.__version__}...")
     if tf.__version__ > "2.13.1":
         helper_url = "https://github.com/ultralytics/yolov5/issues/12489"
-        LOGGER.info(
-            f"WARNING ⚠️ using Tensorflow {tf.__version__} > 2.13.1 might cause issue when exporting the model to tflite {helper_url}"
+        LOGGER.warning(
+            f"using Tensorflow {tf.__version__} > 2.13.1 might cause issue when exporting the model to tflite {helper_url}"
         )  # handling issue https://github.com/ultralytics/yolov5/issues/12489
     f = str(file).replace(".pt", "_saved_model")
     batch_size, ch, *imgsz = list(im.shape)  # BCHW

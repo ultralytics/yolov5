@@ -49,15 +49,17 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         For more information on model loading and customization, visit the
         [YOLOv5 PyTorch Hub Documentation](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading).
     """
+    import logging
     from pathlib import Path
 
     from models.common import AutoShape, DetectMultiBackend
     from models.experimental import attempt_load
     from models.yolo import ClassificationModel, DetectionModel, SegmentationModel
     from utils.downloads import attempt_download
-    from utils.general import LOGGER, ROOT, check_requirements, intersect_dicts, logging
+    from utils.general import LOGGER, ROOT, check_requirements, intersect_dicts
     from utils.torch_utils import select_device
 
+    prev_level = LOGGER.level
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
     check_requirements(ROOT / "requirements.txt", exclude=("opencv-python", "tensorboard", "ultralytics-thop"))
@@ -71,12 +73,12 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 if autoshape:
                     if model.pt and isinstance(model.model, ClassificationModel):
                         LOGGER.warning(
-                            "WARNING ⚠️ YOLOv5 ClassificationModel is not yet AutoShape compatible. "
+                            "YOLOv5 ClassificationModel is not yet AutoShape compatible. "
                             "You must pass torch tensors in BCHW to this model, i.e. shape(1,3,224,224)."
                         )
                     elif model.pt and isinstance(model.model, SegmentationModel):
                         LOGGER.warning(
-                            "WARNING ⚠️ YOLOv5 SegmentationModel is not yet AutoShape compatible. "
+                            "YOLOv5 SegmentationModel is not yet AutoShape compatible. "
                             "You will not be able to run inference with this model."
                         )
                     else:
@@ -93,14 +95,15 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 model.load_state_dict(csd, strict=False)  # load
                 if len(ckpt["model"].names) == classes:
                     model.names = ckpt["model"].names  # set class names attribute
-        if not verbose:
-            LOGGER.setLevel(logging.INFO)  # reset to default
         return model.to(device)
 
     except Exception as e:
         help_url = "https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading"
         s = f"{e}. Cache may be out of date, try `force_reload=True` or see {help_url} for help."
         raise RuntimeError(s) from e
+
+    finally:
+        LOGGER.setLevel(prev_level)  # restore on both paths, LOGGER is shared with ultralytics
 
 
 def custom(path="path/to/model.pt", autoshape=True, _verbose=True, device=None):

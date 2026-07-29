@@ -67,14 +67,14 @@ def safe_download(file, url, url2=None, min_bytes=1e0, error_msg=""):
     except Exception as e:  # url2
         if file.exists():
             file.unlink()  # remove partial downloads
-        LOGGER.info(f"ERROR: {e}\nRe-attempting {url2 or url} to {file}...")
+        LOGGER.warning(f"{e}\nRe-attempting {url2 or url} to {file}...")
         # curl download, retry and resume on fail
         curl_download(url2 or url, file)
     finally:
         if not file.exists() or file.stat().st_size < min_bytes:  # check
             if file.exists():
                 file.unlink()  # remove partial downloads
-            LOGGER.info(f"ERROR: {assert_msg}\n{error_msg}")
+            LOGGER.error(f"{assert_msg}\n{error_msg}")
         LOGGER.info("")
 
 

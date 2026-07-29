@@ -289,7 +289,7 @@ def classify_albumentations(
         return A.Compose(T)
 
     except ImportError:  # package not installed, skip
-        LOGGER.warning(f"{prefix}⚠️ not found, install with `pip install albumentations` (recommended)")
+        LOGGER.warning(f"{prefix}not found, install with `pip install albumentations` (recommended)")
     except Exception as e:
         LOGGER.info(f"{prefix}{e}")
 
