@@ -79,7 +79,7 @@ from utils.general import (
     strip_optimizer,
     yaml_save,
 )
-from utils.loggers import LOGGERS, Loggers
+from utils.loggers import Loggers
 from utils.loggers.comet.comet_utils import check_comet_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
@@ -173,20 +173,7 @@ def train(hyp, opt, device, callbacks):
     # Loggers
     data_dict = None
     if RANK in {-1, 0}:
-        include_loggers = list(LOGGERS)
-        if getattr(opt, "ndjson_console", False):
-            include_loggers.append("ndjson_console")
-        if getattr(opt, "ndjson_file", False):
-            include_loggers.append("ndjson_file")
-
-        loggers = Loggers(
-            save_dir=save_dir,
-            weights=weights,
-            opt=opt,
-            hyp=hyp,
-            logger=LOGGER,
-            include=tuple(include_loggers),
-        )
+        loggers = Loggers(save_dir=save_dir, weights=weights, opt=opt, hyp=hyp, logger=LOGGER)
 
         # Register actions
         for k in methods(loggers):
@@ -610,8 +597,6 @@ def parse_opt(known=False):
     parser.add_argument("--artifact_alias", type=str, default="latest", help="Version of dataset artifact to use")
 
     # NDJSON logging
-    parser.add_argument("--ndjson-console", action="store_true", help="Log ndjson to console")
-    parser.add_argument("--ndjson-file", action="store_true", help="Log ndjson to file")
 
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
