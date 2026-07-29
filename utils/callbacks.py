@@ -44,14 +44,6 @@ class Callbacks:
         assert callable(callback), f"callback '{callback}' is not callable"
         self._callbacks[hook].append({"name": name, "callback": callback})
 
-    def get_registered_actions(self, hook=None):
-        """Returns all the registered actions by callback hook.
-
-        Args:
-            hook: The name of the hook to check, defaults to all
-        """
-        return self._callbacks[hook] if hook else self._callbacks
-
     def run(self, hook, *args, thread=False, **kwargs):
         """Loop through the registered actions and fire all callbacks on main thread.
 
