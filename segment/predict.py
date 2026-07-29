@@ -42,6 +42,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from ultralytics.utils.ops import masks2segments
 from ultralytics.utils.plotting import Annotator, colors, save_one_box
 
 from models.common import DetectMultiBackend
@@ -62,7 +63,7 @@ from utils.general import (
     scale_segments,
     strip_optimizer,
 )
-from utils.segment.general import masks2segments, process_mask, process_mask_native
+from utils.segment.general import process_mask, process_mask_native
 from utils.torch_utils import select_device, smart_inference_mode
 
 
@@ -177,7 +178,7 @@ def run(
                 if save_txt:
                     segments = [
                         scale_segments(im0.shape if retina_masks else im.shape[2:], x, im0.shape, normalize=True)
-                        for x in reversed(masks2segments(masks))
+                        for x in reversed(masks2segments(masks, strategy="largest"))
                     ]
 
                 # Print results

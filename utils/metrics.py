@@ -7,7 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from ultralytics.utils.metrics import box_iou, smooth
+from ultralytics.utils.metrics import box_iou, mask_iou, smooth
 
 from utils import TryExcept, threaded
 
@@ -238,8 +238,6 @@ def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, over
     if masks:
         import torch.nn.functional as F
 
-        from utils.segment.general import mask_iou
-
         if overlap:
             nl = len(labels)
             index = torch.arange(nl, device=gt_masks.device).view(nl, 1, 1) + 1
@@ -264,36 +262,6 @@ def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, over
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             correct[matches[:, 1].astype(int), i] = True
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
-
-
-def bbox_ioa(box1, box2, eps=1e-7):
-    """Returns the intersection over box2 area given box1, box2.
-
-    Args:
-        box1: np.array of shape(4)
-        box2: np.array of shape(nx4)
-        eps: Small value to avoid division by zero.
-
-    Returns:
-        np.array of shape(n)
-
-    Notes:
-        - Boxes are x1y1x2y2
-    """
-    # Get the coordinates of bounding boxes
-    b1_x1, b1_y1, b1_x2, b1_y2 = box1
-    b2_x1, b2_y1, b2_x2, b2_y2 = box2.T
-
-    # Intersection area
-    inter_area = (np.minimum(b1_x2, b2_x2) - np.maximum(b1_x1, b2_x1)).clip(0) * (
-        np.minimum(b1_y2, b2_y2) - np.maximum(b1_y1, b2_y1)
-    ).clip(0)
-
-    # box2 area
-    box2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1) + eps
-
-    # Intersection over box2 area
-    return inter_area / box2_area
 
 
 # Plots ----------------------------------------------------------------------------------------------------------------

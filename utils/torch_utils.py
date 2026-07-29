@@ -7,13 +7,22 @@ import platform
 import warnings
 from contextlib import contextmanager
 from copy import deepcopy
-from pathlib import Path
 
 import torch
 import torch.distributed as dist
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
-from ultralytics.utils.torch_utils import copy_attr, scale_img, time_sync  # noqa: F401
+from ultralytics.utils.torch_utils import (  # noqa: F401
+    autocast as smart_amp_autocast,
+)
+from ultralytics.utils.torch_utils import (  # noqa: F401
+    copy_attr,
+    initialize_weights,
+    is_parallel,
+    model_info,
+    scale_img,
+    time_sync,
+)
 
 from utils.general import LOGGER, check_version, colorstr, file_date, git_describe
 
@@ -59,14 +68,6 @@ def smart_DDP(model):
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
     else:
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
-
-
-def smart_amp_autocast(enabled=True):
-    """Return a torch.amp autocast context manager for PyTorch>=2.4, else torch.cuda.amp autocast context manager."""
-    if check_version(torch.__version__, "2.4.0"):
-        return torch.amp.autocast("cuda", enabled=enabled)
-    else:
-        return torch.cuda.amp.autocast(enabled)
 
 
 def reshape_classifier_output(model, n=1000):
@@ -195,29 +196,9 @@ def profile(input, ops, n=10, device=None):
     return results
 
 
-def is_parallel(model):
-    """Checks if the model is using Data Parallelism (DP) or Distributed Data Parallelism (DDP)."""
-    return type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
-
-
 def de_parallel(model):
     """Returns a single-GPU model by removing Data Parallelism (DP) or Distributed Data Parallelism (DDP) if applied."""
     return model.module if is_parallel(model) else model
-
-
-def initialize_weights(model):
-    """Initializes weights of Conv2d, BatchNorm2d, and activations (Hardswish, LeakyReLU, ReLU, ReLU6, SiLU) in the
-    model.
-    """
-    for m in model.modules():
-        t = type(m)
-        if t is nn.Conv2d:
-            pass  # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-        elif t is nn.BatchNorm2d:
-            m.eps = 1e-3
-            m.momentum = 0.03
-        elif t in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU]:
-            m.inplace = True
 
 
 def sparsity(model):
@@ -271,35 +252,6 @@ def fuse_conv_and_bn(conv, bn):
     fusedconv.bias.copy_(torch.mm(w_bn, b_conv.reshape(-1, 1)).reshape(-1) + b_bn)
 
     return fusedconv
-
-
-def model_info(model, verbose=False, imgsz=640):
-    """Prints model summary including layers, parameters, gradients, and FLOPs; imgsz may be int or list.
-
-    Example: img_size=640 or img_size=[640, 320]
-    """
-    n_p = sum(x.numel() for x in model.parameters())  # number parameters
-    n_g = sum(x.numel() for x in model.parameters() if x.requires_grad)  # number gradients
-    if verbose:
-        print(f"{'layer':>5} {'name':>40} {'gradient':>9} {'parameters':>12} {'shape':>20} {'mu':>10} {'sigma':>10}")
-        for i, (name, p) in enumerate(model.named_parameters()):
-            name = name.replace("module_list.", "")
-            print(
-                f"{i:5d} {name:>40s} {p.requires_grad!s:>9s} {p.numel():12d} {list(p.shape)!s:>20s} {p.mean().item():10.3g} {p.std().item():10.3g}"
-            )
-
-    try:  # FLOPs
-        p = next(model.parameters())
-        stride = max(int(model.stride.max()), 32) if hasattr(model, "stride") else 32  # max stride
-        im = torch.empty((1, p.shape[1], stride, stride), device=p.device)  # input image in BCHW format
-        flops = thop.profile(deepcopy(model), inputs=(im,), verbose=False)[0] / 1e9 * 2  # stride GFLOPs
-        imgsz = imgsz if isinstance(imgsz, list) else [imgsz, imgsz]  # expand if int/float
-        fs = f", {flops * imgsz[0] / stride * imgsz[1] / stride:.1f} GFLOPs"  # 640x640 GFLOPs
-    except Exception:
-        fs = ""
-
-    name = Path(model.yaml_file).stem.replace("yolov5", "YOLOv5") if hasattr(model, "yaml_file") else "Model"
-    LOGGER.info(f"{name} summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
 
 
 def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):

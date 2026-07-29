@@ -8,9 +8,9 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms as T
+from ultralytics.utils.metrics import bbox_ioa
 
 from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
-from utils.metrics import bbox_ioa
 
 IMAGENET_MEAN = 0.485, 0.456, 0.406  # RGB mean
 IMAGENET_STD = 0.229, 0.224, 0.225  # RGB standard deviation
@@ -209,7 +209,7 @@ def copy_paste(im, labels, segments, p=0.5):
         for j in random.sample(range(n), k=round(p * n)):
             label, segment = labels[j], segments[j]
             box = w - label[3], label[2], w - label[1], label[4]
-            ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
+            ioa = bbox_ioa(np.array(box)[None], labels[:, 1:5])  # intersection over area
             if (ioa < 0.30).all():  # allow 30% obscuration of existing labels
                 labels = np.concatenate((labels, [[label[0], *box]]), 0)
                 segments.append(np.concatenate((w - segment[:, 0:1], segment[:, 1:2]), 1))
