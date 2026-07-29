@@ -46,7 +46,6 @@ from models.experimental import attempt_load
 from models.yolo import SegmentationModel
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
-from utils.callbacks import Callbacks
 from utils.downloads import attempt_download, is_url
 from utils.general import (
     LOGGER,
@@ -97,7 +96,7 @@ WORLD_SIZE = int(os.getenv("WORLD_SIZE", "1"))
 GIT_INFO = check_git_info()
 
 
-def train(hyp, opt, device, callbacks):
+def train(hyp, opt, device):
     """Trains the YOLOv5 model on a dataset, managing hyperparameters, model optimization, logging, and validation.
 
     `hyp` is path/to/hyp.yaml or hyp dictionary.
@@ -133,7 +132,6 @@ def train(hyp, opt, device, callbacks):
         opt.freeze,
         opt.mask_ratio,
     )
-    # callbacks.run('on_pretrain_routine_start')
 
     # Directories
     w = save_dir / "weights"  # weights dir
@@ -296,7 +294,6 @@ def train(hyp, opt, device, callbacks):
 
             if plots:
                 plot_labels(labels, names, save_dir)
-        # callbacks.run('on_pretrain_routine_end', labels, names)
 
     # DDP mode
     if cuda and RANK != -1:
@@ -325,7 +322,6 @@ def train(hyp, opt, device, callbacks):
     scaler = torch.cuda.amp.GradScaler(enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
     compute_loss = ComputeLoss(model, overlap=overlap)  # init loss class
-    # callbacks.run('on_train_start')
     LOGGER.info(
         f"Image sizes {imgsz} train, {imgsz} val\n"
         f"Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n"
@@ -333,7 +329,6 @@ def train(hyp, opt, device, callbacks):
         f"Starting training for {epochs} epochs..."
     )
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
-        # callbacks.run('on_train_epoch_start')
         model.train()
 
         # Update image weights (optional, single-GPU only)
@@ -358,7 +353,6 @@ def train(hyp, opt, device, callbacks):
             pbar = TQDM(pbar, total=nb)  # progress bar
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _, masks) in pbar:  # batch ------------------------------------------------------
-            # callbacks.run('on_train_batch_start')
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device, non_blocking=True).float() / 255  # uint8 to float32, 0-255 to 0.0-1.0
 
@@ -412,9 +406,6 @@ def train(hyp, opt, device, callbacks):
                     ("%11s" * 2 + "%11.4g" * 6)
                     % (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0], imgs.shape[-1])
                 )
-                # callbacks.run('on_train_batch_end', model, ni, imgs, targets, paths)
-                # if callbacks.stop_training:
-                #    return
 
                 # Mosaic plots
                 if plots:
@@ -431,7 +422,6 @@ def train(hyp, opt, device, callbacks):
 
         if RANK in {-1, 0}:
             # mAP
-            # callbacks.run('on_train_epoch_end', epoch=epoch)
             ema.update_attr(model, include=["yaml", "nc", "hyp", "names", "stride", "class_weights"])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP
@@ -445,7 +435,6 @@ def train(hyp, opt, device, callbacks):
                     dataloader=val_loader,
                     save_dir=save_dir,
                     plots=False,
-                    callbacks=callbacks,
                     compute_loss=compute_loss,
                     mask_downsample_ratio=mask_ratio,
                     overlap=overlap,
@@ -456,7 +445,6 @@ def train(hyp, opt, device, callbacks):
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
             best_fitness = max(best_fitness, fi)
             log_vals = list(mloss) + list(results) + lr
-            # callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
             # Log val metrics and media
             metrics_dict = dict(zip(KEYS, log_vals))
             logger.log_metrics(metrics_dict, epoch)
@@ -483,7 +471,6 @@ def train(hyp, opt, device, callbacks):
                     torch.save(ckpt, w / f"epoch{epoch}.pt")
                     logger.log_model(w / f"epoch{epoch}.pt")
                 del ckpt
-                # callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness, fi)
 
         # EarlyStopping
         if RANK != -1:  # if DDP training
@@ -515,17 +502,14 @@ def train(hyp, opt, device, callbacks):
                         save_json=is_coco,
                         verbose=True,
                         plots=plots,
-                        callbacks=callbacks,
                         compute_loss=compute_loss,
                         mask_downsample_ratio=mask_ratio,
                         overlap=overlap,
                     )  # val best model with plots
                     if is_coco:
-                        # callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
                         metrics_dict = dict(zip(KEYS, list(mloss) + list(results) + lr))
                         logger.log_metrics(metrics_dict, epoch)
 
-        # callbacks.run('on_train_end', last, best, epoch, results)
         # on train end callback using genericLogger
         logger.log_metrics(dict(zip(KEYS[4:16], results)), epochs)
         if not opt.evolve:
@@ -589,10 +573,8 @@ def parse_opt(known=False):
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
 
-def main(opt, callbacks=None):
+def main(opt):
     """Initializes training or evolution of YOLOv5 models based on provided configuration and options."""
-    if callbacks is None:
-        callbacks = Callbacks()
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
@@ -646,7 +628,7 @@ def main(opt, callbacks=None):
 
     # Train
     if not opt.evolve:
-        train(opt.hyp, opt, device, callbacks)
+        train(opt.hyp, opt, device)
 
     # Evolve hyperparameters (optional)
     else:
@@ -737,8 +719,7 @@ def main(opt, callbacks=None):
                 hyp[k] = round(hyp[k], 5)  # significant digits
 
             # Train mutation
-            results = train(hyp.copy(), opt, device, callbacks)
-            callbacks = Callbacks()
+            results = train(hyp.copy(), opt, device)
             # Write mutation results
             print_mutation(KEYS[4:16], results, hyp.copy(), save_dir, opt.bucket)
 
