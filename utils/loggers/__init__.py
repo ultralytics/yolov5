@@ -1,7 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Logging utils."""
 
-import json
 import os
 import warnings
 from pathlib import Path
@@ -61,19 +60,6 @@ except (ImportError, AssertionError):
     comet_ml = None
 
 
-def _json_default(value):
-    """Format `value` for JSON serialization (e.g. unwrap tensors).
-
-    Fall back to strings.
-    """
-    if isinstance(value, torch.Tensor):
-        try:
-            value = value.item()
-        except ValueError:  # "only one element tensors can be converted to Python scalars"
-            pass
-    return value if isinstance(value, float) else str(value)
-
-
 class Loggers:
     """Initializes and manages various logging utilities for tracking YOLOv5 training and validation metrics."""
 
@@ -105,8 +91,6 @@ class Loggers:
         for k in LOGGERS:
             setattr(self, k, None)  # init empty logger dictionary
         self.csv = True  # always log to csv
-        self.ndjson_console = "ndjson_console" in self.include  # log ndjson to console
-        self.ndjson_file = "ndjson_file" in self.include  # log ndjson to file
 
         # Messages
         if not comet_ml:
@@ -247,7 +231,7 @@ class Loggers:
             self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
-        """Callback that logs metrics and saves them to CSV or NDJSON at the end of each fit (train+val) epoch."""
+        """Callback that logs metrics and saves them to CSV at the end of each fit (train+val) epoch."""
         x = dict(zip(self.keys, vals))
         if self.csv:
             file = self.save_dir / "results.csv"
@@ -255,14 +239,6 @@ class Loggers:
             s = "" if file.exists() else (("%20s," * n % ("epoch", *self.keys)).rstrip(",") + "\n")  # add header
             with open(file, "a") as f:
                 f.write(s + ("%20.5g," * n % (epoch, *vals)).rstrip(",") + "\n")
-        if self.ndjson_console or self.ndjson_file:
-            json_data = json.dumps(dict(epoch=epoch, **x), default=_json_default)
-        if self.ndjson_console:
-            print(json_data)
-        if self.ndjson_file:
-            file = self.save_dir / "results.ndjson"
-            with open(file, "a") as f:
-                print(json_data, file=f)
 
         if self.tb:
             for k, v in x.items():
