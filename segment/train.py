@@ -593,7 +593,7 @@ def main(opt):
         opt = argparse.Namespace(**d)  # replace
         opt.cfg, opt.weights, opt.resume = "", str(last), True  # reinstate
         if is_url(opt_data):
-            opt.data = check_file(opt_data)  # avoid HUB resume auth timeout
+            opt.data = check_file(opt_data)  # re-resolve a URL dataset locally on resume
     else:
         opt.data, opt.cfg, opt.hyp, opt.weights, opt.project = (
             check_file(opt.data),

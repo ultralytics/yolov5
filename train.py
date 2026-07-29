@@ -594,7 +594,6 @@ def parse_opt(known=False):
     parser.add_argument("--entity", default=None, help="Entity")
     parser.add_argument("--upload_dataset", nargs="?", const=True, default=False, help='Upload data, "val" option')
     parser.add_argument("--bbox_interval", type=int, default=-1, help="Set bounding-box image logging interval")
-    parser.add_argument("--artifact_alias", type=str, default="latest", help="Version of dataset artifact to use")
 
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
@@ -634,7 +633,7 @@ def main(opt, callbacks=None):
         opt = argparse.Namespace(**d)  # replace
         opt.cfg, opt.weights, opt.resume = "", str(last), True  # reinstate
         if is_url(opt_data):
-            opt.data = check_file(opt_data)  # avoid HUB resume auth timeout
+            opt.data = check_file(opt_data)  # re-resolve a URL dataset locally on resume
     else:
         opt.data, opt.cfg, opt.hyp, opt.weights, opt.project = (
             check_file(opt.data),
