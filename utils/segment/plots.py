@@ -12,7 +12,7 @@ import pandas as pd
 import torch
 
 from .. import threaded
-from ..general import xywh2xyxy
+from ..general import LOGGER, xywh2xyxy
 from ..plots import Annotator, colors
 
 
@@ -144,7 +144,7 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
                     ax[i].scatter(x[-1], y[-1], color="r", label="last", marker="*", linewidth=3)
                     ax[i].set_title(s[j] + f"\n{round(y[-1], 5)}")
         except Exception as e:
-            print(f"Warning: Plotting error for {f}: {e}")
+            LOGGER.warning(f"Plotting error for {f}: {e}")
     ax[1].legend()
     fig.savefig(save_dir / "results.png", dpi=200)
     plt.close()

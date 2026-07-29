@@ -3,12 +3,12 @@
 
 import contextlib
 
-from ultralytics.utils import TryExcept, emojis, threaded  # noqa: F401
+from ultralytics.utils import LOGGER, TryExcept, emojis, threaded  # noqa: F401
 
 
 def notebook_init(verbose=True):
     """Initializes notebook environment by checking requirements, cleaning up, and displaying system info."""
-    print("Checking setup...")
+    LOGGER.info("Checking setup...")
 
     import os
     import shutil
@@ -42,5 +42,5 @@ def notebook_init(verbose=True):
         s = ""
 
     select_device(newline=False)
-    print(emojis(f"Setup complete ✅ {s}"))
+    LOGGER.info(emojis(f"Setup complete ✅ {s}"))
     return display

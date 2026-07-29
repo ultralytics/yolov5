@@ -119,7 +119,7 @@ class Loggers:
                 self.clearml = None
                 prefix = colorstr("ClearML: ")
                 LOGGER.warning(
-                    f"{prefix}WARNING ⚠️ ClearML is installed but not configured, skipping ClearML logging."
+                    f"{prefix}ClearML is installed but not configured, skipping ClearML logging."
                     f" See https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration"
                 )
 
@@ -362,7 +362,7 @@ class GenericLogger:
                 self.clearml = None
                 prefix = colorstr("ClearML: ")
                 LOGGER.warning(
-                    f"{prefix}WARNING ⚠️ ClearML is installed but not configured, skipping ClearML logging."
+                    f"{prefix}ClearML is installed but not configured, skipping ClearML logging."
                     f" See https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration"
                 )
         else:
@@ -440,7 +440,7 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
             warnings.simplefilter("ignore")  # suppress jit trace warning
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
     except Exception as e:
-        LOGGER.warning(f"WARNING ⚠️ TensorBoard graph visualization failure {e}")
+        LOGGER.warning(f"TensorBoard graph visualization failure {e}")
 
 
 def web_project_name(project):

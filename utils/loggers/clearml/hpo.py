@@ -6,6 +6,7 @@ from clearml import Task
 # from here on everything is logged automatically
 from clearml.automation import HyperParameterOptimizer, UniformParameterRange
 from clearml.automation.optuna import OptimizerOptuna
+from ultralytics.utils import LOGGER
 
 task = Task.init(
     project_name="Hyper-Parameter Optimization",
@@ -87,4 +88,4 @@ optimizer.wait()
 # make sure background optimization stopped
 optimizer.stop()
 
-print("We are done, good bye")
+LOGGER.info("We are done, good bye")

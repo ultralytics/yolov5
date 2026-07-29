@@ -493,7 +493,7 @@ if __name__ == "__main__":
             try:
                 _ = Model(cfg)
             except Exception as e:
-                print(f"Error in {cfg}: {e}")
+                LOGGER.error(f"in {cfg}: {e}")
 
     else:  # report fused model summary
         model.fuse()
