@@ -46,7 +46,7 @@ from ultralytics.data.converter import coco80_to_coco91_class  # noqa: F401
 from ultralytics.utils import TQDM as _TQDM
 from ultralytics.utils import colorstr, get_default_args  # noqa: F401
 from ultralytics.utils.checks import check_requirements as check_requirements_ultralytics
-from ultralytics.utils.checks import is_ascii, print_args  # noqa: F401
+from ultralytics.utils.checks import is_ascii  # noqa: F401
 from ultralytics.utils.files import WorkingDirectory, file_date, file_size, get_latest_run  # noqa: F401
 from ultralytics.utils.git import GitRepo
 from ultralytics.utils.ops import (  # noqa: F401
@@ -589,6 +589,23 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):  # noqa: 
     # Usage: index = random.choices(range(n), weights=image_weights, k=1)  # weighted image sample
     class_counts = np.array([np.bincount(x[:, 0].astype(int), minlength=nc) for x in labels])
     return (class_weights.reshape(1, nc) * class_counts).sum(1)
+
+
+# Keep local (do not dedup): ultralytics print_args resolves relative_to() its own package root, so it always
+# falls back to Path(file).stem and "segment/train:" / "classify/train:" both collapse to "train:"
+def print_args(args: dict | None = None, show_file=True, show_func=False):
+    """Logs the arguments of the calling function, with options to include the filename and function name."""
+    x = inspect.currentframe().f_back  # previous frame
+    file, _, func, _, _ = inspect.getframeinfo(x)
+    if args is None:  # get args automatically
+        args, _, _, frm = inspect.getargvalues(x)
+        args = {k: v for k, v in frm.items() if k in args}
+    try:
+        file = Path(file).resolve().relative_to(ROOT).with_suffix("")
+    except ValueError:
+        file = Path(file).stem
+    s = (f"{file}: " if show_file else "") + (f"{func}: " if show_func else "")
+    LOGGER.info(colorstr(s) + ", ".join(f"{k}={v}" for k, v in args.items()))
 
 
 # Keep local (do not dedup): ultralytics xyxy2xywh asserts a 4-wide input; models/common.py passes (n, 6)
