@@ -87,7 +87,6 @@ def run(
     classes=None,  # filter by class: --class 0, or --class 0 2 3
     agnostic_nms=False,  # class-agnostic NMS
     augment=False,  # augmented inference
-    visualize=False,  # visualize features
     update=False,  # update all models
     project=ROOT / "runs/detect",  # save results to project/name
     name="exp",  # save results to project/name
@@ -122,7 +121,6 @@ def run(
         classes (list[int]): List of class indices to filter detections by. Default is None.
         agnostic_nms (bool): If True, perform class-agnostic non-max suppression. Default is False.
         augment (bool): If True, use augmented inference. Default is False.
-        visualize (bool): If True, visualize feature maps. Default is False.
         update (bool): If True, update all models' weights. Default is False.
         project (str | Path): Directory to save results. Default is 'runs/detect'.
         name (str): Name of the current experiment; used to create a subdirectory within 'project'. Default is 'exp'.
@@ -215,17 +213,16 @@ def run(
 
         # Inference
         with dt[1]:
-            visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
             if model.xml and im.shape[0] > 1:
                 pred = None
                 for image in ims:
                     if pred is None:
-                        pred = model(image, augment=augment, visualize=visualize).unsqueeze(0)
+                        pred = model(image, augment=augment).unsqueeze(0)
                     else:
-                        pred = torch.cat((pred, model(image, augment=augment, visualize=visualize).unsqueeze(0)), dim=0)
+                        pred = torch.cat((pred, model(image, augment=augment).unsqueeze(0)), dim=0)
                 pred = [pred, None]
             else:
-                pred = model(im, augment=augment, visualize=visualize)
+                pred = model(im, augment=augment)
         # NMS
         with dt[2]:
             pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
@@ -350,7 +347,6 @@ def parse_opt():
             None.
         --agnostic-nms (bool, optional): Flag for class-agnostic NMS. Defaults to False.
         --augment (bool, optional): Flag for augmented inference. Defaults to False.
-        --visualize (bool, optional): Flag for visualizing features. Defaults to False.
         --update (bool, optional): Flag to update all models in the model directory. Defaults to False.
         --project (str, optional): Directory to save results. Defaults to ROOT / 'runs/detect'.
         --name (str, optional): Sub-directory name for saving results within --project. Defaults to 'exp'.
@@ -396,7 +392,6 @@ def parse_opt():
     parser.add_argument("--classes", nargs="+", type=int, help="filter by class: --classes 0, or --classes 0 2 3")
     parser.add_argument("--agnostic-nms", action="store_true", help="class-agnostic NMS")
     parser.add_argument("--augment", action="store_true", help="augmented inference")
-    parser.add_argument("--visualize", action="store_true", help="visualize features")
     parser.add_argument("--update", action="store_true", help="update all models")
     parser.add_argument("--project", default=ROOT / "runs/detect", help="save results to project/name")
     parser.add_argument("--name", default="exp", help="save results to project/name")

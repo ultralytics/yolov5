@@ -68,31 +68,6 @@ except ImportError:
     thop = None
 
 
-def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detect/exp")):
-    """Visualize feature maps of a given model module during inference."""
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    if any(m in module_type for m in ("Detect", "Segment", "Classify")):
-        return
-    if isinstance(x, torch.Tensor):
-        _, channels, height, width = x.shape
-        if height > 1 and width > 1:
-            f = save_dir / f"stage{stage}_{module_type.rsplit('.', 1)[-1]}_features.png"
-            blocks = torch.chunk(x[0].cpu(), channels, dim=0)
-            n = min(n, channels)
-            _, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)
-            ax = ax.ravel()
-            plt.subplots_adjust(wspace=0.05, hspace=0.05)
-            for i in range(n):
-                ax[i].imshow(blocks[i].squeeze().numpy())
-                ax[i].axis("off")
-            LOGGER.info(f"Saving {f}... ({n}/{channels})")
-            plt.savefig(f, dpi=300, bbox_inches="tight")
-            plt.close()
-            np.save(str(f.with_suffix(".npy")), x[0].cpu().numpy())
-
-
 class Detect(nn.Module):
     """YOLOv5 Detect head for processing input tensors and generating detection outputs in object detection models."""
 
@@ -178,14 +153,12 @@ class Segment(Detect):
 class BaseModel(nn.Module):
     """YOLOv5 base model."""
 
-    def forward(self, x, profile=False, visualize=False):
-        """Executes a single-scale inference or training pass on the YOLOv5 base model, with options for profiling and
-        visualization.
-        """
-        return self._forward_once(x, profile, visualize)  # single-scale inference, train
+    def forward(self, x, profile=False):
+        """Executes a single-scale inference or training pass on the YOLOv5 base model."""
+        return self._forward_once(x, profile)  # single-scale inference, train
 
-    def _forward_once(self, x, profile=False, visualize=False):
-        """Performs a forward pass on the YOLOv5 model, enabling profiling and feature visualization options."""
+    def _forward_once(self, x, profile=False):
+        """Performs a forward pass on the YOLOv5 model, enabling profiling when requested."""
         y, dt = [], []  # outputs
         for m in self.model:
             if m.f != -1:  # if not from previous layer
@@ -194,8 +167,6 @@ class BaseModel(nn.Module):
                 self._profile_one_layer(m, x, dt)
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
-            if visualize:
-                feature_visualization(x, m.type, m.i, save_dir=visualize)
         return x
 
     def _profile_one_layer(self, m, x, dt):
@@ -289,11 +260,11 @@ class DetectionModel(BaseModel):
         self.info()
         LOGGER.info("")
 
-    def forward(self, x, augment=False, profile=False, visualize=False):
-        """Performs single-scale or augmented inference and may include profiling or visualization."""
+    def forward(self, x, augment=False, profile=False):
+        """Performs single-scale or augmented inference and may include profiling."""
         if augment:
             return self._forward_augment(x)  # augmented inference, None
-        return self._forward_once(x, profile, visualize)  # single-scale inference, train
+        return self._forward_once(x, profile)  # single-scale inference, train
 
     def _forward_augment(self, x):
         """Performs augmented inference across different scales and flips, returning combined detections."""

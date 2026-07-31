@@ -85,7 +85,6 @@ def run(
     classes=None,  # filter by class: --class 0, or --class 0 2 3
     agnostic_nms=False,  # class-agnostic NMS
     augment=False,  # augmented inference
-    visualize=False,  # visualize features
     update=False,  # update all models
     project=ROOT / "runs/predict-seg",  # save results to project/name
     name="exp",  # save results to project/name
@@ -143,8 +142,7 @@ def run(
 
         # Inference
         with dt[1]:
-            visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
-            pred, proto = model(im, augment=augment, visualize=visualize)[:2]
+            pred, proto = model(im, augment=augment)[:2]
 
         # NMS
         with dt[2]:
@@ -271,7 +269,6 @@ def parse_opt():
     parser.add_argument("--classes", nargs="+", type=int, help="filter by class: --classes 0, or --classes 0 2 3")
     parser.add_argument("--agnostic-nms", action="store_true", help="class-agnostic NMS")
     parser.add_argument("--augment", action="store_true", help="augmented inference")
-    parser.add_argument("--visualize", action="store_true", help="visualize features")
     parser.add_argument("--update", action="store_true", help="update all models")
     parser.add_argument("--project", default=ROOT / "runs/predict-seg", help="save results to project/name")
     parser.add_argument("--name", default="exp", help="save results to project/name")
