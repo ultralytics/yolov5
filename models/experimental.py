@@ -48,9 +48,9 @@ class MixConv2d(nn.Module):
 class Ensemble(nn.ModuleList):
     """Ensemble of models."""
 
-    def forward(self, x, augment=False, profile=False, visualize=False):
+    def forward(self, x, augment=False, profile=False):
         """Performs forward pass aggregating outputs from an ensemble of models."""
-        y = [module(x, augment, profile, visualize)[0] for module in self]
+        y = [module(x, augment, profile)[0] for module in self]
         # y = torch.stack(y).max(0)[0]  # max ensemble
         # y = torch.stack(y).mean(0)  # mean ensemble
         y = torch.cat(y, 1)  # nms ensemble
