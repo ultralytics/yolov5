@@ -97,7 +97,7 @@ export = [
 # tensorrt  # TensorRT export
 logging = [
     "comet_ml", # https://docs.ultralytics.com/integrations/comet/
-    "tensorboard>=2.13.0",
+    "tensorboard>=2.21.0",
 ]
 extra = [
     "ipython", # interactive notebook
