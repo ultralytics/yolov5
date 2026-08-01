@@ -37,7 +37,7 @@ seaborn>=0.11.0
 
 # Deploy ----------------------------------------------------------------------
 packaging  # Migration of deprecated pkg_resources packages
-setuptools>=70.0.0 # Snyk vulnerability fix
+setuptools>=83.0.0 # Snyk vulnerability fix
 # tritonclient[all]~=2.24.0
 
 # Extras ----------------------------------------------------------------------
