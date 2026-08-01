@@ -4,7 +4,7 @@
 # Base ------------------------------------------------------------------------
 matplotlib>=3.3
 numpy>=1.23.5
-opencv-python>=4.6.0
+opencv-python>=5.0.0.93
 pillow>=10.3.0
 psutil  # system resources
 PyYAML>=5.3.1
