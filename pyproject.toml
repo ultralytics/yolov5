@@ -115,10 +115,6 @@ extra = [
 [tool.pytest.ini_options]
 norecursedirs = [".git", "dist", "build"]
 
-[tool.isort]
-line_length = 120
-multi_line_output = 0
-
 [tool.ruff]
 line-length = 120
 
@@ -144,5 +140,5 @@ pre-summary-newline = true
 close-quotes-on-newline = true
 
 [tool.codespell]
-ignore-words-list = "crate,nd,strack,dota,ane,segway,fo,gool,winn,commend"
-skip = '*.csv,*venv*,docs/??/,docs/mkdocs_??.yml'
+ignore-words-list = "grey,nd,writeable"
+skip = '*venv*'
