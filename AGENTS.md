@@ -14,7 +14,7 @@ This file provides guidance to AI coding agents (Claude Code, etc.) when working
 
 **Review gate:** for every addition, the reviewer decides whether deleting or changing existing code would have fixed the problem instead — if it would, that is a blocking finding. A missing or thin PR description is never itself a finding.
 
-NEVER push to `master`. NEVER force push. Always start work in a new git worktree (`git worktree add`) on a feature branch and open a PR — never edit the primary checkout directly, it may hold in-flight work.
+NEVER push to `main`. NEVER force push. Always start work in a new git worktree (`git worktree add`) on a feature branch and open a PR — never edit the primary checkout directly, it may hold in-flight work.
 
 ## PR Workflow
 
@@ -24,7 +24,7 @@ After opening a PR:
 2. Review the full diff in-session against the Core Principles, performance, and the review gate above, then batch the fixes into one commit and push. After each round of bot or human commits, pull and resume the same reviewer on `<last-reviewed-sha>..HEAD` plus anything that delta could have invalidated. Repeat until the local head matches the live head.
 3. Hand off or merge only on a clean final pass: one cold full-diff review returning LGTM with no findings, on a head that is still live at merge time.
 4. Never fight other commits: Ultralytics Actions pushes auto-format and header commits, and multiple users may work on the same PR. `git pull --rebase` before pushing; never reset or revert commits you did not author.
-5. After the PR merges, clean up: remove local worktrees and branches for it, then `git checkout master && git pull`.
+5. After the PR merges, clean up: remove local worktrees and branches for it, then `git checkout main && git pull`.
 
 ## Commands
 
