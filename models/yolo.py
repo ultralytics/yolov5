@@ -25,8 +25,6 @@ if str(ROOT) not in sys.path:
 if platform.system() != "Windows":
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from ultralytics.utils.plotting import feature_visualization
-
 from models.common import (
     C3,
     C3SPP,
@@ -155,14 +153,12 @@ class Segment(Detect):
 class BaseModel(nn.Module):
     """YOLOv5 base model."""
 
-    def forward(self, x, profile=False, visualize=False):
-        """Executes a single-scale inference or training pass on the YOLOv5 base model, with options for profiling and
-        visualization.
-        """
-        return self._forward_once(x, profile, visualize)  # single-scale inference, train
+    def forward(self, x, profile=False):
+        """Executes a single-scale inference or training pass on the YOLOv5 base model."""
+        return self._forward_once(x, profile)  # single-scale inference, train
 
-    def _forward_once(self, x, profile=False, visualize=False):
-        """Performs a forward pass on the YOLOv5 model, enabling profiling and feature visualization options."""
+    def _forward_once(self, x, profile=False):
+        """Performs a forward pass on the YOLOv5 model, enabling profiling when requested."""
         y, dt = [], []  # outputs
         for m in self.model:
             if m.f != -1:  # if not from previous layer
@@ -171,8 +167,6 @@ class BaseModel(nn.Module):
                 self._profile_one_layer(m, x, dt)
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
-            if visualize:
-                feature_visualization(x, m.type, m.i, save_dir=visualize)
         return x
 
     def _profile_one_layer(self, m, x, dt):
@@ -266,11 +260,11 @@ class DetectionModel(BaseModel):
         self.info()
         LOGGER.info("")
 
-    def forward(self, x, augment=False, profile=False, visualize=False):
-        """Performs single-scale or augmented inference and may include profiling or visualization."""
+    def forward(self, x, augment=False, profile=False):
+        """Performs single-scale or augmented inference and may include profiling."""
         if augment:
             return self._forward_augment(x)  # augmented inference, None
-        return self._forward_once(x, profile, visualize)  # single-scale inference, train
+        return self._forward_once(x, profile)  # single-scale inference, train
 
     def _forward_augment(self, x):
         """Performs augmented inference across different scales and flips, returning combined detections."""

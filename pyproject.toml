@@ -49,6 +49,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -74,7 +75,7 @@ dependencies = [
     "pandas>=1.1.4",
     "seaborn>=0.11.0", # plotting
     "packaging", # general utilities
-    "ultralytics>=8.4.109"
+    "ultralytics>=8.4.110"
 ]
 
 # Optional dependencies ------------------------------------------------------------------------------------------------
@@ -114,10 +115,6 @@ extra = [
 [tool.pytest.ini_options]
 norecursedirs = [".git", "dist", "build"]
 
-[tool.isort]
-line_length = 120
-multi_line_output = 0
-
 [tool.ruff]
 line-length = 120
 
@@ -143,5 +140,5 @@ pre-summary-newline = true
 close-quotes-on-newline = true
 
 [tool.codespell]
-ignore-words-list = "crate,nd,strack,dota,ane,segway,fo,gool,winn,commend"
-skip = '*.csv,*venv*,docs/??/,docs/mkdocs_??.yml'
+ignore-words-list = "grey,nd,writeable"
+skip = '*venv*'
