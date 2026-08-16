@@ -45,5 +45,3 @@ setuptools>=70.0.0 # Snyk vulnerability fix
 # mss  # screenshots
 # albumentations>=1.0.3
 # pycocotools>=2.0.6  # COCO mAP
-urllib3>=2.6.0 ; python_version > '3.8' # not directly required, pinned by Snyk to avoid a vulnerability
-filelock>=3.32.2 ; python_version >= '3.10' # not directly required, pinned by Snyk to avoid a vulnerability
