@@ -47,7 +47,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     Notes:
         For more information on model loading and customization, visit the
-        [YOLOv5 PyTorch Hub Documentation](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading).
+        [YOLOv5 PyTorch Hub Documentation](https://docs.ultralytics.com/yolov5/tutorials/pytorch-hub-model-loading).
     """
     import logging
     from pathlib import Path
@@ -98,7 +98,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         return model.to(device)
 
     except Exception as e:
-        help_url = "https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading"
+        help_url = "https://docs.ultralytics.com/yolov5/tutorials/pytorch-hub-model-loading"
         s = f"{e}. Cache may be out of date, try `force_reload=True` or see {help_url} for help."
         raise RuntimeError(s) from e
 
@@ -132,7 +132,7 @@ def custom(path="path/to/model.pt", autoshape=True, _verbose=True, device=None):
 
     Notes:
         For more details on loading models from PyTorch Hub:
-        https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading
+        https://docs.ultralytics.com/yolov5/tutorials/pytorch-hub-model-loading
     """
     return _create(path, autoshape=autoshape, verbose=_verbose, device=device)
 

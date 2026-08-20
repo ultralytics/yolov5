@@ -50,7 +50,7 @@ from utils.general import (
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
-HELP_URL = "See https://docs.ultralytics.com/yolov5/tutorials/train_custom_data"
+HELP_URL = "See https://docs.ultralytics.com/yolov5/tutorials/train-custom-data"
 IMG_FORMATS = "bmp", "dng", "jpeg", "jpg", "mpo", "png", "tif", "tiff", "webp", "pfm"  # include image suffixes
 VID_FORMATS = "asf", "avi", "gif", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "ts", "wmv"  # include video suffixes
 LOCAL_RANK = int(os.getenv("LOCAL_RANK", "-1"))  # https://pytorch.org/docs/stable/elastic/run.html

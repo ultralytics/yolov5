@@ -11,7 +11,7 @@
 # - [tool.*]: Configures settings for various tools (pytest, ruff, etc.) used in the project.
 
 # Documentation:
-# For comprehensive documentation and usage instructions, visit: https://docs.ultralytics.com/yolov5/
+# For comprehensive documentation and usage instructions, visit: https://docs.ultralytics.com/yolov5
 
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
@@ -97,7 +97,7 @@ export = [
 # tflite-support  # for TFLite model metadata
 # tensorrt  # TensorRT export
 logging = [
-    "comet_ml", # https://docs.ultralytics.com/integrations/comet/
+    "comet_ml", # https://docs.ultralytics.com/integrations/comet
     "tensorboard>=2.13.0",
 ]
 extra = [
