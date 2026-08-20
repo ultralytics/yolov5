@@ -9,7 +9,7 @@
 <div>
     <a href="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml"><img src="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml/badge.svg" alt="YOLOv5 CI Testing"></a>
     <a href="https://hub.docker.com/r/ultralytics/yolov5"><img src="https://img.shields.io/docker/pulls/ultralytics/yolov5?logo=docker" alt="Docker Pulls"></a>
-    <a href="https://discord.com/invite/ultralytics"><img alt="Discord" src="https://img.shields.io/discord/1089800235347353640?logo=discord&logoColor=white&label=Discord&color=blue"></a> <a href="https://community.ultralytics.com/"><img alt="Ultralytics Forums" src="https://img.shields.io/discourse/users?server=https%3A%2F%2Fcommunity.ultralytics.com&logo=discourse&label=Forums&color=blue"></a> <a href="https://www.reddit.com/r/ultralytics/"><img alt="Ultralytics Reddit" src="https://img.shields.io/reddit/subreddit-subscribers/ultralytics?style=flat&logo=reddit&logoColor=white&label=Reddit&color=blue"></a>
+    <a href="https://discord.com/invite/ultralytics"><img alt="Discord" src="https://img.shields.io/discord/1089800235347353640?logo=discord&logoColor=white&label=Discord&color=blue"></a> <a href="https://community.ultralytics.com"><img alt="Ultralytics Forums" src="https://img.shields.io/discourse/users?server=https%3A%2F%2Fcommunity.ultralytics.com&logo=discourse&label=Forums&color=blue"></a> <a href="https://www.reddit.com/r/ultralytics/"><img alt="Ultralytics Reddit" src="https://img.shields.io/reddit/subreddit-subscribers/ultralytics?style=flat&logo=reddit&logoColor=white&label=Reddit&color=blue"></a>
     <br>
     <a href="https://console.paperspace.com/github/ultralytics/yolov5"><img src="https://img.shields.io/badge/Run%20on-Gradient-0A0A0A" alt="Run on Gradient"></a>
     <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
@@ -17,7 +17,7 @@
   </div>
   <br>
 
-Ultralytics YOLOv5 🚀 is a fast, accurate, and easy-to-use computer vision model developed by [Ultralytics](https://www.ultralytics.com/). Based on the [PyTorch](https://pytorch.org/) framework, YOLOv5 is renowned for its speed, accuracy, and simplicity. It incorporates insights and best practices from extensive research and development, making it a popular and reliable choice for a wide range of vision AI tasks, including [object detection](https://docs.ultralytics.com/tasks/detect), [image segmentation](https://docs.ultralytics.com/tasks/segment), and [image classification](https://docs.ultralytics.com/tasks/classify).
+Ultralytics YOLOv5 🚀 is a fast, accurate, and easy-to-use computer vision model developed by [Ultralytics](https://www.ultralytics.com). Based on the [PyTorch](https://pytorch.org/) framework, YOLOv5 is renowned for its speed, accuracy, and simplicity. It incorporates insights and best practices from extensive research and development, making it a popular and reliable choice for a wide range of vision AI tasks, including [object detection](https://docs.ultralytics.com/tasks/detect), [image segmentation](https://docs.ultralytics.com/tasks/segment), and [image classification](https://docs.ultralytics.com/tasks/classify).
 
 We hope the resources here help you get the most out of YOLOv5. Please browse the [YOLOv5 Docs](https://docs.ultralytics.com/yolov5) for detailed information, raise an issue on [GitHub](https://github.com/ultralytics/yolov5/issues/new/choose) for support, and join our [Discord community](https://discord.com/invite/ultralytics) for questions and discussions!
 
@@ -44,7 +44,7 @@ To request an Enterprise License, please complete the form at [Ultralytics Licen
 
 ## 🚀 Explore the Ultralytics YOLO Ecosystem
 
-YOLOv5 is a mature, production-proven model that remains an excellent choice for fast and reliable [object detection](https://docs.ultralytics.com/tasks/detect), [instance segmentation](https://docs.ultralytics.com/tasks/segment), and [image classification](https://docs.ultralytics.com/tasks/classify). If your project calls for the newest architectures, additional tasks such as [pose estimation](https://docs.ultralytics.com/tasks/pose) and [oriented object detection (OBB)](https://docs.ultralytics.com/tasks/obb), or a unified Python and CLI interface, the actively maintained [`ultralytics`](https://github.com/ultralytics/ultralytics) package brings the latest [Ultralytics YOLO models](https://docs.ultralytics.com/models) together in one place. Explore the [Ultralytics Docs](https://docs.ultralytics.com/) to find the best fit for your use case.
+YOLOv5 is a mature, production-proven model that remains an excellent choice for fast and reliable [object detection](https://docs.ultralytics.com/tasks/detect), [instance segmentation](https://docs.ultralytics.com/tasks/segment), and [image classification](https://docs.ultralytics.com/tasks/classify). If your project calls for the newest architectures, additional tasks such as [pose estimation](https://docs.ultralytics.com/tasks/pose) and [oriented object detection (OBB)](https://docs.ultralytics.com/tasks/obb), or a unified Python and CLI interface, the actively maintained [`ultralytics`](https://github.com/ultralytics/ultralytics) package brings the latest [Ultralytics YOLO models](https://docs.ultralytics.com/models) together in one place. Explore the [Ultralytics Docs](https://docs.ultralytics.com) to find the best fit for your use case.
 
 ```bash
 # Install the ultralytics package for the latest Ultralytics YOLO models
@@ -81,7 +81,7 @@ pip install -r requirements.txt
 <details open>
 <summary>Inference with PyTorch Hub</summary>
 
-Use YOLOv5 via [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading) for inference. [Models](https://github.com/ultralytics/yolov5/tree/master/models) are automatically downloaded from the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases).
+Use YOLOv5 via [PyTorch Hub](https://docs.ultralytics.com/yolov5/tutorials/pytorch-hub-model-loading) for inference. [Models](https://github.com/ultralytics/yolov5/tree/master/models) are automatically downloaded from the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases).
 
 ```python
 import torch
@@ -145,7 +145,7 @@ python detect.py --weights yolov5s.pt --source 'rtsp://example.com/media.mp4'
 <details>
 <summary>Training</summary>
 
-The commands below demonstrate how to reproduce YOLOv5 [COCO dataset](https://docs.ultralytics.com/datasets/detect/coco) results. Both [models](https://github.com/ultralytics/yolov5/tree/master/models) and [datasets](https://github.com/ultralytics/yolov5/tree/master/data) are downloaded automatically from the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases). Training times for YOLOv5n/s/m/l/x are approximately 1/2/4/6/8 days on a single [NVIDIA V100 GPU](https://www.nvidia.com/en-us/data-center/v100/). Using [Multi-GPU training](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training) can significantly reduce training time. Use the largest `--batch-size` your hardware allows, or use `--batch-size -1` for YOLOv5 [AutoBatch](https://github.com/ultralytics/yolov5/pull/5092). The batch sizes shown below are for V100-16GB GPUs.
+The commands below demonstrate how to reproduce YOLOv5 [COCO dataset](https://docs.ultralytics.com/datasets/detect/coco) results. Both [models](https://github.com/ultralytics/yolov5/tree/master/models) and [datasets](https://github.com/ultralytics/yolov5/tree/master/data) are downloaded automatically from the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases). Training times for YOLOv5n/s/m/l/x are approximately 1/2/4/6/8 days on a single [NVIDIA V100 GPU](https://www.nvidia.com/en-us/data-center/v100/). Using [Multi-GPU training](https://docs.ultralytics.com/yolov5/tutorials/multi-gpu-training) can significantly reduce training time. Use the largest `--batch-size` your hardware allows, or use `--batch-size -1` for YOLOv5 [AutoBatch](https://github.com/ultralytics/yolov5/pull/5092). The batch sizes shown below are for V100-16GB GPUs.
 
 ```bash
 # Train YOLOv5n on COCO for 300 epochs
@@ -171,22 +171,22 @@ python train.py --data coco.yaml --epochs 300 --weights '' --cfg yolov5x.yaml --
 <details open>
 <summary>Tutorials</summary>
 
-- **[Train Custom Data](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data)** 🚀 **RECOMMENDED**: Learn how to train YOLOv5 on your own datasets.
+- **[Train Custom Data](https://docs.ultralytics.com/yolov5/tutorials/train-custom-data)** 🚀 **RECOMMENDED**: Learn how to train YOLOv5 on your own datasets.
 - **[Tips for Best Training Results](https://docs.ultralytics.com/guides/model-training-tips)** ☘️: Improve your model's performance with expert tips.
-- **[Multi-GPU Training](https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training)**: Speed up training using multiple GPUs.
-- **[PyTorch Hub Integration](https://docs.ultralytics.com/yolov5/tutorials/pytorch_hub_model_loading)**: Easily load models using PyTorch Hub.
-- **[Model Export (TFLite, ONNX, CoreML, TensorRT)](https://docs.ultralytics.com/yolov5/tutorials/model_export)** 🚀: Convert your models to various deployment formats like [ONNX](https://onnx.ai/) or [TensorRT](https://developer.nvidia.com/tensorrt).
+- **[Multi-GPU Training](https://docs.ultralytics.com/yolov5/tutorials/multi-gpu-training)**: Speed up training using multiple GPUs.
+- **[PyTorch Hub Integration](https://docs.ultralytics.com/yolov5/tutorials/pytorch-hub-model-loading)**: Easily load models using PyTorch Hub.
+- **[Model Export (TFLite, ONNX, CoreML, TensorRT)](https://docs.ultralytics.com/yolov5/tutorials/model-export)** 🚀: Convert your models to various deployment formats like [ONNX](https://onnx.ai/) or [TensorRT](https://developer.nvidia.com/tensorrt).
 - **[NVIDIA Jetson Deployment](https://docs.ultralytics.com/guides/nvidia-jetson)**: Deploy YOLOv5 on [NVIDIA Jetson](https://developer.nvidia.com/embedded-computing) devices.
-- **[Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation)**: Enhance prediction accuracy with TTA.
-- **[Model Ensembling](https://docs.ultralytics.com/yolov5/tutorials/model_ensembling)**: Combine multiple models for better performance.
-- **[Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/tutorials/model_pruning_and_sparsity)**: Optimize models for size and speed.
-- **[Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter_evolution)**: Automatically find the best training hyperparameters.
-- **[Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/tutorials/transfer_learning_with_frozen_layers)**: Adapt pretrained models to new tasks efficiently using [transfer learning](https://www.ultralytics.com/glossary/transfer-learning).
-- **[Architecture Summary](https://docs.ultralytics.com/yolov5/tutorials/architecture_description)**: Understand the YOLOv5 model architecture.
+- **[Test-Time Augmentation (TTA)](https://docs.ultralytics.com/yolov5/tutorials/test-time-augmentation)**: Enhance prediction accuracy with TTA.
+- **[Model Ensembling](https://docs.ultralytics.com/yolov5/tutorials/model-ensembling)**: Combine multiple models for better performance.
+- **[Model Pruning/Sparsity](https://docs.ultralytics.com/yolov5/tutorials/model-pruning-and-sparsity)**: Optimize models for size and speed.
+- **[Hyperparameter Evolution](https://docs.ultralytics.com/yolov5/tutorials/hyperparameter-evolution)**: Automatically find the best training hyperparameters.
+- **[Transfer Learning with Frozen Layers](https://docs.ultralytics.com/yolov5/tutorials/transfer-learning-with-frozen-layers)**: Adapt pretrained models to new tasks efficiently using [transfer learning](https://www.ultralytics.com/glossary/transfer-learning).
+- **[Architecture Summary](https://docs.ultralytics.com/yolov5/tutorials/architecture-description)**: Understand the YOLOv5 model architecture.
 - **[Ultralytics Platform Training](https://platform.ultralytics.com)** 🚀 **RECOMMENDED**: Train and deploy YOLO models using Ultralytics Platform.
-- **[ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml_logging_integration)**: Integrate with [ClearML](https://clear.ml/) for experiment tracking.
-- **[Neural Magic DeepSparse Integration](https://docs.ultralytics.com/yolov5/tutorials/neural_magic_pruning_quantization)**: Accelerate inference with DeepSparse.
-- **[Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet_logging_integration)**: Log experiments using [Comet ML](https://www.comet.com/site/).
+- **[ClearML Logging](https://docs.ultralytics.com/yolov5/tutorials/clearml-logging-integration)**: Integrate with [ClearML](https://clear.ml/) for experiment tracking.
+- **[Neural Magic DeepSparse Integration](https://docs.ultralytics.com/yolov5/tutorials/neural-magic-pruning-quantization)**: Accelerate inference with DeepSparse.
+- **[Comet Logging](https://docs.ultralytics.com/yolov5/tutorials/comet-logging-integration)**: Log experiments using [Comet ML](https://www.comet.com/site/).
 
 </details>
 
@@ -222,19 +222,19 @@ YOLOv5 is designed for simplicity and ease of use. We prioritize real-world perf
 
 This table shows the performance metrics for various YOLOv5 models trained on the COCO dataset.
 
-| Model                                                                                                                                                                    | Size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Speed<br><sup>CPU b1<br>(ms) | Speed<br><sup>V100 b1<br>(ms) | Speed<br><sup>V100 b32<br>(ms) | Params<br><sup>(M) | FLOPs<br><sup>@640 (B) |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- | -------------------- | ----------------- | ---------------------------- | ----------------------------- | ------------------------------ | ------------------ | ---------------------- |
-| [YOLOv5n](https://platform.ultralytics.com/ultralytics/yolov5/yolov5nu)                                                                                                  | 640                   | 28.0                 | 45.7              | **45**                       | **6.3**                       | **0.6**                        | **1.9**            | **4.5**                |
-| [YOLOv5s](https://platform.ultralytics.com/ultralytics/yolov5/yolov5su)                                                                                                  | 640                   | 37.4                 | 56.8              | 98                           | 6.4                           | 0.9                            | 7.2                | 16.5                   |
-| [YOLOv5m](https://platform.ultralytics.com/ultralytics/yolov5/yolov5mu)                                                                                                  | 640                   | 45.4                 | 64.1              | 224                          | 8.2                           | 1.7                            | 21.2               | 49.0                   |
-| [YOLOv5l](https://platform.ultralytics.com/ultralytics/yolov5/yolov5lu)                                                                                                  | 640                   | 49.0                 | 67.3              | 430                          | 10.1                          | 2.7                            | 46.5               | 109.1                  |
-| [YOLOv5x](https://platform.ultralytics.com/ultralytics/yolov5/yolov5xu)                                                                                                  | 640                   | 50.7                 | 68.9              | 766                          | 12.1                          | 4.8                            | 86.7               | 205.7                  |
-|                                                                                                                                                                          |                       |                      |                   |                              |                               |                                |                    |                        |
-| [YOLOv5n6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5n6.pt)                                                                                     | 1280                  | 36.0                 | 54.4              | 153                          | 8.1                           | 2.1                            | 3.2                | 4.6                    |
-| [YOLOv5s6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5s6.pt)                                                                                     | 1280                  | 44.8                 | 63.7              | 385                          | 8.2                           | 3.6                            | 12.6               | 16.8                   |
-| [YOLOv5m6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5m6.pt)                                                                                     | 1280                  | 51.3                 | 69.3              | 887                          | 11.1                          | 6.8                            | 35.7               | 50.0                   |
-| [YOLOv5l6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5l6.pt)                                                                                     | 1280                  | 53.7                 | 71.3              | 1784                         | 15.8                          | 10.5                           | 76.8               | 111.4                  |
-| [YOLOv5x6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5x6.pt)<br>+ [[TTA]](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation/) | 1280<br>1536          | 55.0<br>**55.8**     | 72.7<br>**72.7**  | 3136<br>-                    | 26.2<br>-                     | 19.4<br>-                      | 140.7<br>-         | 209.8<br>-             |
+| Model                                                                                                                                                                   | Size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Speed<br><sup>CPU b1<br>(ms) | Speed<br><sup>V100 b1<br>(ms) | Speed<br><sup>V100 b32<br>(ms) | Params<br><sup>(M) | FLOPs<br><sup>@640 (B) |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | -------------------- | ----------------- | ---------------------------- | ----------------------------- | ------------------------------ | ------------------ | ---------------------- |
+| [YOLOv5n](https://platform.ultralytics.com/ultralytics/yolov5/yolov5nu)                                                                                                 | 640                   | 28.0                 | 45.7              | **45**                       | **6.3**                       | **0.6**                        | **1.9**            | **4.5**                |
+| [YOLOv5s](https://platform.ultralytics.com/ultralytics/yolov5/yolov5su)                                                                                                 | 640                   | 37.4                 | 56.8              | 98                           | 6.4                           | 0.9                            | 7.2                | 16.5                   |
+| [YOLOv5m](https://platform.ultralytics.com/ultralytics/yolov5/yolov5mu)                                                                                                 | 640                   | 45.4                 | 64.1              | 224                          | 8.2                           | 1.7                            | 21.2               | 49.0                   |
+| [YOLOv5l](https://platform.ultralytics.com/ultralytics/yolov5/yolov5lu)                                                                                                 | 640                   | 49.0                 | 67.3              | 430                          | 10.1                          | 2.7                            | 46.5               | 109.1                  |
+| [YOLOv5x](https://platform.ultralytics.com/ultralytics/yolov5/yolov5xu)                                                                                                 | 640                   | 50.7                 | 68.9              | 766                          | 12.1                          | 4.8                            | 86.7               | 205.7                  |
+|                                                                                                                                                                         |                       |                      |                   |                              |                               |                                |                    |                        |
+| [YOLOv5n6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5n6.pt)                                                                                    | 1280                  | 36.0                 | 54.4              | 153                          | 8.1                           | 2.1                            | 3.2                | 4.6                    |
+| [YOLOv5s6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5s6.pt)                                                                                    | 1280                  | 44.8                 | 63.7              | 385                          | 8.2                           | 3.6                            | 12.6               | 16.8                   |
+| [YOLOv5m6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5m6.pt)                                                                                    | 1280                  | 51.3                 | 69.3              | 887                          | 11.1                          | 6.8                            | 35.7               | 50.0                   |
+| [YOLOv5l6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5l6.pt)                                                                                    | 1280                  | 53.7                 | 71.3              | 1784                         | 15.8                          | 10.5                           | 76.8               | 111.4                  |
+| [YOLOv5x6](https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5x6.pt)<br>+ [[TTA]](https://docs.ultralytics.com/yolov5/tutorials/test-time-augmentation) | 1280<br>1536          | 55.0<br>**55.8**     | 72.7<br>**72.7**  | 3136<br>-                    | 26.2<br>-                     | 19.4<br>-                      | 140.7<br>-         | 209.8<br>-             |
 
 <details>
   <summary>Table Notes</summary>
@@ -243,7 +243,7 @@ This table shows the performance metrics for various YOLOv5 models trained on th
 - All checkpoints were trained for 300 epochs using default settings. Nano (n) and Small (s) models use [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyperparameters, while Medium (m), Large (l), and Extra-Large (x) models use [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
 - **mAP<sup>val</sup>** values represent single-model, single-scale performance on the [COCO val2017 dataset](https://docs.ultralytics.com/datasets/detect/coco).<br>Reproduce using: `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
 - **Speed** metrics are averaged over COCO val images using an [AWS p3.2xlarge V100 instance](https://aws.amazon.com/ec2/instance-types/p4/). Non-Maximum Suppression (NMS) time (~1 ms/image) is not included.<br>Reproduce using: `python val.py --data coco.yaml --img 640 --task speed --batch 1`
-- **TTA** ([Test Time Augmentation](https://docs.ultralytics.com/yolov5/tutorials/test_time_augmentation)) includes reflection and scale augmentations for improved accuracy.<br>Reproduce using: `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+- **TTA** ([Test Time Augmentation](https://docs.ultralytics.com/yolov5/tutorials/test-time-augmentation)) includes reflection and scale augmentations for improved accuracy.<br>Reproduce using: `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
@@ -440,10 +440,10 @@ Get started quickly with our pre-configured environments. Click the icons below 
   <a href="https://hub.docker.com/r/ultralytics/yolov5" title="Pull Docker Image">
     <img src="https://github.com/ultralytics/assets/releases/download/v0.0.0/logo-docker-small.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
-  <a href="https://docs.ultralytics.com/yolov5/environments/aws_quickstart_tutorial" title="AWS Quickstart Guide">
+  <a href="https://docs.ultralytics.com/yolov5/environments/aws-quickstart-tutorial" title="AWS Quickstart Guide">
     <img src="https://github.com/ultralytics/assets/releases/download/v0.0.0/logo-aws-small.png" width="10%" /></a>
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="5%" alt="" />
-  <a href="https://docs.ultralytics.com/yolov5/environments/google_cloud_quickstart_tutorial" title="GCP Quickstart Guide">
+  <a href="https://docs.ultralytics.com/yolov5/environments/google-cloud-quickstart-tutorial" title="GCP Quickstart Guide">
     <img src="https://github.com/ultralytics/assets/releases/download/v0.0.0/logo-gcp-small.png" width="10%" /></a>
 </div>
 

@@ -12,7 +12,7 @@ Usage - Multi-GPU DDP training:
 
 Models:     https://github.com/ultralytics/yolov5/tree/master/models
 Datasets:   https://github.com/ultralytics/yolov5/tree/master/data
-Tutorial:   https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+Tutorial:   https://docs.ultralytics.com/yolov5/tutorials/train-custom-data
 """
 
 import argparse
@@ -234,7 +234,7 @@ def train(hyp, opt, device):
     if cuda and RANK == -1 and torch.cuda.device_count() > 1:
         LOGGER.warning(
             "DP not recommended, use torch.distributed.run for best DDP Multi-GPU results.\n"
-            "See Multi-GPU Tutorial at https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training to get started."
+            "See Multi-GPU Tutorial at https://docs.ultralytics.com/yolov5/tutorials/multi-gpu-training to get started."
         )
         model = torch.nn.DataParallel(model)
 

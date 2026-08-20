@@ -11,7 +11,7 @@ Usage - Multi-GPU DDP training:
 
 Models:     https://github.com/ultralytics/yolov5/tree/master/models
 Datasets:   https://github.com/ultralytics/yolov5/tree/master/data
-Tutorial:   https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+Tutorial:   https://docs.ultralytics.com/yolov5/tutorials/train-custom-data
 """
 
 import argparse
@@ -131,7 +131,7 @@ def train(hyp, opt, device, callbacks):
         For more usage details, refer to:
         - Models: https://github.com/ultralytics/yolov5/tree/master/models
         - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
-        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train-custom-data
 
     Notes:
         Models and datasets download automatically from the latest YOLOv5 release.
@@ -261,7 +261,7 @@ def train(hyp, opt, device, callbacks):
     if cuda and RANK == -1 and torch.cuda.device_count() > 1:
         LOGGER.warning(
             "DP not recommended, use torch.distributed.run for best DDP Multi-GPU results.\n"
-            "See Multi-GPU Tutorial at https://docs.ultralytics.com/yolov5/tutorials/multi_gpu_training to get started."
+            "See Multi-GPU Tutorial at https://docs.ultralytics.com/yolov5/tutorials/multi-gpu-training to get started."
         )
         model = torch.nn.DataParallel(model)
 
@@ -548,7 +548,7 @@ def parse_opt(known=False):
     Links:
         - Models: https://github.com/ultralytics/yolov5/tree/master/models
         - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
-        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train-custom-data
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="initial weights path")
@@ -961,7 +961,7 @@ def run(**kwargs):
     Notes:
         - Models: https://github.com/ultralytics/yolov5/tree/master/models
         - Datasets: https://github.com/ultralytics/yolov5/tree/master/data
-        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
+        - Tutorial: https://docs.ultralytics.com/yolov5/tutorials/train-custom-data
     """
     opt = parse_opt(True)
     for k, v in kwargs.items():
