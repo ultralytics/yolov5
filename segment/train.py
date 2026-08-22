@@ -33,6 +33,11 @@ import yaml
 from torch import nn
 from torch.optim import lr_scheduler
 
+try:  # torch >= 2.3
+    from torch.amp import GradScaler
+except ImportError:  # torch < 2.3
+    from torch.cuda.amp import GradScaler
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -319,7 +324,7 @@ def train(hyp, opt, device):
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    scaler = GradScaler(enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
     compute_loss = ComputeLoss(model, overlap=overlap)  # init loss class
     LOGGER.info(
