@@ -12,6 +12,12 @@ import torch
 import torch.distributed as dist
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
+
+try:
+    from torch.amp import GradScaler  # noqa: F401
+except ImportError:
+    from torch.cuda.amp import GradScaler  # noqa: F401
+
 from ultralytics.utils.torch_utils import (  # noqa: F401
     autocast as smart_amp_autocast,
 )

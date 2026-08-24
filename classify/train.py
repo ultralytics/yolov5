@@ -26,7 +26,6 @@ import torch
 import torch.distributed as dist
 import torchvision
 from torch import hub
-from torch.cuda import amp
 from torch.optim import lr_scheduler
 
 FILE = Path(__file__).resolve()
@@ -57,6 +56,7 @@ from utils.general import (
 from utils.loggers import GenericLogger
 from utils.plots import imshow_cls
 from utils.torch_utils import (
+    GradScaler,
     ModelEMA,
     de_parallel,
     model_info,
@@ -199,7 +199,7 @@ def train(opt, device):
     criterion = smartCrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
     best_fitness = 0.0
     final_epoch = False  # defined here so the post-loop checkpoint block is safe when epochs == 0
-    scaler = amp.GradScaler(enabled=cuda)
+    scaler = GradScaler(enabled=cuda)
     val = test_dir.stem  # 'val' or 'test'
     LOGGER.info(
         f"Image sizes {imgsz} train, {imgsz} test\n"

@@ -33,11 +33,6 @@ import yaml
 from torch import nn
 from torch.optim import lr_scheduler
 
-try:  # torch >= 2.3
-    from torch.amp import GradScaler
-except ImportError:  # torch < 2.3
-    from torch.cuda.amp import GradScaler
-
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -85,6 +80,7 @@ from utils.segment.metrics import KEYS, fitness
 from utils.segment.plots import plot_images_and_masks, plot_results_with_masks
 from utils.torch_utils import (
     EarlyStopping,
+    GradScaler,
     ModelEMA,
     de_parallel,
     select_device,
