@@ -14,7 +14,7 @@ from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 try:
-    from torch.amp import GradScaler  # noqa: F401
+    from torch.amp import GradScaler
 except ImportError:
     from torch.cuda.amp import GradScaler  # noqa: F401
 
