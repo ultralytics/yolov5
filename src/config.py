@@ -2,7 +2,7 @@
 MODEL_NAME: str = "yolov5su.pt"
 
 # Total training epochs (1 to 100)
-EPOCHS: int = 10
+EPOCHS: int = 15
 
 # Batch size per GPU/CPU (4, 8, 16, 32)
 BATCH_SIZE: int = 16
@@ -11,7 +11,7 @@ BATCH_SIZE: int = 16
 IMG_SIZE: int = 640
 
 # Initial learning rate for SGD/Adam (1e-4 to 0.1)
-LR0: float = 0.01
+LR0: float = 0.008
 
 # Final OneCycleLR learning rate fraction of LR0 (0.001 to 0.1)
 LRF: float = 0.01
@@ -23,7 +23,7 @@ MOMENTUM: float = 0.937
 WEIGHT_DECAY: float = 0.0005
 
 # Warmup epochs count before main schedule (0.0 to 5.0)
-WARMUP_EPOCHS: float = 3.0
+WARMUP_EPOCHS: float = 2.0
 
 # Optimizer choice ('auto', 'SGD', 'Adam', 'AdamW', 'RMSProp')
 OPTIMIZER: str = "auto"
