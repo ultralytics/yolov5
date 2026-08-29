@@ -1,8 +1,11 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 import argparse
 import json
 import pathlib
 import sys
 import time
+
 import numpy as np
 
 # Ensure root directory is on sys.path for config import
@@ -10,21 +13,21 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 try:
     from src.config import (
-        MODEL_NAME,
-        EPOCHS,
         BATCH_SIZE,
-        IMG_SIZE,
-        LR0,
-        LRF,
-        MOMENTUM,
-        WEIGHT_DECAY,
-        WARMUP_EPOCHS,
-        OPTIMIZER,
+        EPOCHS,
+        FLIPLR,
         HSV_H,
         HSV_S,
         HSV_V,
-        FLIPLR,
+        IMG_SIZE,
+        LR0,
+        LRF,
+        MODEL_NAME,
+        MOMENTUM,
         MOSAIC,
+        OPTIMIZER,
+        WARMUP_EPOCHS,
+        WEIGHT_DECAY,
     )
 except ImportError as e:
     print(f"Error importing configuration from src.config: {e}")

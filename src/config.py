@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # Model variant file name or identifier (e.g. 'yolov5su.pt', 'yolov5nu.pt', 'yolov5mu.pt')
 MODEL_NAME: str = "yolov5su.pt"
 
