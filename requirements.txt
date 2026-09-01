@@ -13,7 +13,7 @@ scipy>=1.4.1
 ultralytics-thop>=2.1.6  # FLOPs computation
 torch>=1.8.0  # see https://pytorch.org/get-started/locally (recommended)
 torchvision>=0.9.0
-ultralytics>=8.4.118  # https://ultralytics.com
+ultralytics>=8.4.132  # https://ultralytics.com
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
 # Logging ---------------------------------------------------------------------
