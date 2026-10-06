@@ -27,7 +27,7 @@ jobs:
         model: [yolov5n]
     steps:
       - uses: actions/checkout@v7
-      - uses: ultralytics/actions/setup-uv@setup-uv-defaults
+      - uses: ultralytics/actions/setup-uv@main
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install requirements
@@ -64,7 +64,7 @@ jobs:
             torch: "1.8.0" # min torch version CI https://pypi.org/project/torchvision/
     steps:
       - uses: actions/checkout@v7
-      - uses: ultralytics/actions/setup-uv@setup-uv-defaults
+      - uses: ultralytics/actions/setup-uv@main
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install requirements

@@ -19,7 +19,7 @@ jobs:
     if: github.repository == 'ultralytics/yolov5'
     runs-on: ubuntu-latest
     steps:
-      - uses: ultralytics/actions/setup-uv@setup-uv-defaults
+      - uses: ultralytics/actions/setup-uv@main
       - name: Install requirements
         run: |
           uv pip install pygithub
