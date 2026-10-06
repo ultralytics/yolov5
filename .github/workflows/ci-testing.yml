@@ -27,13 +27,12 @@ jobs:
         model: [yolov5n]
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: ultralytics/actions/setup-uv@main
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: ultralytics/actions/setup-uv@main
       - name: Install requirements
         run: |
-          uv pip install --system -r requirements.txt coremltools "openvino>=2024.0.0" "tensorflow<=2.19.0" "keras>=3.5.0,<=3.12.0" --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
+          uv pip install -r requirements.txt coremltools "openvino>=2024.0.0" "tensorflow<=2.19.0" "keras>=3.5.0,<=3.12.0" --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
           yolo checks
           uv pip list
       - name: Benchmark DetectionModel
@@ -56,7 +55,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-14] # macos-latest bug https://github.com/ultralytics/yolov5/pull/9049
-        python-version: ["3.x"] # evergreen latest stable Python
+        python-version: ["3"] # newest preinstalled Python
         model: [yolov5n]
         include:
           - os: ubuntu-latest
@@ -65,17 +64,16 @@ jobs:
             torch: "1.8.0" # min torch version CI https://pypi.org/project/torchvision/
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: ultralytics/actions/setup-uv@main
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: ultralytics/actions/setup-uv@main
       - name: Install requirements
         run: |
           torch=""
           if [ "${{ matrix.torch }}" == "1.8.0" ]; then
             torch="torch==1.8.0 torchvision==0.9.0"
           fi
-          uv pip install --system -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
+          uv pip install -r requirements.txt $torch --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
         shell: bash # for Windows compatibility
       - name: Update macOS security policy
         if: runner.os == 'macOS'
@@ -85,7 +83,7 @@ jobs:
       - name: Check environment
         run: |
           yolo checks
-          pip list
+          uv pip list
       - name: Test detection
         shell: bash # for Windows compatibility
         run: |
