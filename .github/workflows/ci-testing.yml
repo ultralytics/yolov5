@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.13"] # newest Python with tensorflow and paddlepaddle wheels
+        python-version: ["3.12"] # newest Python for tensorflow<=2.19.0, as tensorflow>=2.20 segfaults with paddlepaddle
         model: [yolov5n]
     steps:
       - uses: actions/checkout@v7
@@ -32,7 +32,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install requirements
         run: |
-          uv pip install -r requirements.txt coremltools "openvino>=2024.0.0" tensorflow --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
+          uv pip install -r requirements.txt coremltools "openvino>=2024.0.0" "tensorflow<=2.19.0" "keras>=3.5.0,<=3.12.0" --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
           yolo checks
           uv pip list
       - name: Benchmark DetectionModel

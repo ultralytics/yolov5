@@ -4,7 +4,7 @@
 # Image is CPU-optimized for ONNX, OpenVINO and PyTorch YOLOv5 deployments
 
 # Start FROM Ubuntu image https://hub.docker.com/_/ubuntu
-FROM ubuntu:26.04
+FROM ubuntu:24.04
 ENV PIP_BREAK_SYSTEM_PACKAGES=1 \
     UV_BREAK_SYSTEM_PACKAGES=1
 
