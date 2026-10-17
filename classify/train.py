@@ -278,7 +278,7 @@ def train(opt, device):
                     "optimizer": None,  # optimizer.state_dict(),
                     "opt": vars(opt),
                     "git": GIT_INFO,  # {remote, branch, commit} if a git repo
-                    "date": datetime.now().isoformat(),  # noqa: DTZ005
+                    "date": datetime.now().isoformat(),
                 }
 
                 # Save last, best and delete
@@ -305,7 +305,7 @@ def train(opt, device):
         file = imshow_cls(images, labels, pred, de_parallel(model).names, verbose=False, f=save_dir / "test_images.jpg")
 
         # Log results
-        meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}  # noqa: DTZ005
+        meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
         logger.log_images(file, name="Test Examples (true-predicted)", epoch=epoch)
         logger.log_model(best, epochs, metadata=meta)
 

@@ -476,7 +476,7 @@ def train(hyp, opt, device, callbacks):
                     "optimizer": optimizer.state_dict(),
                     "opt": vars(opt),
                     "git": GIT_INFO,  # {remote, branch, commit} if a git repo
-                    "date": datetime.now().isoformat(),  # noqa: DTZ005
+                    "date": datetime.now().isoformat(),
                 }
 
                 # Save last, best and delete

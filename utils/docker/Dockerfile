@@ -4,20 +4,18 @@
 # Image is CUDA-optimized for YOLOv5 single/multi-GPU training and inference
 
 # Start FROM PyTorch image https://hub.docker.com/r/pytorch/pytorch
-FROM pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+FROM pytorch/pytorch:2.14.1-cuda13.2-cudnn9-runtime
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
 
 # Install linux packages
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_BREAK_SYSTEM_PACKAGES=1 \
+    UV_BREAK_SYSTEM_PACKAGES=1
 RUN apt update
 RUN TZ=Etc/UTC apt install -y tzdata
 RUN apt install --no-install-recommends -y gcc git zip curl htop libgl1 libglib2.0-0 libpython3-dev gnupg
-
-# Security updates
-# https://security.snyk.io/vuln/SNYK-UBUNTU1804-OPENSSL-3314796
-RUN apt upgrade --no-install-recommends -y openssl
 
 # Create working directory
 RUN rm -rf /usr/src/app && mkdir -p /usr/src/app
@@ -28,8 +26,7 @@ COPY . /usr/src/app
 
 # Install pip packages
 COPY requirements.txt .
-RUN python -m pip install uv wheel
-RUN uv pip install --prefix "$(python -c 'import sys; print(sys.prefix)')" --no-cache -r requirements.txt albumentations comet_ml gsutil notebook \
+RUN uv pip install --system --no-cache -r requirements.txt albumentations comet_ml gsutil notebook \
     coremltools onnx onnxslim onnxruntime 'openvino>=2024.0.0'
 
 # Set environment variables
