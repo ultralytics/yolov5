@@ -168,19 +168,17 @@ class ConfusionMatrix:
         else:
             matches = np.zeros((0, 3))
 
-        n = matches.shape[0] > 0
         m0, m1, _ = matches.transpose().astype(int)
         for i, gc in enumerate(gt_classes):
             j = m0 == i
-            if n and sum(j) == 1:
+            if sum(j) == 1:
                 self.matrix[detection_classes[m1[j]], gc] += 1  # correct
             else:
-                self.matrix[self.nc, gc] += 1  # true background
+                self.matrix[self.nc, gc] += 1  # background FN
 
-        if n:
-            for i, dc in enumerate(detection_classes):
-                if not any(m1 == i):
-                    self.matrix[dc, self.nc] += 1  # predicted background
+        for i, dc in enumerate(detection_classes):
+            if not any(m1 == i):
+                self.matrix[dc, self.nc] += 1  # background FP
 
     @TryExcept("ConfusionMatrix plot failure")
     def plot(self, normalize=True, save_dir="", names=()):
