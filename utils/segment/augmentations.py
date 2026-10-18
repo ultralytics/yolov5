@@ -19,7 +19,7 @@ def mixup(im, labels, segments, im2, labels2, segments2):
     r = np.random.beta(32.0, 32.0)  # mixup ratio, alpha=beta=32.0
     im = (im * r + im2 * (1 - r)).astype(np.uint8)
     labels = np.concatenate((labels, labels2), 0)
-    segments = np.concatenate((segments, segments2), 0)
+    segments = [*segments, *segments2]
     return im, labels, segments
 
 
