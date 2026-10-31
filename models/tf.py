@@ -1,7 +1,9 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 TensorFlow, Keras and TFLite versions of YOLOv5
-Authored by https://github.com/zldrobit in PR https://github.com/ultralytics/yolov5/pull/1127
+Authored by https://github.com/zldrobit in PR https://github.com/ultralytics/yolov5/pull/1127.
 
 Usage:
     $ python models/tf.py --weights yolov5s.pt
@@ -24,8 +26,8 @@ if str(ROOT) not in sys.path:
 import numpy as np
 import tensorflow as tf
 import torch
-import torch.nn as nn
 from tensorflow import keras
+from torch import nn
 
 from models.common import (
     C3,
@@ -477,7 +479,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
         t = str(m)[8:-2].replace("__main__.", "")  # module type
         np = sum(x.numel() for x in torch_m_.parameters())  # number params
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
-        LOGGER.info(f"{i:>3}{str(f):>18}{str(n):>3}{np:>10}  {t:<40}{str(args):<30}")  # print
+        LOGGER.info(f"{i:>3}{f!s:>18}{n!s:>3}{np:>10}  {t:<40}{args!s:<30}")  # print
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
         ch.append(c2)

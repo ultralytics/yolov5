@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Validate a trained YOLOv5 detection model on a detection dataset.
@@ -88,12 +90,11 @@ def save_one_json(predn, jdict, path, class_map):
 
 
 def process_batch(detections, labels, iouv):
-    """
-    Return correct prediction matrix.
+    """Return correct prediction matrix.
 
-    Arguments:
-        detections (array[N, 6]), x1, y1, x2, y2, conf, class
-        labels (array[M, 5]), class, x1, y1, x2, y2
+    Args:
+        detections (array[N, 6]), x1, y1, x2, y2, conf, class: labels (array[M, 5]), class, x1, y1, x2, y2
+
     Returns:
         correct (array[N, 10]), for 10 IoU levels
     """

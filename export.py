@@ -1,6 +1,8 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
-Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit
+Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit.
 
 Format                      | `export.py --include`         | Model
 ---                         | ---                           | ---
@@ -93,7 +95,7 @@ MACOS = platform.system() == "Darwin"  # macOS environment
 class iOSModel(torch.nn.Module):
     def __init__(self, model, im):
         super().__init__()
-        b, c, h, w = im.shape  # batch, channel, height, width
+        _b, _c, h, w = im.shape  # batch, channel, height, width
         self.model = model
         self.nc = model.nc  # number of classes
         if w == h:
@@ -222,8 +224,8 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr("ONNX
 def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:")):
     # YOLOv5 OpenVINO export
     check_requirements("openvino-dev>=2023.0")  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-    import openvino.runtime as ov  # noqa
-    from openvino.tools import mo  # noqa
+    import openvino.runtime as ov
+    from openvino.tools import mo
 
     LOGGER.info(f"\n{prefix} starting export with openvino {ov.__version__}...")
     f = str(file).replace(file.suffix, f"_{'int8_' if int8 else ''}openvino_model{os.sep}")
@@ -247,15 +249,14 @@ def export_openvino(file, metadata, half, int8, data, prefix=colorstr("OpenVINO:
             )[0]
             return dataloader
 
-        # noqa: F811
-
         def transform_fn(data_item):
-            """
-            Quantization transform function.
+            """Quantization transform function.
 
             Extracts and preprocess input data from dataloader item for quantization.
+
             Parameters:
                data_item: Tuple with data item produced by DataLoader during iteration
+
             Returns:
                 input_tensor: Input data for quantization
             """
@@ -463,7 +464,7 @@ def export_tflite(
     import tensorflow as tf
 
     LOGGER.info(f"\n{prefix} starting export with tensorflow {tf.__version__}...")
-    batch_size, ch, *imgsz = list(im.shape)  # BCHW
+    _batch_size, _ch, *imgsz = list(im.shape)  # BCHW
     f = str(file).replace(".pt", "-fp16.tflite")
 
     converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
@@ -606,7 +607,7 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
     from PIL import Image
 
     print(f"{prefix} starting pipeline with coremltools {ct.__version__}...")
-    batch_size, ch, h, w = list(im.shape)  # BCHW
+    _batch_size, _ch, h, w = list(im.shape)  # BCHW
     t = time.time()
 
     # YOLOv5 Output shapes
@@ -623,7 +624,7 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
 
     # Checks
     nx, ny = spec.description.input[0].type.imageType.width, spec.description.input[0].type.imageType.height
-    na, nc = out0_shape
+    _na, nc = out0_shape
     # na, nc = out0.type.multiArrayType.shape  # number anchors, classes
     assert len(names) == nc, f"{len(names)} names found for nc={nc}"  # check
 
@@ -722,9 +723,9 @@ def pipeline_coreml(model, im, file, names, y, prefix=colorstr("CoreML Pipeline:
     model = ct.models.MLModel(pipeline.spec)
     model.input_description["image"] = "Input image"
     model.input_description["iouThreshold"] = f"(optional) IOU Threshold override (default: {nms.iouThreshold})"
-    model.input_description[
-        "confidenceThreshold"
-    ] = f"(optional) Confidence Threshold override (default: {nms.confidenceThreshold})"
+    model.input_description["confidenceThreshold"] = (
+        f"(optional) Confidence Threshold override (default: {nms.confidenceThreshold})"
+    )
     model.output_description["confidence"] = 'Boxes × Class confidence (see user-defined metadata "classes")'
     model.output_description["coordinates"] = "Boxes × [x, y, width, height] (relative to image size)"
     model.save(f)  # pipelined
@@ -858,12 +859,12 @@ def run(
             else ""
         )
         LOGGER.info(
-            f'\nExport complete ({time.time() - t:.1f}s)'
+            f"\nExport complete ({time.time() - t:.1f}s)"
             f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
             f"\nDetect:          python {dir / ('detect.py' if det else 'predict.py')} --weights {f[-1]} {h}"
             f"\nValidate:        python {dir / 'val.py'} --weights {f[-1]} {h}"
             f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')  {s}"
-            f'\nVisualize:       https://netron.app'
+            f"\nVisualize:       https://netron.app"
         )
     return f  # return list of exported files/dirs
 

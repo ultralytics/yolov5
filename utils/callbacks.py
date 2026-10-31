@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """Callback utils."""
 
@@ -33,8 +35,7 @@ class Callbacks:
         self.stop_training = False  # set True to interrupt training
 
     def register_action(self, hook, name="", callback=None):
-        """
-        Register a new action to a callback hook.
+        """Register a new action to a callback hook.
 
         Args:
             hook: The callback hook name to register the action to
@@ -46,8 +47,7 @@ class Callbacks:
         self._callbacks[hook].append({"name": name, "callback": callback})
 
     def get_registered_actions(self, hook=None):
-        """
-        " Returns all the registered actions by callback hook.
+        """" Returns all the registered actions by callback hook.
 
         Args:
             hook: The name of the hook to check, defaults to all
@@ -55,8 +55,7 @@ class Callbacks:
         return self._callbacks[hook] if hook else self._callbacks
 
     def run(self, hook, *args, thread=False, **kwargs):
-        """
-        Loop through the registered actions and fire all callbacks on main thread.
+        """Loop through the registered actions and fire all callbacks on main thread.
 
         Args:
             hook: The name of the hook to check, defaults to all
@@ -64,7 +63,6 @@ class Callbacks:
             thread: (boolean) Run callbacks in daemon thread
             kwargs: Keyword Arguments to receive from YOLOv5
         """
-
         assert hook in self._callbacks, f"hook '{hook}' not found in callbacks {self._callbacks}"
         for logger in self._callbacks[hook]:
             if thread:

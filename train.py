@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Train a YOLOv5 model on a custom dataset. Models and datasets download automatically from the latest YOLOv5 release.
@@ -33,8 +35,8 @@ except ImportError:
 import numpy as np
 import torch
 import torch.distributed as dist
-import torch.nn as nn
 import yaml
+from torch import nn
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 
@@ -320,10 +322,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     compute_loss = ComputeLoss(model)  # init loss class
     callbacks.run("on_train_start")
     LOGGER.info(
-        f'Image sizes {imgsz} train, {imgsz} val\n'
-        f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
+        f"Image sizes {imgsz} train, {imgsz} val\n"
+        f"Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n"
         f"Logging results to {colorstr('bold', save_dir)}\n"
-        f'Starting training for {epochs} epochs...'
+        f"Starting training for {epochs} epochs..."
     )
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run("on_train_epoch_start")
@@ -397,7 +399,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Log
             if RANK in {-1, 0}:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
-                mem = f"{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G"  # (GB)
+                mem = f"{torch.cuda.memory_reserved() / 1e9 if torch.cuda.is_available() else 0:.3g}G"  # (GB)
                 pbar.set_description(
                     ("%11s" * 2 + "%11.4g" * 5)
                     % (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0], imgs.shape[-1])
@@ -434,8 +436,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
-            if fi > best_fitness:
-                best_fitness = fi
+            best_fitness = max(best_fitness, fi)
             log_vals = list(mloss) + list(results) + lr
             callbacks.run("on_fit_epoch_end", log_vals, epoch, best_fitness, fi)
 
@@ -689,8 +690,8 @@ def main(opt, callbacks=Callbacks()):
             del hyp_GA[item]  # Remove the item from hyp_GA dictionary
 
         # Set lower_limit and upper_limit arrays to hold the search space boundaries
-        lower_limit = np.array([meta[k][1] for k in hyp_GA.keys()])
-        upper_limit = np.array([meta[k][2] for k in hyp_GA.keys()])
+        lower_limit = np.array([meta[k][1] for k in hyp_GA])
+        upper_limit = np.array([meta[k][2] for k in hyp_GA])
 
         # Create gene_ranges list to hold the range of values for each gene in the population
         gene_ranges = [(lower_limit[i], upper_limit[i]) for i in range(len(upper_limit))]
@@ -704,7 +705,7 @@ def main(opt, callbacks=Callbacks()):
             with open(ROOT / opt.resume_evolve, errors="ignore") as f:
                 evolve_population = yaml.safe_load(f)
                 for value in evolve_population.values():
-                    value = np.array([value[k] for k in hyp_GA.keys()])
+                    value = np.array([value[k] for k in hyp_GA])
                     initial_values.append(list(value))
 
         # If not resuming from a previous checkpoint, generate initial values from .yaml files in opt.evolve_population
@@ -713,7 +714,7 @@ def main(opt, callbacks=Callbacks()):
             for file_name in yaml_files:
                 with open(os.path.join(opt.evolve_population, file_name)) as yaml_file:
                     value = yaml.safe_load(yaml_file)
-                    value = np.array([value[k] for k in hyp_GA.keys()])
+                    value = np.array([value[k] for k in hyp_GA])
                     initial_values.append(list(value))
 
         # Generate random values within the search space for the rest of the population
@@ -722,7 +723,7 @@ def main(opt, callbacks=Callbacks()):
         elif pop_size > 1:
             population = [generate_individual(gene_ranges, len(hyp_GA)) for _ in range(pop_size - len(initial_values))]
             for initial_value in initial_values:
-                population = [initial_value] + population
+                population = [initial_value, *population]
 
         # Run the genetic algorithm for a fixed number of generations
         list_keys = list(hyp_GA.keys())
@@ -731,7 +732,7 @@ def main(opt, callbacks=Callbacks()):
                 save_dict = {}
                 for i in range(len(population)):
                     little_dict = {list_keys[j]: float(population[i][j]) for j in range(len(population[i]))}
-                    save_dict[f"gen{str(generation)}number{str(i)}"] = little_dict
+                    save_dict[f"gen{generation!s}number{i!s}"] = little_dict
 
                 with open(save_dir / "evolve_population.yaml", "w") as outfile:
                     yaml.dump(save_dict, outfile, default_flow_style=False)
@@ -808,9 +809,9 @@ def main(opt, callbacks=Callbacks()):
         # Plot results
         plot_evolve(evolve_csv)
         LOGGER.info(
-            f'Hyperparameter evolution finished {opt.evolve} generations\n'
+            f"Hyperparameter evolution finished {opt.evolve} generations\n"
             f"Results saved to {colorstr('bold', save_dir)}\n"
-            f'Usage example: $ python train.py --hyp {evolve_yaml}'
+            f"Usage example: $ python train.py --hyp {evolve_yaml}"
         )
 
 

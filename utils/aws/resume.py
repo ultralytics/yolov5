@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # Resume all interrupted trainings in yolov5/ dir including DDP trainings
 # Usage: $ python utils/aws/resume.py
 
@@ -14,7 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
 port = 0  # --master_port
-path = Path("").resolve()
+path = Path.cwd()
 for last in path.rglob("*/**/last.pt"):
     ckpt = torch.load(last)
     if ckpt["optimizer"] is None:

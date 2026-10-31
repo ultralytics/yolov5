@@ -1,4 +1,6 @@
 #!/bin/bash
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 # Download ILSVRC2012 ImageNet dataset https://image-net.org
 # Example usage: bash data/scripts/get_imagenet.sh
@@ -11,8 +13,8 @@
 if [ "$#" -gt 0 ]; then
   for opt in "$@"; do
     case "${opt}" in
-    --train) train=true ;;
-    --val) val=true ;;
+      --train) train=true ;;
+      --val) val=true ;;
     esac
   done
 else

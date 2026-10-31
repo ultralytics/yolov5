@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Train a YOLOv5 segment model on a segment dataset Models and datasets download automatically from the latest YOLOv5
@@ -29,8 +31,8 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.distributed as dist
-import torch.nn as nn
 import yaml
+from torch import nn
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 
@@ -316,10 +318,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     compute_loss = ComputeLoss(model, overlap=overlap)  # init loss class
     # callbacks.run('on_train_start')
     LOGGER.info(
-        f'Image sizes {imgsz} train, {imgsz} val\n'
-        f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
+        f"Image sizes {imgsz} train, {imgsz} val\n"
+        f"Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n"
         f"Logging results to {colorstr('bold', save_dir)}\n"
-        f'Starting training for {epochs} epochs...'
+        f"Starting training for {epochs} epochs..."
     )
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         # callbacks.run('on_train_epoch_start')
@@ -396,7 +398,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Log
             if RANK in {-1, 0}:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
-                mem = f"{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G"  # (GB)
+                mem = f"{torch.cuda.memory_reserved() / 1e9 if torch.cuda.is_available() else 0:.3g}G"  # (GB)
                 pbar.set_description(
                     ("%11s" * 2 + "%11.4g" * 6)
                     % (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0], imgs.shape[-1])
@@ -443,8 +445,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
-            if fi > best_fitness:
-                best_fitness = fi
+            best_fitness = max(best_fitness, fi)
             log_vals = list(mloss) + list(results) + lr
             # callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
             # Log val metrics and media
@@ -703,7 +704,7 @@ def main(opt, callbacks=Callbacks()):
                 mp, s = 0.8, 0.2  # mutation probability, sigma
                 npr = np.random
                 npr.seed(int(time.time()))
-                g = np.array([meta[k][0] for k in hyp.keys()])  # gains 0-1
+                g = np.array([meta[k][0] for k in hyp])  # gains 0-1
                 ng = len(meta)
                 v = np.ones(ng)
                 while all(v == 1):  # mutate until a change occurs (prevent duplicates)
@@ -726,9 +727,9 @@ def main(opt, callbacks=Callbacks()):
         # Plot results
         plot_evolve(evolve_csv)
         LOGGER.info(
-            f'Hyperparameter evolution finished {opt.evolve} generations\n'
+            f"Hyperparameter evolution finished {opt.evolve} generations\n"
             f"Results saved to {colorstr('bold', save_dir)}\n"
-            f'Usage example: $ python train.py --hyp {evolve_yaml}'
+            f"Usage example: $ python train.py --hyp {evolve_yaml}"
         )
 
 

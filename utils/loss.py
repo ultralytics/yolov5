@@ -1,8 +1,10 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """Loss functions."""
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from utils.metrics import bbox_iou
 from utils.torch_utils import de_parallel

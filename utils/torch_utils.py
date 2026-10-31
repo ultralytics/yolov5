@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """PyTorch utils."""
 
@@ -13,8 +15,8 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from utils.general import LOGGER, check_version, colorstr, file_date, git_describe
@@ -115,9 +117,9 @@ def select_device(device="", batch_size=0, newline=True):
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
         os.environ["CUDA_VISIBLE_DEVICES"] = device  # set environment variable - must be before assert is_available()
-        assert torch.cuda.is_available() and torch.cuda.device_count() >= len(
-            device.replace(",", "")
-        ), f"Invalid CUDA '--device {device}' requested, use '--device cpu' or pass valid CUDA device(s)"
+        assert torch.cuda.is_available() and torch.cuda.device_count() >= len(device.replace(",", "")), (
+            f"Invalid CUDA '--device {device}' requested, use '--device cpu' or pass valid CUDA device(s)"
+        )
 
     if not cpu and not mps and torch.cuda.is_available():  # prefer GPU if available
         devices = device.split(",") if device else "0"  # range(torch.cuda.device_count())  # i.e. 0,1,6,7
@@ -150,12 +152,13 @@ def time_sync():
 
 
 def profile(input, ops, n=10, device=None):
-    """YOLOv5 speed/memory/FLOPs profiler
-    Usage:
+    """YOLOv5 speed/memory/FLOPs profiler.
+
+    Examples:
         input = torch.randn(16, 3, 640, 640)
         m1 = lambda x: x * torch.sigmoid(x)
         m2 = nn.SiLU()
-        profile(input, [m1, m2], n=100)  # profile over 100 iterations
+        profile(input, [m1, m2], n=100)  # profile over 100 iterations.
     """
     results = []
     if not isinstance(device, torch.device):
@@ -193,7 +196,7 @@ def profile(input, ops, n=10, device=None):
                 mem = torch.cuda.memory_reserved() / 1e9 if torch.cuda.is_available() else 0  # (GB)
                 s_in, s_out = (tuple(x.shape) if isinstance(x, torch.Tensor) else "list" for x in (x, y))  # shapes
                 p = sum(x.numel() for x in m.parameters()) if isinstance(m, nn.Module) else 0  # parameters
-                print(f"{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{str(s_in):>24s}{str(s_out):>24s}")
+                print(f"{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{s_in!s:>24s}{s_out!s:>24s}")
                 results.append([p, flops, mem, tf, tb, s_in, s_out])
             except Exception as e:
                 print(e)
@@ -240,7 +243,7 @@ def sparsity(model):
 
 def prune(model, amount=0.3):
     # Prune model to requested global sparsity
-    import torch.nn.utils.prune as prune
+    from torch.nn.utils import prune
 
     for name, m in model.named_modules():
         if isinstance(m, nn.Conv2d):
@@ -355,7 +358,7 @@ def smart_optimizer(model, name="Adam", lr=0.001, momentum=0.9, decay=1e-5):
     optimizer.add_param_group({"params": g[1], "weight_decay": 0.0})  # add g1 (BatchNorm2d weights)
     LOGGER.info(
         f"{colorstr('optimizer:')} {type(optimizer).__name__}(lr={lr}) with parameter groups "
-        f'{len(g[1])} weight(decay=0.0), {len(g[0])} weight(decay={decay}), {len(g[2])} bias'
+        f"{len(g[1])} weight(decay=0.0), {len(g[0])} weight(decay={decay}), {len(g[2])} bias"
     )
     return optimizer
 
@@ -420,9 +423,9 @@ class EarlyStopping:
 
 
 class ModelEMA:
-    """Updated Exponential Moving Average (EMA) from https://github.com/rwightman/pytorch-image-models
-    Keeps a moving average of everything in the model state_dict (parameters and buffers)
-    For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
+    """Updated Exponential Moving Average (EMA) from https://github.com/rwightman/pytorch-image-models Keeps a moving
+    average of everything in the model state_dict (parameters and buffers) For EMA details
+    see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage.
     """
 
     def __init__(self, model, decay=0.9999, tau=2000, updates=0):

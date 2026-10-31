@@ -1,4 +1,6 @@
 #!/bin/bash
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 # Download latest models from https://github.com/ultralytics/yolov5/releases
 # Example usage: bash data/scripts/download_weights.sh
@@ -8,7 +10,7 @@
 #     ├── yolov5m.pt
 #     └── ...
 
-python - <<EOF
+python - << EOF
 from utils.downloads import attempt_download
 
 p5 = list('nsmlx')  # P5 models

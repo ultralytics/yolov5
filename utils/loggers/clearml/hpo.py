@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 from clearml import Task
 
 # Connecting ClearML with the current process,

@@ -1,5 +1,9 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """General utils."""
+
+from __future__ import annotations
 
 import contextlib
 import glob
@@ -23,7 +27,6 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from subprocess import check_output
 from tarfile import is_tarfile
-from typing import Optional
 from zipfile import ZipFile, is_zipfile
 
 import cv2
@@ -87,8 +90,8 @@ def is_colab():
 
 
 def is_jupyter():
-    """
-    Check if the current script is running inside a Jupyter Notebook. Verified on Colab, Jupyterlab, Kaggle, Paperspace.
+    """Check if the current script is running inside a Jupyter Notebook. Verified on Colab, Jupyterlab, Kaggle,
+    Paperspace.
 
     Returns:
         bool: True if running inside a Jupyter Notebook, False otherwise.
@@ -244,7 +247,7 @@ def methods(instance):
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
-def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
+def print_args(args: dict | None = None, show_file=True, show_func=False):
     # Print function arguments (optional args dict)
     x = inspect.currentframe().f_back  # previous frame
     file, _, func, _, _ = inspect.getframeinfo(x)
@@ -464,9 +467,9 @@ def check_file(file, suffix=""):
             assert Path(file).exists() and Path(file).stat().st_size > 0, f"File download failed: {url}"  # check
         return file
     elif file.startswith("clearml://"):  # ClearML Dataset ID
-        assert (
-            "clearml" in sys.modules
-        ), "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        assert "clearml" in sys.modules, (
+            "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        )
         return file
     else:  # search
         files = []
@@ -506,7 +509,7 @@ def check_dataset(data, autodownload=True):
         assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
     if isinstance(data["names"], (list, tuple)):  # old array format
         data["names"] = dict(enumerate(data["names"]))  # convert to dict
-    assert all(isinstance(k, int) for k in data["names"].keys()), "data.yaml names keys must be integers, i.e. 2: car"
+    assert all(isinstance(k, int) for k in data["names"]), "data.yaml names keys must be integers, i.e. 2: car"
     data["nc"] = len(data["names"])
 
     # Resolve paths
@@ -525,7 +528,7 @@ def check_dataset(data, autodownload=True):
                 data[k] = [str((path / x).resolve()) for x in data[k]]
 
     # Parse yaml
-    train, val, test, s = (data.get(x) for x in ("train", "val", "test", "download"))
+    _train, val, _test, s = (data.get(x) for x in ("train", "val", "test", "download"))
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
@@ -587,8 +590,10 @@ def yaml_load(file="data.yaml"):
         return yaml.safe_load(f)
 
 
-def yaml_save(file="data.yaml", data={}):
+def yaml_save(file="data.yaml", data=None):
     # Single-line safe yaml saving
+    if data is None:
+        data = {}
     with open(file, "w") as f:
         yaml.safe_dump({k: str(v) if isinstance(v, Path) else v for k, v in data.items()}, f, sort_keys=False)
 
@@ -963,13 +968,11 @@ def non_max_suppression(
     max_det=300,
     nm=0,  # number of masks
 ):
-    """
-    Non-Maximum Suppression (NMS) on inference results to reject overlapping detections.
+    """Non-Maximum Suppression (NMS) on inference results to reject overlapping detections.
 
     Returns:
-         list of detections, on (n,6) tensor per image [xyxy, conf, cls]
+        list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
-
     # Checks
     assert 0 <= conf_thres <= 1, f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
     assert 0 <= iou_thres <= 1, f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
@@ -1105,7 +1108,7 @@ def print_mutation(keys, results, hyp, save_dir, bucket, prefix=colorstr("evolve
     with open(evolve_yaml, "w") as f:
         data = pd.read_csv(evolve_csv, skipinitialspace=True)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
-        i = np.argmax(fitness(data.values[:, :4]))  #
+        i = np.argmax(fitness(data.values[:, :4]))
         generations = len(data)
         f.write(
             "# YOLOv5 Hyperparameter Evolution Results\n"
@@ -1180,7 +1183,7 @@ def increment_path(path, exist_ok=False, sep="", mkdir=False):
         # Method 1
         for n in range(2, 9999):
             p = f"{path}{sep}{n}{suffix}"  # increment path
-            if not os.path.exists(p):  #
+            if not os.path.exists(p):
                 break
         path = Path(p)
 

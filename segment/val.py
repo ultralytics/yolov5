@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Validate a trained YOLOv5 segment model on a segment dataset.
@@ -108,13 +110,13 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
 
 
 def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, overlap=False, masks=False):
-    """
-    Return correct prediction matrix
-    Arguments:
-        detections (array[N, 6]), x1, y1, x2, y2, conf, class
-        labels (array[M, 5]), class, x1, y1, x2, y2
+    """Return correct prediction matrix.
+
+    Args:
+        detections (array[N, 6]), x1, y1, x2, y2, conf, class: labels (array[M, 5]), class, x1, y1, x2, y2
+
     Returns:
-        correct (array[N, 10]), for 10 IoU levels
+        correct (array[N, 10]), for 10 IoU levels.
     """
     if masks:
         if overlap:

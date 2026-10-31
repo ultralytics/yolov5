@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """Dataloaders and dataset utils."""
 
@@ -67,7 +69,7 @@ WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
 PIN_MEMORY = str(os.getenv("PIN_MEMORY", True)).lower() == "true"  # global pin_memory for dataloaders
 
 # Get orientation exif tag
-for orientation in ExifTags.TAGS.keys():
+for orientation in ExifTags.TAGS:
     if ExifTags.TAGS[orientation] == "Orientation":
         break
 
@@ -93,7 +95,7 @@ def exif_size(img):
 def exif_transpose(image):
     """
     Transpose a PIL image accordingly if it has an EXIF Orientation tag.
-    Inplace version of https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py exif_transpose()
+    Inplace version of https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py exif_transpose().
 
     :param image: The image to transpose.
     :return: An image.
@@ -211,8 +213,7 @@ def create_dataloader(
 
 
 class InfiniteDataLoader(dataloader.DataLoader):
-    """
-    Dataloader that reuses workers.
+    """Dataloader that reuses workers.
 
     Uses same syntax as vanilla DataLoader
     """
@@ -231,8 +232,7 @@ class InfiniteDataLoader(dataloader.DataLoader):
 
 
 class _RepeatSampler:
-    """
-    Sampler that repeats forever.
+    """Sampler that repeats forever.
 
     Args:
         sampler (Sampler)
@@ -330,8 +330,7 @@ class LoadImages:
         else:
             self.cap = None
         assert self.nf > 0, (
-            f"No images or videos found in {p}. "
-            f"Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
+            f"No images or videos found in {p}. Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
         )
 
     def __iter__(self):
@@ -669,8 +668,8 @@ class LoadImagesAndLabels(Dataset):
         cache = mem_required * (1 + safety_margin) < mem.available  # to cache or not to cache, that is the question
         if not cache:
             LOGGER.info(
-                f'{prefix}{mem_required / gb:.1f}GB RAM required, '
-                f'{mem.available / gb:.1f}/{mem.total / gb:.1f}GB available, '
+                f"{prefix}{mem_required / gb:.1f}GB RAM required, "
+                f"{mem.available / gb:.1f}/{mem.total / gb:.1f}GB available, "
                 f"{'caching images ✅' if cache else 'not caching images ⚠️'}"
             )
         return cache
@@ -1004,11 +1003,11 @@ class LoadImagesAndLabels(Dataset):
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def flatten_recursive(path=DATASETS_DIR / "coco128"):
     # Flatten a recursive directory by bringing all files to top level
-    new_path = Path(f"{str(path)}_flat")
+    new_path = Path(f"{path!s}_flat")
     if os.path.exists(new_path):
         shutil.rmtree(new_path)  # delete output folder
     os.makedirs(new_path)  # make new output folder
-    for file in tqdm(glob.glob(f"{str(Path(path))}/**/*.*", recursive=True)):
+    for file in tqdm(glob.glob(f"{Path(path)!s}/**/*.*", recursive=True)):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
@@ -1047,12 +1046,13 @@ def extract_boxes(path=DATASETS_DIR / "coco128"):  # from utils.dataloaders impo
 
 
 def autosplit(path=DATASETS_DIR / "coco128/images", weights=(0.9, 0.1, 0.0), annotated_only=False):
-    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    Usage: from utils.dataloaders import *; autosplit()
-    Arguments
-        path:            Path to images directory
-        weights:         Train, val, test weights (list, tuple)
-        annotated_only:  Only use images with an annotated txt file
+    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files Usage: from utils.dataloaders
+    import *; autosplit().
+
+    Args:
+        path: Path to images directory
+        weights: Train, val, test weights (list, tuple)
+        annotated_only: Only use images with an annotated txt file.
     """
     path = Path(path)  # images dir
     files = sorted(x for x in path.rglob("*.*") if x.suffix[1:].lower() in IMG_FORMATS)  # image files only
@@ -1125,14 +1125,13 @@ def verify_image_label(args):
 
 
 class HUBDatasetStats:
-    """
-    Class for generating HUB dataset JSON and `-hub` dataset directory.
+    """Class for generating HUB dataset JSON and `-hub` dataset directory.
 
-    Arguments
-        path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
-        autodownload:   Attempt to download dataset if not found locally
+    Args:
+        path: Path to data.yaml or data.zip (with data.yaml inside data.zip)
+        autodownload: Attempt to download dataset if not found locally
 
-    Usage
+            Usage
         from utils.dataloaders import HUBDatasetStats
         stats = HUBDatasetStats('coco128.yaml', autodownload=True)  # usage 1
         stats = HUBDatasetStats('path/to/coco128.zip')  # usage 2
@@ -1249,12 +1248,11 @@ class HUBDatasetStats:
 
 # Classification dataloaders -------------------------------------------------------------------------------------------
 class ClassificationDataset(torchvision.datasets.ImageFolder):
-    """
-    YOLOv5 Classification Dataset.
+    """YOLOv5 Classification Dataset.
 
-    Arguments
-        root:  Dataset path
-        transform:  torchvision transforms, used by default
+    Args:
+        root: Dataset path
+        transform: torchvision transforms, used by default
         album_transform: Albumentations transforms, used if installed
     """
 
@@ -1264,7 +1262,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         self.album_transforms = classify_albumentations(augment, imgsz) if augment else None
         self.cache_ram = cache is True or cache == "ram"
         self.cache_disk = cache == "disk"
-        self.samples = [list(x) + [Path(x[0]).with_suffix(".npy"), None] for x in self.samples]  # file, index, npy, im
+        self.samples = [[*list(x), Path(x[0]).with_suffix(".npy"), None] for x in self.samples]  # file, index, npy, im
 
     def __getitem__(self, i):
         f, j, fn, im = self.samples[i]  # filename, index, filename.with_suffix('.npy'), image

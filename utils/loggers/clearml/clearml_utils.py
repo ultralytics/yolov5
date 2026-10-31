@@ -1,4 +1,6 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Main Logger class for ClearML experiment tracking."""
+
 import glob
 import re
 from pathlib import Path
@@ -39,11 +41,9 @@ def construct_dataset(clearml_info_string):
     with open(yaml_filenames[0]) as f:
         dataset_definition = yaml.safe_load(f)
 
-    assert set(
-        dataset_definition.keys()
-    ).issuperset(
-        {"train", "test", "val", "nc", "names"}
-    ), "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
+    assert set(dataset_definition.keys()).issuperset({"train", "test", "val", "nc", "names"}), (
+        "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
+    )
 
     data_dict = {}
     data_dict["train"] = (
@@ -62,8 +62,7 @@ def construct_dataset(clearml_info_string):
 
 
 class ClearmlLogger:
-    """
-    Log training runs, datasets, models, and predictions to ClearML.
+    """Log training runs, datasets, models, and predictions to ClearML.
 
     This logger sends information to ClearML at app.clear.ml or to your own hosted server. By default, this information
     includes hyperparameters, system configuration and metrics, model metrics, code information and basic data metrics
@@ -73,14 +72,11 @@ class ClearmlLogger:
     """
 
     def __init__(self, opt, hyp):
-        """
-        - Initialize ClearML Task, this object will capture the experiment
-        - Upload dataset version to ClearML Data if opt.upload_dataset is True
+        """- Initialize ClearML Task, this object will capture the experiment - Upload dataset version to ClearML Data
+        if opt.upload_dataset is True.
 
-        arguments:
-        opt (namespace) -- Commandline arguments for this run
-        hyp (dict) -- Hyperparameters for this run
-
+        Args:
+            opt (namespace) -- Commandline arguments for this run: hyp (dict) -- Hyperparameters for this run
         """
         self.current_epoch = 0
         # Keep tracked of amount of logged images to enforce a limit
@@ -127,47 +123,41 @@ class ClearmlLogger:
                 opt.data = self.data_dict
 
     def log_scalars(self, metrics, epoch):
-        """
-        Log scalars/metrics to ClearML.
+        """Log scalars/metrics to ClearML.
 
-        arguments:
-        metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
-        epoch (int) iteration number for the current set of metrics
+        Args:
+            metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...} epoch (int) iteration number for the
+                current set of metrics
         """
         for k, v in metrics.items():
             title, series = k.split("/")
             self.task.get_logger().report_scalar(title, series, v, epoch)
 
     def log_model(self, model_path, model_name, epoch=0):
-        """
-        Log model weights to ClearML.
+        """Log model weights to ClearML.
 
-        arguments:
-        model_path (PosixPath or str) Path to the model weights
-        model_name (str) Name of the model visible in ClearML
-        epoch (int) Iteration / epoch of the model weights
+        Args:
+            model_path (PosixPath or str) Path to the model weights: model_name (str) Name of the model visible in
+                ClearML epoch (int) Iteration / epoch of the model weights
         """
         self.task.update_output_model(
             model_path=str(model_path), name=model_name, iteration=epoch, auto_delete_file=False
         )
 
     def log_summary(self, metrics):
-        """
-        Log final metrics to a summary table.
+        """Log final metrics to a summary table.
 
-        arguments:
-        metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
+        Args:
+            metrics (dict) Metrics in dict format: {"metrics/mAP": 0.8, ...}
         """
         for k, v in metrics.items():
             self.task.get_logger().report_single_value(k, v)
 
     def log_plot(self, title, plot_path):
-        """
-        Log image as plot in the plot section of ClearML.
+        """Log image as plot in the plot section of ClearML.
 
-        arguments:
-        title (str) Title of the plot
-        plot_path (PosixPath or str) Path to the saved image file
+        Args:
+            title (str) Title of the plot: plot_path (PosixPath or str) Path to the saved image file
         """
         img = mpimg.imread(plot_path)
         fig = plt.figure()
@@ -177,12 +167,11 @@ class ClearmlLogger:
         self.task.get_logger().report_matplotlib_figure(title, "", figure=fig, report_interactive=False)
 
     def log_debug_samples(self, files, title="Debug Samples"):
-        """
-        Log files (images) as debug samples in the ClearML task.
+        """Log files (images) as debug samples in the ClearML task.
 
-        arguments:
-        files (List(PosixPath)) a list of file paths in PosixPath format
-        title (str) A title that groups together images with the same values
+        Args:
+            files (List(PosixPath)) a list of file paths in PosixPath format: title (str) A title that groups together
+                images with the same values
         """
         for f in files:
             if f.exists():
@@ -193,14 +182,13 @@ class ClearmlLogger:
                 )
 
     def log_image_with_boxes(self, image_path, boxes, class_names, image, conf_threshold=0.25):
-        """
-        Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
+        """Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
 
-        arguments:
-        image_path (PosixPath) the path the original image file
-        boxes (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
-        class_names (dict): dict containing mapping of class int to class name
-        image (Tensor): A torch tensor containing the actual image data
+        Args:
+            image_path (PosixPath) the path the original image file
+            boxes (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
+            class_names (dict): dict containing mapping of class int to class name
+            image (Tensor): A torch tensor containing the actual image data
         """
         if (
             len(self.current_epoch_logged_images) < self.max_imgs_to_log_per_epoch

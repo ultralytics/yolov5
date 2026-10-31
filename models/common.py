@@ -1,3 +1,5 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """Common modules."""
 
@@ -18,8 +20,8 @@ import numpy as np
 import pandas as pd
 import requests
 import torch
-import torch.nn as nn
 from PIL import Image
+from torch import nn
 from torch.cuda import amp
 
 # Import 'ultralytics' package or install if if missing
@@ -500,11 +502,10 @@ class DetectMultiBackend(nn.Module):
             input_details = interpreter.get_input_details()  # inputs
             output_details = interpreter.get_output_details()  # outputs
             # load metadata
-            with contextlib.suppress(zipfile.BadZipFile):
-                with zipfile.ZipFile(w, "r") as model:
-                    meta_file = model.namelist()[0]
-                    meta = ast.literal_eval(model.read(meta_file).decode("utf-8"))
-                    stride, names = int(meta["stride"]), meta["names"]
+            with contextlib.suppress(zipfile.BadZipFile), zipfile.ZipFile(w, "r") as model:
+                meta_file = model.namelist()[0]
+                meta = ast.literal_eval(model.read(meta_file).decode("utf-8"))
+                stride, names = int(meta["stride"]), meta["names"]
         elif tfjs:  # TF.js
             raise NotImplementedError("ERROR: YOLOv5 TF.js inference is not supported")
         elif paddle:  # PaddlePaddle
@@ -541,7 +542,7 @@ class DetectMultiBackend(nn.Module):
 
     def forward(self, im, augment=False, visualize=False):
         # YOLOv5 MultiBackend inference
-        b, ch, h, w = im.shape  # batch, channel, height, width
+        _b, _ch, h, w = im.shape  # batch, channel, height, width
         if self.fp16 and im.dtype != torch.float16:
             im = im.half()  # to FP16
         if self.nhwc:
@@ -629,7 +630,7 @@ class DetectMultiBackend(nn.Module):
         warmup_types = self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb, self.triton
         if any(warmup_types) and (self.device.type != "cpu" or self.triton):
             im = torch.empty(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
-            for _ in range(2 if self.jit else 1):  #
+            for _ in range(2 if self.jit else 1):
                 self.forward(im)  # warmup
 
     @staticmethod
@@ -646,7 +647,7 @@ class DetectMultiBackend(nn.Module):
         types = [s in Path(p).name for s in sf]
         types[8] &= not types[9]  # tflite &= not edgetpu
         triton = not any(types) and all([any(s in url.scheme for s in ["http", "grpc"]), url.netloc])
-        return types + [triton]
+        return [*types, triton]
 
     @staticmethod
     def _load_metadata(f=Path("path/to/meta.yaml")):
@@ -852,7 +853,7 @@ class Detections:
         ca = "xmin", "ymin", "xmax", "ymax", "confidence", "class", "name"  # xyxy columns
         cb = "xcenter", "ycenter", "width", "height", "confidence", "class", "name"  # xywh columns
         for k, c in zip(["xyxy", "xyxyn", "xywh", "xywhn"], [ca, ca, cb, cb]):
-            a = [[x[:5] + [int(x[5]), self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # update
+            a = [[[*x[:5], int(x[5]), self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # update
             setattr(new, k, [pd.DataFrame(x, columns=c) for x in a])
         return new
 

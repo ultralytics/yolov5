@@ -1,6 +1,8 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
-PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5
+PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5.
 
 Usage:
     import torch
@@ -14,10 +16,9 @@ import torch
 
 
 def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True, device=None):
-    """
-    Creates or loads a YOLOv5 model.
+    """Creates or loads a YOLOv5 model.
 
-    Arguments:
+    Args:
         name (str): model name 'yolov5s' or path 'path/to/best.pt'
         pretrained (bool): load pretrained weights into the model
         channels (int): number of input channels
@@ -64,7 +65,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
             except Exception:
                 model = attempt_load(path, device=device, fuse=False)  # arbitrary model
         else:
-            cfg = list((Path(__file__).parent / "models").rglob(f"{path.stem}.yaml"))[0]  # model.yaml path
+            cfg = next(iter((Path(__file__).parent / "models").rglob(f"{path.stem}.yaml")))  # model.yaml path
             model = DetectionModel(cfg, channels, classes)  # create model
             if pretrained:
                 ckpt = torch.load(attempt_download(path), map_location=device)  # load
