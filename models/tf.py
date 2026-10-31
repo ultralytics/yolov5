@@ -311,6 +311,16 @@ class TFDetect(keras.layers.Layer):
             ny, nx = self.imgsz[0] // self.stride[i], self.imgsz[1] // self.stride[i]
             self.grid[i] = self._make_grid(nx, ny)
 
+        # Fold stride/imgsz and anchor/imgsz into constants so xywh is computed directly in normalized units.
+        # No tensor is multiplied by a large pixel-space constant, which avoids wrong TFLite calibration ranges
+        # when elementwise ops overwrite their input buffers in place.
+        norm = tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
+        self.xy_scale = [2 * self.stride[i] / norm for i in range(self.nl)]
+        self.xy_offset = [
+            (tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5) * self.stride[i] / norm for i in range(self.nl)
+        ]
+        self.wh_scale = [tf.transpose(self.anchor_grid[i], [0, 2, 1, 3]) * 4 / norm for i in range(self.nl)]
+
     def call(self, inputs):
         z = []  # inference output
         x = []
@@ -322,13 +332,9 @@ class TFDetect(keras.layers.Layer):
 
             if not self.training:  # inference
                 y = x[i]
-                grid = tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5
-                anchor_grid = tf.transpose(self.anchor_grid[i], [0, 2, 1, 3]) * 4
-                xy = (tf.sigmoid(y[..., 0:2]) * 2 + grid) * self.stride[i]  # xy
-                wh = tf.sigmoid(y[..., 2:4]) ** 2 * anchor_grid
-                # Normalize xywh to 0-1 to reduce calibration error
-                xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
-                wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
+                # xywh computed directly in normalized (0-1) units
+                xy = tf.sigmoid(y[..., 0:2]) * self.xy_scale[i] + self.xy_offset[i]  # xy
+                wh = tf.sigmoid(y[..., 2:4]) ** 2 * self.wh_scale[i]  # wh
                 y = tf.concat([xy, wh, tf.sigmoid(y[..., 4 : 5 + self.nc]), y[..., 5 + self.nc :]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
