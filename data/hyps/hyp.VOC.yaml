@@ -9,7 +9,7 @@
 # YOLOv5 Hyperparameter Evolution Results
 # Best generation: 467
 # Last generation: 996
-#    metrics/precision,       metrics/recall,      metrics/mAP50, metrics/mAP50-95,         val/box_loss,         val/obj_loss,         val/cls_loss
+#    metrics/precision,       metrics/recall,        metrics/mAP50,     metrics/mAP50-95,         val/box_loss,         val/obj_loss,         val/cls_loss
 #              0.87729,              0.85125,              0.91286,              0.72664,            0.0076739,            0.0042529,            0.0013865
 
 lr0: 0.00334 # initial learning rate (SGD=1E-2, Adam=1E-3)
