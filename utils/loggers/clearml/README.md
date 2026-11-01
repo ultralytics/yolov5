@@ -73,7 +73,7 @@ ClearML automatically logs:
 - Hyperparameters and configuration settings
 - Model checkpoints (use `--save-period n` to save every `n` epochs)
 - Console output logs
-- Performance metrics ([precision, recall](https://docs.ultralytics.com/guides/yolo-performance-metrics), [losses](https://docs.ultralytics.com/reference/utils/loss), [learning rates](https://www.ultralytics.com/glossary/learning-rate), mAP<sub>0.5</sub>, mAP<sub>0.5:0.95</sub>)
+- Performance metrics ([precision, recall](https://docs.ultralytics.com/guides/yolo-performance-metrics), [losses](https://docs.ultralytics.com/reference/utils/loss), [learning rates](https://www.ultralytics.com/glossary/learning-rate), mAP<sub>50</sub>, mAP<sub>50-95</sub>)
 - System details (hardware specs, runtime, creation date)
 - Generated plots (label correlogram, [confusion matrix](https://www.ultralytics.com/glossary/confusion-matrix))
 - Images with bounding boxes per epoch
