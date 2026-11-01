@@ -17,8 +17,8 @@ trapezoid = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
 
 
 def fitness(x):
-    """Calculates fitness of a model using weighted sum of metrics P, R, mAP@0.5, mAP@0.5:0.95."""
-    w = [0.0, 0.0, 0.1, 0.9]  # weights for [P, R, mAP@0.5, mAP@0.5:0.95]
+    """Calculates fitness of a model using weighted sum of metrics P, R, mAP50, mAP50-95."""
+    w = [0.0, 0.0, 0.1, 0.9]  # weights for [P, R, mAP50, mAP50-95]
     return (x[:, :4] * w).sum(1)
 
 
@@ -32,7 +32,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
         conf (np.ndarray): Objectness values from 0-1, shape (n,).
         pred_cls (np.ndarray): Predicted object classes, shape (n,).
         target_cls (np.ndarray): True object classes, shape (m,).
-        plot (bool): Plot precision-recall curve at mAP@0.5.
+        plot (bool): Plot precision-recall curve at mAP50.
         save_dir (str | Path): Plot save directory.
         names (dict | tuple): Class index to name mapping used for plot legends.
         eps (float): Small value to avoid division by zero.
@@ -76,7 +76,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
         for j in range(tp.shape[1]):
             ap[ci, j], mpre, mrec = compute_ap(recall[:, j], precision[:, j])
             if plot and j == 0:
-                py.append(np.interp(px, mrec, mpre))  # precision at mAP@0.5
+                py.append(np.interp(px, mrec, mpre))  # precision at mAP50
 
     # Compute F1 (harmonic mean of precision and recall)
     f1 = 2 * p * r / (p + r + eps)

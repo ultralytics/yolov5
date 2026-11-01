@@ -128,7 +128,7 @@
   },
   "spec": {
     "maxCombo": 0,
-    "metric": "metrics/mAP_0.5",
+    "metric": "metrics/mAP50",
     "objective": "maximize"
   },
   "trials": 1

@@ -114,7 +114,7 @@ def train(hyp, opt, device, callbacks):
         callbacks (Callbacks): Callback functions for various training events.
 
     Returns:
-        (tuple): Final validation results (P, R, mAP@0.5, mAP@0.5:0.95, val/box_loss, val/obj_loss, val/cls_loss).
+        (tuple): Final validation results (P, R, mAP50, mAP50-95, val/box_loss, val/obj_loss, val/cls_loss).
 
     Examples:
         Single-GPU training:
@@ -340,7 +340,7 @@ def train(hyp, opt, device, callbacks):
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
-    results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+    results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP50, mAP50-95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = GradScaler(enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
@@ -459,7 +459,7 @@ def train(hyp, opt, device, callbacks):
                 )
 
             # Update best mAP
-            fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
+            fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP50, mAP50-95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
             best_fitness = max(best_fitness, fi)
             log_vals = list(mloss) + list(results) + lr
@@ -808,8 +808,8 @@ def main(opt, callbacks=None):
                 keys = (
                     "metrics/precision",
                     "metrics/recall",
-                    "metrics/mAP_0.5",
-                    "metrics/mAP_0.5:0.95",
+                    "metrics/mAP50",
+                    "metrics/mAP50-95",
                     "val/box_loss",
                     "val/obj_loss",
                     "val/cls_loss",

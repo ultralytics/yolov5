@@ -82,7 +82,7 @@ Comet automatically logs the following information by default:
 ### Metrics
 
 - **Losses:** Box Loss, Object Loss, Classification Loss (Training and Validation)
-- **Performance:** [mAP@0.5](https://www.ultralytics.com/glossary/mean-average-precision-map), mAP@0.5:0.95 (Validation). Learn more in the [YOLO Performance Metrics guide](https://docs.ultralytics.com/guides/yolo-performance-metrics).
+- **Performance:** [mAP<sub>50</sub>](https://www.ultralytics.com/glossary/mean-average-precision-map), mAP<sub>50-95</sub> (Validation). Learn more in the [YOLO Performance Metrics guide](https://docs.ultralytics.com/guides/yolo-performance-metrics).
 - **[Precision](https://www.ultralytics.com/glossary/precision) and [Recall](https://www.ultralytics.com/glossary/recall):** Validation data metrics
 
 ### Parameters

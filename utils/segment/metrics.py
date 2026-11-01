@@ -7,8 +7,8 @@ from ..metrics import ap_per_class
 
 
 def fitness(x):
-    """Return model fitness as a weighted sum of box and mask metrics [P, R, mAP@0.5, mAP@0.5:0.95] with weights [0, 0,
-    0.1, 0.9] applied to each of the box and mask groups (x: [N, 8] array).
+    """Return model fitness as a weighted sum of box and mask metrics [P, R, mAP50, mAP50-95] with weights [0, 0, 0.1,
+    0.9] applied to each of the box and mask groups (x: [N, 8] array).
     """
     w = [0.0, 0.0, 0.1, 0.9, 0.0, 0.0, 0.1, 0.9]
     return (x[:, :8] * w).sum(1)
@@ -79,7 +79,7 @@ class Metric:
 
     @property
     def ap50(self):
-        """AP@0.5 of all classes.
+        """AP50 of all classes.
 
         Returns:
             (nc, ) or [].
@@ -88,7 +88,7 @@ class Metric:
 
     @property
     def ap(self):
-        """AP@0.5:0.95.
+        """AP50-95.
 
         Returns:
             (nc, ) or []
@@ -115,7 +115,7 @@ class Metric:
 
     @property
     def map50(self):
-        """Mean AP@0.5 of all classes.
+        """mAP50 of all classes.
 
         Returns:
             float.
@@ -124,7 +124,7 @@ class Metric:
 
     @property
     def map(self):
-        """Mean AP@0.5:0.95 of all classes.
+        """mAP50-95 of all classes.
 
         Returns:
             float.
@@ -204,12 +204,12 @@ KEYS = [
     "train/cls_loss",
     "metrics/precision(B)",
     "metrics/recall(B)",
-    "metrics/mAP_0.5(B)",
-    "metrics/mAP_0.5:0.95(B)",  # metrics
+    "metrics/mAP50(B)",
+    "metrics/mAP50-95(B)",  # metrics
     "metrics/precision(M)",
     "metrics/recall(M)",
-    "metrics/mAP_0.5(M)",
-    "metrics/mAP_0.5:0.95(M)",  # metrics
+    "metrics/mAP50(M)",
+    "metrics/mAP50-95(M)",  # metrics
     "val/box_loss",
     "val/seg_loss",  # val loss
     "val/obj_loss",
@@ -223,10 +223,10 @@ BEST_KEYS = [
     "best/epoch",
     "best/precision(B)",
     "best/recall(B)",
-    "best/mAP_0.5(B)",
-    "best/mAP_0.5:0.95(B)",
+    "best/mAP50(B)",
+    "best/mAP50-95(B)",
     "best/precision(M)",
     "best/recall(M)",
-    "best/mAP_0.5(M)",
-    "best/mAP_0.5:0.95(M)",
+    "best/mAP50(M)",
+    "best/mAP50-95(M)",
 ]
