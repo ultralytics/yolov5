@@ -482,8 +482,8 @@ class CometLogger:
                 class_name = self.class_names[c]
                 self.experiment.log_metrics(
                     {
-                        "mAP@.5": ap50[i],
-                        "mAP@.5:.95": ap[i],
+                        "mAP50": ap50[i],
+                        "mAP50-95": ap[i],
                         "precision": p[i],
                         "recall": r[i],
                         "f1": f1[i],

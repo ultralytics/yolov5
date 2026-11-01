@@ -56,7 +56,7 @@ optimizer = HyperParameterOptimizer(
     ],
     # this is the objective metric we want to maximize/minimize
     objective_metric_title="metrics",
-    objective_metric_series="mAP_0.5",
+    objective_metric_series="mAP50",
     # now we decide if we want to maximize it or minimize it (accuracy we maximize)
     objective_metric_sign="max",
     # let us limit the number of concurrent experiments,

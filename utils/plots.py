@@ -133,7 +133,7 @@ def plot_val_study(file="", dir="", x=None):
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
         if plot2:
-            s = ["P", "R", "mAP@.5", "mAP@.5:.95", "t_preprocess (ms/img)", "t_inference (ms/img)", "t_NMS (ms/img)"]
+            s = ["P", "R", "mAP50", "mAP50-95", "t_preprocess (ms/img)", "t_inference (ms/img)", "t_NMS (ms/img)"]
             for i in range(7):
                 ax[i].plot(x, y[i], ".-", linewidth=2, markersize=8)
                 ax[i].set_title(s[i])
