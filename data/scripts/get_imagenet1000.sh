@@ -1,7 +1,7 @@
 #!/bin/bash
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-# Download ImageNet1000 dataset https://image-net.org (1000-image subset of ILSVRC2012 train/val)
+# Download ImageNet1000 dataset https://docs.ultralytics.com/datasets/classify/imagenet (1000-image subset of ILSVRC2012 train/val)
 # Example usage: bash data/scripts/get_imagenet1000.sh
 # parent
 # ├── yolov5
