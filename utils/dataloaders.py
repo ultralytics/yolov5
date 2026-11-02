@@ -919,7 +919,13 @@ def verify_image_label(args):
                 lb = [x.split() for x in f.read().strip().splitlines() if len(x)]
                 if any(len(x) > 6 for x in lb):  # is segment
                     classes = np.array([x[0] for x in lb], dtype=np.float32)
-                    segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in lb]  # (cls, xy1...)
+                    segments = [np.array(x[1:], dtype=np.float32) for x in lb]  # (cls, xy1...)
+                    segments = [  # box lines (cls, xywh) in a polygon file become their 4 corners
+                        (s[:2] + s[2:] * [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]] if len(s) == 4 else s)
+                        .astype(np.float32)
+                        .reshape(-1, 2)
+                        for s in segments
+                    ]
                     lb = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
                 lb = np.array(lb, dtype=np.float32)
             if nl := len(lb):
