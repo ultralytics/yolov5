@@ -137,11 +137,14 @@ class ConfusionMatrix:
         self.iou_thres = iou_thres
 
     def process_batch(self, detections, labels):
-        """Update the confusion matrix for a batch of detections vs labels (both in pixel xyxy).
+        """Update confusion matrix for a batch of detections vs labels (both in pixel xyxy).
 
         Args:
-            detections (Array[N, 6]): x1, y1, x2, y2, conf, class
-            labels (Array[M, 5]): class, x1, y1, x2, y2
+            detections (torch.Tensor | None): Detection predictions with shape (N, 6) in (x1, y1, x2, y2, conf, class)
+                format. If None, only ground-truth class counts are added to the background column.
+            labels (torch.Tensor): Ground-truth labels. When detections is None, labels may be a 1D tensor of class IDs
+                for backward compatibility or a 2D tensor in (class, x1, y1, x2, y2) format. When detections is
+                provided, labels must be a 2D tensor in (class, x1, y1, x2, y2) format.
 
         Returns:
             None (updates self.matrix in place).
