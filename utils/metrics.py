@@ -34,7 +34,8 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
         target_cls (np.ndarray): True object classes, shape (m,).
         plot (bool): Plot precision-recall curve at mAP50.
         save_dir (str | Path): Plot save directory.
-        names (dict | tuple): Class index to name mapping used for plot legends.
+        names (dict | list | tuple): Class names. If a dictionary is provided, class indices are mapped using
+            dictionary keys. If a list or tuple is provided, class indices map to names by their position.
         eps (float): Small value to avoid division by zero.
         prefix (str): Prefix for saved plot filenames.
 
