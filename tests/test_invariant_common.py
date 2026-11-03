@@ -11,6 +11,8 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from models.common import DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
+import torch
+from utils.metrics import ConfusionMatrix
 from utils.segment.general import scale_image
 
 BLOCKED_URLS = [
@@ -109,3 +111,50 @@ def test_tensorrt_deserialize_failure_reports_environment(monkeypatch, tmp_path)
 
     with pytest.raises(RuntimeError, match="same TensorRT version"):
         DetectMultiBackend(str(engine))
+
+
+def test_confusion_matrix_none_detections_2d_labels():
+    """Verify ConfusionMatrix.process_batch handles documented 2D (M, 5) labels when detections=None."""
+    nc = 80
+    cm = ConfusionMatrix(nc=nc)
+
+    labels = torch.tensor(
+        [
+            [0.0, 100.0, 200.0, 150.0, 250.0],
+            [5.0, 10.0, 20.0, 30.0, 40.0],
+        ]
+    )
+
+    cm.process_batch(detections=None, labels=labels)
+
+    assert cm.matrix[nc, 0] == 1.0, f"Expected FN count 1 for class 0, got {cm.matrix[nc, 0]}"
+    assert cm.matrix[nc, 5] == 1.0, f"Expected FN count 1 for class 5, got {cm.matrix[nc, 5]}"
+    assert cm.matrix.sum() == 2.0, f"Expected total matrix sum 2.0, got {cm.matrix.sum()}"
+
+    for corrupted_col in [10, 20, 30, 40]:
+        assert cm.matrix[nc, corrupted_col] == 0.0, (
+            f"Coordinate {corrupted_col} was mistakenly counted as a false negative!"
+        )
+
+
+def test_confusion_matrix_none_detections_1d_labels():
+    """Verify backward compatibility with 1D labels slice as passed from val.py."""
+    nc = 80
+    cm = ConfusionMatrix(nc=nc)
+
+    labels_1d = torch.tensor([0, 5])
+    cm.process_batch(detections=None, labels=labels_1d)
+
+    assert cm.matrix[nc, 0] == 1.0
+    assert cm.matrix[nc, 5] == 1.0
+    assert cm.matrix.sum() == 2.0
+
+
+def test_confusion_matrix_none_detections_empty_labels():
+    """Verify handling of empty labels when detections=None."""
+    nc = 80
+    cm = ConfusionMatrix(nc=nc)
+
+    labels_empty = torch.zeros((0, 5))
+    cm.process_batch(detections=None, labels=labels_empty)
+    assert cm.matrix.sum() == 0.0
