@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from models.common import DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
+from utils.general import labels_to_image_weights
 from utils.segment.general import scale_image
 
 BLOCKED_URLS = [
@@ -109,3 +110,33 @@ def test_tensorrt_deserialize_failure_reports_environment(monkeypatch, tmp_path)
 
     with pytest.raises(RuntimeError, match="same TensorRT version"):
         DetectMultiBackend(str(engine))
+
+
+@pytest.mark.parametrize("nc", [1, 2, 10, 80])
+def test_labels_to_image_weights_default_class_weights(nc):
+    """Verify labels_to_image_weights works with default class_weights for nc=1, 2, 10, and 80."""
+    labels = [
+        np.array([[0, 0.5, 0.5, 0.2, 0.2]]),
+        np.array([[0, 0.1, 0.1, 0.3, 0.3]]),
+    ]
+
+    weights = labels_to_image_weights(labels, nc=nc)
+
+    assert isinstance(weights, np.ndarray)
+    assert weights.shape == (2,)
+    assert np.allclose(weights, [1.0, 1.0])
+
+
+def test_labels_to_image_weights_custom_weights_preserved():
+    """Verify explicitly supplied custom class weights are preserved."""
+    nc = 3
+    labels = [
+        np.array([[0, 0.5, 0.5, 0.2, 0.2], [1, 0.5, 0.5, 0.2, 0.2]]),
+        np.array([[2, 0.1, 0.1, 0.3, 0.3]]),
+    ]
+    custom_cw = np.array([2.0, 3.0, 5.0])
+
+    weights = labels_to_image_weights(labels, nc=nc, class_weights=custom_cw)
+
+    assert isinstance(weights, np.ndarray)
+    assert np.allclose(weights, [5.0, 5.0])
