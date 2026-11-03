@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from models.common import DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
+from utils.metrics import ap_per_class
 from utils.segment.general import scale_image
 
 BLOCKED_URLS = [
@@ -109,3 +110,25 @@ def test_tensorrt_deserialize_failure_reports_environment(monkeypatch, tmp_path)
 
     with pytest.raises(RuntimeError, match="same TensorRT version"):
         DetectMultiBackend(str(engine))
+
+
+@pytest.mark.parametrize(
+    "names_input",
+    [
+        (),  # default argument
+        ("class_0", "class_1"),  # tuple
+        ["class_0", "class_1"],  # list
+        {0: "class_0", 1: "class_1"},  # dict
+    ],
+)
+def test_ap_per_class_names_formats(names_input):
+    """Test ap_per_class with default, tuple, list, and dict names without AttributeError."""
+    tp = np.ones((5, 1), dtype=bool)
+    conf = np.linspace(0.9, 0.5, 5)
+    pred_cls = np.zeros(5, dtype=int)
+    target_cls = np.zeros(5, dtype=int)
+
+    tp_out, fp_out, _p, _r, _f1, _ap, unique_classes = ap_per_class(tp, conf, pred_cls, target_cls, names=names_input)
+    assert tp_out[0] == 5.0
+    assert fp_out[0] == 0.0
+    assert len(unique_classes) == 1
