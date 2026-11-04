@@ -272,7 +272,7 @@ def run(
                 if nl:
                     stats.append((correct_masks, correct_bboxes, *torch.zeros((2, 0), device=device), labels[:, 0]))
                     if plots:
-                        confusion_matrix.process_batch(detections=None, labels=labels[:, 0])
+                        confusion_matrix.process_batch(detections=None, labels=labels)
                 continue
 
             # Masks

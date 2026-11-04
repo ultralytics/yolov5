@@ -34,7 +34,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
         target_cls (np.ndarray): True object classes, shape (m,).
         plot (bool): Plot precision-recall curve at mAP50.
         save_dir (str | Path): Plot save directory.
-        names (dict | tuple): Class index to name mapping used for plot legends.
+        names (dict | list | tuple): Class names indexed by class ID, used for plot legends.
         eps (float): Small value to avoid division by zero.
         prefix (str): Prefix for saved plot filenames.
 
@@ -80,9 +80,9 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names
 
     # Compute F1 (harmonic mean of precision and recall)
     f1 = 2 * p * r / (p + r + eps)
-    names = [v for k, v in names.items() if k in unique_classes]  # list: only classes that have data
-    names = dict(enumerate(names))  # to dict
     if plot:
+        names = dict(enumerate(names)) if isinstance(names, (list, tuple)) else names
+        names = dict(enumerate(names[c] for c in unique_classes if c in names))
         plot_pr_curve(px, py, ap, Path(save_dir) / f"{prefix}PR_curve.png", names)
         plot_mc_curve(px, f1, Path(save_dir) / f"{prefix}F1_curve.png", names, ylabel="F1")
         plot_mc_curve(px, p, Path(save_dir) / f"{prefix}P_curve.png", names, ylabel="Precision")
@@ -140,20 +140,19 @@ class ConfusionMatrix:
         """Update the confusion matrix for a batch of detections vs labels (both in pixel xyxy).
 
         Args:
-            detections (Array[N, 6]): x1, y1, x2, y2, conf, class
+            detections (Array[N, 6] | None): x1, y1, x2, y2, conf, class, or None if no detections.
             labels (Array[M, 5]): class, x1, y1, x2, y2
 
         Returns:
             None (updates self.matrix in place).
         """
+        gt_classes = labels[:, 0].int()
         if detections is None:
-            gt_classes = labels.int()
             for gc in gt_classes:
                 self.matrix[self.nc, gc] += 1  # background FN
             return
 
         detections = detections[detections[:, 4] > self.conf]
-        gt_classes = labels[:, 0].int()
         detection_classes = detections[:, 5].int()
         iou = box_iou(labels[:, 1:], detections[:, :4])
 
