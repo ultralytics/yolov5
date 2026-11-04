@@ -546,11 +546,11 @@ def labels_to_class_weights(labels, nc=80):
     return torch.from_numpy(weights).float()
 
 
-def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):  # noqa: B008
+def labels_to_image_weights(labels, nc=80, class_weights=1.0):
     """Calculates image weights from labels using class weights for weighted sampling."""
     # Usage: index = random.choices(range(n), weights=image_weights, k=1)  # weighted image sample
     class_counts = np.array([np.bincount(x[:, 0].astype(int), minlength=nc) for x in labels])
-    return (class_weights.reshape(1, nc) * class_counts).sum(1)
+    return (np.asarray(class_weights).reshape(1, -1) * class_counts).sum(1)
 
 
 # Keep local (do not dedup): ultralytics print_args resolves relative_to() its own package root, so it always
