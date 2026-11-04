@@ -386,12 +386,16 @@ class TFDetect(keras.layers.Layer):
         self.na = len(anchors[0]) // 2  # number of anchors
         self.grid = [tf.zeros(1)] * self.nl  # init grid
         self.anchors = tf.convert_to_tensor(w.anchors.numpy(), dtype=tf.float32)
-        self.anchor_grid = tf.reshape(self.anchors * tf.reshape(self.stride, [self.nl, 1, 1]), [self.nl, 1, -1, 1, 2])
+        norm = tf.constant([imgsz[1], imgsz[0]], dtype=tf.float32)
+        self.xy_scale = 2 * self.stride[:, None] / norm
+        self.anchor_grid = tf.reshape(
+            self.anchors * tf.reshape(self.stride, [self.nl, 1, 1]) * 4 / norm, [self.nl, 1, 1, -1, 2]
+        )
         self.m = [TFConv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
         self.imgsz = imgsz
         for i in range(self.nl):
             ny, nx = self.imgsz[0] // self.stride[i], self.imgsz[1] // self.stride[i]
-            self.grid[i] = self._make_grid(nx, ny)
+            self.grid[i] = (tf.transpose(self._make_grid(nx, ny), [0, 2, 1, 3]) - 0.5) * self.stride[i] / norm
 
     def call(self, inputs):
         """Performs forward pass through the model layers to predict object bounding boxes and classifications."""
@@ -405,13 +409,9 @@ class TFDetect(keras.layers.Layer):
 
             # Inference
             y = x[i]
-            grid = tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5
-            anchor_grid = tf.transpose(self.anchor_grid[i], [0, 2, 1, 3]) * 4
-            xy = (tf.sigmoid(y[..., 0:2]) * 2 + grid) * self.stride[i]  # xy
-            wh = tf.sigmoid(y[..., 2:4]) ** 2 * anchor_grid
-            # Normalize xywh to 0-1 to reduce calibration error
-            xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
-            wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
+            # Decode in image-size-normalized units to avoid large pixel-space calibration ranges.
+            xy = tf.sigmoid(y[..., 0:2]) * self.xy_scale[i] + self.grid[i]  # xy
+            wh = tf.sigmoid(y[..., 2:4]) ** 2 * self.anchor_grid[i]  # wh
             y = tf.concat([xy, wh, tf.sigmoid(y[..., 4 : 5 + self.nc]), y[..., 5 + self.nc :]], -1)
             z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
