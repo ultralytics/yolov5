@@ -40,7 +40,7 @@ python train.py --imgsz 64 --batch 32 --weights yolov5n.pt --cfg yolov5n.yaml --
 ```
 
 - CI (`.github/workflows/ci-testing.yml`) runs end-to-end train/val/detect/export smoke scripts and `benchmarks.py` — not pytest — on push/PR to `master` plus a daily cron.
-- Tests matrix: ubuntu-latest, windows-latest, macos-14 on latest Python 3.x, plus ubuntu on Python 3.8 with torch 1.8.0 (repo floors: `requires-python >=3.8`, `torch>=1.8.0`); the Benchmarks job is pinned to Python 3.11.
+- Tests matrix: ubuntu-latest, windows-latest, macos-latest on latest Python 3.x, plus ubuntu on Python 3.8 with torch 1.8.0 (repo floors: `requires-python >=3.8`, `torch>=1.8.0`); the Benchmarks job is pinned to Python 3.11.
 
 ## Architecture
 
