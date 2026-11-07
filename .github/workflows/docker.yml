@@ -23,7 +23,7 @@ jobs:
           - dockerfile: utils/docker/Dockerfile-arm64
             tag: latest-arm64
             platform: linux/arm64
-            runs_on: ubuntu-24.04-arm
+            runs_on: ubuntu-26.04-arm
           - dockerfile: utils/docker/Dockerfile-cpu
             tag: latest-cpu
             platform: linux/amd64
