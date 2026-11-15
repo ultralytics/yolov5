@@ -17,6 +17,9 @@
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+namespaces = false
+
 # Project settings -----------------------------------------------------------------------------------------------------
 [project]
 version = "7.0.0"
