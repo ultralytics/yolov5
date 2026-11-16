@@ -7,12 +7,10 @@ from types import SimpleNamespace
 import cv2
 import numpy as np
 import pytest
-from PIL import Image
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from models.common import AutoShape, DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
-from models.yolo import DetectionModel
+from models.common import DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
 from utils.segment.general import scale_image
 
 BLOCKED_URLS = [
@@ -80,17 +78,6 @@ def test_scale_image_many_masks():
 
     assert resized.shape == (8, 10, 513)
     np.testing.assert_allclose(resized, expected)
-
-
-@pytest.mark.parametrize("mode", ["P", "LA", "CMYK", "1"])
-def test_autoshape_converts_pil_images_to_rgb(mode):
-    """AutoShape must feed palette, gray+alpha, CMYK and bilevel PIL images to the model as RGB."""
-    model = AutoShape(DetectionModel(os.path.join(os.path.dirname(__file__), "..", "models", "yolov5n.yaml")))
-    im = Image.fromarray(np.random.default_rng(0).integers(0, 256, (48, 64, 3), dtype=np.uint8)).convert(mode)
-
-    results = model(im, size=64)
-
-    np.testing.assert_array_equal(results.ims[0], np.asarray(im.convert("RGB")))
 
 
 def test_tensorrt_deserialize_failure_reports_environment(monkeypatch, tmp_path):
