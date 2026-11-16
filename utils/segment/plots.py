@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+from PIL import Image
 
 from .. import threaded
 from ..general import LOGGER, xywh2xyxy
@@ -94,7 +95,7 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname="images.jpg"
                 else:
                     image_masks = masks[idx]
 
-                im = np.asarray(annotator.im).copy()
+                im = annotator.im  # NumPy image, masks are blended in place
                 for j, box in enumerate(boxes.T.tolist()):
                     if labels or conf[j] > 0.25:  # 0.25 conf thresh
                         color = colors(classes[j])
@@ -109,8 +110,7 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname="images.jpg"
                             im[y : y + h, x : x + w, :][mask] = (
                                 im[y : y + h, x : x + w, :][mask] * 0.4 + np.array(color) * 0.6
                             )
-                annotator.fromarray(im)
-    annotator.im.save(fname)  # save
+    Image.fromarray(annotator.result()).save(fname)  # save
 
 
 def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
