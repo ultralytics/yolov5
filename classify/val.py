@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from yolov5.classify.val import main, parse_opt  # noqa: E402
+from yolov5.classify.val import main, parse_opt
 
 if __name__ == "__main__":
     main(parse_opt())

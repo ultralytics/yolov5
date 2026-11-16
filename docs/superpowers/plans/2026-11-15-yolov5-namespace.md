@@ -34,6 +34,7 @@
 ### Task 1: Create the namespaced package and move implementation
 
 **Files:**
+
 - Move: root `models/`, Python implementation in `utils/`, `classify/`, and `segment/` into `yolov5/`.
 - Keep: root `utils/docker/` in place for Docker workflows.
 - Keep: classification and segmentation tutorial notebooks at their current root paths.
@@ -51,6 +52,7 @@
 ### Task 2: Namespace imports and preserve CLI paths
 
 **Files:**
+
 - Modify: Python files throughout `yolov5/` and existing `tests/` files to use `yolov5.models`, `yolov5.utils`, and `yolov5.classify` / `yolov5.segment` imports.
 - Modify: existing root `tests/` imports and path setup.
 - Create: thin root CLI forwarders and `classify/*` / `segment/*` forwarders for the existing script paths.
@@ -64,6 +66,7 @@
 ### Task 3: Repair resource roots and verify the editable package
 
 **Files:**
+
 - Modify: package path constants in `yolov5/utils/general.py`, model builders, logger integrations, and moved CLI modules as required.
 - Modify: `pyproject.toml` only if verification identifies missing package data.
 
