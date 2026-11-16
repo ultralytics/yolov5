@@ -72,8 +72,21 @@ git clone https://github.com/ultralytics/yolov5
 # Navigate to the cloned directory
 cd yolov5
 
-# Install required packages
-pip install -r requirements.txt
+# Install YOLOv5 and its required packages in editable mode
+pip install -e .
+```
+
+</details>
+
+<details>
+<summary>Python package imports</summary>
+
+Import YOLOv5 implementation modules through the `yolov5` namespace:
+
+```python
+from yolov5.models.common import DetectMultiBackend
+from yolov5.models.yolo import DetectionModel
+from yolov5.utils.general import check_yaml
 ```
 
 </details>

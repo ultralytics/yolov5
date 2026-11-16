@@ -53,15 +53,12 @@ def test_export_edgetpu_no_shell_true():
         "ultralytics",
         "ultralytics.utils",
         "ultralytics.utils.patches",
-        "models",
-        "models.experimental",
-        "models.yolo",
-        "utils",
-        "utils.dataloaders",
-        "utils.general",
-        "utils.torch_utils",
-        "utils.segment",
-        "utils.segment.general",
+        "yolov5.models.experimental",
+        "yolov5.models.yolo",
+        "yolov5.utils.dataloaders",
+        "yolov5.utils.general",
+        "yolov5.utils.torch_utils",
+        "yolov5.utils.segment.general",
     ]
     stubs = {}
     for mod in heavy_mods:
@@ -70,8 +67,8 @@ def test_export_edgetpu_no_shell_true():
 
     with patch.dict("sys.modules", stubs):
         # Remove cached module if already imported
-        sys.modules.pop("export", None)
-        import export as export_module
+        sys.modules.pop("yolov5.export", None)
+        import yolov5.export as export_module
 
     shell_true_calls = []
 

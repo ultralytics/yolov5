@@ -19,6 +19,7 @@
 *.avi
 *.data
 *.json
+!yolov5/utils/loggers/comet/optimizer_config.json
 *.cfg
 
 storage.googleapis.com

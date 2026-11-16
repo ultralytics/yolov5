@@ -10,8 +10,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from models.common import DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
-from utils.segment.general import scale_image
+from yolov5.models.common import DetectMultiBackend, _request_ssrf_url, _validate_ssrf_url
+from yolov5.utils.segment.general import scale_image
 
 BLOCKED_URLS = [
     "http://169.254.169.254/latest/meta-data/",  # AWS metadata / link-local

@@ -72,8 +72,21 @@ git clone https://github.com/ultralytics/yolov5
 # 导航到克隆的目录
 cd yolov5
 
-# 安装所需的包
-pip install -r requirements.txt
+# 以可编辑模式安装 YOLOv5 及其依赖
+pip install -e .
+```
+
+</details>
+
+<details>
+<summary>Python 包导入</summary>
+
+通过 `yolov5` 命名空间导入 YOLOv5 实现模块：
+
+```python
+from yolov5.models.common import DetectMultiBackend
+from yolov5.models.yolo import DetectionModel
+from yolov5.utils.general import check_yaml
 ```
 
 </details>

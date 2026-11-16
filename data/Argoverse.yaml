@@ -30,7 +30,7 @@ names:
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import json
-  from utils.general import download, Path, TQDM
+  from yolov5.utils.general import download, Path, TQDM
 
 
   def argoverse2yolo(set):

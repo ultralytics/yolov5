@@ -31,7 +31,7 @@ names:
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
-  from utils.general import download, os, Path, TQDM
+  from yolov5.utils.general import download, os, Path, TQDM
 
   def visdrone2yolo(dir):
       from PIL import Image

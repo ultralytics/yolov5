@@ -23,7 +23,7 @@ names:
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import shutil
-  from utils.general import np, pd, Path, download, xyxy2xywh, TQDM
+  from yolov5.utils.general import np, pd, Path, download, xyxy2xywh, TQDM
 
 
   # Download

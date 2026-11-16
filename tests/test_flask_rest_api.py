@@ -5,7 +5,7 @@ import io
 import pytest
 from PIL import Image
 
-from utils.flask_rest_api.restapi import DETECTION_URL, MAX_IMAGE_SIZE, app, models
+from yolov5.utils.flask_rest_api.restapi import DETECTION_URL, MAX_IMAGE_SIZE, app, models
 
 MODEL_NAME = "yolov5s"
 DETECTION_PATH = DETECTION_URL.replace("<model>", MODEL_NAME)
