@@ -8,8 +8,9 @@ from pathlib import Path
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
-import yaml
 from ultralytics.utils.plotting import Annotator, colors
+
+from utils.general import yaml_load
 
 try:
     import clearml
@@ -56,8 +57,7 @@ def construct_dataset(clearml_info_string):
             "No yaml definition found in dataset root path, check that there is a correct yaml file "
             "inside the dataset root path."
         )
-    with open(yaml_filenames[0]) as f:
-        dataset_definition = yaml.safe_load(f)
+    dataset_definition = yaml_load(yaml_filenames[0])
 
     assert set(dataset_definition.keys()).issuperset({"train", "test", "val", "nc", "names"}), (
         "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
