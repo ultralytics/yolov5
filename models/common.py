@@ -908,9 +908,11 @@ class AutoShape(nn.Module):
                 f = f"image{i}"  # filename
                 if isinstance(im, (str, Path)):  # filename or uri
                     im, f = Image.open(_request_ssrf_url(str(im)).raw if str(im).startswith("http") else im), im
-                    im = np.asarray(exif_transpose(im))
-                elif isinstance(im, Image.Image):  # PIL Image
-                    im, f = np.asarray(exif_transpose(im)), getattr(im, "filename", f) or f
+                if isinstance(im, Image.Image):  # PIL Image
+                    im, f = exif_transpose(im), getattr(im, "filename", f) or f
+                    if im.mode.startswith("I;16"):  # convert() clips 16-bit values at 255, scale them like cv2 does
+                        im = Image.fromarray((np.asarray(im) >> 8).astype(np.uint8))
+                    im = np.asarray(im if im.mode in {"RGB", "L"} else im.convert("RGB"))  # palette, LA, CMYK, etc.
                 files.append(Path(f).with_suffix(".jpg").name)
                 if im.shape[0] < 5:  # image in CHW
                     im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
