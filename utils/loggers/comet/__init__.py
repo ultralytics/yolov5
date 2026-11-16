@@ -27,10 +27,9 @@ except ImportError:
 import PIL
 import torch
 import torchvision.transforms as T
-import yaml
 
 from utils.dataloaders import img2label_paths
-from utils.general import check_dataset, scale_boxes, xywh2xyxy
+from utils.general import check_dataset, scale_boxes, xywh2xyxy, yaml_load
 from utils.metrics import box_iou
 
 COMET_PREFIX = "comet://"
@@ -244,8 +243,7 @@ class CometLogger:
 
     def check_dataset(self, data_file):
         """Validates the dataset configuration by loading the YAML file specified in `data_file`."""
-        with open(data_file) as f:
-            data_config = yaml.safe_load(f)
+        data_config = yaml_load(data_file)
 
         path = data_config.get("path")
         if path and path.startswith(COMET_PREFIX):

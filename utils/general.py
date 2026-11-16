@@ -331,7 +331,7 @@ def check_file(file, suffix=""):
     else:  # search
         files = []
         for d in "data", "models", "utils":  # search directories
-            files.extend(glob.glob(str(ROOT / d / "**" / file), recursive=True))  # find file
+            files.extend(glob.glob(str(Path(glob.escape(str(ROOT / d))) / "**" / file), recursive=True))  # find file
         assert len(files), f"File not found: {file}"  # assert file was found
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
@@ -437,7 +437,7 @@ def check_amp(model):
 
 def yaml_load(file="data.yaml"):
     """Safely loads and returns the contents of a YAML file specified by `file` argument."""
-    with open(file, errors="ignore") as f:
+    with open(file, errors="ignore", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
