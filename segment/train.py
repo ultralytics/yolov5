@@ -459,7 +459,7 @@ def train(hyp, opt, device):
                     "ema": deepcopy(ema.ema).half(),
                     "updates": ema.updates,
                     "optimizer": optimizer.state_dict(),
-                    "opt": vars(opt),
+                    "opt": {k: str(v) if isinstance(v, Path) else v for k, v in vars(opt).items()},
                     "git": GIT_INFO,  # {remote, branch, commit} if a git repo
                     "date": datetime.now().isoformat(),
                 }
