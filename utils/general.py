@@ -796,9 +796,8 @@ def save_one_txt(predn, save_conf, shape, file):
         shape (tuple): Shape of the original image as (height, width).
         file (str | Path): File path where the result will be saved.
     """
-    gn = torch.tensor(shape)[[1, 0, 1, 0]]  # normalization gain whwh
     predn = predn.cpu()
-    xywh = (xyxy2xywh(predn[:, :4].float()) / gn).tolist()  # normalized xywh
+    xywh = xyxy2xywhn(predn[:, :4].float(), w=shape[1], h=shape[0]).tolist()  # normalized xywh
     with open(file, "a") as f:
         for (*_, conf, cls), box in zip(predn.tolist(), xywh):
             line = (cls, *box, conf) if save_conf else (cls, *box)  # label format
